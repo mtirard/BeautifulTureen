@@ -8,6 +8,7 @@ PacletObject[
     "PublisherID" -> "MaximilienTirard",
     "License" -> "MIT",
     "PrimaryContext" -> "MaximilienTirard`BeautifulTureen`",
+    "URL" -> "https://github.com/mtirard/BeautifulTureen",
     "DocumentationURL" -> "https://resources.wolframcloud.com/PacletRepository/resources",
     "Extensions" -> {
       {
