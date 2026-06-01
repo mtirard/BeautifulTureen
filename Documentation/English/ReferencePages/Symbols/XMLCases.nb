@@ -11,28 +11,21 @@ Notebook[{
 Cell[CellGroupData[{
 Cell["XMLCases", "ObjectName"],
 
-Cell[TextData[{
- Cell["   ", "ModInfo"],
- Cell[BoxData[
-  RowBox[{
-   ButtonBox["XMLCases",
-    BaseStyle->"Link",
-    ButtonData->"paclet:MaximilienTirardBeautifulTureen/ref/XMLCases"], "[", 
-   RowBox[{
-    StyleBox["tree", "TI"], ",", 
-    StyleBox["pattern", "TI"]}], "]"}]], "InlineFormula"],
- "\[LineSeparator]finds matching elements. Accepts ",
- Cell[BoxData[
-  ButtonBox["XMLElement",
-   BaseStyle->"Link"]], "InlineFormula"],
- " patterns, ",
- Cell[BoxData[
-  ButtonBox["Alternatives",
-   BaseStyle->"Link"]], "InlineFormula"],
- " thereof (heterogeneous attribute constraints), rules, and combinators."
-}], "Usage"],
+Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"], "[", RowBox[{StyleBox["tree", "TI"], ",", " ", StyleBox["pattern", "TI"]}], "]"}]], "InlineFormula"], " \[LineSeparator]gives a list of the elements of ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " that match ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], ".", "\[LineSeparator]"}], "Usage"],
 
-Cell["XXXX", "Notes"]
+Cell[TextData[{Cell[BoxData[TemplateBox[{Cell[TextData["XMLCases"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], "[", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], "] returns a flat list of every element of ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " matching ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], ", searched at all depths via ", Cell[BoxData[TemplateBox[{Cell[TextData["Cases"]], "paclet:ref/Cases"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], " with an ", Cell[BoxData[TemplateBox[{Cell[TextData["Infinity"]], "paclet:ref/Infinity"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], " level specification."}], "Notes"],
+
+Cell[TextData[{Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " can be an ", Cell[BoxData[TemplateBox[{Cell[TextData["XMLObject"]], "paclet:ref/XMLObject"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], " (as returned by ", Cell[BoxData[TemplateBox[{Cell[TextData["ImportString"]], "paclet:ref/ImportString"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], "[", Cell[BoxData[StyleBox["source", "TI"]], "InlineFormula"], ", {\"HTML\", \"XMLObject\"}]), a single ", Cell[BoxData[TemplateBox[{Cell[TextData["XMLElement"]], "paclet:ref/XMLElement"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], ", or a list of either."}], "Notes"],
+
+Cell[TextData[{"The simplest ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " is an ", Cell[BoxData[TemplateBox[{Cell[TextData["XMLElement"]], "paclet:ref/XMLElement"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], " pattern, most conveniently built with ", Cell[BoxData[TemplateBox[{Cell[TextData["XMLPattern"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], ". A bare ", Cell[BoxData[TemplateBox[{Cell[TextData["XMLPattern"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], "[", Cell[BoxData[StyleBox["tag", "TI"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["constraints", "TI"]], "InlineFormula"], "] expands to an ", Cell[BoxData[TemplateBox[{Cell[TextData["XMLElement"]], "paclet:ref/XMLElement"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], " pattern, so this case is effectively ", Cell[BoxData[TemplateBox[{Cell[TextData["Cases"]], "paclet:ref/Cases"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], "[", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], ", ", Cell[BoxData[TemplateBox[{Cell[TextData["Infinity"]], "paclet:ref/Infinity"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], "]."}], "Notes"],
+
+Cell[TextData[{"An ", Cell[BoxData[TemplateBox[{Cell[TextData["Alternatives"]], "paclet:ref/Alternatives"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], " of ", Cell[BoxData[TemplateBox[{Cell[TextData["XMLElement"]], "paclet:ref/XMLElement"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], " patterns matches any of several element shapes in a single pass, and the alternatives may carry different attribute and class constraints."}], "Notes"],
+
+Cell[TextData[{"Combinators express structural relationships between elements: ", Cell[BoxData[TemplateBox[{Cell[TextData["Child"]], "paclet:MaximilienTirard/BeautifulTureen/ref/Child"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], "[", Cell[BoxData[StyleBox["parent", "TI"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["child", "TI"]], "InlineFormula"], "] matches direct children, ", Cell[BoxData[TemplateBox[{Cell[TextData["Descendant"]], "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], "[", Cell[BoxData[StyleBox["ancestor", "TI"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["desc", "TI"]], "InlineFormula"], "] matches at any depth, ", Cell[BoxData[TemplateBox[{Cell[TextData["Adjacent"]], "paclet:MaximilienTirard/BeautifulTureen/ref/Adjacent"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], "[", Cell[BoxData[StyleBox["before", "TI"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["after", "TI"]], "InlineFormula"], "] matches an immediately following sibling, and ", Cell[BoxData[TemplateBox[{Cell[TextData["Sibling"]], "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], "[", Cell[BoxData[StyleBox["before", "TI"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["after", "TI"]], "InlineFormula"], "] matches any following sibling."}], "Notes"],
+
+Cell[TextData[{"A delayed rule ", Cell[BoxData[RowBox[{StyleBox["pattern", "TI"], "\[RuleDelayed]", StyleBox["body", "TI"]}]], "InlineFormula"], " returns the result of applying ", Cell[BoxData[StyleBox["body", "TI"]], "InlineFormula"], " to each match instead of the matched elements. Pattern names bound on the left-hand side\[LongDash]including those bound inside a combinator\[LongDash]are in scope in ", Cell[BoxData[StyleBox["body", "TI"]], "InlineFormula"], "."}], "Notes"],
+
+Cell[TextData[{Cell[BoxData[TemplateBox[{Cell[TextData["XMLCases"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], " returns ", Cell[BoxData["$Failed"], "InlineFormula"], " and issues a message when ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " is not a valid XML expression (", Cell[BoxData["XMLCases::badtree"], "InlineFormula"], ") or when ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " is neither an ", Cell[BoxData[TemplateBox[{Cell[TextData["XMLElement"]], "paclet:ref/XMLElement"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], " pattern, an ", Cell[BoxData[TemplateBox[{Cell[TextData["Alternatives"]], "paclet:ref/Alternatives"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], " of them, nor a supported combinator (", Cell[BoxData["XMLCases::badpat"], "InlineFormula"], ")."}], "Notes"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -52,40 +45,43 @@ Cell[TextData[{
 
 Cell[TextData[{
  Cell[BoxData[
-  TagBox[
-   FrameBox["\<\"XXXX\"\>"],
-   "FunctionPlaceholder"]], "InlineSeeAlsoFunction",
+  TemplateBox[{
+    Cell[
+     TextData["XMLFirstCase"]], 
+    "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"},
+   "RefLink"]], "InlineSeeAlsoFunction",
   TaggingRules->{"PageType" -> "Function"}],
+ Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]],
  Cell[BoxData[
-  RowBox[{
-  Cell[TextData[StyleBox[
-   " \[FilledVerySmallSquare] ", "InlineSeparator"]]], 
-   DynamicModuleBox[{$CellContext`nbobj$$ = NotebookObject[
-     FrontEndObject[
-      LinkObject["i7bzb_shm", 209, 9]], 22], $CellContext`cellobj$$ = 
-    CellObject[6753]}, 
-    TemplateBox[{
-      GraphicsBox[{{
-         Thickness[0.06], 
-         StrokeForm[
-          Hue[0.4167, 0.406, 0.502]], 
-         CircleBox[{0, 0}]}, {
-         Thickness[0.06], 
-         StrokeForm[
-          Hue[0.4167, 0.406, 0.502]], 
-         LineBox[{{0, 0.62}, {0, -0.62}}]}, {
-         Thickness[0.06], 
-         StrokeForm[
-          Hue[0.4167, 0.406, 0.502]], 
-         LineBox[{{-0.62, 0}, {0.62, 0}}]}}, 
-       ImagePadding -> {{1., 1.}, {2.4, 1.}}, ImageSize -> 16, 
-       PlotRange -> {{-1.06, 1.06}, {-1.06, 1.06}}, 
-       BaselinePosition -> (Center -> 
-        Center)], $CellContext`nbobj$$, $CellContext`cellobj$$},
-     "InlineListingAddButton"],
-    Initialization:>($CellContext`nbobj$$ = 
-      EvaluationNotebook[]; $CellContext`cellobj$$ = EvaluationCell[])]}]], 
-  "InlineListingAddButton"]
+  TemplateBox[{
+    Cell[
+     TextData["XMLDeleteCases"]], 
+    "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDeleteCases"},
+   "RefLink"]], "InlineSeeAlsoFunction",
+  TaggingRules->{"PageType" -> "Function"}],
+ Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["XMLPattern"]], 
+    "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"},
+   "RefLink"]], "InlineSeeAlsoFunction",
+  TaggingRules->{"PageType" -> "Function"}],
+ Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["HTMLText"]], 
+    "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLText"},
+   "RefLink"]], "InlineSeeAlsoFunction",
+  TaggingRules->{"PageType" -> "Function"}],
+ Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["Cases"]], "paclet:ref/Cases"},
+   "RefLink"]], "InlineSeeAlsoFunction",
+  TaggingRules->{"PageType" -> "Function"}]
 }], "SeeAlso"]
 }, Open  ]],
 
@@ -152,6 +148,8 @@ Cell[BoxData[
   "]"}]], "ExampleInitialization"]
 }, Open  ]],
 
+Cell[CellGroupData[{
+
 Cell[BoxData[
  InterpretationBox[GridBox[{
     {
@@ -167,6 +165,59 @@ Cell[BoxData[
 
 Cell[CellGroupData[{
 
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "\t", "ExampleDelimiter"],
+  $Line = 0; Null]], "ExampleDelimiter"],
+
+Cell["Find every paragraph in a small HTML fragment:", "ExampleText"],
+
+Cell[BoxData[
+ RowBox[{"XMLCases", "[", 
+  RowBox[{
+   RowBox[{"ImportString", "[", 
+    RowBox[{"\"\<<html><body><p>Hello</p></body></html>\>\"", ",", " ", 
+     RowBox[{"{", 
+      RowBox[{"\"\<HTML\>\"", ",", " ", "\"\<XMLObject\>\""}], "}"}]}], "]"}],
+    ",", " ", 
+   RowBox[{"XMLPattern", "[", "\"\<p\>\"", "]"}]}], "]"}]], "Input",Expression\
+UUID->"696bf591-d904-4ea8-846d-17c1aa15ae4c"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Hello\"", "}"}]}], "]"}], "}"}]], "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "\t", "ExampleDelimiter"],
+  $Line = 0; Null]], "ExampleDelimiter"],
+
+Cell["Find direct children of a specific div using a combinator:", \
+"ExampleText"],
+
+Cell[BoxData[
+ RowBox[{"XMLCases", "[", 
+  RowBox[{
+   RowBox[{"ImportString", "[", 
+    RowBox[{"\"\<<html><body><div class=\\\"main\\\"><p>A</p></div><div \
+class=\\\"sidebar\\\"><p>B</p></div></body></html>\>\"", ",", " ", 
+     RowBox[{"{", 
+      RowBox[{"\"\<HTML\>\"", ",", " ", "\"\<XMLObject\>\""}], "}"}]}], "]"}],
+    ",", " ", 
+   RowBox[{"Child", "[", 
+    RowBox[{
+     RowBox[{"XMLPattern", "[", 
+      RowBox[{"\"\<div\>\"", ",", " ", 
+       RowBox[{"CSSClass", "[", "\"\<main\>\"", "]"}]}], "]"}], ",", " ", 
+     RowBox[{"XMLPattern", "[", "\"\<p\>\"", "]"}]}], "]"}]}], "]"}]], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"A\"", "}"}]}], "]"}], "}"}]], "Output"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
 Cell[TextData[{
  "More Examples",
  Cell[BoxData[
@@ -178,7 +229,8 @@ Cell[TextData[{
        BaseStyle -> "IFrameBox"]], "MoreInfoTextOuter"]},
    "MoreInfoOpenerButtonTemplate"]]]
 }], "ExtendedExamplesSection",
- CellTags->"ExtendedExamples"],
+ CellTags->
+  "ExtendedExamples"],
 
 Cell[BoxData[
  InterpretationBox[Cell[
@@ -266,10 +318,12 @@ Cell[TextData[{
 }], "CategorizationSection"],
 
 Cell["Symbol", "Categorization",
- CellLabel->"Entity Type"],
+ CellLabel->
+  "Entity Type"],
 
 Cell["MaximilienTirard/BeautifulTureen", "Categorization",
- CellLabel->"Paclet Name"],
+ CellLabel->
+  "Paclet Name"],
 
 Cell["MaximilienTirard`BeautifulTureen`", "Categorization",
  CellLabel->"Context"],
@@ -290,19 +344,25 @@ Cell[CellGroupData[{
 Cell["Syntax Templates", "TemplatesSection"],
 
 Cell[BoxData[""], "Template",
- CellLabel->"Additional Function Template"],
+ CellLabel->
+  "Additional Function \
+Template"],
 
 Cell[BoxData[""], "Template",
- CellLabel->"Arguments Pattern"],
+ CellLabel->
+  "Arguments Pattern"],
 
 Cell[BoxData[""], "Template",
- CellLabel->"Local Variables"],
+ CellLabel->
+  "Local Variables"],
 
 Cell[BoxData[""], "Template",
- CellLabel->"Color Equal Signs"]
+ CellLabel->
+  "Color Equal Signs"]
 }, Closed]]
 }, Open  ]]
 },
+Visible->False,
 TaggingRules-><|"Paclet" -> "MaximilienTirard/BeautifulTureen"|>,
 CellContext->"Global`",
 StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "FunctionPageStylesExt.nb", 
