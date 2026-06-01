@@ -5,16 +5,16 @@ BeginPackage["MaximilienTirard`BeautifulTureen`"];
 
 (* === Public symbols === *)
 
-XMLPattern::usage = "XMLPattern[tag, constraints...] produces an XMLElement pattern.";
-CSSClass::usage = "CSSClass[cls, ...] constraint for CSS class membership.";
-XMLCases::usage = "XMLCases[tree, pattern] finds matching elements. Accepts XMLElement patterns, Alternatives thereof (heterogeneous attribute constraints), rules, and combinators.";
-XMLFirstCase::usage = "XMLFirstCase[tree, pattern] returns the first matching element (or Missing[\"NotFound\"]). XMLFirstCase[tree, pattern, default] returns default instead. Same pattern surface as XMLCases; short-circuits on first match.";
-XMLDeleteCases::usage = "XMLDeleteCases[tree, pattern] returns tree with all matching elements removed at any depth. Accepts XMLElement patterns, Alternatives thereof, Child[parent, child], and Descendant[outer, inner].";
-Child::usage = "Child[parentPat, childPat] \[LongDash] direct child combinator.";
-Adjacent::usage = "Adjacent[beforePat, afterPat] \[LongDash] adjacent sibling combinator.";
-Sibling::usage = "Sibling[beforePat, afterPat] \[LongDash] general sibling combinator.";
-Descendant::usage = "Descendant[ancestorPat, descPat] \[LongDash] descendant combinator.";
-HTMLText::usage = "HTMLText[element] extracts text content recursively.";
+XMLPattern::usage = "XMLPattern[tag] constructs an XMLElement pattern matching any element with the given tag. XMLPattern[tag, constraints...] additionally constrains attributes, where each constraint is \"attr\" -> value, a bare \"attr\" for existence, or CSSClass[...].";
+CSSClass::usage = "CSSClass[cls] gives an attribute constraint, for use in XMLPattern, matching elements whose class attribute contains cls. CSSClass[cls1, cls2, ...] requires all of the given classes; use Alternatives for or-semantics and Except[cls] to negate.";
+XMLCases::usage = "XMLCases[tree, pattern] gives a list of all elements of the XML tree that match pattern, searched at any depth. pattern can be an XMLElement pattern (see XMLPattern), an Alternatives of them, a Child, Descendant, Adjacent, or Sibling combinator, or a rule pattern :> body.";
+XMLFirstCase::usage = "XMLFirstCase[tree, pattern] gives the first element of tree matching pattern, or Missing[\"NotFound\"] if there is none. XMLFirstCase[tree, pattern, default] gives default instead. It accepts the same patterns as XMLCases and short-circuits on the first match.";
+XMLDeleteCases::usage = "XMLDeleteCases[tree, pattern] gives tree with every element matching pattern removed, at any depth. It accepts XMLElement patterns, Alternatives of them, and Child or Descendant combinators; Adjacent and Sibling are not supported.";
+Child::usage = "Child[parentPat, childPat] is a combinator for XMLCases matching elements that satisfy childPat and occur as direct children of an element satisfying parentPat.";
+Adjacent::usage = "Adjacent[beforePat, afterPat] is a combinator for XMLCases matching an element that satisfies afterPat and immediately follows a sibling satisfying beforePat.";
+Sibling::usage = "Sibling[beforePat, afterPat] is a combinator for XMLCases matching elements that satisfy afterPat and follow a sibling satisfying beforePat.";
+Descendant::usage = "Descendant[ancestorPat, descPat] is a combinator for XMLCases matching elements that satisfy descPat and are nested anywhere below an element satisfying ancestorPat.";
+HTMLText::usage = "HTMLText[element] gives the text content of an XML element, concatenating all nested strings. It does not insert whitespace at block boundaries or convert <br> to newlines.";
 
 (* === Messages === *)
 
