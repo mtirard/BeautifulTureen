@@ -106,7 +106,7 @@ Cell[CellGroupData[{
 
 Cell["Related Guides", "MoreAboutSection"],
 
-Cell["XXXX", "MoreAbout"]
+Cell[TextData[ButtonBox["BeautifulTureen", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/guide/BeautifulTureen"]], "MoreAbout"]
 }, Open  ]],
 
 Cell[CellGroupData[{

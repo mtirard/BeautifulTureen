@@ -11,17 +11,181 @@ Notebook[{
 Cell[CellGroupData[{
 Cell["XMLPattern", "ObjectName"],
 
-Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"], "[", StyleBox["tag", "TI"], "]"}]], "InlineFormula"], " \[LineSeparator]constructs an ", Cell[BoxData[TemplateBox[{Cell[TextData["XMLElement"]], "paclet:ref/XMLElement"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], " pattern matching any element with tag ", Cell[BoxData[StyleBox["tag", "TI"]], "InlineFormula"], ".", "\[LineSeparator]", Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"], "[", RowBox[{StyleBox["tag", "TI"], ",", " ", StyleBox["constraints \[Ellipsis]", "TI"]}], "]"}]], "InlineFormula"], " \[LineSeparator]constructs an ", Cell[BoxData[TemplateBox[{Cell[TextData["XMLElement"]], "paclet:ref/XMLElement"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], " pattern matching elements with tag ", Cell[BoxData[StyleBox["tag", "TI"]], "InlineFormula"], " that also satisfy the given ", Cell[BoxData[StyleBox["constraints", "TI"]], "InlineFormula"], "."}], "Usage"],
+Cell[TextData[{
+ Cell["   ", "ModInfo"],
+ Cell[BoxData[
+  RowBox[{
+   ButtonBox["XMLPattern",
+    BaseStyle->"Link",
+    ButtonData->"paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"], "[", 
+   StyleBox["tag", "TI"], "]"}]], "InlineFormula"],
+ " \[LineSeparator]constructs an ",
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["XMLElement"]], "paclet:ref/XMLElement"},
+   "RefLink",
+   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+ " pattern matching any element with tag ",
+ Cell[BoxData[
+  StyleBox["tag", "TI"]], "InlineFormula"],
+ ".",
+ "\[LineSeparator]",
+ Cell["   ", "ModInfo"],
+ Cell[BoxData[
+  RowBox[{
+   ButtonBox["XMLPattern",
+    BaseStyle->"Link",
+    ButtonData->"paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"], "[", 
+   RowBox[{
+    StyleBox["tag", "TI"], ",", " ", 
+    StyleBox[
+     RowBox[{"constraints", " ", "\[Ellipsis]"}], "TI"]}], "]"}]], 
+  "InlineFormula"],
+ " \[LineSeparator]constructs an ",
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["XMLElement"]], "paclet:ref/XMLElement"},
+   "RefLink",
+   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+ " pattern matching elements with tag ",
+ Cell[BoxData[
+  StyleBox["tag", "TI"]], "InlineFormula"],
+ " that also satisfy the given ",
+ Cell[BoxData[
+  StyleBox["constraints", "TI"]], "InlineFormula"],
+ "."
+}], "Usage"],
 
-Cell[TextData[{Cell[BoxData[TemplateBox[{Cell[TextData["XMLPattern"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], "[", Cell[BoxData[StyleBox["tag", "TI"]], "InlineFormula"], "] expands to the ", Cell[BoxData[TemplateBox[{Cell[TextData["XMLElement"]], "paclet:ref/XMLElement"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], " pattern XMLElement[", Cell[BoxData[StyleBox["tag", "TI"]], "InlineFormula"], ", _, _], matching any element with the given tag regardless of attributes or content."}], "Notes"],
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["XMLPattern"]], 
+    "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"},
+   "RefLink",
+   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+ "[",
+ Cell[BoxData[
+  StyleBox["tag", "TI"]], "InlineFormula"],
+ "] expands to the ",
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["XMLElement"]], "paclet:ref/XMLElement"},
+   "RefLink",
+   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+ " pattern XMLElement[",
+ Cell[BoxData[
+  StyleBox["tag", "TI"]], "InlineFormula"],
+ ", _, _], matching any element with the given tag regardless of attributes \
+or content."
+}], "Notes"],
 
-Cell[TextData[{Cell[BoxData[TemplateBox[{Cell[TextData["XMLPattern"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], "[", Cell[BoxData[StyleBox["tag", "TI"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["constraints", "TI"]], "InlineFormula"], "] adds attribute constraints, expanding to an ", Cell[BoxData[TemplateBox[{Cell[TextData["XMLElement"]], "paclet:ref/XMLElement"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], " pattern whose attributes are matched with ", Cell[BoxData[TemplateBox[{Cell[TextData["KeyValuePattern"]], "paclet:ref/KeyValuePattern"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], ". A constraint of the form ", Cell[BoxData[StyleBox["key", "TI"]], "InlineFormula"], " -> ", Cell[BoxData[StyleBox["val", "TI"]], "InlineFormula"], " requires that attribute; a bare string ", Cell[BoxData[StyleBox["key", "TI"]], "InlineFormula"], " is shorthand for ", Cell[BoxData[StyleBox["key", "TI"]], "InlineFormula"], " -> _ , meaning the attribute is present with any value."}], "Notes"],
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["XMLPattern"]], 
+    "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"},
+   "RefLink",
+   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+ "[",
+ Cell[BoxData[
+  StyleBox["tag", "TI"]], "InlineFormula"],
+ ", ",
+ Cell[BoxData[
+  StyleBox["constraints", "TI"]], "InlineFormula"],
+ "] adds attribute constraints, expanding to an ",
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["XMLElement"]], "paclet:ref/XMLElement"},
+   "RefLink",
+   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+ " pattern whose attributes are matched with ",
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["KeyValuePattern"]], "paclet:ref/KeyValuePattern"},
+   "RefLink",
+   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+ ". A constraint of the form ",
+ Cell[BoxData[
+  StyleBox["key", "TI"]], "InlineFormula"],
+ " -> ",
+ Cell[BoxData[
+  StyleBox["val", "TI"]], "InlineFormula"],
+ " requires that attribute; a bare string ",
+ Cell[BoxData[
+  StyleBox["key", "TI"]], "InlineFormula"],
+ " is shorthand for ",
+ Cell[BoxData[
+  StyleBox["key", "TI"]], "InlineFormula"],
+ " -> _ , meaning the attribute is present with any value."
+}], "Notes"],
 
-Cell[TextData[{Cell[BoxData[StyleBox["tag", "TI"]], "InlineFormula"], " may be a string, an ", Cell[BoxData[TemplateBox[{Cell[TextData["Alternatives"]], "paclet:ref/Alternatives"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], " of strings, or a pattern such as ", Cell[BoxData["_"], "InlineFormula"], " or a named pattern, allowing a single ", Cell[BoxData[TemplateBox[{Cell[TextData["XMLPattern"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], " to match several tags."}], "Notes"],
+Cell[TextData[{
+ Cell[BoxData[
+  StyleBox["tag", "TI"]], "InlineFormula"],
+ " may be a string, an ",
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["Alternatives"]], "paclet:ref/Alternatives"},
+   "RefLink",
+   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+ " of strings, or a pattern such as ",
+ Cell[BoxData[
+ "_"], "InlineFormula"],
+ " or a named pattern, allowing a single ",
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["XMLPattern"]], 
+    "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"},
+   "RefLink",
+   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+ " to match several tags."
+}], "Notes"],
 
-Cell[TextData[{"Pass a ", Cell[BoxData[TemplateBox[{Cell[TextData["CSSClass"]], "paclet:MaximilienTirard/BeautifulTureen/ref/CSSClass"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], "[", Cell[BoxData[StyleBox["cls", "TI"]], "InlineFormula"], "] constraint to match on CSS class membership; it evaluates to a \"class\" attribute rule and so is accepted wherever an attribute constraint is."}], "Notes"],
+Cell[TextData[{
+ "Pass a ",
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["CSSClass"]], 
+    "paclet:MaximilienTirard/BeautifulTureen/ref/CSSClass"},
+   "RefLink",
+   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+ "[",
+ Cell[BoxData[
+  StyleBox["cls", "TI"]], "InlineFormula"],
+ "] constraint to match on CSS class membership; it evaluates to a \"class\" \
+attribute rule and so is accepted wherever an attribute constraint is."
+}], "Notes"],
 
-Cell[TextData[{Cell[BoxData[TemplateBox[{Cell[TextData["XMLPattern"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], " returns ", Cell[BoxData["$Failed"], "InlineFormula"], " with ", Cell[BoxData["XMLPattern::badtag"], "InlineFormula"], " for an invalid tag, or ", Cell[BoxData["XMLPattern::badconstraint"], "InlineFormula"], " (naming the offending constraint) when a constraint is neither a rule nor an attribute-existence string."}], "Notes"]
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["XMLPattern"]], 
+    "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"},
+   "RefLink",
+   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+ " returns ",
+ Cell[BoxData[
+ "$Failed"], "InlineFormula"],
+ " with ",
+ Cell[BoxData[
+  RowBox[{"XMLPattern", "::", "badtag"}]], "InlineFormula"],
+ " for an invalid tag, or ",
+ Cell[BoxData[
+  RowBox[{"XMLPattern", "::", "badconstraint"}]], "InlineFormula"],
+ " (naming the offending constraint) when a constraint is neither a rule nor \
+an attribute-existence string."
+}], "Notes"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -102,7 +266,7 @@ Cell[CellGroupData[{
 
 Cell["Related Guides", "MoreAboutSection"],
 
-Cell["XXXX", "MoreAbout"]
+Cell[TextData[ButtonBox["BeautifulTureen", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/guide/BeautifulTureen"]], "MoreAbout"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -168,6 +332,8 @@ Cell[BoxData[
 
 Cell["Match any element with a given tag:", "ExampleText"],
 
+Cell[CellGroupData[{
+
 Cell[BoxData[
  RowBox[{"MatchQ", "[", 
   RowBox[{
@@ -175,10 +341,12 @@ Cell[BoxData[
     RowBox[{"\"\<p\>\"", ",", " ", 
      RowBox[{"{", "}"}], ",", " ", 
      RowBox[{"{", "\"\<text\>\"", "}"}]}], "]"}], ",", " ", 
-   RowBox[{"XMLPattern", "[", "\"\<p\>\"", "]"}]}], "]"}]], "Input",Expression\
-UUID->"577507cc-6c44-4690-ad3b-4e8a69658a2d"],
+   RowBox[{"XMLPattern", "[", "\"\<p\>\"", "]"}]}], "]"}]], "Input",
+ CellLabel->"In[1]:="],
 
-Cell[BoxData["True"], "Output"]
+Cell[BoxData["True"], "Output",
+ CellLabel->"Out[1]="]
+}, Open  ]]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -190,6 +358,8 @@ Cell[BoxData[
 
 Cell["Constrain on an attribute value:", "ExampleText"],
 
+Cell[CellGroupData[{
+
 Cell[BoxData[
  RowBox[{"MatchQ", "[", 
   RowBox[{
@@ -200,9 +370,13 @@ Cell[BoxData[
      RowBox[{"{", "\"\<link\>\"", "}"}]}], "]"}], ",", " ", 
    RowBox[{"XMLPattern", "[", 
     RowBox[{"\"\<a\>\"", ",", " ", 
-     RowBox[{"\"\<href\>\"", " ", "->", " ", "_"}]}], "]"}]}], "]"}]], "Input"],
+     RowBox[{"\"\<href\>\"", " ", "->", " ", "_"}]}], "]"}]}], "]"}]], "Input",\
 
-Cell[BoxData["True"], "Output"]
+ CellLabel->"In[1]:="],
+
+Cell[BoxData["True"], "Output",
+ CellLabel->"Out[1]="]
+}, Open  ]]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -213,6 +387,8 @@ Cell[BoxData[
   $Line = 0; Null]], "ExampleDelimiter"],
 
 Cell["Combine tag, class, and attribute constraints:", "ExampleText"],
+
+Cell[CellGroupData[{
 
 Cell[BoxData[
  RowBox[{"XMLCases", "[", 
@@ -225,9 +401,22 @@ href=\\\"/about\\\">About</a></body></html>\>\"", ",", " ",
     ",", " ", 
    RowBox[{"XMLPattern", "[", 
     RowBox[{"\"\<a\>\"", ",", " ", 
-     RowBox[{"CSSClass", "[", "\"\<btn\>\"", "]"}]}], "]"}]}], "]"}]], "Input"],
+     RowBox[{"CSSClass", "[", "\"\<btn\>\"", "]"}]}], "]"}]}], "]"}]], "Input",\
 
-Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{RowBox[{"\"shape\"", "\[Rule]", "\"rect\""}], ",", RowBox[{"\"class\"", "\[Rule]", "\"btn\""}], ",", RowBox[{"\"href\"", "\[Rule]", "\"/buy\""}]}], "}"}], ",", RowBox[{"{", "\"Buy\"", "}"}]}], "]"}], "}"}]], "Output"]
+ CellLabel->"In[1]:="],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"XMLElement", "[", 
+   RowBox[{"\<\"a\"\>", ",", 
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"\<\"shape\"\>", "\[Rule]", "\<\"rect\"\>"}], ",", 
+      RowBox[{"\<\"class\"\>", "\[Rule]", "\<\"btn\"\>"}], ",", 
+      RowBox[{"\<\"href\"\>", "\[Rule]", "\<\"/buy\"\>"}]}], "}"}], ",", 
+    RowBox[{"{", "\<\"Buy\"\>", "}"}]}], "]"}], "}"}]], "Output",ExpressionUUI\
+D->"6f25dda0-5efb-440b-b126-a393409aab87"]
+}, Open  ]]
 }, Open  ]]
 }, Open  ]],
 
