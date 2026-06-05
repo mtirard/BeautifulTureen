@@ -1,0 +1,452 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Wolfram 14.3' *)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["HTMLToNotebook", "ObjectName"],
+
+Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["HTMLToNotebook", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLToNotebook"], "[", StyleBox["tree", "TI"], "]"}]], "InlineFormula"], " \[LineSeparator]converts the HTML/XML ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " into a ", Cell[BoxData[TemplateBox[{Cell[TextData["Notebook"]], "paclet:ref/Notebook"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], " expression, from which Markdown, PDF, RTF, and display follow via ", Cell[BoxData[TemplateBox[{Cell[TextData["Export"]], "paclet:ref/Export"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], ".", "\n", Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["HTMLToNotebook", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLToNotebook"], "[", RowBox[{StyleBox["tree", "TI"], ",", " ", RowBox[{StyleBox["\"Roles\"", "TR"], "\[Rule]", StyleBox["rules", "TI"]}]}], "]"}]], "InlineFormula"], " \[LineSeparator]overrides the block/inline classification before falling back to the frozen user-agent table.", "\n", Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["HTMLToNotebook", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLToNotebook"], "[", RowBox[{StyleBox["tree", "TI"], ",", " ", RowBox[{StyleBox["\"Constructs\"", "TR"], "\[Rule]", StyleBox["rules", "TI"]}]}], "]"}]], "InlineFormula"], " \[LineSeparator]overrides the form each element takes \[LongDash] an inline token, a cell-style string, or a constructor function."}], "Usage"],
+
+Cell[TextData[{
+ "Block-level tags become cells and inline tags become boxes inside the \
+surrounding cell. Classification is by tag alone, using a frozen snapshot of \
+the WHATWG HTML default user-agent stylesheet; CSS is never consulted. ",
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["HTMLToNotebook"]], 
+    "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLToNotebook"},
+   "RefLink",
+   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+ " makes projection choices (it is lossy and one-directional), unlike ",
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["HTMLTextContent"]], 
+    "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLTextContent"},
+   "RefLink",
+   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+ " and ",
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["HTMLInnerText"]], 
+    "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLInnerText"},
+   "RefLink",
+   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+ ", which read near-canonical text off the tree."
+}], "Notes"],
+
+Cell[TextData[{
+ "Headings ",
+ Cell[BoxData[
+ "h1"], "InlineFormula"],
+ " through ",
+ Cell[BoxData[
+ "h6"], "InlineFormula"],
+ " map to the cell styles \"Title\", \"Chapter\", \"Section\", \
+\"Subsection\", \"Subsubsection\", and \"Subsubsubsection\"; ",
+ Cell[BoxData[
+ "p"], "InlineFormula"],
+ " to \"Text\"; and ",
+ Cell[BoxData[
+ "li"], "InlineFormula"],
+ " to depth-aware \"Item\"/\"Subitem\"/\"Subsubitem\" styles (with a \
+\"Numbered\" suffix inside ",
+ Cell[BoxData[
+ "ol"], "InlineFormula"],
+ ")."
+}], "Notes"],
+
+Cell[TextData[{
+ "Inline tags map to boxes: ",
+ Cell[BoxData[
+ "b"], "InlineFormula"],
+ " and ",
+ Cell[BoxData[
+ "strong"], "InlineFormula"],
+ " to bold, ",
+ Cell[BoxData[
+ "i"], "InlineFormula"],
+ "/",
+ Cell[BoxData[
+ "em"], "InlineFormula"],
+ " to italic, ",
+ Cell[BoxData[
+ "code"], "InlineFormula"],
+ " to inline code, ",
+ Cell[BoxData[
+ "a"], "InlineFormula"],
+ " to a hyperlink, ",
+ Cell[BoxData[
+ "s"], "InlineFormula"],
+ "/",
+ Cell[BoxData[
+ "del"], "InlineFormula"],
+ " to strike-through, ",
+ Cell[BoxData[
+ "u"], "InlineFormula"],
+ " to underline. Tags with no rendering distinction (",
+ Cell[BoxData[
+ "span"], "InlineFormula"],
+ ", ",
+ Cell[BoxData[
+ "mark"], "InlineFormula"],
+ ", \[Ellipsis]) splice their content in plain."
+}], "Notes"],
+
+Cell[TextData[{
+ "The leaf-collapsing tags ",
+ Cell[BoxData[
+ "blockquote"], "InlineFormula"],
+ ", ",
+ Cell[BoxData[
+ "pre"], "InlineFormula"],
+ ", and ",
+ Cell[BoxData[
+ "table"], "InlineFormula"],
+ " collapse their whole subtree into one cell rather than recursing: a framed \
+quote, a verbatim ",
+ Cell[BoxData["\"\<Program\>\""], "InlineFormula"],
+ " cell, and a ",
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["Dataset"]], "paclet:ref/Dataset"},
+   "RefLink",
+   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+ " (unique header labels) or ",
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["Grid"]], "paclet:ref/Grid"},
+   "RefLink",
+   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+ " (otherwise, lossless) respectively."
+}], "Notes"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  StyleBox["tree", "TI"]], "InlineFormula"],
+ " may be an ",
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["XMLElement"]], "paclet:ref/XMLElement"},
+   "RefLink",
+   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+ ", an ",
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["XMLObject"]], "paclet:ref/XMLObject"},
+   "RefLink",
+   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+ " document, a list of these, or a bare string; a bare string or top-level \
+inline content is wrapped in a \"Text\" cell."
+}], "Notes"],
+
+Cell[TextData[{
+ "Each \"Constructs\" rule is ",
+ Cell[BoxData[
+  StyleBox["pattern", "TI"]], "InlineFormula"],
+ " -> ",
+ Cell[BoxData[
+  StyleBox["construct", "TI"]], "InlineFormula"],
+ " (or ",
+ Cell[BoxData[":>"], "InlineFormula"],
+ "), where ",
+ Cell[BoxData[
+  StyleBox["pattern", "TI"]], "InlineFormula"],
+ " is an ",
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["XMLPattern"]], 
+    "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"},
+   "RefLink",
+   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+ " (a bare string sugars to ",
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["XMLPattern"]], 
+    "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"},
+   "RefLink",
+   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
+ "[",
+ Cell[BoxData[
+  StyleBox["string", "TI"]], "InlineFormula"],
+ "]). Rules are tried in order, first match wins. The RHS is a cell-style \
+string, an inline token (\"Bold\", \"Italic\", \"Underline\", \"StrikeThrough\
+\", \"Code\", \"Hyperlink\", \"Plain\"), or a constructor function ",
+ Cell[BoxData[
+  StyleBox["element", "TI"]], "InlineFormula"],
+ " :> ",
+ Cell[BoxData[
+  RowBox[{"Cell", "/", "boxes"}]], "InlineFormula"],
+ "."
+}], "Notes"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "See Also",
+ Cell[BoxData[
+  TemplateBox[{"SeeAlso", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell[
+       "Insert links to any related reference (function) pages.", 
+        "MoreInfoText"], BaseStyle -> "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "SeeAlsoSection"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["HTMLInnerText"]], 
+    "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLInnerText"},
+   "RefLink"]], "InlineSeeAlsoFunction",
+  TaggingRules->{"PageType" -> "Function"}],
+ Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["HTMLTextContent"]], 
+    "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLTextContent"},
+   "RefLink"]], "InlineSeeAlsoFunction",
+  TaggingRules->{"PageType" -> "Function"}],
+ Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["XMLPattern"]], 
+    "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"},
+   "RefLink"]], "InlineSeeAlsoFunction",
+  TaggingRules->{"PageType" -> "Function"}],
+ Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]],
+ Cell[BoxData[
+  TemplateBox[{
+    Cell[
+     TextData["XMLCases"]], 
+    "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"},
+   "RefLink"]], "InlineSeeAlsoFunction",
+  TaggingRules->{"PageType" -> "Function"}]
+}], "SeeAlso"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Related Guides", "MoreAboutSection"],
+
+Cell[TextData[ButtonBox["BeautifulTureen",
+ BaseStyle->"Link",
+ ButtonData->
+  "paclet:MaximilienTirard/BeautifulTureen/guide/BeautifulTureen"]], \
+"MoreAbout"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Examples Initialization",
+ Cell[BoxData[
+  TemplateBox[{"ExamplesInitialization", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell[
+       "Input that is to be evaluated before any examples are run, e.g. \
+Needs[\[Ellipsis]].", "MoreInfoText"], BaseStyle -> "IFrameBox"]], 
+     "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "ExamplesInitializationSection"],
+
+Cell[BoxData[
+ RowBox[{"Needs", "[", "\"\<MaximilienTirard`BeautifulTureen`\>\"", 
+  "]"}]], "ExampleInitialization"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ InterpretationBox[GridBox[{
+    {
+     StyleBox[
+      RowBox[{"Basic", " ", "Examples"}], "PrimaryExamplesSection"], 
+     ButtonBox[
+      RowBox[{
+       RowBox[{"More", " ", "Examples"}], " ", "\[RightTriangle]"}],
+      BaseStyle->"ExtendedExamplesLink",
+      ButtonData:>"ExtendedExamples"]}
+   }],
+  $Line = 0; Null]], "PrimaryExamplesSection"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "\t", "ExampleDelimiter"],
+  $Line = 0; Null]], "ExampleDelimiter"],
+
+Cell["\<\
+Convert a heading and a paragraph with inline formatting to Markdown:\
+\>", "ExampleText"],
+
+Cell[BoxData[
+ RowBox[{"ExportString", "[", 
+  RowBox[{
+   RowBox[{"HTMLToNotebook", "[", 
+    RowBox[{"ImportString", "[", 
+     RowBox[{"\"\<<h1>Welcome</h1><p>A short <b>intro</b> with a <a \
+href=\"https://wolfram.com\">link</a>.</p>\>\"", ",", " ", 
+      RowBox[{"{", 
+       RowBox[{"\"\<HTML\>\"", ",", " ", "\"\<XMLObject\>\""}], "}"}]}], 
+     "]"}], "]"}], ",", " ", "\"\<Markdown\>\""}], "]"}]], "Input",ExpressionU\
+UID->"7520aa32-2300-4616-9a85-acc7d6f5390e"],
+
+Cell[BoxData["\<\"# Welcome\\n\\nA short **intro** with a \
+[link](https://wolfram.com).\"\>"], "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "\t", "ExampleDelimiter"],
+  $Line = 0; Null]], "ExampleDelimiter"],
+
+Cell["Lists become bullet or numbered item cells:", "ExampleText"],
+
+Cell[BoxData[
+ RowBox[{"ExportString", "[", 
+  RowBox[{
+   RowBox[{"HTMLToNotebook", "[", 
+    RowBox[{"ImportString", "[", 
+     RowBox[{"\"\<<ul><li>first</li><li>second</li></ul>\>\"", ",", " ", 
+      RowBox[{"{", 
+       RowBox[{"\"\<HTML\>\"", ",", " ", "\"\<XMLObject\>\""}], "}"}]}], 
+     "]"}], "]"}], ",", " ", "\"\<Markdown\>\""}], "]"}]], "Input",ExpressionU\
+UID->"1bd42e23-69a2-4c52-ac90-b5f30a7df29f"],
+
+Cell[BoxData["\<\"- first\\n\\n- second\"\>"], "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "\t", "ExampleDelimiter"],
+  $Line = 0; Null]], "ExampleDelimiter"],
+
+Cell["A table with a header row becomes a Dataset:", "ExampleText"],
+
+Cell[BoxData[
+ RowBox[{"ExportString", "[", 
+  RowBox[{
+   RowBox[{"HTMLToNotebook", "[", 
+    RowBox[{"ImportString", "[", 
+     RowBox[{"\"\<<table><thead><tr><th>Name</th><th>Role</th></tr></thead><\
+tbody><tr><td>Ann</td><td>Dev</td></tr></tbody></table>\>\"", ",", " ", 
+      RowBox[{"{", 
+       RowBox[{"\"\<HTML\>\"", ",", " ", "\"\<XMLObject\>\""}], "}"}]}], 
+     "]"}], "]"}], ",", " ", "\"\<Markdown\>\""}], "]"}]], "Input",ExpressionU\
+UID->"958caba1-989f-46d1-93cb-6584c4d13546"],
+
+Cell[BoxData["\<\"| Name | Role |\\n| - | - |\\n| Ann | Dev |\"\>"], "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "\t", "ExampleDelimiter"],
+  $Line = 0; Null]], "ExampleDelimiter"],
+
+Cell["\<\
+Override a construct to render a paragraph as a Section heading:\
+\>", "ExampleText"],
+
+Cell[BoxData[
+ RowBox[{"ExportString", "[", 
+  RowBox[{
+   RowBox[{"HTMLToNotebook", "[", 
+    RowBox[{
+     RowBox[{"ImportString", "[", 
+      RowBox[{"\"\<<p>x</p>\>\"", ",", " ", 
+       RowBox[{"{", 
+        RowBox[{"\"\<HTML\>\"", ",", " ", "\"\<XMLObject\>\""}], "}"}]}], 
+      "]"}], ",", " ", 
+     RowBox[{"\"\<Constructs\>\"", " ", "->", " ", 
+      RowBox[{"{", 
+       RowBox[{"\"\<p\>\"", " ", "->", " ", "\"\<Section\>\""}], "}"}]}]}], 
+    "]"}], ",", " ", "\"\<Markdown\>\""}], "]"}]], "Input"],
+
+Cell[BoxData["\<\"### x\"\>"], "Output"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Metadata", "MetadataSection"],
+
+Cell[TextData[{
+ "New in: ",
+ Cell["1.2.0", "HistoryData",
+  CellTags->"New"],
+ " | Modified in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Modified"],
+ " | Obsolete in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Obsolete"]
+}], "History"],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Categorization",
+ Cell[BoxData[
+  TemplateBox[{"Metadata", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell[
+       "Metadata such as page URI, context, and type of documentation page.", 
+        "MoreInfoText"], BaseStyle -> "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "CategorizationSection"],
+
+Cell["Symbol", "Categorization",
+ CellLabel->
+  "Entity Type"],
+
+Cell["MaximilienTirard/BeautifulTureen", "Categorization",
+ CellLabel->
+  "Paclet Name"],
+
+Cell["MaximilienTirard`BeautifulTureen`", "Categorization",
+ CellLabel->"Context"],
+
+Cell["MaximilienTirard/BeautifulTureen/ref/HTMLToNotebook", "Categorization",
+ CellLabel->"URI"]
+}, Closed]]
+}, Open  ]]
+},
+Visible->False,
+TaggingRules-><|"Paclet" -> "MaximilienTirard/BeautifulTureen"|>,
+CellContext->"Global`",
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "FunctionPageStylesExt.nb", 
+  CharacterEncoding -> "UTF-8"]
+]
+(* End of Notebook Content *)

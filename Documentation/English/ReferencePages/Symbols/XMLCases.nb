@@ -43,46 +43,7 @@ Cell[TextData[{
    "MoreInfoOpenerButtonTemplate"]]]
 }], "SeeAlsoSection"],
 
-Cell[TextData[{
- Cell[BoxData[
-  TemplateBox[{
-    Cell[
-     TextData["XMLFirstCase"]], 
-    "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"},
-   "RefLink"]], "InlineSeeAlsoFunction",
-  TaggingRules->{"PageType" -> "Function"}],
- Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]],
- Cell[BoxData[
-  TemplateBox[{
-    Cell[
-     TextData["XMLDeleteCases"]], 
-    "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDeleteCases"},
-   "RefLink"]], "InlineSeeAlsoFunction",
-  TaggingRules->{"PageType" -> "Function"}],
- Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]],
- Cell[BoxData[
-  TemplateBox[{
-    Cell[
-     TextData["XMLPattern"]], 
-    "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"},
-   "RefLink"]], "InlineSeeAlsoFunction",
-  TaggingRules->{"PageType" -> "Function"}],
- Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]],
- Cell[BoxData[
-  TemplateBox[{
-    Cell[
-     TextData["HTMLText"]], 
-    "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLText"},
-   "RefLink"]], "InlineSeeAlsoFunction",
-  TaggingRules->{"PageType" -> "Function"}],
- Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]],
- Cell[BoxData[
-  TemplateBox[{
-    Cell[
-     TextData["Cases"]], "paclet:ref/Cases"},
-   "RefLink"]], "InlineSeeAlsoFunction",
-  TaggingRules->{"PageType" -> "Function"}]
-}], "SeeAlso"]
+Cell[TextData[{Cell[BoxData[TemplateBox[{Cell[TextData["XMLFirstCase"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLDeleteCases"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDeleteCases"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLPattern"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["HTMLTextContent"]], "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLTextContent"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["HTMLInnerText"]], "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLInnerText"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["Cases"]], "paclet:ref/Cases"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}]}], "SeeAlso"]
 }, Open  ]],
 
 Cell[CellGroupData[{

@@ -35,24 +35,24 @@ Cell[TextData[{
     ButtonData->"paclet:MaximilienTirard/BeautifulTureen/ref/CSSClass"], "[", 
    
    RowBox[{
-    StyleBox[
-     SubscriptBox[
-      StyleBox["cls", "TI"], "1"], "TI"], ",", " ", 
-    StyleBox[
-     SubscriptBox[
-      StyleBox["cls", "TI"], "2"], "TI"], ",", " ", 
+    SubscriptBox[
+     StyleBox["cls", "TI"], 
+     StyleBox["1", "TR"]], ",", " ", 
+    SubscriptBox[
+     StyleBox["cls", "TI"], 
+     StyleBox["2", "TR"]], ",", " ", 
     StyleBox["\[Ellipsis]", "TR"]}], "]"}]], "InlineFormula"],
  " \[LineSeparator]represents a constraint matching elements that carry all \
 of the classes ",
  Cell[BoxData[
-  StyleBox[
-   SubscriptBox[
-    StyleBox["cls", "TI"], "1"], "TI"]], "InlineFormula"],
+  SubscriptBox[
+   StyleBox["cls", "TI"], 
+   StyleBox["1", "TR"]]], "InlineFormula"],
  ", ",
  Cell[BoxData[
-  StyleBox[
-   SubscriptBox[
-    StyleBox["cls", "TI"], "2"], "TI"]], "InlineFormula"],
+  SubscriptBox[
+   StyleBox["cls", "TI"], 
+   StyleBox["2", "TR"]]], "InlineFormula"],
  ", \[Ellipsis]."
 }], "Usage"],
 
@@ -289,7 +289,11 @@ Cell[CellGroupData[{
 
 Cell["Related Guides", "MoreAboutSection"],
 
-Cell[TextData[ButtonBox["BeautifulTureen", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/guide/BeautifulTureen"]], "MoreAbout"]
+Cell[TextData[ButtonBox["BeautifulTureen",
+ BaseStyle->"Link",
+ ButtonData->
+  "paclet:MaximilienTirard/BeautifulTureen/guide/BeautifulTureen"]], \
+"MoreAbout"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -556,7 +560,7 @@ Cell[BoxData[""], "Template",
 },
 TaggingRules-><|"Paclet" -> "MaximilienTirard/BeautifulTureen"|>,
 CellContext->"Global`",
-Magnification->1.5,
+Magnification->1.25,
 StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "FunctionPageStylesExt.nb", 
   CharacterEncoding -> "UTF-8"]
 ]
