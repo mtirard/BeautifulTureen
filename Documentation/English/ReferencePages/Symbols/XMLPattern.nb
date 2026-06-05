@@ -11,52 +11,7 @@ Notebook[{
 Cell[CellGroupData[{
 Cell["XMLPattern", "ObjectName"],
 
-Cell[TextData[{
- Cell["   ", "ModInfo"],
- Cell[BoxData[
-  RowBox[{
-   ButtonBox["XMLPattern",
-    BaseStyle->"Link",
-    ButtonData->"paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"], "[", 
-   StyleBox["tag", "TI"], "]"}]], "InlineFormula"],
- " \[LineSeparator]constructs an ",
- Cell[BoxData[
-  TemplateBox[{
-    Cell[
-     TextData["XMLElement"]], "paclet:ref/XMLElement"},
-   "RefLink",
-   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
- " pattern matching any element with tag ",
- Cell[BoxData[
-  StyleBox["tag", "TI"]], "InlineFormula"],
- ".",
- "\[LineSeparator]",
- Cell["   ", "ModInfo"],
- Cell[BoxData[
-  RowBox[{
-   ButtonBox["XMLPattern",
-    BaseStyle->"Link",
-    ButtonData->"paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"], "[", 
-   RowBox[{
-    StyleBox["tag", "TI"], ",", " ", 
-    StyleBox[
-     RowBox[{"constraints", " ", "\[Ellipsis]"}], "TI"]}], "]"}]], 
-  "InlineFormula"],
- " \[LineSeparator]constructs an ",
- Cell[BoxData[
-  TemplateBox[{
-    Cell[
-     TextData["XMLElement"]], "paclet:ref/XMLElement"},
-   "RefLink",
-   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
- " pattern matching elements with tag ",
- Cell[BoxData[
-  StyleBox["tag", "TI"]], "InlineFormula"],
- " that also satisfy the given ",
- Cell[BoxData[
-  StyleBox["constraints", "TI"]], "InlineFormula"],
- "."
-}], "Usage"],
+Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"], "[", StyleBox["tag", "TI"], "]"}]], "InlineFormula"], " \[LineSeparator]constructs an ", Cell[BoxData[TemplateBox[{Cell[TextData["XMLElement"]], "paclet:ref/XMLElement"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], " pattern matching any element with tag ", Cell[BoxData[StyleBox["tag", "TI"]], "InlineFormula"], ".", "\n", Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"], "[", RowBox[{StyleBox["tag", "TI"], ",", " ", StyleBox["constraints \[Ellipsis]", "TI"]}], "]"}]], "InlineFormula"], " \[LineSeparator]constructs an ", Cell[BoxData[TemplateBox[{Cell[TextData["XMLElement"]], "paclet:ref/XMLElement"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], " pattern matching elements with tag ", Cell[BoxData[StyleBox["tag", "TI"]], "InlineFormula"], " that also satisfy the given ", Cell[BoxData[StyleBox["constraints", "TI"]], "InlineFormula"], "."}], "Usage"],
 
 Cell[TextData[{
  Cell[BoxData[
