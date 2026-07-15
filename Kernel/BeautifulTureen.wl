@@ -7,9 +7,9 @@ BeginPackage["MaximilienTirard`BeautifulTureen`"];
 
 XMLPattern::usage = "XMLPattern[tag] constructs an XMLElement pattern matching any element with the given tag. XMLPattern[tag, constraints...] additionally constrains attributes, where each constraint is \"attr\" -> value, a bare \"attr\" for existence, or CSSClass[...].";
 CSSClass::usage = "CSSClass[cls] gives an attribute constraint, for use in XMLPattern, matching elements whose class attribute contains cls. CSSClass[cls1, cls2, ...] requires all of the given classes; use Alternatives for or-semantics and Except[cls] to negate.";
-XMLCases::usage = "XMLCases[tree, pattern] gives a list of all elements of the XML tree that match pattern, searched at any depth. pattern can be an XMLElement pattern (see XMLPattern), an Alternatives of them, a Child, Descendant, Adjacent, or Sibling combinator, or a rule pattern :> body.";
+XMLCases::usage = "XMLCases[tree, pattern] gives a list of all elements of the XML tree that match pattern, searched at any depth. pattern can be an XMLElement pattern (see XMLPattern), an Alternatives of them, a Child, Descendant, Adjacent, or Sibling combinator, a conditioned pattern pat /; test, or a rule pattern :> body.";
 XMLFirstCase::usage = "XMLFirstCase[tree, pattern] gives the first element of tree matching pattern, or Missing[\"NotFound\"] if there is none. XMLFirstCase[tree, pattern, default] gives default instead. It accepts the same patterns as XMLCases and short-circuits on the first match.";
-XMLDeleteCases::usage = "XMLDeleteCases[tree, pattern] gives tree with every element matching pattern removed, at any depth. It accepts XMLElement patterns, Alternatives of them, and Child or Descendant combinators; Adjacent and Sibling are not supported.";
+XMLDeleteCases::usage = "XMLDeleteCases[tree, pattern] gives tree with every element matching pattern removed, at any depth. It accepts XMLElement patterns, Alternatives of them, conditioned patterns pat /; test, and Child or Descendant combinators; Adjacent and Sibling are not supported.";
 Child::usage = "Child[parentPat, childPat] is a combinator for XMLCases matching elements that satisfy childPat and occur as direct children of an element satisfying parentPat.";
 Adjacent::usage = "Adjacent[beforePat, afterPat] is a combinator for XMLCases matching an element that satisfies afterPat and immediately follows a sibling satisfying beforePat.";
 Sibling::usage = "Sibling[beforePat, afterPat] is a combinator for XMLCases matching elements that satisfy afterPat and follow a sibling satisfying beforePat.";
@@ -25,10 +25,13 @@ XMLPattern::badtag = "Tag should be a string, Alternatives, or pattern (e.g. _).
 XMLPattern::badconstraint = "Constraint should be a Rule (key -> val, where key is an attribute name or a {namespace, name} pair), string (attribute existence), or CSSClass[...]. Got `1`.";
 XMLCases::badtree = "First argument should be an XMLObject, XMLElement, or list thereof. Got head `1`.";
 XMLCases::badpat = "Second argument should be an XMLElement pattern, Alternatives of XMLElement patterns, or combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
+XMLCases::condcombinator = "A condition (/;) may wrap an XMLElement pattern or an Alternatives of them, but not a combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
 XMLFirstCase::badtree = "First argument should be an XMLObject, XMLElement, or list thereof. Got head `1`.";
 XMLFirstCase::badpat = "Second argument should be an XMLElement pattern, Alternatives of XMLElement patterns, or combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
+XMLFirstCase::condcombinator = "A condition (/;) may wrap an XMLElement pattern or an Alternatives of them, but not a combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
 XMLDeleteCases::badtree = "First argument should be an XMLObject, XMLElement, or list thereof. Got head `1`.";
 XMLDeleteCases::badpat = "Second argument should be an XMLElement pattern, Alternatives of XMLElement patterns, or Child/Descendant combinator. Got `1`.";
+XMLDeleteCases::condcombinator = "A condition (/;) may wrap an XMLElement pattern or an Alternatives of them, but not a combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
 XMLDeleteCases::unsupported = "Adjacent and Sibling combinators are not supported by XMLDeleteCases. Use XMLCases for filtering semantics instead.";
 HTMLTextContent::badtree = "First argument should be an XMLObject, XMLElement, or list thereof. Got head `1`.";
 HTMLInnerText::badtree = "First argument should be an XMLObject, XMLElement, or list thereof. Got head `1`.";
@@ -90,6 +93,22 @@ altLeaves[x_] := {x};
 altOfXMLElementsQ[alts_Alternatives] :=
   AllTrue[altLeaves[alts], MatchQ[#, _XMLElement] &];
 
+(* A top-level Condition (pat /; test) is accepted when it wraps a base pattern
+   \[LongDash] an XMLElement pattern or an Alternatives of them \[LongDash] which map directly to
+   Cases/FirstCase/DeleteCases. A Condition wrapping a combinator is not
+   accepted (condition semantics over a multi-step traversal are undefined); it
+   is reported with ::condcombinator. Condition is HoldAll, so we inspect the
+   held left-hand side with Part rather than by matching. *)
+validConditionQ[c_Condition] :=
+  With[{lhs = c[[1]]},
+    MatchQ[lhs, _XMLElement] ||
+      (MatchQ[lhs, _Alternatives] && altOfXMLElementsQ[lhs])];
+validConditionQ[_] := False;
+
+condCombinatorQ[c_Condition] :=
+  MatchQ[c[[1]], _Child | _Adjacent | _Sibling | _Descendant];
+condCombinatorQ[_] := False;
+
 validPatternQ[_XMLElement] := True;
 validPatternQ[_Child] := True;
 validPatternQ[_Adjacent] := True;
@@ -97,6 +116,7 @@ validPatternQ[_Sibling] := True;
 validPatternQ[_Descendant] := True;
 validPatternQ[_RuleDelayed] := True;
 validPatternQ[alts_Alternatives] := altOfXMLElementsQ[alts];
+validPatternQ[c_Condition] := validConditionQ[c];
 validPatternQ[_] := False;
 
 (* Valid tree for XMLCases *)
@@ -193,6 +213,15 @@ XMLCases[tree_, pat_Alternatives] :=
    Also handles (pat1 | pat2) :> body since the lhs is an Alternatives. *)
 XMLCases[tree_, rule_RuleDelayed] :=
   Cases[tree, rule, Infinity] /; validTreeQ[tree];
+
+(* Base: top-level Condition (pat /; test) over a base pattern *)
+XMLCases[tree_, pat_Condition] :=
+  Cases[tree, pat, Infinity] /; validTreeQ[tree] && validConditionQ[pat];
+
+(* Condition wrapping a combinator: unsupported *)
+XMLCases[tree_, pat_Condition] :=
+  (Message[XMLCases::condcombinator, Short[pat[[1]]]]; $Failed) /;
+    validTreeQ[tree] && condCombinatorQ[pat];
 
 (* Descendant: chained Cases *)
 XMLCases[tree_, Descendant[outerPat_, innerPat_]] :=
@@ -323,6 +352,16 @@ XMLFirstCase[tree_, pat_Alternatives, default_:Missing["NotFound"]] :=
    Also handles (pat1 | pat2) :> body since the lhs is an Alternatives. *)
 XMLFirstCase[tree_, rule_RuleDelayed, default_:Missing["NotFound"]] :=
   FirstCase[tree, rule, default, Infinity] /; validTreeQ[tree];
+
+(* Base: top-level Condition (pat /; test) over a base pattern *)
+XMLFirstCase[tree_, pat_Condition, default_:Missing["NotFound"]] :=
+  FirstCase[tree, pat, default, Infinity] /;
+    validTreeQ[tree] && validConditionQ[pat];
+
+(* Condition wrapping a combinator: unsupported *)
+XMLFirstCase[tree_, pat_Condition, ___] :=
+  (Message[XMLFirstCase::condcombinator, Short[pat[[1]]]]; $Failed) /;
+    validTreeQ[tree] && condCombinatorQ[pat];
 
 (* Descendant: short-circuit via Catch/Throw on first inner hit *)
 XMLFirstCase[tree_, Descendant[outerPat_, innerPat_],
@@ -508,6 +547,15 @@ XMLDeleteCases[tree_, Descendant[outerPat_, innerPat_]] :=
     ] &
   ] /; validTreeQ[tree];
 
+(* Base: top-level Condition (pat /; test) over a base pattern *)
+XMLDeleteCases[tree_, pat_Condition] :=
+  DeleteCases[tree, pat, Infinity] /; validTreeQ[tree] && validConditionQ[pat];
+
+(* Condition wrapping a combinator: unsupported *)
+XMLDeleteCases[tree_, pat_Condition] :=
+  (Message[XMLDeleteCases::condcombinator, Short[pat[[1]]]]; $Failed) /;
+    validTreeQ[tree] && condCombinatorQ[pat];
+
 (* Adjacent / Sibling: unsupported \[LongDash] deletion by relative position is a niche
    operation and the combinator API is documented as unsupported here. *)
 XMLDeleteCases[tree_, _Adjacent | _Sibling] :=
@@ -518,7 +566,8 @@ XMLDeleteCases[tree_, pat_] :=
   (Message[XMLDeleteCases::badtree, Head[tree]]; $Failed) /;
     !validTreeQ[tree] &&
     (MatchQ[pat, _XMLElement | _Child | _Descendant | _Adjacent | _Sibling] ||
-     (MatchQ[pat, _Alternatives] && altOfXMLElementsQ[pat]));
+     (MatchQ[pat, _Alternatives] && altOfXMLElementsQ[pat]) ||
+     validConditionQ[pat]);
 
 (* Bad pattern *)
 XMLDeleteCases[tree_, pat_] :=

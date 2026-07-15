@@ -279,6 +279,74 @@ VerificationTest[
   TestID -> "tagpred-with-constraint"
 ];
 
+(* === Top-level Condition patterns (pat /; test) === *)
+
+$treeCond = ImportString[
+  "<section><h1>A</h1><h2>B</h2><p>C</p><div><span>x</span><span>y</span></div></section>",
+  {"HTML", "XMLObject"}];
+
+(* Condition on the whole element, testing the tag binding *)
+VerificationTest[
+  XMLCases[$treeCond, XMLPattern[t_] /; StringMatchQ[t, "h" ~~ DigitCharacter]][[All, 1]],
+  {"h1", "h2"},
+  TestID -> "cond-tag"
+];
+
+(* Condition on a whole-part capture (element-child count) \[LongDash] the unique power
+   of a top-level condition, not expressible via XMLPattern constraints *)
+VerificationTest[
+  XMLCases[$treeCond, XMLElement[tag_, _, kids_] /; Count[kids, _XMLElement] >= 2][[All, 1]],
+  {"div", "section"},
+  TestID -> "cond-childcount"
+];
+
+(* Whole-attrs capture lets a condition relate two attributes *)
+VerificationTest[
+  XMLCases[
+    ImportString["<div><a href=\"/buy\" data-id=\"buy\">x</a><a href=\"/z\" data-id=\"q\">y</a></div>",
+      {"HTML", "XMLObject"}],
+    (XMLElement["a", attrs_, _] /;
+       With[{a = Association[attrs]}, StringContainsQ[a["href"], a["data-id"]]]) :> "hit"],
+  {"hit"},
+  TestID -> "cond-wholeattrs-crossfield"
+];
+
+(* Condition short-circuits in XMLFirstCase; deletes in XMLDeleteCases *)
+VerificationTest[
+  XMLFirstCase[$treeCond, XMLPattern[t_] /; StringMatchQ[t, "h" ~~ DigitCharacter]][[1]],
+  "h1",
+  TestID -> "cond-firstcase"
+];
+VerificationTest[
+  FreeQ[
+    XMLDeleteCases[$treeCond, XMLPattern[t_] /; StringMatchQ[t, "h" ~~ DigitCharacter]],
+    XMLElement["h1" | "h2", _, _]],
+  True,
+  TestID -> "cond-deletecases"
+];
+
+(* A Condition wrapping a combinator is rejected with a clean message *)
+VerificationTest[
+  XMLCases[$treeCond, Child[XMLPattern["div"], XMLPattern["span"]] /; True],
+  $Failed,
+  {XMLCases::condcombinator},
+  TestID -> "cond-combinator-rejected"
+];
+
+(* KNOWN ISSUE (bug 477310 / family of 472952): a /; test that references two or
+   more attribute captures from XMLPattern's (nested) KeyValuePattern silently
+   drops all but one binding, so this returns {} instead of {"/buy"}. Asserting
+   the current buggy output as a change-detector: when the upstream fix reaches
+   our kernel this test FAILS, signaling us to flip it to the correct value and
+   promote attribute cross-field conditions to supported. *)
+VerificationTest[
+  XMLCases[
+    ImportString["<div><a href=\"/buy\" data-id=\"buy\">x</a></div>", {"HTML", "XMLObject"}],
+    XMLPattern["a", "href" -> h_, "data-id" -> d_] /; StringContainsQ[h, d]],
+  {},
+  TestID -> "cond-cross-field-known-issue-477310"
+];
+
 (* === Integration: real-world page === *)
 
 $realPage = FileNameJoin[{DirectoryName[$TestFileName], "assets", "wolfram-language.html"}];

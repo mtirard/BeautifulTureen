@@ -182,7 +182,15 @@ Cell["Search a list of XMLElement objects as one:", "ExampleText"],
 Cell[BoxData["items = XMLCases[tree, XMLPattern[\"li\"]];
 XMLCases[items, XMLPattern[\"a\"]]"], "Input"],
 
-Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{RowBox[{"\"shape\"", "\[Rule]", "\"rect\""}], ",", RowBox[{"\"href\"", "\[Rule]", "\"/miso\""}]}], "}"}], ",", RowBox[{"{", "\"Miso\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{RowBox[{"\"shape\"", "\[Rule]", "\"rect\""}], ",", RowBox[{"\"href\"", "\[Rule]", "\"/pho\""}]}], "}"}], ",", RowBox[{"{", "\"Pho\"", "}"}]}], "]"}]}], "}"}]], "Output"]}, Open]]}, Open]],
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{RowBox[{"\"shape\"", "\[Rule]", "\"rect\""}], ",", RowBox[{"\"href\"", "\[Rule]", "\"/miso\""}]}], "}"}], ",", RowBox[{"{", "\"Miso\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{RowBox[{"\"shape\"", "\[Rule]", "\"rect\""}], ",", RowBox[{"\"href\"", "\[Rule]", "\"/pho\""}]}], "}"}], ",", RowBox[{"{", "\"Pho\"", "}"}]}], "]"}]}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Select elements with at least two child elements using a condition:", "ExampleText"], Cell[BoxData["$tree=XMLElement[\"body\",{},{
+XMLElement[\"ul\",{},{XMLElement[\"li\",{},{\"a\"}],XMLElement[\"li\",{},{\"b\"}]}],
+XMLElement[\"p\",{},{\"one\"}],
+XMLElement[\"ol\",{},{XMLElement[\"li\",{},{\"c\"}],XMLElement[\"li\",{},{\"d\"}]}]}];
+XMLCases[$tree,XMLElement[tag_,_,kids_]/;Count[kids,_XMLElement]>=2]〚All,1〛"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"\"ul\"", ",", "\"ol\""}], "}"}]], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
@@ -263,7 +271,19 @@ Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"div\"", 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Find whitespace between block elements kept as text nodes:", "ExampleText"], Cell[BoxData["tree = ImportString[\"<div><p>a</p>\\n<p>b</p></div>\", {\"HTML\", \"XMLObject\"}];
 First[XMLCases[tree, XMLPattern[\"div\"]]][[3]]"], "Input"],
 
-Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"a\"", "}"}]}], "]"}], ",", "\"\\n\"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"b\"", "}"}]}], "]"}]}], "}"}]], "Output"]}, Open]]}, Open]],
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"a\"", "}"}]}], "]"}], ",", "\"\\n\"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"b\"", "}"}]}], "]"}]}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A condition referencing two or more XMLPattern attribute captures currently matches nothing:", "ExampleText"], Cell[BoxData["$doc=ImportString[\"<a href=\\\"/buy\\\" data-id=\\\"buy\\\">x</a>\",{\"HTML\",\"XMLObject\"}];
+XMLCases[$doc,XMLPattern[\"a\",\"href\"->h_,\"data-id\"->d_]/;StringContainsQ[h,d]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", "}"}]], "Output"],
+
+Cell["Capture the whole attribute list so the condition can read every attribute:", "ExampleText"],
+
+Cell[BoxData["$doc=ImportString[\"<a href=\\\"/buy\\\" data-id=\\\"buy\\\">x</a>\",{\"HTML\",\"XMLObject\"}];
+XMLCases[$doc,(XMLElement[\"a\",attrs_,_]/;With[{a=Association[attrs]},StringContainsQ[a[\"href\"],a[\"data-id\"]]]):>\"match\"]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", "\"match\"", "}"}]], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
