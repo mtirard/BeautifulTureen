@@ -1,2 +1,6 @@
 build/
 .DS_Store
+
+# UnitTestFramework: machine-specific overrides & run cache
+Tests/LocalConfig.*
+Tests/**/last_test_run.wxf

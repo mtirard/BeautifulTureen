@@ -29,7 +29,7 @@ uninstall:
 	@wolframscript -code 'r = PacletUninstall["$(PACLET_NAME)"]; Print["Uninstalled ", Length[Flatten[{r}]], " paclet(s)"]'
 
 test:
-	wolframscript -code 'report = TestReport["Tests/Tests-BeautifulTureen.wlt"]; Print[report["TestsSucceededCount"], " passed, ", report["TestsFailedCount"], " failed"]; If[report["TestsFailedCount"] > 0, Exit[1]]'
+	@wolframscript -file Tests/run_tests.wls
 
 clean:
 	@rm -rf build
