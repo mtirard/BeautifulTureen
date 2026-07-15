@@ -3,7 +3,7 @@
 (*** Wolfram Notebook File ***)
 (* http://www.wolfram.com/nb *)
 
-(* CreatedBy='Wolfram 14.3' *)
+(* CreatedBy='Mathematica 12.0' *)
 
 (* Beginning of Notebook Content *)
 Notebook[{
@@ -11,227 +11,19 @@ Notebook[{
 Cell[CellGroupData[{
 Cell["CSSClass", "ObjectName"],
 
-Cell[TextData[{
- Cell["   ", "ModInfo"],
- Cell[BoxData[
-  RowBox[{
-   ButtonBox["CSSClass",
-    BaseStyle->"Link",
-    ButtonData->"paclet:MaximilienTirard/BeautifulTureen/ref/CSSClass"], "[", 
-   
-   StyleBox["cls", "TI"], "]"}]], "InlineFormula"],
- " \[LineSeparator]represents a constraint matching elements whose ",
- Cell[BoxData[
- "class"], "InlineFormula"],
- " attribute contains the class ",
- Cell[BoxData[
-  StyleBox["cls", "TI"]], "InlineFormula"],
- ".\n",
- Cell["   ", "ModInfo"],
- Cell[BoxData[
-  RowBox[{
-   ButtonBox["CSSClass",
-    BaseStyle->"Link",
-    ButtonData->"paclet:MaximilienTirard/BeautifulTureen/ref/CSSClass"], "[", 
-   
-   RowBox[{
-    SubscriptBox[
-     StyleBox["cls", "TI"], 
-     StyleBox["1", "TR"]], ",", " ", 
-    SubscriptBox[
-     StyleBox["cls", "TI"], 
-     StyleBox["2", "TR"]], ",", " ", 
-    StyleBox["\[Ellipsis]", "TR"]}], "]"}]], "InlineFormula"],
- " \[LineSeparator]represents a constraint matching elements that carry all \
-of the classes ",
- Cell[BoxData[
-  SubscriptBox[
-   StyleBox["cls", "TI"], 
-   StyleBox["1", "TR"]]], "InlineFormula"],
- ", ",
- Cell[BoxData[
-  SubscriptBox[
-   StyleBox["cls", "TI"], 
-   StyleBox["2", "TR"]]], "InlineFormula"],
- ", \[Ellipsis]."
-}], "Usage"],
+Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["CSSClass", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/CSSClass"], "[", StyleBox["cls", "TI"], "]"}]], "InlineFormula"], " \[LineSeparator]represents a constraint matching elements whose ", Cell[BoxData[StyleBox["class", "TR"]], "InlineFormula"], " attribute contains the class ", Cell[BoxData[StyleBox["cls", "TI"]], "InlineFormula"], ".", "\n", Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["CSSClass", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/CSSClass"], "[", RowBox[{StyleBox[SubscriptBox["cls", StyleBox["1", "TR"]], "TI"], ",", " ", StyleBox[SubscriptBox["cls", StyleBox["2", "TR"]], "TI"], ",", " ", StyleBox["\[Ellipsis]", "TR"]}], "]"}]], "InlineFormula"], " \[LineSeparator]represents a constraint matching elements that carry all of the classes ", Cell[BoxData[StyleBox[SubscriptBox["cls", StyleBox["1", "TR"]], "TI"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox[SubscriptBox["cls", StyleBox["2", "TR"]], "TI"]], "InlineFormula"], ", \[Ellipsis]."}], "Usage"],
 
-Cell[TextData[{
- Cell[BoxData[
-  TemplateBox[{
-    Cell[
-     TextData["CSSClass"]], 
-    "paclet:MaximilienTirard/BeautifulTureen/ref/CSSClass"},
-   "RefLink",
-   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
- "[",
- Cell[BoxData[
-  StyleBox["cls", "TI"]], "InlineFormula"],
- "] produces a \"class\" attribute pattern that matches when the element \
-class list contains ",
- Cell[BoxData[
-  StyleBox["cls", "TI"]], "InlineFormula"],
- " as a whitespace-delimited token, so it matches one class within a \
-multi-class attribute such as \"lead disclaimer\"."
-}], "Notes"],
+Cell[TextData[{Cell[BoxData[RowBox[{ButtonBox["CSSClass", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/CSSClass"], "[", StyleBox["cls", "TI"], "]"}]], "InlineFormula"], " produces a \"class\" attribute pattern that matches when the element class list contains ", Cell[BoxData[StyleBox["cls", "TI"]], "InlineFormula"], " as a whitespace-delimited token, so it matches one class within a multi-class attribute such as \"lead disclaimer\"."}], "Notes"],
 
-Cell[TextData[{
- "Multiple arguments are combined with AND: ",
- Cell[BoxData[
-  TemplateBox[{
-    Cell[
-     TextData["CSSClass"]], 
-    "paclet:MaximilienTirard/BeautifulTureen/ref/CSSClass"},
-   "RefLink",
-   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
- "[",
- Cell[BoxData[
-  StyleBox["a", "TI"]], "InlineFormula"],
- ", ",
- Cell[BoxData[
-  StyleBox["b", "TI"]], "InlineFormula"],
- "] matches only elements carrying both classes. Use an ",
- Cell[BoxData[
-  TemplateBox[{
-    Cell[
-     TextData["Alternatives"]], "paclet:ref/Alternatives"},
-   "RefLink",
-   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
- " for OR semantics."
-}], "Notes"],
+Cell[TextData[{"Multiple arguments are combined with AND: ", Cell[BoxData[RowBox[{ButtonBox["CSSClass", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/CSSClass"], "[", RowBox[{StyleBox["a", "TI"], ",", " ", StyleBox["b", "TI"]}], "]"}]], "InlineFormula"], " matches only elements carrying both classes. Use an ", Cell[BoxData[ButtonBox["Alternatives", BaseStyle -> "Link", ButtonData -> "paclet:ref/Alternatives"]], "InlineFormula"], " for OR semantics."}], "Notes"],
 
-Cell[TextData[{
- "Wrapping an argument in ",
- Cell[BoxData[
-  TemplateBox[{
-    Cell[
-     TextData["Except"]], "paclet:ref/Except"},
-   "RefLink",
-   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
- " negates it, so ",
- Cell[BoxData[
-  TemplateBox[{
-    Cell[
-     TextData["CSSClass"]], 
-    "paclet:MaximilienTirard/BeautifulTureen/ref/CSSClass"},
-   "RefLink",
-   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
- " with ",
- Cell[BoxData[
-  RowBox[{"Except", "[", "cls", "]"}]], "InlineFormula"],
- " matches elements that do not carry ",
- Cell[BoxData[
-  StyleBox["cls", "TI"]], "InlineFormula"],
- ". ",
- Cell[BoxData[
-  TemplateBox[{
-    Cell[
-     TextData["Except"]], "paclet:ref/Except"},
-   "RefLink",
-   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
- " may also be mixed with positive arguments to combine required and \
-forbidden classes."
-}], "Notes"],
+Cell[TextData[{"Wrapping an argument in ", Cell[BoxData[ButtonBox["Except", BaseStyle -> "Link", ButtonData -> "paclet:ref/Except"]], "InlineFormula"], " negates it, so ", Cell[BoxData[ButtonBox["CSSClass", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/CSSClass"]], "InlineFormula"], " with ", Cell[BoxData[RowBox[{ButtonBox["Except", BaseStyle -> "Link", ButtonData -> "paclet:ref/Except"], "[", StyleBox["cls", "TR"], "]"}]], "InlineFormula"], " matches elements that do not carry ", Cell[BoxData[StyleBox["cls", "TI"]], "InlineFormula"], ". ", Cell[BoxData[ButtonBox["Except", BaseStyle -> "Link", ButtonData -> "paclet:ref/Except"]], "InlineFormula"], " may also be mixed with positive arguments to combine required and forbidden classes."}], "Notes"],
 
-Cell[TextData[{
- "Each argument may be a string, a string pattern, an ",
- Cell[BoxData[
-  TemplateBox[{
-    Cell[
-     TextData["Alternatives"]], "paclet:ref/Alternatives"},
-   "RefLink",
-   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
- ", or ",
- Cell[BoxData[
-  TemplateBox[{
-    Cell[
-     TextData["Except"]], "paclet:ref/Except"},
-   "RefLink",
-   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
- "[",
- Cell[BoxData[
-  StyleBox["cls", "TI"]], "InlineFormula"],
- "]. A single list argument ",
- Cell[BoxData[
-  TemplateBox[{
-    Cell[
-     TextData["CSSClass"]], 
-    "paclet:MaximilienTirard/BeautifulTureen/ref/CSSClass"},
-   "RefLink",
-   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
- "[{",
- Cell[BoxData[
-  StyleBox["a", "TI"]], "InlineFormula"],
- ", ",
- Cell[BoxData[
-  StyleBox["b", "TI"]], "InlineFormula"],
- "}] is treated the same as the flattened sequence ",
- Cell[BoxData[
-  TemplateBox[{
-    Cell[
-     TextData["CSSClass"]], 
-    "paclet:MaximilienTirard/BeautifulTureen/ref/CSSClass"},
-   "RefLink",
-   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
- "[",
- Cell[BoxData[
-  StyleBox["a", "TI"]], "InlineFormula"],
- ", ",
- Cell[BoxData[
-  StyleBox["b", "TI"]], "InlineFormula"],
- "]."
-}], "Notes"],
+Cell[TextData[{"Each argument may be a string, a string pattern, an ", Cell[BoxData[ButtonBox["Alternatives", BaseStyle -> "Link", ButtonData -> "paclet:ref/Alternatives"]], "InlineFormula"], ", or ", Cell[BoxData[RowBox[{ButtonBox["Except", BaseStyle -> "Link", ButtonData -> "paclet:ref/Except"], "[", StyleBox["cls", "TI"], "]"}]], "InlineFormula"], ". A single list argument ", Cell[BoxData[RowBox[{ButtonBox["CSSClass", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/CSSClass"], "[", RowBox[{"{", RowBox[{StyleBox["a", "TI"], ",", " ", StyleBox["b", "TI"]}], "}"}], "]"}]], "InlineFormula"], " is treated the same as the flattened sequence ", Cell[BoxData[RowBox[{ButtonBox["CSSClass", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/CSSClass"], "[", RowBox[{StyleBox["a", "TI"], ",", " ", StyleBox["b", "TI"]}], "]"}]], "InlineFormula"], "."}], "Notes"],
 
-Cell[TextData[{
- Cell[BoxData[
-  TemplateBox[{
-    Cell[
-     TextData["CSSClass"]], 
-    "paclet:MaximilienTirard/BeautifulTureen/ref/CSSClass"},
-   "RefLink",
-   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
- " is normally used as a constraint inside ",
- Cell[BoxData[
-  TemplateBox[{
-    Cell[
-     TextData["XMLPattern"]], 
-    "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"},
-   "RefLink",
-   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
- ", but it evaluates to an ordinary attribute rule and may be used anywhere \
-such a rule is valid."
-}], "Notes"],
+Cell[TextData[{Cell[BoxData[ButtonBox["CSSClass", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/CSSClass"]], "InlineFormula"], " is normally used as a constraint inside ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"]], "InlineFormula"], ", but it evaluates to an ordinary attribute rule and may be used anywhere such a rule is valid."}], "Notes"],
 
-Cell[TextData[{
- Cell[BoxData[
-  TemplateBox[{
-    Cell[
-     TextData["CSSClass"]], 
-    "paclet:MaximilienTirard/BeautifulTureen/ref/CSSClass"},
-   "RefLink",
-   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
- " returns ",
- Cell[BoxData[
- "$Failed"], "InlineFormula"],
- " and issues ",
- Cell[BoxData[
-  RowBox[{"CSSClass", "::", "badarg"}]], "InlineFormula"],
- " when given an argument that is not a string, string pattern, ",
- Cell[BoxData[
-  TemplateBox[{
-    Cell[
-     TextData["Alternatives"]], "paclet:ref/Alternatives"},
-   "RefLink",
-   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
- ", or ",
- Cell[BoxData[
-  TemplateBox[{
-    Cell[
-     TextData["Except"]], "paclet:ref/Except"},
-   "RefLink",
-   BaseStyle->{"InlineFormula"}]], "InlineFormula"],
- "."
-}], "Notes"]
+Cell[TextData[{Cell[BoxData[ButtonBox["CSSClass", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/CSSClass"]], "InlineFormula"], " returns ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], " and issues ", Cell[BoxData["CSSClass::badarg"], "InlineFormula"], " when given an argument that is not a string, string pattern, ", Cell[BoxData[ButtonBox["Alternatives", BaseStyle -> "Link", ButtonData -> "paclet:ref/Alternatives"]], "InlineFormula"], ", or ", Cell[BoxData[ButtonBox["Except", BaseStyle -> "Link", ButtonData -> "paclet:ref/Except"]], "InlineFormula"], "."}], "Notes"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -249,23 +41,7 @@ Cell[TextData[{
    "MoreInfoOpenerButtonTemplate"]]]
 }], "SeeAlsoSection"],
 
-Cell[TextData[{
- Cell[BoxData[
-  TemplateBox[{
-    Cell[
-     TextData["XMLPattern"]], 
-    "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"},
-   "RefLink"]], "InlineSeeAlsoFunction",
-  TaggingRules->{"PageType" -> "Function"}],
- Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]],
- Cell[BoxData[
-  TemplateBox[{
-    Cell[
-     TextData["XMLCases"]], 
-    "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"},
-   "RefLink"]], "InlineSeeAlsoFunction",
-  TaggingRules->{"PageType" -> "Function"}]
-}], "SeeAlso"]
+Cell[TextData[{Cell[BoxData[TemplateBox[{Cell[TextData["XMLPattern"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLCases"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLFirstCase"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLDeleteCases"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDeleteCases"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["StringMatchQ"]], "paclet:ref/StringMatchQ"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}]}], "SeeAlso"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -289,11 +65,7 @@ Cell[CellGroupData[{
 
 Cell["Related Guides", "MoreAboutSection"],
 
-Cell[TextData[ButtonBox["BeautifulTureen",
- BaseStyle->"Link",
- ButtonData->
-  "paclet:MaximilienTirard/BeautifulTureen/guide/BeautifulTureen"]], \
-"MoreAbout"]
+Cell[TextData[ButtonBox["BeautifulTureen", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/guide/BeautifulTureen"]], "MoreAbout"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -330,14 +102,10 @@ Needs[\[Ellipsis]].", "MoreInfoText"], BaseStyle -> "IFrameBox"]],
    "MoreInfoOpenerButtonTemplate"]]]
 }], "ExamplesInitializationSection"],
 
-Cell[BoxData[
- RowBox[{"Needs", "[", "\"\<MaximilienTirard`BeautifulTureen`\>\"", 
-  "]"}]], "ExampleInitialization"]
+Cell[BoxData[RowBox[{"Needs", "[", "\"MaximilienTirard`BeautifulTureen`\"", "]"}]], "ExampleInitialization"]
 }, Open  ]],
 
-Cell[CellGroupData[{
-
-Cell[BoxData[
+Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[GridBox[{
     {
      StyleBox[
@@ -350,67 +118,13 @@ Cell[BoxData[
    }],
   $Line = 0; Null]], "PrimaryExamplesSection"],
 
-Cell[CellGroupData[{
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Match an element whose class list contains the given class:", "ExampleText"], Cell[BoxData["MatchQ[XMLElement[\"p\",{\"class\"->\"lead disclaimer\"},{}],XMLPattern[\"p\",CSSClass[\"lead\"]]]"], "Input"],
 
-Cell[BoxData[
- InterpretationBox[Cell[
-  "\t", "ExampleDelimiter"],
-  $Line = 0; Null]], "ExampleDelimiter"],
+Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell["Match an element whose class list contains the given class:", \
-"ExampleText"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Use Except to require absence of a class:", "ExampleText"], Cell[BoxData["MatchQ[XMLElement[\"p\",{\"class\"->\"lead disclaimer\"},{}],XMLPattern[\"p\",CSSClass[\"lead\",Except[\"disclaimer\"]]]]"], "Input"],
 
-Cell[CellGroupData[{
-
-Cell[BoxData[
- RowBox[{"MatchQ", "[", 
-  RowBox[{
-   RowBox[{"XMLElement", "[", 
-    RowBox[{"\"\<p\>\"", ",", " ", 
-     RowBox[{"{", 
-      RowBox[{"\"\<class\>\"", " ", "->", " ", "\"\<lead disclaimer\>\""}], 
-      "}"}], ",", " ", 
-     RowBox[{"{", "}"}]}], "]"}], ",", " ", 
-   RowBox[{"XMLPattern", "[", 
-    RowBox[{"\"\<p\>\"", ",", " ", 
-     RowBox[{"CSSClass", "[", "\"\<lead\>\"", "]"}]}], "]"}]}], 
-  "]"}]], "Input"],
-
-Cell[BoxData["True"], "Output"]
-}, Open  ]]
-}, Open  ]],
-
-Cell[CellGroupData[{
-
-Cell[BoxData[
- InterpretationBox[Cell[
-  "\t", "ExampleDelimiter"],
-  $Line = 0; Null]], "ExampleDelimiter"],
-
-Cell["Use Except to require absence of a class:", "ExampleText"],
-
-Cell[CellGroupData[{
-
-Cell[BoxData[
- RowBox[{"MatchQ", "[", 
-  RowBox[{
-   RowBox[{"XMLElement", "[", 
-    RowBox[{"\"\<p\>\"", ",", " ", 
-     RowBox[{"{", 
-      RowBox[{"\"\<class\>\"", " ", "->", " ", "\"\<lead disclaimer\>\""}], 
-      "}"}], ",", " ", 
-     RowBox[{"{", "}"}]}], "]"}], ",", " ", 
-   RowBox[{"XMLPattern", "[", 
-    RowBox[{"\"\<p\>\"", ",", " ", 
-     RowBox[{"CSSClass", "[", 
-      RowBox[{"\"\<lead\>\"", ",", " ", 
-       RowBox[{"Except", "[", "\"\<disclaimer\>\"", "]"}]}], "]"}]}], "]"}]}],
-   "]"}]], "Input"],
-
-Cell[BoxData["False"], "Output"]
-}, Open  ]]
-}, Open  ]]
-}, Open  ]],
+Cell[BoxData["False"], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{
 
@@ -425,25 +139,59 @@ Cell[TextData[{
        BaseStyle -> "IFrameBox"]], "MoreInfoTextOuter"]},
    "MoreInfoOpenerButtonTemplate"]]]
 }], "ExtendedExamplesSection",
- CellTags->
-  "ExtendedExamples"],
+ CellTags->"ExtendedExamples"],
 
-Cell[BoxData[
+Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
   "Scope", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[BoxData[
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Select every element carrying a class:", "ExampleText"], Cell[BoxData["tree=ImportString[\"<ul><li class=\\\"item active\\\">A</li><li class=\\\"item\\\">B</li><li class=\\\"item disabled\\\">C</li></ul>\",{\"HTML\",\"XMLObject\"}];
+XMLCases[tree,XMLPattern[\"li\",CSSClass[\"item\"]]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", RowBox[{"\"class\"", "\[Rule]", "\"item active\""}], "}"}], ",", RowBox[{"{", "\"A\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", RowBox[{"\"class\"", "\[Rule]", "\"item\""}], "}"}], ",", RowBox[{"{", "\"B\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", RowBox[{"\"class\"", "\[Rule]", "\"item disabled\""}], "}"}], ",", RowBox[{"{", "\"C\"", "}"}]}], "]"}]}], "}"}]], "Output"],
+
+Cell["Require several classes at once \[LongDash] all must be present (AND):", "ExampleText"],
+
+Cell[BoxData["XMLCases[tree,XMLPattern[\"li\",CSSClass[\"item\",\"active\"]]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", RowBox[{"\"class\"", "\[Rule]", "\"item active\""}], "}"}], ",", RowBox[{"{", "\"A\"", "}"}]}], "]"}], "}"}]], "Output"],
+
+Cell[TextData[{"Match any of several classes with an ", Cell[BoxData[ButtonBox["Alternatives", BaseStyle -> "Link", ButtonData -> "paclet:ref/Alternatives"]], "InlineFormula"], " (OR):"}], "ExampleText"],
+
+Cell[BoxData["XMLCases[tree,XMLPattern[\"li\",CSSClass[\"active\"|\"disabled\"]]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", RowBox[{"\"class\"", "\[Rule]", "\"item active\""}], "}"}], ",", RowBox[{"{", "\"A\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", RowBox[{"\"class\"", "\[Rule]", "\"item disabled\""}], "}"}], ",", RowBox[{"{", "\"C\"", "}"}]}], "]"}]}], "}"}]], "Output"],
+
+Cell[TextData[{"Negate a class with ", Cell[BoxData[ButtonBox["Except", BaseStyle -> "Link", ButtonData -> "paclet:ref/Except"]], "InlineFormula"], ":"}], "ExampleText"],
+
+Cell[BoxData["XMLCases[tree,XMLPattern[\"li\",CSSClass[Except[\"disabled\"]]]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", RowBox[{"\"class\"", "\[Rule]", "\"item active\""}], "}"}], ",", RowBox[{"{", "\"A\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", RowBox[{"\"class\"", "\[Rule]", "\"item\""}], "}"}], ",", RowBox[{"{", "\"B\"", "}"}]}], "]"}]}], "}"}]], "Output"],
+
+Cell["Combine required and forbidden classes in one constraint:", "ExampleText"],
+
+Cell[BoxData["XMLCases[tree,XMLPattern[\"li\",CSSClass[\"item\",Except[\"disabled\"]]]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", RowBox[{"\"class\"", "\[Rule]", "\"item active\""}], "}"}], ",", RowBox[{"{", "\"A\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", RowBox[{"\"class\"", "\[Rule]", "\"item\""}], "}"}], ",", RowBox[{"{", "\"B\"", "}"}]}], "]"}]}], "}"}]], "Output"],
+
+Cell["A single list argument is treated as the flattened sequence of classes:", "ExampleText"],
+
+Cell[BoxData["XMLPattern[\"li\",CSSClass[{\"item\",\"active\"}]]===XMLPattern[\"li\",CSSClass[\"item\",\"active\"]]"], "Input"],
+
+Cell[BoxData["True"], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
   "Generalizations & Extensions", "ExampleSection"],
-  $Line = 0; Null]], "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"]}, Open]],
 
 Cell[CellGroupData[{
 
-Cell[BoxData[
+Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
   "Options", "ExampleSection"],
-  $Line = 0; Null]], "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"]}, Open]],
 
 Cell[BoxData[
  InterpretationBox[Cell[
@@ -456,30 +204,65 @@ Cell[BoxData[
   $Line = 0; Null]], "ExampleSubsection"]
 }, Open  ]],
 
-Cell[BoxData[
+Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
   "Applications", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[BoxData[
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Pull the lead paragraph out of an article by its class:", "ExampleText"], Cell[BoxData["article=ImportString[\"<article><p class=\\\"lead\\\">Intro.</p><p>Body one.</p><p>Body two.</p></article>\",{\"HTML\",\"XMLObject\"}];
+XMLFirstCase[article,XMLPattern[\"p\",CSSClass[\"lead\"]]]"], "Input"],
+
+Cell[BoxData[RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "\[Rule]", "\"lead\""}], "}"}], ",", RowBox[{"{", "\"Intro.\"", "}"}]}], "]"}]], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
   "Properties & Relations", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[BoxData[
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["CSSClass", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/CSSClass"]], "InlineFormula"], " evaluates to an ordinary attribute ", Cell[BoxData[ButtonBox["Rule", BaseStyle -> "Link", ButtonData -> "paclet:ref/Rule"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["MatchQ[CSSClass[\"lead\"],_Rule]"], "Input"],
+
+Cell[BoxData["True"], "Output"],
+
+Cell[TextData[{"so it can be used directly inside a ", Cell[BoxData[ButtonBox["KeyValuePattern", BaseStyle -> "Link", ButtonData -> "paclet:ref/KeyValuePattern"]], "InlineFormula"], ", outside ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"]], "InlineFormula"], ":"}], "ExampleText"],
+
+Cell[BoxData["MatchQ[<|\"class\"->\"lead disclaimer\"|>,KeyValuePattern[CSSClass[\"lead\"]]]"], "Input"],
+
+Cell[BoxData["True"], "Output"],
+
+Cell[TextData[{"Matching is by whitespace-delimited token, not substring as ", Cell[BoxData[ButtonBox["StringContainsQ", BaseStyle -> "Link", ButtonData -> "paclet:ref/StringContainsQ"]], "InlineFormula"], " would give:"}], "ExampleText"],
+
+Cell[BoxData["{MatchQ[XMLElement[\"p\",{\"class\"->\"leader\"},{}],XMLPattern[\"p\",CSSClass[\"lead\"]]],StringContainsQ[\"leader\",\"lead\"]}"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"False", ",", "True"}], "}"}]], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
   "Possible Issues", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[BoxData[
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Match a class only as a whole token, never as a substring of a longer word:", "ExampleText"], Cell[BoxData["MatchQ[XMLElement[\"p\",{\"class\"->\"leader\"},{}],XMLPattern[\"p\",CSSClass[\"lead\"]]]"], "Input"],
+
+Cell[BoxData["False"], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"An element with no ", Cell[BoxData[StyleBox["class", "TR"]], "InlineFormula"], " attribute never satisfies a positive ", Cell[BoxData[ButtonBox["CSSClass", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/CSSClass"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["MatchQ[XMLElement[\"p\",{},{\"text\"}],XMLPattern[\"p\",CSSClass[\"lead\"]]]"], "Input"],
+
+Cell[BoxData["False"], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"An argument that is not a string or pattern returns ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], " with a message:"}], "ExampleText"], Cell[BoxData["CSSClass[42]"], "Input"],
+
+Cell[BoxData["CSSClass::badarg: Expected a string, string pattern, Alternatives, or Except. Got 42."], "Message", "MSG"],
+
+Cell[BoxData["$Failed"], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
   "Interactive Examples", "ExampleSection"],
-  $Line = 0; Null]], "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"]}, Open]],
 
-Cell[BoxData[
+Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
   "Neat Examples", "ExampleSection"],
-  $Line = 0; Null]], "ExampleSection"]
+  $Line = 0; Null]], "ExampleSection"]}, Open]]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -514,12 +297,10 @@ Cell[TextData[{
 }], "CategorizationSection"],
 
 Cell["Symbol", "Categorization",
- CellLabel->
-  "Entity Type"],
+ CellLabel->"Entity Type"],
 
 Cell["MaximilienTirard/BeautifulTureen", "Categorization",
- CellLabel->
-  "Paclet Name"],
+ CellLabel->"Paclet Name"],
 
 Cell["MaximilienTirard`BeautifulTureen`", "Categorization",
  CellLabel->"Context"],
@@ -540,27 +321,21 @@ Cell[CellGroupData[{
 Cell["Syntax Templates", "TemplatesSection"],
 
 Cell[BoxData[""], "Template",
- CellLabel->
-  "Additional Function \
-Template"],
+ CellLabel->"Additional Function Template"],
 
 Cell[BoxData[""], "Template",
- CellLabel->
-  "Arguments Pattern"],
+ CellLabel->"Arguments Pattern"],
 
 Cell[BoxData[""], "Template",
- CellLabel->
-  "Local Variables"],
+ CellLabel->"Local Variables"],
 
 Cell[BoxData[""], "Template",
- CellLabel->
-  "Color Equal Signs"]
+ CellLabel->"Color Equal Signs"]
 }, Closed]]
 }, Open  ]]
 },
-TaggingRules-><|"Paclet" -> "MaximilienTirard/BeautifulTureen"|>,
+TaggingRules->Association["Paclet" -> "None"],
 CellContext->"Global`",
-Magnification->1.25,
 StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "FunctionPageStylesExt.nb", 
   CharacterEncoding -> "UTF-8"]
 ]
