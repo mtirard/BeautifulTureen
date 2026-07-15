@@ -52,12 +52,16 @@ validCSSClassQ[_PatternTest] := True;
 validCSSClassQ[_Pattern] := True;
 validCSSClassQ[_] := False;
 
-(* Valid tag: string, Alternatives, Blank, Pattern, StringExpression *)
+(* Valid tag: a string, or any ordinary pattern matched against the element's
+   tag \[LongDash] Alternatives, Blank(Sequence), a named Pattern, or a predicate-bearing
+   PatternTest (_?f) / Condition (t_ /; test). *)
 validTagQ[_String] := True;
 validTagQ[_Alternatives] := True;
 validTagQ[_Blank] := True;
 validTagQ[_BlankSequence] := True;
 validTagQ[_Pattern] := True;
+validTagQ[_PatternTest] := True;
+validTagQ[_Condition] := True;
 validTagQ[_] := False;
 
 (* Valid attribute key: a plain name, or an imported {namespace, name} pair
