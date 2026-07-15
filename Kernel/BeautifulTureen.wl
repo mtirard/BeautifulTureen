@@ -22,7 +22,7 @@ HTMLToNotebook::usage = "HTMLToNotebook[tree] converts an HTML/XML tree into a N
 
 CSSClass::badarg = "Expected a string, string pattern, Alternatives, or Except. Got `1`.";
 XMLPattern::badtag = "Tag should be a string, Alternatives, or pattern (e.g. _). Got `1`.";
-XMLPattern::badconstraint = "Constraint should be a Rule (key -> val), string (attribute existence), or CSSClass[...]. Got `1`.";
+XMLPattern::badconstraint = "Constraint should be a Rule (key -> val, where key is an attribute name or a {namespace, name} pair), string (attribute existence), or CSSClass[...]. Got `1`.";
 XMLCases::badtree = "First argument should be an XMLObject, XMLElement, or list thereof. Got head `1`.";
 XMLCases::badpat = "Second argument should be an XMLElement pattern, Alternatives of XMLElement patterns, or combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
 XMLFirstCase::badtree = "First argument should be an XMLObject, XMLElement, or list thereof. Got head `1`.";
@@ -60,9 +60,16 @@ validTagQ[_BlankSequence] := True;
 validTagQ[_Pattern] := True;
 validTagQ[_] := False;
 
+(* Valid attribute key: a plain name, or an imported {namespace, name} pair
+   (WL imports a namespaced attribute such as xlink:href with a two-element
+   list key {namespaceURI, localName}). Both positions may be patterns. *)
+validAttrKeyQ[_String] := True;
+validAttrKeyQ[{_, _}] := True;
+validAttrKeyQ[_] := False;
+
 (* Valid constraint for XMLPattern *)
-validConstraintQ[Rule[_String, _]] := True;     (* "attr" -> val *)
-validConstraintQ[_String] := True;              (* "attr" \[LongDash] existence shorthand *)
+validConstraintQ[Rule[k_, _]] := validAttrKeyQ[k];  (* key -> val *)
+validConstraintQ[_String] := True;                  (* "attr" \[LongDash] existence shorthand *)
 validConstraintQ[_] := False;
 
 (* Valid pattern for XMLCases: XMLElement pattern, combinator, Alternatives of
