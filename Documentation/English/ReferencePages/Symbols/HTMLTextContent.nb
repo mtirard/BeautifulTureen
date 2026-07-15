@@ -3,7 +3,7 @@
 (*** Wolfram Notebook File ***)
 (* http://www.wolfram.com/nb *)
 
-(* CreatedBy='Wolfram 14.3' *)
+(* CreatedBy='Mathematica 12.0' *)
 
 (* Beginning of Notebook Content *)
 Notebook[{
@@ -13,17 +13,17 @@ Cell["HTMLTextContent", "ObjectName"],
 
 Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["HTMLTextContent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLTextContent"], "[", StyleBox["tree", "TI"], "]"}]], "InlineFormula"], " \[LineSeparator]gives the text content of ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], ": the lossless concatenation, in document order, of every descendant string, with no whitespace inserted or removed."}], "Usage"],
 
-Cell[TextData[{"In ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], ", every descendant string is joined in document order. No whitespace is inserted at block boundaries and ", Cell[BoxData["br"], "InlineFormula"], " elements do not become newlines, so adjacent inline text may run together."}], "Notes"],
+Cell[TextData[{"In ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], ", every descendant string is joined in document order. No whitespace is inserted at block boundaries and ", Cell[BoxData[StyleBox["br", "TR"]], "InlineFormula"], " elements do not become newlines, so adjacent inline text may run together."}], "Notes"],
 
-Cell[TextData[{Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " may be an ", Cell[BoxData[TemplateBox[{Cell[TextData["XMLElement"]], "paclet:ref/XMLElement"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], ", an ", Cell[BoxData[TemplateBox[{Cell[TextData["XMLObject"]], "paclet:ref/XMLObject"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], " document (its root element is used), a list of these, or a bare string."}], "Notes"],
+Cell[TextData[{Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " may be an ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], ", an ", Cell[BoxData[ButtonBox["XMLObject", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLObject"]], "InlineFormula"], " document (its root element is used), a list of ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], " objects, or a bare string."}], "Notes"],
 
-Cell[TextData[{"Concatenation is lossless: source indentation, newlines, and ", Cell[BoxData["pre"], "InlineFormula"], " whitespace all survive unchanged. For readable text \\[LongDash] collapsed whitespace, block tags on their own lines, ", Cell[BoxData["br"], "InlineFormula"], " as newlines \\[LongDash] use ", Cell[BoxData[TemplateBox[{Cell[TextData["HTMLInnerText"]], "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLInnerText"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], "."}], "Notes"],
+Cell[TextData[{"Concatenation is lossless: source indentation, newlines, and ", Cell[BoxData[StyleBox["pre", "TR"]], "InlineFormula"], " whitespace all survive unchanged. For readable text \[LongDash] collapsed whitespace, block tags on their own lines, ", Cell[BoxData[StyleBox["br", "TR"]], "InlineFormula"], " as newlines \[LongDash] use ", Cell[BoxData[ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLInnerText"]], "InlineFormula"], "."}], "Notes"],
 
 Cell["Stray nodes that are neither elements nor strings, such as comments, contribute the empty string \"\".", "Notes"],
 
-Cell[TextData[{"Given an argument that is not a valid tree, ", Cell[BoxData[TemplateBox[{Cell[TextData["HTMLTextContent"]], "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLTextContent"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], " returns ", Cell[BoxData[TemplateBox[{Cell[TextData["$Failed"]], "paclet:ref/$Failed"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], " and issues a message."}], "Notes"],
+Cell[TextData[{"Given an argument that is not a valid tree, ", Cell[BoxData[ButtonBox["HTMLTextContent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLTextContent"]], "InlineFormula"], " returns ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], " and issues a message."}], "Notes"],
 
-Cell[TextData[{Cell[BoxData[TemplateBox[{Cell[TextData["HTMLTextContent"]], "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLTextContent"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], " is commonly applied to the results of ", Cell[BoxData[TemplateBox[{Cell[TextData["XMLCases"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], " or ", Cell[BoxData[TemplateBox[{Cell[TextData["XMLFirstCase"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"}, "RefLink", BaseStyle->{"InlineFormula"}]], "InlineFormula"], " to extract text from matched elements."}], "Notes"]
+Cell[TextData[{Cell[BoxData[ButtonBox["HTMLTextContent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLTextContent"]], "InlineFormula"], " is commonly applied to the results of ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"]], "InlineFormula"], " or ", Cell[BoxData[ButtonBox["XMLFirstCase", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"]], "InlineFormula"], " to extract text from matched elements."}], "Notes"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -102,14 +102,10 @@ Needs[\[Ellipsis]].", "MoreInfoText"], BaseStyle -> "IFrameBox"]],
    "MoreInfoOpenerButtonTemplate"]]]
 }], "ExamplesInitializationSection"],
 
-Cell[BoxData[
- RowBox[{"Needs", "[", "\"\<MaximilienTirard`BeautifulTureen`\>\"", 
-  "]"}]], "ExampleInitialization"]
+Cell[BoxData[RowBox[{"Needs", "[", "\"MaximilienTirard`BeautifulTureen`\"", "]"}]], "ExampleInitialization"]
 }, Open  ]],
 
-Cell[CellGroupData[{
-
-Cell[BoxData[
+Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[GridBox[{
     {
      StyleBox[
@@ -122,23 +118,13 @@ Cell[BoxData[
    }],
   $Line = 0; Null]], "PrimaryExamplesSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Extract the text content of an element:", "ExampleText"], Cell[BoxData["HTMLTextContent[XMLElement[\"p\", {}, {\"Hello, world\"}]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Extract the text content of an element:", "ExampleText"], Cell[BoxData["HTMLTextContent[XMLElement[\"p\",{},{\"Hello, world\"}]]"], "Input"],
 
 Cell[BoxData["\"Hello, world\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Nested children are concatenated in document order:", "ExampleText"], Cell[BoxData["HTMLTextContent[XMLElement[\"p\", {}, {\"Hi \", XMLElement[\"em\", {}, {\"there\"}]}]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Nested children are concatenated in document order:", "ExampleText"], Cell[BoxData["HTMLTextContent[XMLElement[\"p\",{},{\"Hi \",XMLElement[\"em\",{},{\"there\"}]}]]"], "Input"],
 
-Cell[BoxData["\"Hi there\""], "Output"]}, Open]],
-
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A whole imported document descends to its root element:", "ExampleText"], Cell[BoxData["HTMLTextContent[ImportString[\"<p>Hello</p>\", {\"HTML\", \"XMLObject\"}]]"], "Input"],
-
-Cell[BoxData["\"Hello\""], "Output"]}, Open]],
-
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Concatenation is lossless, so source whitespace survives, unlike HTMLInnerText:", "ExampleText"], Cell[BoxData["doc = ImportString[\"<p>Hi   <em>there</em>,\\n  world</p>\", {\"HTML\", \"XMLObject\"}];
-{HTMLTextContent[doc], HTMLInnerText[doc]}"], "Input"],
-
-Cell[BoxData[RowBox[{"{", RowBox[{"\"Hi   there,\\n  world\"", ",", "\"Hi there, world\""}], "}"}]], "Output"]}, Open]]
-}, Open  ]],
+Cell[BoxData["\"Hi there\""], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{
 
@@ -153,25 +139,40 @@ Cell[TextData[{
        BaseStyle -> "IFrameBox"]], "MoreInfoTextOuter"]},
    "MoreInfoOpenerButtonTemplate"]]]
 }], "ExtendedExamplesSection",
- CellTags->
-  "ExtendedExamples"],
+ CellTags->"ExtendedExamples"],
 
-Cell[BoxData[
+Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
   "Scope", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[BoxData[
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A whole imported document descends to its root element:", "ExampleText"], Cell[BoxData["HTMLTextContent[ImportString[\"<p>Hello</p>\",{\"HTML\",\"XMLObject\"}]]"], "Input"],
+
+Cell[BoxData["\"Hello\""], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A list of elements is concatenated as one:", "ExampleText"], Cell[BoxData["HTMLTextContent[{XMLElement[\"p\",{},{\"a\"}],XMLElement[\"p\",{},{\"b\"}]}]"], "Input"],
+
+Cell[BoxData["\"ab\""], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A bare string is returned unchanged:", "ExampleText"], Cell[BoxData["HTMLTextContent[\"  raw  text  \"]"], "Input"],
+
+Cell[BoxData["\"  raw  text  \""], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Source indentation and newlines survive verbatim:", "ExampleText"], Cell[BoxData["HTMLTextContent[XMLElement[\"pre\",{},{\"  for x:\\n    print x\"}]]"], "Input"],
+
+Cell[BoxData["\"  for x:\\n    print x\""], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
   "Generalizations & Extensions", "ExampleSection"],
-  $Line = 0; Null]], "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"]}, Open]],
 
 Cell[CellGroupData[{
 
-Cell[BoxData[
+Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
   "Options", "ExampleSection"],
-  $Line = 0; Null]], "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"]}, Open]],
 
 Cell[BoxData[
  InterpretationBox[Cell[
@@ -184,30 +185,53 @@ Cell[BoxData[
   $Line = 0; Null]], "ExampleSubsection"]
 }, Open  ]],
 
-Cell[BoxData[
+Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
   "Applications", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[BoxData[
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Collect the section headings of the 1989 proposal that founded the web:", "ExampleText"], Cell[BoxData["tree=Import[\"https://www.w3.org/History/1989/proposal.html\",{\"HTML\",\"XMLObject\"}];
+HTMLTextContent/@XMLCases[tree,XMLPattern[\"h2\"]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"\"Overview\"", ",", "\"Losing Information at CERN\"", ",", "\"Linked information systems\"", ",", "\"The problem with trees\"", ",", "\"The problem with keywords\"", ",", "\"A solution: Hypertext\"", ",", "\"CERN Requirements\"", ",", "\"Specific Applications\"", ",", "\"The State of the Art in Hypermedia\"", ",", "\"Accessing Existing Data\"", ",", "\"Conclusion\"", ",", "\"References\""}], "}"}]], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
   "Properties & Relations", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[BoxData[
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Concatenation is lossless, so source whitespace survives where ", Cell[BoxData[ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLInnerText"]], "InlineFormula"], " collapses it:"}], "ExampleText"], Cell[BoxData["doc=ImportString[\"<p>Hi   <em>there</em>, \\n  world</p>\",{\"HTML\",\"XMLObject\"}];
+{HTMLTextContent[doc],HTMLInnerText[doc]}"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"\"Hi   there, \\n  world\"", ",", "\"Hi there, world\""}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Compose with ", Cell[BoxData[ButtonBox["XMLFirstCase", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"]], "InlineFormula"], " to read the text of a matched element:"}], "ExampleText"], Cell[BoxData["tree=ImportString[\"<article><h1>Title</h1><p>Body</p></article>\",{\"HTML\",\"XMLObject\"}];
+HTMLTextContent[XMLFirstCase[tree,XMLPattern[\"h1\"]]]"], "Input"],
+
+Cell[BoxData["\"Title\""], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
   "Possible Issues", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[BoxData[
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["No whitespace is inserted at block boundaries, so adjacent block text runs together:", "ExampleText"], Cell[BoxData["HTMLTextContent[XMLElement[\"div\",{},{XMLElement[\"p\",{},{\"a\"}],XMLElement[\"p\",{},{\"b\"}]}]]"], "Input"],
+
+Cell[BoxData["\"ab\""], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Nodes that are neither elements nor strings, such as comments, contribute the empty string:", "ExampleText"], Cell[BoxData["HTMLTextContent[XMLElement[\"p\",{},{\"a\",XMLObject[\"Comment\"][\"note\"],\"b\"}]]"], "Input"],
+
+Cell[BoxData["\"ab\""], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
   "Interactive Examples", "ExampleSection"],
-  $Line = 0; Null]], "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"]}, Open]],
 
-Cell[BoxData[
+Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
   "Neat Examples", "ExampleSection"],
-  $Line = 0; Null]], "ExampleSection"]
+  $Line = 0; Null]], "ExampleSection"]}, Open]]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -242,12 +266,10 @@ Cell[TextData[{
 }], "CategorizationSection"],
 
 Cell["Symbol", "Categorization",
- CellLabel->
-  "Entity Type"],
+ CellLabel->"Entity Type"],
 
 Cell["MaximilienTirard/BeautifulTureen", "Categorization",
- CellLabel->
-  "Paclet Name"],
+ CellLabel->"Paclet Name"],
 
 Cell["MaximilienTirard`BeautifulTureen`", "Categorization",
  CellLabel->"Context"],
@@ -268,26 +290,20 @@ Cell[CellGroupData[{
 Cell["Syntax Templates", "TemplatesSection"],
 
 Cell[BoxData[""], "Template",
- CellLabel->
-  "Additional Function \
-Template"],
+ CellLabel->"Additional Function Template"],
 
 Cell[BoxData[""], "Template",
- CellLabel->
-  "Arguments Pattern"],
+ CellLabel->"Arguments Pattern"],
 
 Cell[BoxData[""], "Template",
- CellLabel->
-  "Local Variables"],
+ CellLabel->"Local Variables"],
 
 Cell[BoxData[""], "Template",
- CellLabel->
-  "Color Equal Signs"]
+ CellLabel->"Color Equal Signs"]
 }, Closed]]
 }, Open  ]]
 },
-Visible->False,
-TaggingRules-><|"Paclet" -> "MaximilienTirard/BeautifulTureen"|>,
+TaggingRules->Association["Paclet" -> "None"],
 CellContext->"Global`",
 StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "FunctionPageStylesExt.nb", 
   CharacterEncoding -> "UTF-8"]
