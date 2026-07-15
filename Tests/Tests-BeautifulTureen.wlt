@@ -242,6 +242,43 @@ VerificationTest[
   TestID -> "nskey-bad-triple-list"
 ];
 
+(* === Tag predicate patterns (PatternTest / Condition) === *)
+
+$treeHeadings = ImportString[
+  "<section><h1>A</h1><h2>B</h2><p>C</p><h3>D</h3></section>",
+  {"HTML", "XMLObject"}];
+
+(* PatternTest with a pure function predicate on the tag *)
+VerificationTest[
+  XMLCases[$treeHeadings, XMLPattern[t_?(StringMatchQ[#, "h" ~~ DigitCharacter] &)] :> t],
+  {"h1", "h2", "h3"},
+  TestID -> "tagpred-patterntest-function"
+];
+
+(* PatternTest with the operator form of StringMatchQ (parenthesized) *)
+VerificationTest[
+  XMLCases[$treeHeadings, XMLPattern[_?(StringMatchQ["h" ~~ DigitCharacter])]][[All, 1]],
+  {"h1", "h2", "h3"},
+  TestID -> "tagpred-patterntest-operator"
+];
+
+(* Condition on the tag *)
+VerificationTest[
+  XMLCases[$treeHeadings, XMLPattern[t_ /; StringMatchQ[t, "h" ~~ DigitCharacter]] :> t],
+  {"h1", "h2", "h3"},
+  TestID -> "tagpred-condition"
+];
+
+(* Predicate composes with attribute constraints *)
+VerificationTest[
+  XMLCases[
+    ImportString["<div><a rel=\"x\">1</a><b rel=\"y\">2</b><a>3</a></div>",
+      {"HTML", "XMLObject"}],
+    XMLPattern[_?(StringMatchQ[#, "a" | "b"] &), "rel" -> r_] :> r],
+  {"x", "y"},
+  TestID -> "tagpred-with-constraint"
+];
+
 (* === Integration: real-world page === *)
 
 $realPage = FileNameJoin[{DirectoryName[$TestFileName], "assets", "wolfram-language.html"}];
