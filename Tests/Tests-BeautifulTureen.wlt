@@ -197,6 +197,51 @@ VerificationTest[
   TestID -> "descendant-rule-cross-level"
 ];
 
+(* === Namespaced attribute keys ({namespace, name} pairs) === *)
+
+(* WL imports a namespaced attribute such as xlink:href with a two-element
+   {namespaceURI, localName} key rather than a plain string. *)
+$svg = ImportString[
+  "<svg xmlns:xlink=\"http://www.w3.org/1999/xlink\"><use xlink:href=\"#a\"/></svg>",
+  {"XML", "XMLObject"}];
+
+(* A plain-string constraint does not match a namespaced key *)
+VerificationTest[
+  XMLCases[$svg, XMLPattern["use", "href" -> _]],
+  {},
+  TestID -> "nskey-plain-string-misses"
+];
+
+(* Match the local name in any namespace with a {_, name} pair key *)
+VerificationTest[
+  XMLCases[$svg, XMLPattern["use", {_, "href"} -> href_] :> href],
+  {"#a"},
+  TestID -> "nskey-pair-any-namespace"
+];
+
+(* Match an exact {namespace, name} pair (with a literal value) *)
+VerificationTest[
+  XMLCases[$svg,
+    XMLPattern["use", {"http://www.w3.org/1999/xlink", "href"} -> "#a"] :> "hit"],
+  {"hit"},
+  TestID -> "nskey-pair-exact"
+];
+
+(* A pair key with a pattern local name (Alternatives) is accepted *)
+VerificationTest[
+  XMLCases[$svg, XMLPattern["use", {_, "href" | "src"} -> href_] :> href],
+  {"#a"},
+  TestID -> "nskey-pair-alternatives"
+];
+
+(* A three-element list is not a valid attribute key -> badconstraint *)
+VerificationTest[
+  XMLPattern["p", {"a", "b", "c"} -> _],
+  $Failed,
+  {XMLPattern::badconstraint},
+  TestID -> "nskey-bad-triple-list"
+];
+
 (* === Integration: real-world page === *)
 
 $realPage = FileNameJoin[{DirectoryName[$TestFileName], "assets", "wolfram-language.html"}];
