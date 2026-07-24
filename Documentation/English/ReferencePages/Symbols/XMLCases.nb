@@ -23,7 +23,7 @@ Cell[TextData[{"An ", Cell[BoxData[ButtonBox["Alternatives", BaseStyle -> "Link"
 
 Cell[TextData[{"Combinators express structural relationships between elements: ", Cell[BoxData[RowBox[{ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"], "[", RowBox[{StyleBox["parent", "TI"], ",", " ", StyleBox["child", "TI"]}], "]"}]], "InlineFormula"], " matches direct children, ", Cell[BoxData[RowBox[{ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"], "[", RowBox[{StyleBox["ancestor", "TI"], ",", " ", StyleBox["desc", "TI"]}], "]"}]], "InlineFormula"], " matches at any depth, ", Cell[BoxData[RowBox[{ButtonBox["Adjacent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Adjacent"], "[", RowBox[{StyleBox["before", "TI"], ",", " ", StyleBox["after", "TI"]}], "]"}]], "InlineFormula"], " matches an immediately following sibling, and ", Cell[BoxData[RowBox[{ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"], "[", RowBox[{StyleBox["before", "TI"], ",", " ", StyleBox["after", "TI"]}], "]"}]], "InlineFormula"], " matches any following sibling."}], "Notes"],
 
-Cell[TextData[{"A delayed rule ", Cell[BoxData[RowBox[{StyleBox["pattern", "TI"], "\[RuleDelayed]", StyleBox["body", "TI"]}]], "InlineFormula"], " returns the result of applying ", Cell[BoxData[StyleBox["body", "TI"]], "InlineFormula"], " to each match instead of the matched elements. Pattern names bound on the left-hand side \[LongDash] including names bound in an attribute constraint or inside a combinator \[LongDash] are in scope in ", Cell[BoxData[StyleBox["body", "TI"]], "InlineFormula"], "."}], "Notes"],
+Cell[TextData[{"Two forms transform or filter the matches instead of returning the matched elements. A conditioned pattern ", Cell[BoxData["pat$ /; test$"], "InlineFormula"], " returns only the elements for which ", Cell[BoxData[StyleBox["test", "TI"]], "InlineFormula"], " evaluates to ", Cell[BoxData[ButtonBox["True", BaseStyle -> "Link", ButtonData -> "paclet:ref/True"]], "InlineFormula"], "; a delayed rule ", Cell[BoxData[RowBox[{StyleBox["pat", "TI"], "\[RuleDelayed]", StyleBox["body", "TI"]}]], "InlineFormula"], " returns ", Cell[BoxData[StyleBox["body", "TI"]], "InlineFormula"], " applied to each match. Names bind as in ordinary pattern matching: bind sub-parts inside the shape (", Cell[BoxData[RowBox[{ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"], "[", RowBox[{StyleBox["tag", "TI"], ",", " ", StyleBox["_", "TR"], ",", " ", StyleBox["kids", "TI"]}], "]"}]], "InlineFormula"], "), or bind the whole matched element with a leading name (", Cell[BoxData["el$ : pat$"], "InlineFormula"], ") so ", Cell[BoxData[StyleBox["test", "TI"]], "InlineFormula"], " or ", Cell[BoxData[StyleBox["body", "TI"]], "InlineFormula"], " can operate on the element directly \[LongDash] for example ", Cell[BoxData[RowBox[{ButtonBox["HTMLTextContent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLTextContent"], "[", StyleBox["el", "TI"], "]"}]], "InlineFormula"], ". A condition may wrap an ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], " pattern or an ", Cell[BoxData[ButtonBox["Alternatives", BaseStyle -> "Link", ButtonData -> "paclet:ref/Alternatives"]], "InlineFormula"], " of them, but not a combinator."}], "Notes"],
 
 Cell[TextData[{Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"]], "InlineFormula"], " returns ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], " and issues a message when ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " is not a valid XML expression (", Cell[BoxData["XMLCases::badtree"], "InlineFormula"], ") or when ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " is neither an ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], " pattern, an ", Cell[BoxData[ButtonBox["Alternatives", BaseStyle -> "Link", ButtonData -> "paclet:ref/Alternatives"]], "InlineFormula"], " of them, nor a supported combinator (", Cell[BoxData["XMLCases::badpat"], "InlineFormula"], ")."}], "Notes"]
 }, Open  ]],
@@ -60,7 +60,9 @@ Cell[TextData[{
    "MoreInfoOpenerButtonTemplate"]]]
 }], "TechNotesSection"],
 
-Cell["XXXX", "Tutorials"]
+Cell["XXXX", "Tutorials"],
+
+Cell[TextData[ButtonBox["Scraping HTML with BeautifulTureen", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/tutorial/ScrapingHTMLWithBeautifulTureen"]], "TechNotes"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -190,7 +192,12 @@ XMLElement[\"p\",{},{\"one\"}],
 XMLElement[\"ol\",{},{XMLElement[\"li\",{},{\"c\"}],XMLElement[\"li\",{},{\"d\"}]}]}];
 XMLCases[$tree,XMLElement[tag_,_,kids_]/;Count[kids,_XMLElement]>=2]〚All,1〛"], "Input"],
 
-Cell[BoxData[RowBox[{"{", RowBox[{"\"ul\"", ",", "\"ol\""}], "}"}]], "Output"]}, Open]]}, Open]],
+Cell[BoxData[RowBox[{"{", RowBox[{"\"ul\"", ",", "\"ol\""}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Bind the whole matched element by name to test it with ", Cell[BoxData[ButtonBox["HTMLTextContent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLTextContent"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["menu=ImportString[\"<ul><li>Miso</li><li>Pho (sold out)</li><li>Ramen</li></ul>\",{\"HTML\",\"XMLObject\"}];
+HTMLTextContent/@XMLCases[menu,(li:XMLPattern[\"li\"])/;StringContainsQ[HTMLTextContent[li],\"sold out\"]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", "\"Pho (sold out)\"", "}"}]], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[

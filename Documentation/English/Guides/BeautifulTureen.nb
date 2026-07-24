@@ -55,7 +55,7 @@ Cell[CellGroupData[{
 
 Cell["Tech Notes", "GuideTutorialsSection"],
 
-Cell["XXXX", "GuideTutorial"],
+Cell[TextData[ButtonBox["Scraping HTML with BeautifulTureen", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/tutorial/ScrapingHTMLWithBeautifulTureen"]], "GuideTutorial"],
 
 Cell["XXXX", "GuideTutorial"]
 }, Open  ]],
