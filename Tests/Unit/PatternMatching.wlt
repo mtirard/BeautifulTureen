@@ -138,6 +138,57 @@ TestCreate[
   TestID -> "cond-combinator-rejected"
 ];
 
+(* === Named whole-element conditions (el : pat /; test) === *)
+
+(* Binding the matched element by name lets the predicate address the whole
+   element \[LongDash] most importantly via the text extractors, which have no
+   XMLPattern-constraint equivalent. This is the natural form for HTML scraping
+   ("keep/drop elements whose rendered text says X") and mirrors native WL,
+   where name:patt /; test is ordinary. *)
+$treeMenu = ImportString[
+  "<ul><li>Miso</li><li>Pho (sold out)</li><li>Ramen</li></ul>",
+  {"HTML", "XMLObject"}];
+
+(* XMLCases: bind the <li>, filter on its rendered text *)
+TestCreate[
+  XMLCases[$treeMenu, (li : XMLPattern["li"]) /; StringContainsQ[HTMLTextContent[li], "sold out"]],
+  {XMLElement["li", {}, {"Pho (sold out)"}]},
+  TestID -> "cond-named-xmlcases"
+];
+
+(* XMLFirstCase: same predicate, first match *)
+TestCreate[
+  XMLFirstCase[$treeMenu, (li : XMLPattern["li"]) /; StringContainsQ[HTMLTextContent[li], "sold out"]],
+  XMLElement["li", {}, {"Pho (sold out)"}],
+  TestID -> "cond-named-firstcase"
+];
+
+(* XMLDeleteCases: drop the element whose text says sold out *)
+TestCreate[
+  XMLCases[
+    XMLDeleteCases[$treeMenu, (li : XMLPattern["li"]) /; StringContainsQ[HTMLTextContent[li], "sold out"]],
+    XMLPattern["li"]][[All, 3, 1]],
+  {"Miso", "Ramen"},
+  TestID -> "cond-named-deletecases"
+];
+
+(* A named Alternatives-of-XMLElements is accepted just like the bare form *)
+TestCreate[
+  XMLCases[$treeCond,
+    (el : (XMLPattern["h1"] | XMLPattern["h2"])) /; StringLength[HTMLTextContent[el]] === 1][[All, 1]],
+  {"h1", "h2"},
+  TestID -> "cond-named-alternatives"
+];
+
+(* A name never changes structural validity: a named combinator condition is
+   still rejected, and with the specific ::condcombinator message (not badpat) *)
+TestCreate[
+  XMLCases[$treeCond, (x : Child[XMLPattern["div"], XMLPattern["span"]]) /; True],
+  $Failed,
+  {XMLCases::condcombinator},
+  TestID -> "cond-named-combinator-rejected"
+];
+
 (* KNOWN ISSUE (bug 477310 / family of 472952): a /; test that references two or
    more attribute captures from XMLPattern's (nested) KeyValuePattern silently
    drops all but one binding, so both h and d are lost and this yields {} instead

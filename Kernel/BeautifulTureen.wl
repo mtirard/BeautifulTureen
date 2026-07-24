@@ -93,20 +93,28 @@ altLeaves[x_] := {x};
 altOfXMLElementsQ[alts_Alternatives] :=
   AllTrue[altLeaves[alts], MatchQ[#, _XMLElement] &];
 
-(* A top-level Condition (pat /; test) is accepted when it wraps a base pattern
-   \[LongDash] an XMLElement pattern or an Alternatives of them \[LongDash] which map directly to
-   Cases/FirstCase/DeleteCases. A Condition wrapping a combinator is not
-   accepted (condition semantics over a multi-step traversal are undefined); it
-   is reported with ::condcombinator. Condition is HoldAll, so we inspect the
-   held left-hand side with Part rather than by matching. *)
+(* A top-level Condition (pat /; test) is a filter over the matched element. Its
+   left-hand side may bind the whole matched element by name \[LongDash] el : pat /; test
+   \[LongDash] so the predicate can address the whole element (e.g. HTMLTextContent[el]),
+   exactly as name:patt /; test does natively in the kernel. A leading name is
+   incidental: it never changes what is structurally valid, so we strip it with
+   condLHSBase before checking the base. The base must be an XMLElement pattern
+   or an Alternatives of them, which map directly to Cases/FirstCase/DeleteCases.
+   A Condition wrapping a combinator is not accepted \[LongDash] condition semantics over a
+   multi-step traversal are undefined \[LongDash] named or not; it is reported with
+   ::condcombinator. Condition is HoldAll, so we inspect the held left-hand side
+   with Part rather than by matching. *)
+condLHSBase[Verbatim[Pattern][_, x_]] := x;
+condLHSBase[x_] := x;
+
 validConditionQ[c_Condition] :=
-  With[{lhs = c[[1]]},
+  With[{lhs = condLHSBase[c[[1]]]},
     MatchQ[lhs, _XMLElement] ||
       (MatchQ[lhs, _Alternatives] && altOfXMLElementsQ[lhs])];
 validConditionQ[_] := False;
 
 condCombinatorQ[c_Condition] :=
-  MatchQ[c[[1]], _Child | _Adjacent | _Sibling | _Descendant];
+  MatchQ[condLHSBase[c[[1]]], _Child | _Adjacent | _Sibling | _Descendant];
 condCombinatorQ[_] := False;
 
 validPatternQ[_XMLElement] := True;
