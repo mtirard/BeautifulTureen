@@ -1,0 +1,130 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 12.0' *)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["Scraping HTML with BeautifulTureen", "Title"],
+Cell[TextData[{Cell[BoxData[ButtonBox["BeautifulTureen", BaseStyle -> "Link", ButtonData -> "paclet:ref/BeautifulTureen"]], "InlineFormula"], " brings BeautifulSoup-style ergonomics to the Wolfram Language: you select elements from an imported HTML or XML tree by ", StyleBox["pattern", FontSlant->"Italic"], ", compose those patterns with structural ", StyleBox["combinators", FontSlant->"Italic"], ", and extract the matched content as raw text, readable text, or a notebook ready to export. Every function operates on the static ", Cell[BoxData[ButtonBox["XMLObject", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLObject"]], "InlineFormula"], " tree that ", Cell[BoxData[ButtonBox["Import", BaseStyle -> "Link", ButtonData -> "paclet:ref/Import"]], "InlineFormula"], " produces \[LongDash] no live DOM, no CSS engine, no round-trip out to a browser."}], "Text"],
+Cell[TextData[{"This tutorial walks the whole workflow on one small page: import the tree, find elements with ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["CSSClass", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/CSSClass"]], "InlineFormula"], ", narrow the search with the ", Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["Adjacent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Adjacent"]], "InlineFormula"], ", and ", Cell[BoxData[ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"]], "InlineFormula"], " combinators, prune unwanted subtrees with ", Cell[BoxData[ButtonBox["XMLDeleteCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDeleteCases"]], "InlineFormula"], ", and finally turn what remains into text with ", Cell[BoxData[ButtonBox["HTMLTextContent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLTextContent"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLInnerText"]], "InlineFormula"], " or into a document with ", Cell[BoxData[ButtonBox["HTMLToNotebook", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLToNotebook"]], "InlineFormula"], "."}], "Text"],
+Cell[TextData[{"Everything starts from the tree ", Cell[BoxData[ButtonBox["Import", BaseStyle -> "Link", ButtonData -> "paclet:ref/Import"]], "InlineFormula"], " builds with the ", Cell[BoxData[RowBox[{"{", RowBox[{StyleBox["\"HTML\"", "TR"], ",", " ", StyleBox["\"XMLObject\"", "TR"]}], "}"}]], "InlineFormula"], " format. It is an ordinary symbolic expression: nested ", Cell[BoxData[RowBox[{ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"], "[", RowBox[{StyleBox["tag", "TI"], ",", " ", StyleBox["attributes", "TI"], ",", " ", StyleBox["children", "TI"]}], "]"}]], "InlineFormula"], " objects wrapped in an ", Cell[BoxData[ButtonBox["XMLObject", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLObject"]], "InlineFormula"], " document envelope. Because it is just an expression, the whole standard pattern language already applies to it \[LongDash] ", Cell[BoxData[ButtonBox["BeautifulTureen", BaseStyle -> "Link", ButtonData -> "paclet:ref/BeautifulTureen"]], "InlineFormula"], " adds a vocabulary that makes the common HTML questions concise. Import a small page to work with throughout:"}], "Text"],
+
+Cell["XXXX", "Text"],
+
+Cell[BoxData[GridBox[{
+   {"XXXX", Cell[
+    "XXXX", "TableText"]},
+   {"XXXX", Cell[
+    "XXXX", "TableText"]},
+   {"XXXX", Cell[
+    "XXXX", "TableText"]}
+  }]], "DefinitionBox"],
+
+Cell["XXXX.", "Caption"],
+
+Cell[CellGroupData[{
+
+Cell["XXXX", "MathCaption"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData["page=ImportString[\"<article><h1>Tureen Soup Bar</h1><p class=\\\"lead\\\">Seasonal <b>bowls</b>, made to order.</p><nav><a href=\\\"/menu\\\">Menu</a><a href=\\\"/hours\\\">Hours</a></nav><ul class=\\\"menu\\\"><li><a href=\\\"/miso\\\">Miso</a></li><li><a href=\\\"/pho\\\">Pho</a></li><li><a href=\\\"/ramen\\\">Ramen (sold out)</a></li></ul><script>track();</script></article>\",{\"HTML\",\"XMLObject\"}];Union[XMLCases[page,element:XMLPattern[_]:>First[element]]]"], "Input",
+ CellLabel->"In[1]:="],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"\"a\"", ",", "\"article\"", ",", "\"b\"", ",", "\"h1\"", ",", "\"li\"", ",", "\"nav\"", ",", "\"p\"", ",", "\"script\"", ",", "\"ul\""}], "}"}]], "Output"]
+}, Open  ]],
+Cell[TextData[{"The parser normalizes the fragment into a full document \[LongDash] wrapping it in ", Cell[BoxData[StyleBox["html", "TR"]], "InlineFormula"], " and ", Cell[BoxData[StyleBox["body", "TR"]], "InlineFormula"], " \[LongDash] so the tags present include structure the source never wrote out."}], "Text"]
+}, Open  ]],
+Cell[CellGroupData[{Cell["Selecting elements", "Section"], Cell[TextData[{Cell[BoxData[RowBox[{ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"], "[", StyleBox["tag", "TI"], "]"}]], "InlineFormula"], " matches any element with the given tag; ", Cell[BoxData[RowBox[{ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"], "[", RowBox[{StyleBox["tag", "TI"], ",", " ", RowBox[{StyleBox["constraints", "TI"], StyleBox["\[Ellipsis]", "TR"]}]}], "]"}]], "InlineFormula"], " adds attribute constraints. Hand a pattern to ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"]], "InlineFormula"], " to collect every match at any depth. A delayed rule ", Cell[BoxData[RowBox[{StyleBox["pattern", "TI"], "\[RuleDelayed]", StyleBox["body", "TI"]}]], "InlineFormula"], " returns a function of each match instead of the raw elements \[LongDash] the idiom for pulling a single attribute or piece of text out. Collect every link target on the page:"}], "Text"],
+Cell[BoxData["XMLCases[page,XMLPattern[\"a\",\"href\"->target_]:>target]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"\"/menu\"", ",", "\"/hours\"", ",", "\"/miso\"", ",", "\"/pho\"", ",", "\"/ramen\""}], "}"}]], "Output"], Cell[TextData[{"Constraints beyond a tag and an attribute value come from ", Cell[BoxData[ButtonBox["CSSClass", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/CSSClass"]], "InlineFormula"], ", which matches a whitespace-delimited class token rather than a substring. When you want just one element, ", Cell[BoxData[ButtonBox["XMLFirstCase", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"]], "InlineFormula"], " short-circuits on the first match and returns ", Cell[BoxData[RowBox[{ButtonBox["Missing", BaseStyle -> "Link", ButtonData -> "paclet:ref/Missing"], "[", StyleBox["\"NotFound\"", "TR"], "]"}]], "InlineFormula"], " \[LongDash] or a supplied default \[LongDash] when nothing matches. Grab the lead paragraph by its class:"}], "Text"],
+Cell[BoxData["XMLFirstCase[page,XMLPattern[\"p\",CSSClass[\"lead\"]]]"], "Input"],
+
+Cell[BoxData[RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "\[Rule]", "\"lead\""}], "}"}], ",", RowBox[{"{", RowBox[{"\"Seasonal \"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"b\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"bowls\"", "}"}]}], "]"}], ",", "\", made to order.\""}], "}"}]}], "]"}]], "Output"]}, Open]],
+Cell[CellGroupData[{Cell["Structural combinators", "Section"], Cell[TextData[{"A bare pattern ignores where an element sits in the tree. The four combinators add that structure, each mirroring a CSS selector: ", Cell[BoxData[RowBox[{ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"], "[", RowBox[{StyleBox["parent", "TI"], ",", " ", StyleBox["child", "TI"]}], "]"}]], "InlineFormula"], " matches a direct child (CSS ", Cell[BoxData["parent > child"], "InlineFormula"], "); ", Cell[BoxData[RowBox[{ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"], "[", RowBox[{StyleBox["ancestor", "TI"], ",", " ", StyleBox["desc", "TI"]}], "]"}]], "InlineFormula"], " matches at any depth (CSS ", Cell[BoxData["ancestor desc"], "InlineFormula"], "); ", Cell[BoxData[RowBox[{ButtonBox["Adjacent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Adjacent"], "[", RowBox[{StyleBox["before", "TI"], ",", " ", StyleBox["after", "TI"]}], "]"}]], "InlineFormula"], " matches the element immediately following a sibling (CSS ", Cell[BoxData["before + after"], "InlineFormula"], "); and ", Cell[BoxData[RowBox[{ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"], "[", RowBox[{StyleBox["before", "TI"], ",", " ", StyleBox["after", "TI"]}], "]"}]], "InlineFormula"], " matches any following sibling (CSS ", Cell[BoxData["before ~ after"], "InlineFormula"], ")."}], "Text"], Cell[TextData[{"All four are accepted by ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["XMLFirstCase", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"]], "InlineFormula"], "; ", Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"]], "InlineFormula"], " are also accepted by ", Cell[BoxData[ButtonBox["XMLDeleteCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDeleteCases"]], "InlineFormula"], ". Restrict the link search to the menu list, so that the ", Cell[BoxData[StyleBox["nav", "TR"]], "InlineFormula"], " links are left out:"}], "Text"],
+Cell[BoxData["XMLCases[page,Descendant[XMLPattern[\"ul\",CSSClass[\"menu\"]],XMLPattern[\"a\",\"href\"->target_]]:>target]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"\"/miso\"", ",", "\"/pho\"", ",", "\"/ramen\""}], "}"}]], "Output"], Cell[TextData[{Cell[BoxData[ButtonBox["Adjacent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Adjacent"]], "InlineFormula"], " reaches for content by its position relative to a landmark \[LongDash] here, the paragraph that immediately follows the top heading:"}], "Text"],
+Cell[BoxData["XMLCases[page,Adjacent[XMLPattern[\"h1\"],XMLPattern[\"p\"]]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "\[Rule]", "\"lead\""}], "}"}], ",", RowBox[{"{", RowBox[{"\"Seasonal \"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"b\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"bowls\"", "}"}]}], "]"}], ",", "\", made to order.\""}], "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+Cell[CellGroupData[{Cell["Pruning the tree", "Section"], Cell[TextData[{"Selection pulls elements ", StyleBox["out", FontSlant->"Italic"], "; ", Cell[BoxData[ButtonBox["XMLDeleteCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDeleteCases"]], "InlineFormula"], " removes them ", StyleBox["in place", FontSlant->"Italic"], ", returning the tree with every match \[LongDash] and its whole subtree \[LongDash] gone. It is the natural first step before reading a page as text: strip the chrome and the non-content tags, then extract. Pass an ", Cell[BoxData[ButtonBox["Alternatives", BaseStyle -> "Link", ButtonData -> "paclet:ref/Alternatives"]], "InlineFormula"], " to remove several categories in one pass. Remove the tracking script and the navigation, keeping the document envelope intact:"}], "Text"],
+Cell[BoxData["readable=XMLDeleteCases[page,XMLPattern[\"script\"]|XMLPattern[\"nav\"]];XMLCases[readable,XMLPattern[\"a\",\"href\"->target_]:>target]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"\"/miso\"", ",", "\"/pho\"", ",", "\"/ramen\""}], "}"}]], "Output"], Cell[TextData[{"The ", Cell[BoxData[StyleBox["nav", "TR"]], "InlineFormula"], " anchors are gone and only the menu links survive. A conditioned pattern ", Cell[BoxData["pat$ /; test$"], "InlineFormula"], " deletes selectively; names bind as in ordinary pattern matching, and a leading name on the whole matched element (", Cell[BoxData["el$ : pat$"], "InlineFormula"], ") lets the test call ", Cell[BoxData[RowBox[{ButtonBox["HTMLTextContent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLTextContent"], "[", StyleBox["el", "TI"], "]"}]], "InlineFormula"], " on it. The ", Cell[BoxData[ButtonBox["Adjacent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Adjacent"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"]], "InlineFormula"], " combinators are not accepted here, since deletion by relative position is ambiguous."}], "Text"]}, Open]],
+Cell[CellGroupData[{Cell["Extracting text", "Section"], Cell[TextData[{"Two functions turn a tree into a string, and the choice between them is the same one the web platform draws between ", Cell[BoxData[StyleBox["textContent", "TR"]], "InlineFormula"], " and ", Cell[BoxData[StyleBox["innerText", "TR"]], "InlineFormula"], ". ", Cell[BoxData[ButtonBox["HTMLTextContent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLTextContent"]], "InlineFormula"], " is the lossless concatenation of every descendant string in document order \[LongDash] faithful but verbose, preserving source whitespace and inserting nothing at block boundaries. ", Cell[BoxData[ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLInnerText"]], "InlineFormula"], " renders the tree as it is ", StyleBox["meant", FontSlant->"Italic"], " to read: whitespace runs collapse, block-level tags break onto their own lines, ", Cell[BoxData[StyleBox["br", "TR"]], "InlineFormula"], " becomes a newline, ", Cell[BoxData[StyleBox["pre", "TR"]], "InlineFormula"], " stays verbatim, and non-rendered tags are dropped. Compare the two on the pruned page:"}], "Text"],
+Cell[BoxData["{HTMLTextContent[readable],HTMLInnerText[readable]}"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"\"Tureen Soup BarSeasonal bowls, made to order.MisoPhoRamen (sold out)\"", ",", "\"Tureen Soup Bar\\nSeasonal bowls, made to order.\\nMiso\\nPho\\nRamen (sold out)\""}], "}"}]], "Output"], Cell[TextData[{Cell[BoxData[ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLInnerText"]], "InlineFormula"], " classifies each element by tag alone, using a frozen snapshot of the default user-agent stylesheet \[LongDash] it never reads a page's CSS. The ", Cell[BoxData[StyleBox["\"Roles\"", "TR"]], "InlineFormula"], " option overrides that classification (for example, to skip a screenreader-only span), and ", Cell[BoxData[StyleBox["\"BlockSeparator\"", "TR"]], "InlineFormula"], " sets the string that joins block boundaries."}], "Text"]}, Open]],
+Cell[CellGroupData[{Cell["Converting to a notebook", "Section"], Cell[TextData[{"When plain text is too lossy \[LongDash] you want the headings, lists, links, and emphasis to survive \[LongDash] ", Cell[BoxData[ButtonBox["HTMLToNotebook", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLToNotebook"]], "InlineFormula"], " projects the tree into a ", Cell[BoxData[ButtonBox["Notebook", BaseStyle -> "Link", ButtonData -> "paclet:ref/Notebook"]], "InlineFormula"], " expression. Block tags become cells and inline tags become boxes; from that notebook, Markdown, PDF, RTF, and on-screen display all follow through ", Cell[BoxData[ButtonBox["Export", BaseStyle -> "Link", ButtonData -> "paclet:ref/Export"]], "InlineFormula"], ". The notebook is the common ancestor of every one of those outputs, which is why it, rather than a direct string emitter, is the primitive. Convert the pruned page to Markdown:"}], "Text"],
+Cell[BoxData["ExportString[HTMLToNotebook[readable],\"Markdown\"]"], "Input"],
+
+Cell[BoxData["\"# Tureen Soup Bar\\n\\nSeasonal **bowls**, made to order.\\n\\n- [Miso](/miso)\\n\\n- [Pho](/pho)\\n\\n- [Ramen (sold out)](/ramen)\""], "Output"], Cell[TextData[{"Headings map to a descending ladder of cell styles, ", Cell[BoxData[StyleBox["li", "TR"]], "InlineFormula"], " to depth-aware ", Cell[BoxData[ButtonBox["Item", BaseStyle -> "Link", ButtonData -> "paclet:ref/Item"]], "InlineFormula"], " styles, and inline ", Cell[BoxData[StyleBox["b", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["i", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["code", "TR"]], "InlineFormula"], ", and ", Cell[BoxData[StyleBox["a", "TR"]], "InlineFormula"], " to their Markdown equivalents. Two option layers shape the result: ", Cell[BoxData[StyleBox["\"Roles\"", "TR"]], "InlineFormula"], " re-decides block-versus-inline placement (the layer shared with ", Cell[BoxData[ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLInnerText"]], "InlineFormula"], "), while ", Cell[BoxData[StyleBox["\"Constructs\"", "TR"]], "InlineFormula"], " supplies the concrete form \[LongDash] a cell style, an inline token, or a constructor function ", Cell[BoxData[RowBox[{StyleBox["element", "TI"], "\[RuleDelayed]", "Cell/boxes"}]], "InlineFormula"], " for anything bespoke. With these six verbs \[LongDash] pattern, combinator, delete, two text projections, and the notebook conversion \[LongDash] a page goes from imported markup to exactly the shape your computation needs."}], "Text"]}, Open]],
+
+Cell[CellGroupData[{
+
+Cell["Related Guides", "TutorialMoreAboutSection"],
+
+Cell[TextData[ButtonBox["BeautifulTureen", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/guide/BeautifulTureen"]], "TutorialMoreAbout"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Related Tech Notes", "RelatedTutorialsSection"],
+
+Cell["XXXX", "RelatedTutorials"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Metadata", "MetadataSection"],
+
+Cell[TextData[{
+ "New in: ",
+ Cell["XX", "HistoryData",
+  CellTags->"New"],
+ " | Modified in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Modified"],
+ " | Obsolete in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Obsolete"]
+}], "History"],
+
+Cell[CellGroupData[{
+
+Cell["Categorization", "CategorizationSection"],
+
+Cell["Tech Note", "Categorization",
+ CellLabel->"Entity Type"],
+
+Cell["MaximilienTirard/BeautifulTureen", "Categorization",
+ CellLabel->"Paclet Name"],
+
+Cell["MaximilienTirard`BeautifulTureen`", "Categorization",
+ CellLabel->"Context"],
+
+Cell["MaximilienTirard/BeautifulTureen/tutorial/ScrapingHTMLWithBeautifulTureen", "Categorization",
+ CellLabel->"URI"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Keywords", "KeywordsSection"],
+
+Cell["XXXX", "Keywords"]
+}, Closed]]
+}, Open  ]]
+},
+TaggingRules->Association["Paclet" -> "None"],
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "TechNotePageStylesExt.nb", 
+  CharacterEncoding -> "UTF-8"]
+]
+(* End of Notebook Content *)

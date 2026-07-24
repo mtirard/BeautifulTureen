@@ -19,7 +19,7 @@ Cell[TextData[{"When no element matches, ", Cell[BoxData[RowBox[{ButtonBox["XMLF
 
 Cell[TextData[{Cell[BoxData[RowBox[{ButtonBox["XMLFirstCase", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"], "[", RowBox[{StyleBox["tree", "TI"], ",", " ", StyleBox["pattern", "TI"], ",", " ", StyleBox["default", "TI"]}], "]"}]], "InlineFormula"], " returns ", Cell[BoxData[StyleBox["default", "TI"]], "InlineFormula"], " instead of ", Cell[BoxData[RowBox[{ButtonBox["Missing", BaseStyle -> "Link", ButtonData -> "paclet:ref/Missing"], "[", StyleBox["\"NotFound\"", "TR"], "]"}]], "InlineFormula"], " when nothing matches."}], "Notes"],
 
-Cell[TextData[{Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " can be any of the forms accepted by ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"]], "InlineFormula"], ": ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], " patterns (typically built with ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"]], "InlineFormula"], "), an ", Cell[BoxData[ButtonBox["Alternatives", BaseStyle -> "Link", ButtonData -> "paclet:ref/Alternatives"]], "InlineFormula"], " of them, the combinators ", Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["Adjacent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Adjacent"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"]], "InlineFormula"], ", and delayed rules ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " :> ", Cell[BoxData[StyleBox["body", "TI"]], "InlineFormula"], "."}], "Notes"],
+Cell[TextData[{Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " can be any of the forms accepted by ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"]], "InlineFormula"], ": ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], " patterns (typically built with ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"]], "InlineFormula"], "), an ", Cell[BoxData[ButtonBox["Alternatives", BaseStyle -> "Link", ButtonData -> "paclet:ref/Alternatives"]], "InlineFormula"], " of them, the combinators ", Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["Adjacent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Adjacent"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"]], "InlineFormula"], ", a conditioned pattern ", Cell[BoxData["pat$ /; test$"], "InlineFormula"], ", and delayed rules ", Cell[BoxData[RowBox[{StyleBox["pattern", "TI"], "\[RuleDelayed]", StyleBox["body", "TI"]}]], "InlineFormula"], "."}], "Notes"],
 
 Cell[TextData[{"Short-circuiting extends through the combinators, so only as much of ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " as is needed to find the first match is traversed."}], "Notes"],
 
@@ -58,7 +58,9 @@ Cell[TextData[{
    "MoreInfoOpenerButtonTemplate"]]]
 }], "TechNotesSection"],
 
-Cell["XXXX", "Tutorials"]
+Cell["XXXX", "Tutorials"],
+
+Cell[TextData[ButtonBox["Scraping HTML with BeautifulTureen", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/tutorial/ScrapingHTMLWithBeautifulTureen"]], "TechNotes"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -173,7 +175,12 @@ Cell["Apply a function to the first match with a delayed rule:", "ExampleText"],
 
 Cell[BoxData["XMLFirstCase[tree,XMLPattern[\"a\",\"href\"->href_]:>href]"], "Input"],
 
-Cell[BoxData["\"/about\""], "Output"]}, Open]]}, Open]],
+Cell[BoxData["\"/about\""], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Bind the whole matched element by name so the test can read its text:", "ExampleText"], Cell[BoxData["tree=ImportString[\"<article><p>Short.</p><p>This paragraph mentions the Wolfram Language.</p></article>\",{\"HTML\",\"XMLObject\"}];
+XMLFirstCase[tree,(para:XMLPattern[\"p\"])/;StringContainsQ[HTMLTextContent[para],\"Wolfram\"]]"], "Input"],
+
+Cell[BoxData[RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"This paragraph mentions the Wolfram Language.\"", "}"}]}], "]"}]], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
@@ -250,7 +257,7 @@ Cell[TextData[{"An invalid tree gives ", Cell[BoxData[ButtonBox["$Failed", BaseS
 
 Cell[BoxData["XMLFirstCase[42,XMLPattern[\"p\"]]"], "Input"],
 
-Cell[BoxData["XMLFirstCase::badtree: First argument should be an XMLObject, XMLElement, or list thereof. Got head Integer."], "Message", "MSG"],
+Cell["XMLFirstCase::badtree: First argument should be an XMLObject, XMLElement, or list thereof. Got head Integer.", "Message", "MSG"],
 
 Cell[BoxData["$Failed"], "Output"]}, Open]]}, Open]],
 
