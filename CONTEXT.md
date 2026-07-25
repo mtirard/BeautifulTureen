@@ -112,6 +112,29 @@ invisible authoring accident. Tags-only is predictable; tags-plus-inline-CSS is
 not. The escape hatch for users who _do_ know their CSS is an injectable role
 classifier (see code / ADRs), not a CSS engine.
 
+### Class list
+
+What a `CSSClass` constraint selects on: the whitespace-separated **tokens** of an
+element's `class` attribute. Three different-looking elements have the same
+**empty** class list — no `class` attribute, `class=""`, and whitespace only —
+because they state the same fact in HTML, so no class constraint may distinguish
+them.
+
+Each `CSSClass` argument is an **ordinary string pattern matched against one
+token**, never against the whole attribute value: `_` is one character, `__` one
+or more, `___` zero or more, and `"col-" ~~ __` is a class beginning with `col-`
+and cannot run past the space into the next class. Nothing is reinterpreted; the
+token is simply the unit of matching (ADR 0005).
+
+The empty class list is why a negation is absence-tolerant: `CSSClass[Except["ad"]]`
+matches an element carrying no class, exactly as CSS `:not(.ad)` does, and
+`CSSClass[Except[___]]` reads as "carries no classes" — the mirror of
+`CSSClass[___]`, "carries at least one class" (ADR 0004). Presence of the
+*attribute* is a different question, asked with the bare-attribute shorthand
+`XMLPattern["p", "class"]`, which `class=""` satisfies. A raw attribute rule
+(`"href" -> Except["#"]`) keeps plain `KeyValuePattern` semantics and does require
+the key — it is the user's own pattern, not our abstraction.
+
 ### Notebook conversion (`HTMLToNotebook`)
 
 A directed, lossy projection of an HTML/XML tree into a Wolfram `Notebook[…]`
