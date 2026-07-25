@@ -6,7 +6,7 @@ BeginPackage["MaximilienTirard`BeautifulTureen`"];
 (* === Public symbols === *)
 
 XMLPattern::usage = "XMLPattern[tag] constructs an XMLElement pattern matching any element with the given tag. XMLPattern[tag, constraints...] additionally constrains attributes, where each constraint is \"attr\" -> value, a bare \"attr\" for existence, or CSSClass[...].";
-CSSClass::usage = "CSSClass[cls] gives an attribute constraint, for use in XMLPattern, matching elements whose class attribute contains cls. CSSClass[cls1, cls2, ...] requires all of the given classes; use Alternatives for or-semantics and Except[cls] to negate.";
+CSSClass::usage = "CSSClass[cls] gives an attribute constraint, for use in XMLPattern, matching elements whose class list contains a class matching cls. Each argument is an ordinary string pattern matched against a single class, so \"col-\" ~~ __ matches one class beginning with col- and ___ matches any class at all. CSSClass[cls1, cls2, ...] requires all of the given classes; use Alternatives for or-semantics and Except[cls] to negate. A negation reads a missing class attribute as an empty class list, so Except[cls] also matches elements carrying no class at all (as CSS :not(.cls) does) and Except[___] means \"carries no classes\".";
 XMLCases::usage = "XMLCases[tree, pattern] gives a list of all elements of the XML tree that match pattern, searched at any depth. pattern can be an XMLElement pattern (see XMLPattern), an Alternatives of them, a Child, Descendant, Adjacent, or Sibling combinator, a conditioned pattern pat /; test, or a rule pattern :> body.";
 XMLFirstCase::usage = "XMLFirstCase[tree, pattern] gives the first element of tree matching pattern, or Missing[\"NotFound\"] if there is none. XMLFirstCase[tree, pattern, default] gives default instead. It accepts the same patterns as XMLCases and short-circuits on the first match.";
 XMLDeleteCases::usage = "XMLDeleteCases[tree, pattern] gives tree with every element matching pattern removed, at any depth. It accepts XMLElement patterns, Alternatives of them, conditioned patterns pat /; test, and Child or Descendant combinators; Adjacent and Sibling are not supported.";
@@ -45,12 +45,17 @@ Begin["`Private`"];
 (* Validation helpers                                           *)
 (* =========================================================== *)
 
-(* Valid class constraint: string, StringExpression, Alternatives, Except, PatternTest, Blank *)
+(* Valid class constraint: any ordinary string pattern matched against one class
+   token \[LongDash] a literal string, a StringExpression, Alternatives, a blank (_ for one
+   character, __ for one or more, ___ for zero or more), a PatternTest or a named
+   Pattern \[LongDash] or an Except wrapping one of those. *)
 validCSSClassQ[_String] := True;
 validCSSClassQ[_StringExpression] := True;
 validCSSClassQ[_Alternatives] := True;
 validCSSClassQ[Verbatim[Except][_]] := True;
 validCSSClassQ[_Blank] := True;
+validCSSClassQ[_BlankSequence] := True;
+validCSSClassQ[_BlankNullSequence] := True;
 validCSSClassQ[_PatternTest] := True;
 validCSSClassQ[_Pattern] := True;
 validCSSClassQ[_] := False;
@@ -77,6 +82,8 @@ validAttrKeyQ[_] := False;
 (* Valid constraint for XMLPattern *)
 validConstraintQ[Rule[k_, _]] := validAttrKeyQ[k];  (* key -> val *)
 validConstraintQ[_String] := True;                  (* "attr" \[LongDash] existence shorthand *)
+validConstraintQ[_classTest] := True;               (* absence-tolerant class test *)
+validConstraintQ[cs_List] := AllTrue[cs, validConstraintQ];  (* CSSClass may split *)
 validConstraintQ[_] := False;
 
 (* Valid pattern for XMLCases: XMLElement pattern, combinator, Alternatives of
@@ -140,42 +147,65 @@ validTextInputQ[t_] := validTreeQ[t];
 
 (* =========================================================== *)
 (* CSSClass                                                     *)
-(* Produces a rule for use in KeyValuePattern.                  *)
-(* Uses StringMatchQ with a whitespace-bounded string pattern.  *)
-(* Multiple arguments = AND. Use Alternatives for OR.           *)
+(* Produces a constraint for use in XMLPattern.                 *)
+(* Each argument is a string pattern matched against one class  *)
+(* token. Multiple arguments = AND. Alternatives for OR.        *)
 (* =========================================================== *)
 
-(* String pattern that matches cls as a whitespace-delimited token *)
-classPattern[cls_] :=
-  (___ ~~ Whitespace)... ~~ cls ~~ (Whitespace ~~ ___)...;
+(* The class list: the whitespace-separated tokens of the class attribute.
+   StringSplit gives the empty list for "", for whitespace-only values, and (via
+   the "" default in classValue) for a missing attribute \[LongDash] the three ways an
+   element ends up carrying no classes, which must be indistinguishable here. *)
+classList[val_String] := StringSplit[val];
+
+(* An argument holds for an element when some class token matches it. Matching a
+   token rather than the whole attribute value is what lets each argument be an
+   ordinary string pattern: _ is one character, __ one or more, ___ zero or more,
+   all scoped to a single class. Matching the value as a whole would let a
+   composite pattern such as "col-" ~~ __ run past the space into the next
+   token. *)
+classMatchQ[val_String, cls_] :=
+  AnyTrue[classList[val], StringMatchQ[#, cls] &];
 
 (* Single positive constraint *)
 CSSClass[cls_] :=
-  "class" -> _?(StringMatchQ[classPattern[cls]]) /;
+  "class" -> _?(classMatchQ[#, cls] &) /;
     validCSSClassQ[cls] && !MatchQ[cls, _Except];
 
-(* Single negation: CSSClass[Except["x"]] = does not have class x *)
+(* Single negation: CSSClass[Except["x"]] = does not have class x.
+   A negation cannot be a KeyValuePattern rule: KeyValuePattern requires the key
+   to be present before the value pattern is consulted, so an element carrying no
+   class attribute would never reach the test and would fail the negation. An
+   element with no class attribute has the same (empty) class list as one with
+   class="", so we emit a classTest, which XMLPattern applies to the whole
+   attribute list with an absent class read as "". *)
 CSSClass[Verbatim[Except][cls_]] :=
-  "class" -> _?(!StringMatchQ[#, classPattern[cls]] &) /;
+  classTest[!classMatchQ[#, cls] &] /;
     validCSSClassQ[cls];
 
 (* List -> treat as sequence: CSSClass[{"a","b"}] = CSSClass["a","b"] *)
 CSSClass[cls_List] := CSSClass @@ cls;
 
-(* Multiple constraints: AND semantics *)
+(* Multiple constraints: AND semantics. The positive constraints stay a
+   KeyValuePattern rule (presence-requiring: nothing without a class attribute
+   can carry a class); the negations are lifted into a single classTest, keeping
+   them absence-tolerant. Either group may be empty; XMLPattern flattens the
+   resulting list back into its constraint sequence. *)
 CSSClass[constraints__] :=
-  "class" -> _?(Function[val,
-    AllTrue[{constraints}, classConstraint[val, #] &]
-  ]) /; Length[{constraints}] > 1 && AllTrue[{constraints}, validCSSClassQ];
+  With[
+    {positives = DeleteCases[{constraints}, _Except],
+     negations = Cases[{constraints}, Verbatim[Except][cls_] :> cls]},
+    Flatten @ {
+      If[positives === {}, Nothing,
+        "class" -> _?(Function[val, AllTrue[positives, classMatchQ[val, #] &]])],
+      If[negations === {}, Nothing,
+        classTest[Function[val, NoneTrue[negations, classMatchQ[val, #] &]]]]}
+  ] /; Length[{constraints}] > 1 && AllTrue[{constraints}, validCSSClassQ];
 
 (* Bad arguments *)
 CSSClass[cls_] := (Message[CSSClass::badarg, cls]; $Failed) /;
   !validCSSClassQ[cls];
 
-classConstraint[val_String, Verbatim[Except][cls_]] :=
-  !StringMatchQ[val, classPattern[cls]];
-classConstraint[val_String, cls_] :=
-  StringMatchQ[val, classPattern[cls]];
 
 (* =========================================================== *)
 (* XMLPattern                                                   *)
@@ -185,12 +215,30 @@ classConstraint[val_String, cls_] :=
 XMLPattern[tag_] :=
   XMLElement[tag, _, _] /; validTagQ[tag];
 
-(* Convert bare strings to existence rules, pass Rules through *)
+(* Convert bare strings to existence rules, pass Rules and classTests through *)
 normalizeConstraint[key_String] := key -> _;
 normalizeConstraint[r_Rule] := r;
+normalizeConstraint[t_classTest] := t;
+
+(* The class list of an element's attributes: absent class reads as "", the same
+   value a present-but-empty class="" carries \[LongDash] the two are indistinguishable in
+   HTML, so they must be indistinguishable to a class test. *)
+classValue[attrs_] := Lookup[attrs, "class", ""];
+
+(* Attribute pattern for a normalized constraint list. Rules go into
+   KeyValuePattern (presence-requiring, as KeyValuePattern is); classTests are
+   lifted to a PatternTest on the whole attribute list, where absence is a value
+   rather than a missing key. *)
+attrsPattern[cs_List] :=
+  Module[{tests = Cases[cs, _classTest], rules = DeleteCases[cs, _classTest], kvp},
+    kvp = KeyValuePattern[rules];
+    If[tests === {},
+      kvp,
+      PatternTest[kvp,
+        Function[attrs, AllTrue[tests, First[#][classValue[attrs]] &]]]]];
 
 XMLPattern[tag_, constraints__] :=
-  XMLElement[tag, KeyValuePattern[normalizeConstraint /@ Flatten[{constraints}]], _] /;
+  XMLElement[tag, attrsPattern[normalizeConstraint /@ Flatten[{constraints}]], _] /;
     validTagQ[tag] && AllTrue[{constraints}, validConstraintQ];
 
 (* Bad tag *)
