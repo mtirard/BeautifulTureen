@@ -4,69 +4,70 @@ BeautifulSoup-style HTML element selection and text extraction for the Wolfram L
 
 This file is a glossary, not a spec. It defines the language we use to talk about the domain. Implementation lives in the code; decisions live in `docs/adr/`.
 
-## Terms
+**Naming convention** (not a domain term, but load-bearing for reading the glossary): a symbol reading a (near-)canonical property off the tree is named `HTML‹Noun›` — "the ‹noun› of the tree." A symbol performing a directed, lossy, opinionated projection — where there is no canonical answer — is named `‹X›To‹Y›`, signaling "expect loss, do not expect a round-trip."
 
-The two text functions take their names and their split straight from the web platform's two long-standing answers to "what is the text of this HTML?" — `textContent` (a `Node` tree-fold) and `innerText` (an `HTMLElement` rendering projection). We inherit that convention rather than invent our own.
+## Language
 
-**Naming principle.** A symbol's name idiom tracks its semantics, not surface uniformity. A function that _reads a (near-)canonical property off_ the tree is named `HTML‹Noun›` — "the ‹noun› of the tree" (`HTMLTextContent`, `HTMLInnerText`). A function that performs a _directed, lossy, opinionated projection_ — where there is no canonical answer and decisions are being made — is named `‹X›To‹Y›` (`HTMLToNotebook`). The `To` is a deliberate signal: expect choices, expect loss, do not expect a round-trip.
+### Text extraction
 
-### Text content (`HTMLTextContent`)
+**HTMLTextContent**:
+The lossless concatenation of every descendant text node, in document order, with no whitespace inserted or removed. The DOM `textContent` analogue.
+_Avoid_: HTMLText (former name through v1.0.2), text content, raw text
 
-The lossless concatenation of every descendant text node, in document order, with no whitespace inserted or removed. The analogue of the DOM's `textContent`. Faithful but verbose: source indentation, newlines, and `<pre>` whitespace all survive unchanged. The low-level primitive; normalizing transforms sit _above_ it, never inside it. (Shipped as `HTMLText` through v1.0.2; see ADR on the rename.)
+**HTMLInnerText**:
+Text as the structural meaning of the tags implies it should read: whitespace collapsed, block tags on their own line, `<br>` as a newline, preformatted tags verbatim, non-rendered tags dropped. The DOM `innerText` analogue, approximated via the [[Frozen UA stylesheet]] since a non-rendered element has no layout to consult.
+_Avoid_: rendered text, visible text, display text
 
-### Inner text (`HTMLInnerText`)
-
-Text as the **structural meaning of the tags** implies it should read: internal whitespace collapsed, block tags broken onto their own lines, `<br>` → newline, preformatted tags left verbatim, non-rendered tags dropped. The analogue of the DOM's `innerText` — and like `innerText` on a non-rendered element, it has no layout to consult, so it approximates using the [[frozen-ua-stylesheet]]. See **Tags-only**: we judge by tag, never by the CSS cascade, so we reproduce HTML-in-general, not this-page-as-rendered.
+**Block separator**:
+The single global string (default `"\n"`) inserted between Block boundaries when `HTMLInnerText` emits text — the `get_text(separator=…)` analogue. Uniform across all tags; never varies per tag.
+_Avoid_: line separator, join string
 
 ### Display role
 
-The classification that drives readable-text extraction; assigned per element by the [[frozen-ua-stylesheet]] table or a user [[role-rule]]. It is really **two orthogonal axes plus two special atoms**:
+**Display role**:
+The per-element classification that drives readable-text extraction: **Block**, **Inline**, **Preformatted**, **LineBreak**, or **Skip**. Assigned by the [[Frozen UA stylesheet]] table or a [[Role rule]].
+_Avoid_: display type, tag category, render mode
 
-- **Box** (local, _not_ inherited): **Block** sits on its own line; **Inline** flows with its neighbours. Re-decided at every element.
-- **Whitespace** (environmental, _inherited_ down the fold): **Normal** collapses whitespace runs to a single space; **Preserve** keeps text verbatim.
-- **Skip**: prune the element _and its whole subtree_ (`script`, `style`).
-- **LineBreak**: an empty forced single newline (`<br>`) — no box, and never doubled by the [[block-separator]].
+**Box**:
+The axis of a display role distinguishing **Block** (own line) from **Inline** (flows with neighbors). Decided fresh at every element; not inherited.
+_Avoid_: layout axis
 
-The inhabited combinations: **Inline** (Inline+Normal), **Block** (Block+Normal), **Preformatted** (Block+Preserve). Inline+Preserve is representable but has no built-in occupant. Only the Whitespace axis is threaded through the fold; Box, Skip, and LineBreak are decided locally.
+**Whitespace mode**:
+The axis of a display role distinguishing **Normal** (whitespace runs collapse to one space) from **Preserve** (verbatim). Inherited down the tree, unlike [[Box]].
+_Avoid_: whitespace handling
 
-In a [[role-rule]], a role is written as one of **five flat string tokens** — `"Block"`, `"Inline"`, `"Preformatted"`, `"LineBreak"`, `"Skip"`. The orthogonal `{Box, Whitespace}` form was rejected: it only buys the empty Inline+Preserve quadrant, so the flat enum is the practical choice (the option could grow to also accept a pair later, without breaking the flat form).
+**Frozen UA stylesheet**:
+Our fixed tag → rendering table, snapshotting the WHATWG HTML §15 default user-agent stylesheet. Never consults per-page CSS — not classes, `<style>`, external sheets, or inline `style=`. Drives both [[Display role]] and default [[Construct]] assignment; both are [[Tags-only]].
+_Avoid_: default stylesheet, UA CSS
 
-### Block separator
+**Role rule**:
+A user-supplied override (`HTMLInnerText`'s `"Roles"` option) of the form `pattern -> role`, where the pattern is an `XMLPattern` and the role is one of five flat tokens (`"Block"`, `"Inline"`, `"Preformatted"`, `"LineBreak"`, `"Skip"`). Tried in order, first match wins; unmatched elements fall through to the [[Frozen UA stylesheet]].
+_Avoid_: role override, classifier
 
-A single global string (default `"\n"`) inserted between Block boundaries when emitting readable text — the BeautifulSoup `get_text(separator=…)` analogue. `"\n\n"` gives paragraph-style gaps. It is deliberately _uniform_: we do **not** vary it per tag (no "`<p>` gets a blank line but `<li>` doesn't"). That mixed, structure-aware spacing is the job of a separate Markdown transform, not the text extractor. `<br>` ([[display-role]] LineBreak) is always one newline, immune to this option.
+**Tags-only**:
+The standing rule that display roles and constructs are decided from the tag name alone, never from `class` or inline `style=`. Predictable; tags-plus-CSS is not.
+_Avoid_: tag-based, CSS-aware
 
-### Frozen UA stylesheet
+### Selection
 
-Our fixed tag → rendering tables. A deliberate _snapshot_ of the WHATWG HTML §15 "Rendering" default user-agent stylesheet — the spec's own definition of how each tag renders by default. "Frozen" because we never consult per-page CSS: not classes, not `<style>` blocks, not external sheets, not even inline `style=`. A page that overrides a tag's `display` in its own CSS will not move us. The same snapshot drives **two layers**: the `display` property gives each element's [[display-role]] (the structural skeleton); the font rendering (bold/italic/…) gives its default inline [[construct]]. Both are [[tags-only]].
+**Class list**:
+The whitespace-separated tokens of an element's `class` attribute — what a `CSSClass` constraint selects on. A missing `class` attribute, `class=""`, and whitespace-only class all count as the same empty class list.
+_Avoid_: class attribute, classes
 
-### Role rule
+### Notebook conversion
 
-A user-supplied override (the `"Roles"` option of `HTMLInnerText`) of the form `pattern -> role` (or `pattern :> role`). The left-hand side is an `XMLPattern` — the paclet's _own_ selection language, reused — with a bare string sugaring to `XMLPattern[string]` (exact tag match). Combinators (`Child`/`Adjacent`/`Sibling`/`Descendant`) are not accepted, because a role is assigned to each element in isolation, not by its tree position. Rules are tried **in order, first match wins** (the `Replace` convention — deliberately _not_ CSS-style specificity); if none match, the [[frozen-ua-stylesheet]] table decides, and an unknown tag defaults to **Inline** (as in browsers). Because the LHS is a full pattern and the rule may be delayed, `PatternTest`, `Condition`, and a computed RHS subsume any need for a separate "classifier function" override.
+**HTMLToNotebook**:
+A directed, lossy projection of an HTML/XML tree into a `Notebook[…]` expression: each Block [[Display role]] element becomes a `Cell`, each Inline element becomes a box inside the surrounding `TextData`. Markdown, PDF, RTF, and display fall out downstream via `Export`.
+_Avoid_: notebook export, HTML rendering
 
-### Tags-only
+**Construct**:
+What an element becomes in the notebook, chosen after its [[Display role]] places it as block-or-inline. A **block construct** is an open-ended cell-style string (`"Text"`, `"Section"`, `"Item"`, …); an **inline construct** is one of a closed set of box-transform tokens (`"Bold"`, `"Italic"`, `"Underline"`, `"StrikeThrough"`, `"Code"`, `"Hyperlink"`, `"Plain"`).
+_Avoid_: cell style, render form
 
-The standing rule that display roles are decided from the **tag name alone**. Inline `style="display:none"` is technically present in the tree but deliberately _not_ read, because honoring it while being unable to honor the class-based equivalent (`class="hidden"`) would make behavior hinge on an invisible authoring accident. Tags-only is predictable; tags-plus-inline-CSS is not. The escape hatch for users who _do_ know their CSS is an injectable role classifier (see code / ADRs), not a CSS engine.
+**Leaf-collapsing construct**:
+A construct (`<blockquote>`, `<pre>`, `<table>`) that collapses its whole subtree into a single cell's content rather than recursing into separate child cells. Contrasts with the default recurse-and-flatten behavior of most Block constructs.
+_Avoid_: table construct (too narrow — also covers blockquote/pre)
 
-### Class list
-
-What a `CSSClass` constraint selects on: the whitespace-separated **tokens** of an element's `class` attribute. Three different-looking elements have the same **empty** class list — no `class` attribute, `class=""`, and whitespace only — because they state the same fact in HTML, so no class constraint may distinguish them.
-
-Each `CSSClass` argument is an **ordinary string pattern matched against one token**, never against the whole attribute value: `_` is one character, `__` one or more, `___` zero or more, and `"col-" ~~ __` is a class beginning with `col-` and cannot run past the space into the next class. Nothing is reinterpreted; the token is simply the unit of matching (ADR 0005).
-
-The empty class list is why a negation is absence-tolerant: `CSSClass[Except["ad"]]` matches an element carrying no class, exactly as CSS `:not(.ad)` does, and `CSSClass[Except[___]]` reads as "carries no classes" — the mirror of `CSSClass[___]`, "carries at least one class" (ADR 0004). Presence of the _attribute_ is a different question, asked with the bare-attribute shorthand `XMLPattern["p", "class"]`, which `class=""` satisfies. A raw attribute rule (`"href" -> Except["#"]`) keeps plain `KeyValuePattern` semantics and does require the key — it is the user's own pattern, not our abstraction.
-
-### Notebook conversion (`HTMLToNotebook`)
-
-A directed, lossy projection of an HTML/XML tree into a Wolfram `Notebook[…]` expression: each [[display-role]] Block element becomes a `Cell`, each Inline element becomes a box inside the surrounding cell's `TextData`. Markdown, PDF, RTF, and display then fall out via `Export` — we never emit those formats ourselves. Named with the `‹X›To‹Y›` idiom rather than `HTML‹Noun›` precisely because it makes projection choices (lossy, no canonical answer) — see the naming principle at the top.
-
-### Construct
-
-What an element _becomes_ in the notebook, chosen **after** its [[display-role]] has placed it — the role decides block-vs-inline, the construct supplies the form. Two kinds, gated by the role: a **block construct** is a Wolfram cell-style string used directly (`"Text"`, `"Section"`, `"Item"`, … — an open set `Export` already understands, so we adopt WL's names rather than invent our own); an **inline construct** is one of a **closed** token set — `"Bold"`, `"Italic"`, `"Underline"`, `"StrikeThrough"`, `"Code"`, `"Hyperlink"`, `"Plain"` — each naming a box transform whose WL form (e.g. `FrameBox[StyleBox[…, "Code"]]` for `"Code"`) is hidden. Block is open/native; inline is closed/named, because inline boxes have no clean string analogue. `"Plain"` means _unwrap_: splice the children's boxes in with no wrapper.
-
-Most Block elements **recurse-and-flatten**: their block children become their own cells, nesting surviving only through style-name depth (`Item`/`Subitem`/…), since a `Notebook` is a flat cell sequence. The exceptions are **leaf-collapsing** constructs — `<blockquote>`, `<pre>`, and `<table>` — which do _not_ recurse into separate cells but collapse their whole subtree into one cell's content (a framed inline render, verbatim code text, or a tabular data structure respectively). Nested _quotes_ still survive (the quote renderer prefixes each line, so depth composes via `>`); nested non-quote blocks inside them flatten to lines.
-
-### Construct rule
-
-A user override of the default [[construct]] map, the Layer-2 analogue of a [[role-rule]]: `pattern -> construct` (or `pattern :> construct`), bare-string LHS sugaring to `XMLPattern[string]`, tried in order, first match wins. The delayed form lets the construct be computed from the matched element (read an attribute, count children). The [[display-role]] still decides block-vs-inline placement; a construct rule only supplies the form and yields to the role on conflict. Two override layers therefore coexist on the conversion: `"Roles"` shapes the skeleton, the construct map shapes the form.
-
-The RHS [[construct]] takes one of **three forms**: a block cell-style string, an inline token, or a **constructor function** `element ↦ Cell/boxes` — the universal escape hatch for anything bespoke. There are therefore **no per-feature options** (no table-style knob, no image knob): the general construct rule with a function RHS subsumes them, exactly as the [[role-rule]]'s full-pattern + delayed RHS subsumes a separate classifier override. A few built-in defaults are themselves function-valued rules — notably `<table>`, which builds a `Dataset` when a `<thead>`/`<th>` row gives unique column labels (idiomatic header) and a `Grid` otherwise (positional, no silent column loss). `Dataset`/`Grid` over `Tabular` because the paclet floor is WL 12+ and `Tabular` is 14.1+.
+**Construct rule**:
+A user override of the default [[Construct]] map — the Layer-2 analogue of a [[Role rule]] — of the form `pattern -> construct`, tried in order, first match wins. The RHS is a block cell-style string, an inline token, or a constructor function; the [[Display role]] still decides block-vs-inline and wins on conflict.
+_Avoid_: construct override
