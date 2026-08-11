@@ -1,4 +1,12 @@
+---
+status: superseded by ADR-0006
+---
+
 # A `CSSClass` argument is a string pattern matched against **one class token**
+
+> **Superseded by [ADR 0006](./0006-three-levels-token-predicate-quantifier-conjunction.md).** Per-token matching survives as a _mechanism_, but the surface is gone: `CSSClass` is replaced by `ClassTest`, the implicit ∃ this ADR legislates becomes an explicit quantifier, and `Except` at the top level is removed as a category error.
+>
+> **Correction, and it is stronger than this ADR's own closing note.** The closing note calls the `CSSClass[Except[…]]` level jump an _unstated exception_. In fact **`Except["ad"]` is not a legal string pattern at all** — `Except`'s first argument must be single-character-width, so `StringMatchQ["x", Except["ad"]]` issues `StringExpression::invld` and comes back unevaluated. `Except["a"]` _is_ legal and means "any single character other than `a`". So the construct's very legality depended on the **length of the user's class name**, and both spellings were accepted only because `CSSClass` unwrapped `Except` before any string pattern saw it (`Kernel/BeautifulTureen.wl:182`). That is the concrete evidence the level muddle was real rather than cosmetic.
 
 Each argument to `CSSClass` is matched with `StringMatchQ` against the individual tokens of the element's class list (`StringSplit` of the `class` attribute), and the constraint holds when **some** token matches. No argument is reinterpreted: `_` is one character, `__` one or more, `___` zero or more, exactly as `StringsAndCharacters` documents, all scoped to a single class.
 
