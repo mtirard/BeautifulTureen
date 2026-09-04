@@ -34,9 +34,9 @@ This file is a glossary, not a spec. It defines the language we use to talk abou
 
 **Attribute set**: The collection of an element's attributes, each a `key -> value` pair. A **structural** collection: it is present in the tree as itself, and `AttributeTest` quantifies over it. _Avoid_: attribute list, attributes, attribute map
 
-**Token list**: The collection obtained by splitting a single attribute's value on a [[Delimiter]]. A **derived** collection: it exists only because we read a string that way, and `TokenTest` quantifies over it. _Avoid_: token set, split value, word list
+**Token list**: The collection obtained by splitting a single attribute's value on a [[Delimiter]]. A **derived** collection: it exists only because we read a string that way, and `TokenTest` quantifies over it. Derived does not mean unreachable — a token list can be _obtained_ as a value, not only quantified over. _Avoid_: token set, split value, word list
 
-**Class list**: The [[Token list]] of an element's `class` attribute — the [[Reading]] that `ClassTest` names. `class=""` and a whitespace-only `class` both give the empty class list; an element with no `class` attribute has no class list at all, which is a different fact. _Avoid_: class attribute, classes
+**Class list**: The [[Token list]] of an element's `class` attribute — the [[Reading]] that `ClassTest` and `HTMLClassList` share. `class=""` and a whitespace-only `class` both give the empty class list; an element with no `class` attribute has no class list at all, which is a different fact, and both testing and extraction observe it. _Avoid_: class attribute, classes
 
 **Token predicate**: A `String -> Bool` test applied to one token of a [[Token list]]. A bare string pattern in a token position is sugar for one. _Avoid_: class matcher, token test (that names the construct, not the predicate inside it)
 
@@ -44,9 +44,9 @@ This file is a glossary, not a spec. It defines the language we use to talk abou
 
 **Microsyntax**: A convention for splitting an attribute value into a [[Token list]] — space-separated or comma-separated. **Key-independent**: `class`, `rel`, `headers`, `ping` and `itemprop` all share the space-separated one. _Avoid_: format, syntax, separator convention
 
-**Reading**: A [[Microsyntax]] together with a fixed attribute key. `ClassTest` is the only reading that ships, which is why `"rel" -> ClassTest[q]` does not type-check. _Avoid_: shorthand, alias, named microsyntax (a reading fixes the key too)
+**Reading**: A [[Microsyntax]] together with a fixed attribute key. The class reading is the only one that ships, which is why `"rel" -> ClassTest[q]` does not type-check. A reading comes in two forms — **testing** it (`ClassTest`) and **extracting** it (`HTMLClassList`) — and because the key and microsyntax are fixed, neither takes options. _Avoid_: shorthand, alias, named microsyntax (a reading fixes the key too)
 
-**Delimiter**: The string pattern a [[Token list]] is split on. Distinct from the [[Microsyntax]] that selects it, which also fixes whether tokens are trimmed. _Avoid_: separator (that is the [[Block separator]], a different thing entirely)
+**Delimiter**: The string pattern a [[Token list]] is split on. Distinct from the [[Microsyntax]] that selects it, which also fixes whether tokens are trimmed. The space-separated one is named `HTMLWhitespace`, and it is a **run** of one or more HTML ASCII whitespace characters — mirroring WL's `Whitespace`, not `WhitespaceCharacter`, so that splitting on it never yields a phantom empty token. It is narrower than WL's Unicode default, which splits on no-break space and six other characters HTML does not. _Avoid_: separator (that is the [[Block separator]], a different thing entirely)
 
 **Lift**: Wrapping a string pattern so it can match in a slot that matches **expressions** rather than strings — the tag, an attribute key, an attribute value. Spelled `Matching`, and necessary because a bare string pattern silently fails to match an expression. _Avoid_: wrapper, coercion, cast
 

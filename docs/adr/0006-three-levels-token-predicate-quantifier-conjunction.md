@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted (amended by ADR-0010)
 ---
 
 # `XMLPattern` matching has three levels: token predicate, quantifier, conjunction
@@ -7,6 +7,8 @@ status: accepted
 An `XMLPattern` attribute constraint operates at three distinct levels, and until now only one of them was named. A **token predicate** tests one token (`"lead"`, `"col-" ~~ __`); a **quantifier** lifts a predicate to a whole collection (∃ / ∀ / ¬∃); a **conjunction** combines constraints on one element. Each level gets its own vocabulary and its own syntax, and no construct is allowed to stand in for a level it does not belong to.
 
 Supersedes ADR 0004 and ADR 0005, both outright.
+
+> **Amended by [ADR 0010](./0010-bindings-reach-through-classtest.md).** This ADR states that `ClassTest[…]` **evaluates** to a `Rule`. It no longer does: `ClassTest`, `TokenTest` and `AttributeTest` are inert, expanded by the `XMLPattern` compiler, so that `cls : ClassTest[q]` can be recognised and bound. Every holding below survives — including the rejection of element-level `Not`, whose argument shifts from "it is a `Rule`" to "it is not a Boolean" and whose conclusion is unchanged.
 
 ## Context
 
