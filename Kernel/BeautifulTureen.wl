@@ -486,9 +486,6 @@ conditionOn[p_, c_] := Condition @@ Join[Hold[p], Extract[c, {2}, Hold]];
 tupleRule[r : Verbatim[RuleDelayed][lhs_, _]] :=
   RuleDelayed @@ Join[Hold @@ {tuplePattern[lhs]}, Extract[r, {2}, Hold]];
 
-lhsOf[Verbatim[RuleDelayed][lhs_, _]] := lhs;
-lhsOf[q_] := q;
-
 (* Extract reads {} as no positions, not as the whole tree. *)
 at[{}] := $chainTree;
 at[p_] := Extract[$chainTree, p];
@@ -499,8 +496,11 @@ elementIndices[l_List] := Flatten @ Position[l, _XMLElement, {1}, Heads -> False
    document order. *)
 selected[Descendant, p_, s_] := Join[p, #] & /@ Position[at[p], s, Infinity, Heads -> False];
 selected[Child, p_, s_] := Join[p, {3}, #] & /@ Position[at[p][[3]], s, {1}, Heads -> False];
-selected[Adjacent, p_, s_] := Select[nextSibling[p], MatchQ[at[#], s] &];
-selected[Sibling, p_, s_] := Select[laterSiblings[p], MatchQ[at[#], s] &];
+selected[Sibling, p_, s_] := selectedAt[laterSiblings[p], s];
+
+(* The sites at positions ps that stage s selects, with one Extract. *)
+selectedAt[ps_, s_] := Pick[ps, selects[ps, s]];
+selects[ps_, s_] := MatchQ[s] /@ atAll[ps];
 
 (* Siblings are children of one element. For the children list at position
    kids: its element indices, and each index's next element index (0 for none),
@@ -519,16 +519,23 @@ laterSiblings[p_] :=
   Replace[siblingsAt[Most[p]],
     {{is_, _} :> (Append[Most[p], #] & /@ Select[is, # > Last[p] &]), _ -> {}}];
 
-nextSibling[{}] := {};
-nextSibling[p_] :=
-  If[siblingsAt[Most[p]] === {}, {},
-    Replace[$siblings[Most[p]][[2, Last[p]]], {0 -> {}, i_ :> {Append[Most[p], i]}}]];
+(* Adjacent extends the tuples ending in one list of siblings together. *)
+nextSiblings[tuples_, s_] :=
+  With[{kids = Most[Last[First[tuples]]]},
+    Replace[siblingsAt[kids],
+      {{_, next_} :> pairedNext[tuples, kids, next[[Last /@ Last /@ tuples]], s], _ -> {}}]];
+
+pairedNext[tuples_, kids_, is_, s_] :=
+  With[{sites = Append[kids, #] & /@ DeleteCases[is, 0]},
+    Pick[MapThread[Append, {Pick[tuples, Unitize[is], 1], sites}], selects[sites, s]]];
 
 (* A stage followed by Sibling starts from its first match among each set of
    siblings. *)
 fromFirstSibling[Sibling, tuples_] := DeleteDuplicatesBy[tuples, {Most[#], Most[Last[#]]} &];
 fromFirstSibling[_, tuples_] := tuples;
 
+extend[tuples_, {Adjacent, s_}] :=
+  Join @@ (nextSiblings[#, s] & /@ GatherBy[DeleteCases[tuples, {___, {}}], Most @* Last]);
 extend[tuples_, {r_, s_}] :=
   Join @@ (Function[t, Append[t, #] & /@ selected[r, Last[t], s]] /@ fromFirstSibling[r, tuples]);
 
@@ -549,32 +556,47 @@ inCasesOrder[tuples_] :=
       PadRight[lasts, {Length[lasts], Max[Length /@ lasts] + 1}, Max[lasts, 0] + 1],
       List /@ Range[Length[lasts]], 2]]]];
 
-(* The element tuples of the query's chain, matched below the tree. *)
-elementTuples[tree_, q_] :=
-  Block[{$chainTree = tree}, elementsAt @ siteTuples[chainOf[lhsOf[q]], Infinity]];
+(* The elements at a list of positions, with one Extract. *)
+atAll[ps_] := Extract[$chainTree, ps];
 
-(* One Extract for every site of every tuple; the tuples have one length. *)
+(* The element tuples of site tuples, which have one length. *)
 elementsAt[{}] := {};
-elementsAt[tuples_] := Partition[Extract[$chainTree, Join @@ tuples], Length[First[tuples]]];
+elementsAt[tuples_] := Partition[atAll[Join @@ tuples], Length[First[tuples]]];
+
+(* The site tuples whose elements match the tuple pattern. The stages' own
+   matches, which selected the sites, decide it unless a Condition wraps a
+   combinator or a name is bound at two stages. *)
+matchedSites[q_, level_] :=
+  With[{sites = siteTuples[chainOf[q], level]},
+    If[stagesDecideQ[q], sites, Pick[sites, MatchQ[tuplePattern[q]] /@ elementsAt[sites]]]];
+
+stagesDecideQ[q_] :=
+  With[{stages = chainOf[q][[1 ;; ;; 2]]},
+    tuplePattern[q] === stages && DuplicateFreeQ[Join @@ (namesIn /@ stages)]];
+
+namesIn[s_] :=
+  DeleteDuplicates @ Cases[s, Verbatim[Pattern][n_Symbol, _] :> Hold[n], {0, Infinity}, Heads -> True];
 
 (* The plain form picks the last element of a matching tuple rather than binding
    the tuple: a rule's right-hand side re-evaluates what it is given, and a
    tuple may hold a large element. *)
-chainCases[tree_, r_RuleDelayed] := Cases[elementTuples[tree, r], tupleRule[r], {1}];
-chainCases[tree_, q_] := Last /@ Select[elementTuples[tree, q], MatchQ[tuplePattern[q]]];
+chainCases[tree_, r : Verbatim[RuleDelayed][lhs_, _]] :=
+  Block[{$chainTree = tree}, Cases[elementsAt @ siteTuples[chainOf[lhs], Infinity], tupleRule[r], {1}]];
+chainCases[tree_, q_] :=
+  Block[{$chainTree = tree}, atAll[Last /@ matchedSites[q, Infinity]]];
 
-chainFirst[tree_, r_RuleDelayed, default_] :=
-  FirstCase[elementTuples[tree, r], tupleRule[r], default, {1}];
+chainFirst[tree_, r : Verbatim[RuleDelayed][lhs_, _], default_] :=
+  Block[{$chainTree = tree},
+    FirstCase[elementsAt @ siteTuples[chainOf[lhs], Infinity], tupleRule[r], default, {1}]];
 chainFirst[tree_, q_, default_] :=
-  Last @ SelectFirst[elementTuples[tree, q], MatchQ[tuplePattern[q]], {default}];
+  Block[{$chainTree = tree},
+    Replace[matchedSites[q, Infinity], {{t_, ___} :> at[Last[t]], {} -> default}]];
 
 (* A chain deletes the elements its last stage selects. Its first stage may be
    the root; Delete removes positions nested in one another together. *)
 chainDelete[tree_, q_] :=
   Block[{$chainTree = tree},
-    With[{sites = siteTuples[chainOf[q], {0, Infinity}]},
-      deleteAt[tree, DeleteDuplicates @
-        Pick[Last /@ sites, MatchQ[tuplePattern[q]] /@ elementsAt[sites]]]]];
+    deleteAt[tree, DeleteDuplicates[Last /@ matchedSites[q, {0, Infinity}]]]];
 
 deleteAt[tree_, {}] := tree;
 deleteAt[tree_, ps_] := Delete[tree, ps];
