@@ -34,12 +34,15 @@ XMLPattern::strpat = "`1` is a string pattern, and a string pattern is never mat
 XMLCases::badtree = "First argument should be an XMLObject, XMLElement, or list thereof. Got head `1`.";
 XMLCases::badpat = "Second argument should be an XMLPattern, Alternatives of XMLPatterns, or combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
 XMLCases::condcombinator = "A condition (/;) may wrap an XMLPattern or an Alternatives of them, but not a combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
+XMLCases::stagename = "The name `1` is bound at two stages of a combinator. A name for an element or its attribute map belongs to one stage: give each stage its own name.";
 XMLFirstCase::badtree = "First argument should be an XMLObject, XMLElement, or list thereof. Got head `1`.";
 XMLFirstCase::badpat = "Second argument should be an XMLPattern, Alternatives of XMLPatterns, or combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
 XMLFirstCase::condcombinator = "A condition (/;) may wrap an XMLPattern or an Alternatives of them, but not a combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
+XMLFirstCase::stagename = "The name `1` is bound at two stages of a combinator. A name for an element or its attribute map belongs to one stage: give each stage its own name.";
 XMLDeleteCases::badtree = "First argument should be an XMLObject, XMLElement, or list thereof. Got head `1`.";
 XMLDeleteCases::badpat = "Second argument should be an XMLPattern, Alternatives of XMLPatterns, or Child/Descendant combinator. Got `1`.";
 XMLDeleteCases::condcombinator = "A condition (/;) may wrap an XMLPattern or an Alternatives of them, but not a combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
+XMLDeleteCases::stagename = "The name `1` is bound at two stages of a combinator. A name for an element or its attribute map belongs to one stage: give each stage its own name.";
 XMLDeleteCases::unsupported = "Adjacent and Sibling combinators are not supported by XMLDeleteCases. Use XMLCases for filtering semantics instead.";
 XMLMatchQ::badpat = "Pattern should be an XMLPattern, an Alternatives of them, or a conditioned pattern pat /; test. Got `1`.";
 XMLMatchQ::condcombinator = "A condition (/;) may wrap an XMLPattern or an Alternatives of them, but not a combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
@@ -294,7 +297,7 @@ compileQuery[q_, head_, readings_Association] :=
     $refusal];
 
 compilePass[q_, head_, readings_, mat_] :=
-  Block[{$head = head, $readings = readings, $mat = mat, $fresh = <||>},
+  Block[{$head = head, $readings = readings, $mat = mat, $fresh = <||>, $outerBinds = {}},
     MapAt[Union @@ # &, Reap[First @ Reap[cQuery[q], $bindTag], $listKeyTag], 2]];
 
 (* Held, since a MessageName evaluates to its text. *)
@@ -315,9 +318,27 @@ cQuery[r_RuleDelayed] :=
     With[{l = lhs}, RuleDelayed @@ Join[Hold[l], wrapBinds[binds, Extract[r, {2}, Hold]]]]];
 cQuery[q_] := cStage[q];
 
-(* A combinator's stages are element patterns or combinators. *)
-cStage[(h : Child | Descendant | Adjacent | Sibling)[a_, b_]] := h[cStage[a], cStage[b]];
+(* A combinator's stages are element patterns or combinators. Every consumer
+   puts a later stage in the scope of the earlier stages' names, so a later
+   stage's test is wrapped in the earlier stages' bindings as well as its own. *)
+cStage[(h : Child | Descendant | Adjacent | Sibling)[a_, b_]] :=
+  Module[{ca, cb, binds, elemA, elemB},
+    {{ca, binds}, elemA} = reapNames[reapBinds[cStage[a]]];
+    Scan[Sow[#, $bindTag] &, binds];
+    {cb, elemB} = reapNames[Block[{$outerBinds = Join[$outerBinds, binds]}, cStage[b]]];
+    oneStageNames[{a, elemA}, {b, elemB}];
+    Scan[Sow[#, $nameTag] &, Join[elemA, elemB]];
+    h[ca, cb]];
 cStage[q_] := cElem[q];
+
+(* A later stage runs in the scope of an earlier stage's names, where an element
+   name is the element, no longer a name to bind: an element or attribute-map
+   name at one stage may not be bound at another. *)
+oneStageNames[{a_, elemA_}, {b_, elemB_}] :=
+  Replace[Join[Intersection[elemA, patternNames[b]], Intersection[patternNames[a], elemB]],
+    {Hold[s_], ___} :> refuseAtHead["stagename", HoldForm[s]]];
+
+patternNames[x_] := Cases[x, Verbatim[Pattern][s_Symbol, _] :> Hold[s], {0, Infinity}, Heads -> True];
 
 (* ---- Element patterns ---- *)
 
@@ -331,7 +352,9 @@ cElem[c_Condition] :=
       refuseAtHead["condcombinator", Short[c[[1]]]]];
     {lhs, binds} = reapBinds[cElem[c[[1]]]];
     Scan[Sow[#, $bindTag] &, binds];
-    With[{l = lhs}, Condition @@ Join[Hold[l], wrapBinds[binds, Extract[c, {2}, Hold]]]]];
+    With[{l = lhs},
+      Condition @@ Join[Hold[l],
+        wrapBinds[DeleteDuplicates @ Join[$outerBinds, binds], Extract[c, {2}, Hold]]]]];
 (* A plain XMLElement pattern is already what the consumers run. *)
 cElem[x_XMLElement] := x;
 cElem[q_] := badpat[q];
@@ -399,13 +422,14 @@ noDuplicateKeys[rules_] :=
 (* The same name gets the same fresh symbol throughout a query, so that
    (e : XMLPattern["a"]) | (e : XMLPattern["b"]) still binds one name. *)
 SetAttributes[bindAs, HoldFirst];
-bindAs[s_, p_, inverse_] :=
+bindAs[s_, p_, inverse_] := (
+  Sow[Hold[s], $nameTag];
   If[!$mat,
     namedPattern[s, p],
     With[{fresh = If[KeyExistsQ[$fresh, Hold[s]], $fresh[Hold[s]],
         $fresh[Hold[s]] = freshSymbol[]]},
       Sow[{Hold[s], fresh, inverse}, $bindTag];
-      namedPattern[fresh, p]]];
+      namedPattern[fresh, p]]]);
 
 (* A temporary private symbol, so nothing is left in the caller's context. *)
 freshSymbol[] := Module[{bound}, bound];
@@ -418,6 +442,11 @@ namedPattern[s_, p_] := Pattern @@ Hold[s, p];
 SetAttributes[reapBinds, HoldFirst];
 reapBinds[expr_] :=
   MapAt[DeleteDuplicates[Join @@ #] &, Reap[expr, $bindTag], 2];
+
+(* The element and attribute-map names bound in expr, which bindAs sows. *)
+SetAttributes[reapNames, HoldFirst];
+reapNames[expr_] :=
+  MapAt[DeleteDuplicates[Join @@ #] &, Reap[expr, $nameTag], 2];
 
 (* Hold[body] -> Hold[With[{e = strip[e$], ...}, body]] *)
 wrapBinds[{}, held_Hold] := held;
@@ -454,6 +483,13 @@ runCompiled[run_, tree_, {pattern_, readings_}, rest___] :=
 nestedQ[(Child | Descendant | Adjacent | Sibling)[a_, b_]] := combinatorQ[a] || combinatorQ[b];
 nestedQ[Verbatim[RuleDelayed][lhs_, _]] := nestedQ[lhs];
 nestedQ[_] := False;
+
+(* An unnested combinator matches a later stage apart from the earlier ones, so
+   a later stage's test could not see their names; it runs as a chain too. *)
+chainQ[q_] := nestedQ[q] || laterTestQ[q];
+laterTestQ[(Child | Descendant | Adjacent | Sibling)[a_, b_]] := laterTestQ[a] || !FreeQ[b, _Condition];
+laterTestQ[Verbatim[RuleDelayed][lhs_, _]] := laterTestQ[lhs];
+laterTestQ[_] := False;
 
 chainOf[(h : Child | Descendant | Adjacent | Sibling)[a_, b_]] := Join[chainOf[a], {h}, chainOf[b]];
 chainOf[s_] := {s};
@@ -533,7 +569,7 @@ XMLCases[tree_, q_, opts : OptionsPattern[]] :=
     Which[
       c === $Failed, $Failed,
       !validTreeQ[tree], Message[XMLCases::badtree, Head[tree]]; $Failed,
-      True, runCompiled[If[nestedQ[First[c]], chainCases, casesC], tree, c]]];
+      True, runCompiled[If[chainQ[First[c]], chainCases, casesC], tree, c]]];
 
 (* Base: a pattern, a Condition, or a rule over either \[LongDash] just Cases *)
 casesC[tree_, pat_] := Cases[tree, pat, Infinity];
@@ -650,7 +686,7 @@ XMLFirstCase[tree_, q_, default : Except[_?(optionRuleQ[XMLFirstCase])] : Missin
     Which[
       c === $Failed, $Failed,
       !validTreeQ[tree], Message[XMLFirstCase::badtree, Head[tree]]; $Failed,
-      True, runCompiled[If[nestedQ[First[c]], chainFirst, firstC], tree, c, default]]];
+      True, runCompiled[If[chainQ[First[c]], chainFirst, firstC], tree, c, default]]];
 
 (* Base: FirstCase short-circuits natively *)
 firstC[tree_, pat_, default_] := FirstCase[tree, pat, default, Infinity];
@@ -808,7 +844,7 @@ XMLDeleteCases[tree_, q_, opts : OptionsPattern[]] :=
       c === $Failed, $Failed,
       !validTreeQ[tree], Message[XMLDeleteCases::badtree, Head[tree]]; $Failed,
       siblingRelationQ[q], Message[XMLDeleteCases::unsupported]; $Failed,
-      True, runCompiled[If[nestedQ[First[c]], chainDelete, deleteC], tree, c]]];
+      True, runCompiled[If[chainQ[First[c]], chainDelete, deleteC], tree, c]]];
 
 (* A chain deletes the elements its last stage selects. Its first stage may be
    the root, which the unnested combinators' walk also visits; Delete removes
