@@ -277,72 +277,67 @@ TestCreate[
   TestID -> "nested-firstcase"
 ];
 
-(* === A later stage's test sees an earlier stage's names === *)
+(* === A stage's test sees only its own stage's names === *)
 
+(* As in WL, where MatchQ[{1, 2}, {a_, b_ /; Head[a] === Symbol}] is True, a
+   Condition sees only the names bound inside the pattern it wraps: in a later
+   stage's test, an earlier stage's name is the plain symbol. *)
 $treeCard = ImportString[
   "<article><div class=\"card\" id=\"k\"><p class=\"lead\">1</p><p class=\"ad\">2</p></div></article>",
   {"HTML", "XMLObject"}];
 
-(* An earlier stage's element binding is the original element in a later stage's
-   test, even when a stage names a list key. *)
-TestCreate[
-  XMLCases[$treeCard,
-    Descendant[d : XMLPattern["div", "classList" -> "card"], p : XMLPattern["p"] /; d[[2]] === {"class" -> "card", "id" -> "k"}] :>
-      HTMLTextContent[p]],
-  {"1", "2"},
-  TestID -> "later-stage-test-sees-earlier-element"
-];
-
-(* Sibling relations and the plain form see earlier names too. *)
 TestCreate[
   {XMLCases[$treeCard,
-     Adjacent[a : XMLPattern["p", "classList" -> "lead"], b : XMLPattern["p"] /; a[[2]] === {"class" -> "lead"}] :>
+     Descendant[d : XMLPattern["div", "classList" -> "card"], p : XMLPattern["p"] /; Head[d] === Symbol] :>
+       HTMLTextContent[p]],
+   XMLCases[$treeCard,
+     Adjacent[a : XMLPattern["p", "classList" -> "lead"], b : XMLPattern["p"] /; Head[a] === Symbol] :>
        HTMLTextContent[b]],
    HTMLTextContent /@ XMLCases[$treeCard,
-     Sibling[a : XMLPattern["p", "classList" -> "lead"], XMLPattern["p"] /; a[[2]] === {"class" -> "lead"}]],
+     Sibling[a : XMLPattern["p"], XMLPattern["p"] /; Head[a] === Symbol]],
    HTMLTextContent /@ XMLCases[$treeCard,
-     Child[d : XMLPattern["div", "classList" -> "card"], XMLPattern["p"] /; d[[2]] === {"class" -> "card", "id" -> "k"}]]},
-  {{"2"}, {"2"}, {"1", "2"}},
-  TestID -> "later-stage-test-sees-earlier-element-every-combinator"
+     Child[d : XMLPattern["div"], XMLPattern["p"] /; Head[d] === Symbol]]},
+  {{"1", "2"}, {"2"}, {"2"}, {"1", "2"}},
+  TestID -> "stage-test-sees-not-earlier-element"
 ];
 
-(* A name on an earlier stage's attribute argument is the original map, and a
-   value binding is the value, in a later stage's test. *)
+(* Nor an earlier stage's attribute map or value; its own names it sees, an
+   element or attribute map as the original even when a stage names a list key. *)
 TestCreate[
   {XMLCases[$treeCard,
-     Child[XMLPattern["div", as : {"classList" -> "card"}], p : XMLPattern["p"] /; as === {"class" -> "card", "id" -> "k"}] :>
+     Child[XMLPattern["div", as : {"classList" -> "card"}], p : XMLPattern["p"] /; Head[as] === Symbol] :>
        HTMLTextContent[p]],
    HTMLTextContent /@ XMLCases[$treeCard,
-     Descendant[XMLPattern["div", {"classList" -> "card", "id" -> i_}], XMLPattern["p"] /; i === "k"]]},
-  {{"1", "2"}, {"1", "2"}},
-  TestID -> "later-stage-test-sees-earlier-attrs-and-values"
+     Descendant[XMLPattern["div", {"classList" -> "card", "id" -> i_}], XMLPattern["p"] /; Head[i] === Symbol]],
+   HTMLTextContent /@ XMLCases[$treeCard,
+     Child[XMLPattern["div"], p : XMLPattern["p", as : {"classList" -> _}] /; {p[[2]], as} === {{"class" -> "ad"}, {"class" -> "ad"}}]]},
+  {{"1", "2"}, {"1", "2"}, {"2"}},
+  TestID -> "stage-test-sees-not-earlier-attrs-and-values"
 ];
 
-(* In a chain, a later stage's test sees every earlier stage, plain and rule forms. *)
 TestCreate[
   {XMLCases[$treeCard,
      Descendant[a : XMLPattern["article"],
-       Child[d : XMLPattern["div", "classList" -> "card"], p : XMLPattern["p", "classList" -> "ad"] /; {a[[1]], d[[2]]} === {"article", {"class" -> "card", "id" -> "k"}}]] :>
+       Child[d : XMLPattern["div", "classList" -> "card"], p : XMLPattern["p", "classList" -> "ad"] /; Head[a] === Head[d] === Symbol]] :>
        HTMLTextContent[p]],
    HTMLTextContent /@ XMLCases[$treeCard,
-     Child[Descendant[XMLPattern["article"], d : XMLPattern["div", "classList" -> "card"]], XMLPattern["p"] /; d[[2, 1]] === ("class" -> "card")]]},
+     Child[Descendant[XMLPattern["article"], d : XMLPattern["div", "classList" -> "card"]], XMLPattern["p"] /; Head[d] === Symbol]]},
   {{"2"}, {"1", "2"}},
-  TestID -> "chain-later-stage-test-sees-earlier-stages"
+  TestID -> "chain-stage-test-sees-not-earlier-stages"
 ];
 
 TestCreate[
   {XMLFirstCase[$treeCard,
-     Sibling[a : XMLPattern["p", "classList" -> "lead"], p : XMLPattern["p"] /; a[[2]] === {"class" -> "lead"}] :> HTMLTextContent[p]],
+     Sibling[a : XMLPattern["p", "classList" -> "lead"], p : XMLPattern["p"] /; Head[a] === Symbol] :> HTMLTextContent[p]],
    XMLFirstCase[$treeCard,
-     Descendant[d : XMLPattern["div", "classList" -> "card"], XMLPattern["p"] /; d[[2]] === {"class" -> "card", "id" -> "k"}]],
-   XMLDeleteCases[$treeCard,
-     Child[d : XMLPattern["div", "classList" -> "card"], XMLPattern["p"] /; d[[2]] === {"class" -> "card", "id" -> "k"}]][[2, 3, 1]],
-   XMLDeleteCases[$treeCard,
-     Descendant[d : XMLPattern["div", "classList" -> "card"], XMLPattern["p", "classList" -> "ad"] /; d[[1]] === "div"]][[2, 3, 1]]},
+     Descendant[d : XMLPattern["div", "classList" -> "card"], XMLPattern["p"] /; Head[d] === Symbol]],
+   XMLFirstCase[
+     XMLDeleteCases[$treeCard,
+       Child[d : XMLPattern["div", "classList" -> "card"], XMLPattern["p", "classList" -> "ad"] /; Head[d] === Symbol]],
+     XMLPattern["div"]]},
   {"2", XMLElement["p", {"class" -> "lead"}, {"1"}],
-   XMLElement["div", {"class" -> "card", "id" -> "k"}, {}],
    XMLElement["div", {"class" -> "card", "id" -> "k"}, {XMLElement["p", {"class" -> "lead"}, {"1"}]}]},
-  TestID -> "firstcase-and-deletecases-later-stage-test-sees-earlier-element"
+  TestID -> "firstcase-and-deletecases-stage-test-sees-not-earlier-element"
 ];
 
 (* A name for an element or its attribute map is bound at one stage: the same
