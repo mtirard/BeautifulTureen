@@ -5,19 +5,19 @@
 (* === Child combinator === *)
 
 TestCreate[
-  HTMLTextContent /@ XMLCases[$tree, Child[XMLPattern["div", CSSClass["main"]], XMLPattern["p"]]],
+  HTMLTextContent /@ XMLCases[$tree, Child[XMLPattern["div", "classList" -> "main"], XMLPattern["p"]]],
   {"Hello", "World"},
   TestID -> "child-basic"
 ];
 
 TestCreate[
-  XMLCases[$tree, Child[XMLPattern["div", CSSClass["main"]], XMLPattern["p"]] :> "found"],
+  XMLCases[$tree, Child[XMLPattern["div", "classList" -> "main"], XMLPattern["p"]] :> "found"],
   {"found", "found"},
   TestID -> "child-rule-constant"
 ];
 
 TestCreate[
-  XMLCases[$tree, Child[XMLPattern["div", CSSClass["main"]], x:XMLPattern["p"]] :> HTMLTextContent[x]],
+  XMLCases[$tree, Child[XMLPattern["div", "classList" -> "main"], x:XMLPattern["p"]] :> HTMLTextContent[x]],
   {"Hello", "World"},
   TestID -> "child-rule-named"
 ];
@@ -31,7 +31,7 @@ TestCreate[
 
 (* Child with named attribute on child *)
 TestCreate[
-  XMLCases[$tree, Child[XMLPattern["div", CSSClass["main"]], XMLPattern["p", "class" -> cls_]] :> cls],
+  XMLCases[$tree, Child[XMLPattern["div", "classList" -> "main"], XMLPattern["p", "class" -> cls_]] :> cls],
   {"special"},
   TestID -> "child-rule-attr"
 ];
@@ -52,7 +52,7 @@ TestCreate[
 
 (* Adjacent: p immediately after p *)
 TestCreate[
-  XMLCases[$treeSiblings, Adjacent[XMLPattern["p", CSSClass["lead"]], x:XMLPattern["p"]] :> HTMLTextContent[x]],
+  XMLCases[$treeSiblings, Adjacent[XMLPattern["p", "classList" -> "lead"], x:XMLPattern["p"]] :> HTMLTextContent[x]],
   {"Second"},
   TestID -> "adjacent-p-after-p"
 ];
@@ -104,13 +104,13 @@ TestCreate[
 (* === Descendant combinator === *)
 
 TestCreate[
-  HTMLTextContent /@ XMLCases[$tree, Descendant[XMLPattern["div", CSSClass["main"]], XMLPattern["p"]]],
+  HTMLTextContent /@ XMLCases[$tree, Descendant[XMLPattern["div", "classList" -> "main"], XMLPattern["p"]]],
   {"Hello", "World"},
   TestID -> "descendant-basic"
 ];
 
 TestCreate[
-  XMLCases[$tree, Descendant[XMLPattern["div", CSSClass["main"]], x:XMLPattern["p"]] :> HTMLTextContent[x]],
+  XMLCases[$tree, Descendant[XMLPattern["div", "classList" -> "main"], x:XMLPattern["p"]] :> HTMLTextContent[x]],
   {"Hello", "World"},
   TestID -> "descendant-rule-named"
 ];
@@ -135,7 +135,7 @@ TestCreate[
 (* Child with named extraction from child *)
 TestCreate[
   XMLCases[$treeProducts,
-    Child[XMLPattern["div", CSSClass["on-sale"]], el:XMLPattern["a", "href" -> href_]] :> {HTMLTextContent[el], href}
+    Child[XMLPattern["div", "classList" -> "on-sale"], el:XMLPattern["a", "href" -> href_]] :> {HTMLTextContent[el], href}
   ],
   {{"Sale Item", "/sale"}},
   TestID -> "child-rule-full-extraction"
@@ -144,7 +144,7 @@ TestCreate[
 (* Cross-level: parent AND child bindings in the same rule *)
 TestCreate[
   XMLCases[$treeProducts,
-    Child[XMLPattern["div", CSSClass["product"], "data-price" -> price_], el:XMLPattern["a"]] :> {price, HTMLTextContent[el]}
+    Child[XMLPattern["div", {"classList" -> "product", "data-price" -> price_}], el:XMLPattern["a"]] :> {price, HTMLTextContent[el]}
   ],
   {{"19.99", "Sale Item"}, {"49.99", "Regular Item"}},
   TestID -> "child-rule-cross-level"
@@ -157,4 +157,59 @@ TestCreate[
   ],
   {{"19.99", "Sale Item"}, {"49.99", "Regular Item"}},
   TestID -> "descendant-rule-cross-level"
+];
+
+(* === The classList key in both stages === *)
+
+(* A query naming a list key in any stage runs on one materialised tree, and every
+   element it returns or binds is the original. *)
+$treeCards = ImportString[
+  "<div class=\"card\"><p class=\"lead\">1</p><p class=\"ad\">2</p><p class=\"lead ad\">3</p></div>\
+<div><p class=\"lead\">4</p></div>",
+  {"HTML", "XMLObject"}];
+
+TestCreate[
+  XMLCases[$treeCards,
+    Child[XMLPattern["div", "classList" -> "card"], XMLPattern["p", "classList" -> _?(FreeQ["ad"])]]],
+  {XMLElement["p", {"class" -> "lead"}, {"1"}]},
+  TestID -> "child-classlist-both-stages"
+];
+
+TestCreate[
+  XMLCases[$treeCards,
+    Descendant[d : XMLPattern["div", "classList" -> c1_], p : XMLPattern["p", "classList" -> c2 : {"lead", ___}]] :>
+      {d[[2]], c1, HTMLTextContent[p], c2, p[[2]]}],
+  {{{"class" -> "card"}, {"card"}, "1", {"lead"}, {"class" -> "lead"}},
+   {{"class" -> "card"}, {"card"}, "3", {"lead", "ad"}, {"class" -> "lead ad"}},
+   {{}, {}, "4", {"lead"}, {"class" -> "lead"}}},
+  TestID -> "descendant-classlist-bindings-both-stages"
+];
+
+TestCreate[
+  XMLCases[$treeCards,
+    Adjacent[XMLPattern["p", "classList" -> "ad"], a : XMLPattern["p", "classList" -> "lead"]] :> a],
+  {XMLElement["p", {"class" -> "lead ad"}, {"3"}]},
+  TestID -> "adjacent-classlist-both-stages"
+];
+
+TestCreate[
+  XMLCases[$treeCards,
+    Sibling[XMLPattern["p", "classList" -> {"lead"}], XMLPattern["p", "classList" -> "ad"]]],
+  {XMLElement["p", {"class" -> "ad"}, {"2"}], XMLElement["p", {"class" -> "lead ad"}, {"3"}]},
+  TestID -> "sibling-classlist-both-stages"
+];
+
+TestCreate[
+  XMLFirstCase[$treeCards,
+    Child[XMLPattern["div", "classList" -> {}], x : XMLPattern["p"]] :> x],
+  XMLElement["p", {"class" -> "lead"}, {"4"}],
+  TestID -> "firstcase-child-classlist-absent-parent"
+];
+
+(* A combinator's stages are element patterns. *)
+TestCreate[
+  XMLCases[$treeCards, Descendant[XMLPattern["div"], Child[XMLPattern["div"], XMLPattern["p"]]]],
+  $Failed,
+  {XMLCases::badpat},
+  TestID -> "combinator-stage-must-be-element-pattern"
 ];

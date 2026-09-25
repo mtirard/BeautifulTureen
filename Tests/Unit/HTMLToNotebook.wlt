@@ -229,7 +229,7 @@ TestCreate[
   ExportString[
     HTMLToNotebook[
       ImportString["<div><p>keep</p><p class=\"ad\">drop</p></div>", {"HTML", "XMLObject"}],
-      "Roles" -> {XMLPattern["p", CSSClass["ad"]] -> "Skip"}],
+      "Roles" -> {XMLPattern["p", "classList" -> "ad"] -> "Skip"}],
     "Markdown"],
   "keep",
   TestID -> "htn-roles-skip"
@@ -286,4 +286,46 @@ TestCreate[
     "Constructs" -> {"table" :> Function[el, Cell["TABLE", "Text"]]}],
   "TABLE",
   TestID -> "htn-constructs-table-override"
+];
+
+(* === Rules naming the classList key === *)
+
+(* A rule naming a list key materialises the tree once, at entry; the output is
+   the same as on the tree as it is. The fixture carries a link, an image, a table
+   and classes, the parts that read attributes. *)
+$rich = ImportString[
+  "<div class=\"main\"><h2 class=\"t\">T</h2><p class=\"lead\">see <a href=\"/x\" class=\"ext\">x</a> \
+<img src=\"i.png\" alt=\"pic\"></p><table><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table>\
+<ul class=\"menu\"><li>one</li></ul></div>",
+  {"HTML", "XMLObject"}];
+
+TestCreate[
+  HTMLToNotebook[$rich,
+    "Roles" -> {XMLPattern["p", "classList" -> "nomatch"] -> "Skip"},
+    "Constructs" -> {XMLPattern["b", "classList" -> "nomatch"] -> "Italic"}] === HTMLToNotebook[$rich],
+  True,
+  TestID -> "htn-materialised-output-identical"
+];
+
+TestCreate[
+  nbmd2["<p>a <span class=\"kw hot\">b</span></p>",
+    "Constructs" -> {XMLPattern["span", "classList" -> "kw"] -> "Bold"}],
+  "a **b**",
+  TestID -> "htn-constructs-classlist"
+];
+
+TestCreate[
+  nbmd2["<p class=\"x\">keep</p><p>drop</p>",
+    "Roles" -> {XMLPattern["p", "classList" -> {}] -> "Skip"}],
+  "keep",
+  TestID -> "htn-roles-classlist-absent"
+];
+
+(* A rule is tried against one element, so a combinator is refused. *)
+TestCreate[
+  HTMLToNotebook[XMLElement["p", {}, {"x"}],
+    "Roles" -> {Child[XMLPattern["div"], XMLPattern["p"]] -> "Skip"}],
+  $Failed,
+  {HTMLToNotebook::badpat},
+  TestID -> "htn-rule-combinator-refused"
 ];

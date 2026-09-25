@@ -112,14 +112,14 @@ TestCreate[
   TestID -> "innertext-skip-script"
 ];
 
-(* Roles override: drop a screenreader-only span by class, reusing CSSClass *)
+(* Roles override: drop a screenreader-only span by its class list *)
 TestCreate[
   HTMLInnerText[
     XMLElement["div", {}, {
       "keep ",
       XMLElement["span", {"class" -> "sr-only"}, {"screenreader"}],
       "this"}],
-    "Roles" -> {XMLPattern["span", CSSClass["sr-only"]] -> "Skip"}
+    "Roles" -> {XMLPattern["span", "classList" -> "sr-only"] -> "Skip"}
   ],
   "keep this",
   TestID -> "innertext-roles-cssclass-skip"
@@ -237,4 +237,39 @@ TestCreate[
   ],
   "ac",
   TestID -> "innertext-roles-first-match"
+];
+
+(* === Role rules naming the classList key === *)
+
+$richText = ImportString[
+  "<div class=\"main\"><h2 class=\"t\">T</h2><p class=\"lead\">see <a href=\"/x\">x</a></p>\
+<pre class=\"code\">  a\n  b</pre><ul><li class=\"i\">one</li><li>two</li></ul></div>",
+  {"HTML", "XMLObject"}];
+
+TestCreate[
+  HTMLInnerText[$richText, "Roles" -> {XMLPattern["li", "classList" -> "nomatch"] -> "Skip"}] ===
+    HTMLInnerText[$richText],
+  True,
+  TestID -> "innertext-materialised-output-identical"
+];
+
+(* A delayed rule's element binding sees the original element. *)
+TestCreate[
+  HTMLInnerText[$richText,
+    "Roles" -> {e : XMLPattern["li", "classList" -> _] :> If[e[[2]] === {}, "Skip", "Block"]}],
+  "T\nsee x\n  a\n  b\none",
+  TestID -> "innertext-roles-classlist-binding-original"
+];
+
+TestCreate[
+  HTMLInnerText[$richText, "Roles" -> {XMLPattern["li", {"classList" -> "i"}] -> "Skip"}],
+  "T\nsee x\n  a\n  b\ntwo",
+  TestID -> "innertext-roles-classlist-skip"
+];
+
+TestCreate[
+  HTMLInnerText[$richText, "Roles" -> {XMLPattern["li", "a", "b"] -> "Skip"}],
+  $Failed,
+  {XMLPattern::nargs},
+  TestID -> "innertext-roles-xmlpattern-refusal"
 ];

@@ -1,46 +1,59 @@
 (* ::Package:: *)
-(* BeautifulTureen: pattern constructors + XMLCases *)
+(* BeautifulTureen: XML patterns + the XML* consumers *)
 
 BeginPackage["MaximilienTirard`BeautifulTureen`"];
 
 (* === Public symbols === *)
 
-XMLPattern::usage = "XMLPattern[tag] constructs an XMLElement pattern matching any element with the given tag. XMLPattern[tag, constraints...] additionally constrains attributes, where each constraint is \"attr\" -> value, a bare \"attr\" for existence, or CSSClass[...].";
-CSSClass::usage = "CSSClass[cls] gives an attribute constraint, for use in XMLPattern, matching elements whose class list contains a class matching cls. Each argument is an ordinary string pattern matched against a single class, so \"col-\" ~~ __ matches one class beginning with col- and ___ matches any class at all. CSSClass[cls1, cls2, ...] requires all of the given classes; use Alternatives for or-semantics and Except[cls] to negate. A negation reads a missing class attribute as an empty class list, so Except[cls] also matches elements carrying no class at all (as CSS :not(.cls) does) and Except[___] means \"carries no classes\".";
+XMLPattern::usage = "XMLPattern[tag] is an XML pattern matching any element with the given tag. XMLPattern[tag, attrs] additionally constrains the element's attribute map, where attrs is what KeyValuePattern takes: a list of \"key\" -> value rules, a single rule, or a bare \"key\" (meaning \"key\" -> _), optionally named and tested as a whole. Keys are literal: a string, a {namespace, name} pair, or Alternatives of those. Values are ordinary WL patterns. A key with a reading also has a list key, \"classList\" for \"class\", matched against the element's token list; at a list key, a literal string or Alternatives of strings means \"contains this token\". XMLPattern is inert: only XMLCases, XMLFirstCase, XMLDeleteCases, XMLMatchQ and the Roles and Constructs options interpret it; MatchQ and Cases do not.";
+CSSClass::usage = "CSSClass is obsolete. Match an element's class list with the \"classList\" key of XMLPattern instead: XMLPattern[tag, \"classList\" -> \"cls\"].";
+$AttributeReadings::usage = "$AttributeReadings is an Association from a literal attribute key to its reading: how the key's value is split into a token list, and the list key under which an XML pattern reaches that list. Each entry has the fields Method (\"SpaceSeparated\" or \"CommaSeparated\"), Delimiters, \"TrimWhitespace\" and \"ListKey\" (Automatic means key <> \"List\"). It ships with one entry, class, whose list key is \"classList\".";
 HTMLWhitespace::usage = "HTMLWhitespace is a string pattern matching a run of one or more HTML ASCII whitespace characters (space, tab, line feed, form feed, carriage return): the delimiter HTML splits a class attribute on. Use it as StringSplit[value, HTMLWhitespace]. Unlike StringSplit's default, it does not treat no-break space or other Unicode whitespace as a delimiter, so it splits as a browser does.";
 HTMLClassList::usage = "HTMLClassList[element] gives the class list of an XMLElement: the tokens of its class attribute, split on HTMLWhitespace, in document order and with duplicates kept. An element with no class attribute, class=\"\", or a whitespace-only class gives {}. It takes a single element; use HTMLClassList /@ XMLCases[tree, pattern] for many.";
-XMLCases::usage = "XMLCases[tree, pattern] gives a list of all elements of the XML tree that match pattern, searched at any depth. pattern can be an XMLElement pattern (see XMLPattern), an Alternatives of them, a Child, Descendant, Adjacent, or Sibling combinator, a conditioned pattern pat /; test, or a rule pattern :> body.";
+XMLCases::usage = "XMLCases[tree, pattern] gives a list of all elements of the XML tree that match pattern, searched at any depth. pattern can be an XMLPattern, an Alternatives of them, a Child, Descendant, Adjacent, or Sibling combinator, a conditioned pattern pat /; test, or a rule pattern :> body. A name bound to a whole element, e : XMLPattern[...], always sees the element as it is in tree.";
 XMLFirstCase::usage = "XMLFirstCase[tree, pattern] gives the first element of tree matching pattern, or Missing[\"NotFound\"] if there is none. XMLFirstCase[tree, pattern, default] gives default instead. It accepts the same patterns as XMLCases and short-circuits on the first match.";
-XMLDeleteCases::usage = "XMLDeleteCases[tree, pattern] gives tree with every element matching pattern removed, at any depth. It accepts XMLElement patterns, Alternatives of them, conditioned patterns pat /; test, and Child or Descendant combinators; Adjacent and Sibling are not supported.";
-Child::usage = "Child[parentPat, childPat] is a combinator for XMLCases matching elements that satisfy childPat and occur as direct children of an element satisfying parentPat.";
-Adjacent::usage = "Adjacent[beforePat, afterPat] is a combinator for XMLCases matching an element that satisfies afterPat and immediately follows a sibling satisfying beforePat.";
-Sibling::usage = "Sibling[beforePat, afterPat] is a combinator for XMLCases matching elements that satisfy afterPat and follow a sibling satisfying beforePat.";
-Descendant::usage = "Descendant[ancestorPat, descPat] is a combinator for XMLCases matching elements that satisfy descPat and are nested anywhere below an element satisfying ancestorPat.";
+XMLDeleteCases::usage = "XMLDeleteCases[tree, pattern] gives tree with every element matching pattern removed, at any depth. It accepts XMLPattern, Alternatives of them, conditioned patterns pat /; test, and Child or Descendant combinators; Adjacent and Sibling are not supported.";
+XMLMatchQ::usage = "XMLMatchQ[element, pattern] gives True if element matches pattern, an XMLPattern, an Alternatives of them, or a conditioned pattern pat /; test, and False otherwise. XMLMatchQ[pattern] is an operator form. It tests the whole element, as StringMatchQ tests a whole string; use XMLCases to search a tree.";
+Child::usage = "Child[parentPat, childPat] is a combinator for XMLCases matching elements that satisfy childPat and occur as direct children of an element satisfying parentPat. Both arguments are XMLPattern element patterns.";
+Adjacent::usage = "Adjacent[beforePat, afterPat] is a combinator for XMLCases matching an element that satisfies afterPat and immediately follows a sibling satisfying beforePat. Both arguments are XMLPattern element patterns.";
+Sibling::usage = "Sibling[beforePat, afterPat] is a combinator for XMLCases matching elements that satisfy afterPat and follow a sibling satisfying beforePat. Both arguments are XMLPattern element patterns.";
+Descendant::usage = "Descendant[ancestorPat, descPat] is a combinator for XMLCases matching elements that satisfy descPat and are nested anywhere below an element satisfying ancestorPat. Both arguments are XMLPattern element patterns.";
 HTMLTextContent::usage = "HTMLTextContent[tree] gives the text content of an XML tree: the lossless concatenation, in document order, of every descendant string. It inserts and removes no whitespace, so source indentation and <pre> whitespace survive unchanged. tree may be an XMLElement, an XMLObject document, a list, or a string.";
-HTMLInnerText::usage = "HTMLInnerText[tree] gives the readable text of an XML tree: internal whitespace is collapsed, block-level tags are placed on their own lines, <br> becomes a newline, <pre> content is preserved verbatim, non-rendered tags such as script and style are dropped, and the result is trimmed. Each element is classified by tag alone using a frozen user-agent stylesheet. HTMLInnerText[tree, \"Roles\" -> rules] overrides the classification; \"BlockSeparator\" -> sep sets the string joining block boundaries (default \"\\n\"). tree may be an XMLElement, an XMLObject document, a list, or a string.";
-HTMLToNotebook::usage = "HTMLToNotebook[tree] converts an HTML/XML tree into a Notebook[...] expression, from which Markdown, PDF, RTF, and display follow via Export. Block-level tags become cells (headings -> Title/Chapter/Section/..., p -> Text, li -> Item/Subitem/..., blockquote -> a framed quote, pre -> a Program cell, table -> Dataset or Grid) and inline tags become boxes inside the surrounding cell (b -> bold, i -> italic, code -> inline code, a -> hyperlink, ...). Classification is by tag alone using a frozen user-agent stylesheet. HTMLToNotebook[tree, \"Roles\" -> rules] overrides the block/inline classification; \"Constructs\" -> rules overrides the form each element takes (an inline token, a cell-style string, or a constructor function element :> Cell/boxes). tree may be an XMLElement, an XMLObject document, a list, or a string.";
+HTMLInnerText::usage = "HTMLInnerText[tree] gives the readable text of an XML tree: internal whitespace is collapsed, block-level tags are placed on their own lines, <br> becomes a newline, <pre> content is preserved verbatim, non-rendered tags such as script and style are dropped, and the result is trimmed. Each element is classified by tag alone using a frozen user-agent stylesheet. HTMLInnerText[tree, \"Roles\" -> rules] overrides the classification, where each rule's left-hand side is an XMLPattern or a tag string; \"BlockSeparator\" -> sep sets the string joining block boundaries (default \"\\n\"). tree may be an XMLElement, an XMLObject document, a list, or a string.";
+HTMLToNotebook::usage = "HTMLToNotebook[tree] converts an HTML/XML tree into a Notebook[...] expression, from which Markdown, PDF, RTF, and display follow via Export. Block-level tags become cells (headings -> Title/Chapter/Section/..., p -> Text, li -> Item/Subitem/..., blockquote -> a framed quote, pre -> a Program cell, table -> Dataset or Grid) and inline tags become boxes inside the surrounding cell (b -> bold, i -> italic, code -> inline code, a -> hyperlink, ...). Classification is by tag alone using a frozen user-agent stylesheet. HTMLToNotebook[tree, \"Roles\" -> rules] overrides the block/inline classification; \"Constructs\" -> rules overrides the form each element takes (an inline token, a cell-style string, or a constructor function element :> Cell/boxes). Each rule's left-hand side is an XMLPattern or a tag string. tree may be an XMLElement, an XMLObject document, a list, or a string.";
 
 (* === Messages === *)
 
-CSSClass::badarg = "Expected a string, string pattern, Alternatives, or Except. Got `1`.";
-XMLPattern::badtag = "Tag should be a string, Alternatives, or pattern (e.g. _). Got `1`.";
-XMLPattern::badconstraint = "Constraint should be a Rule (key -> val, where key is an attribute name or a {namespace, name} pair), string (attribute existence), or CSSClass[...]. Got `1`.";
+CSSClass::obs = "CSSClass is obsolete. Match the class list with the \"classList\" key instead: XMLPattern[tag, \"classList\" -> \"cls\"] for .cls, or \"classList\" -> _?(FreeQ[\"cls\"]) for :not(.cls).";
+XMLPattern::badtag = "Tag should be a string, a {namespace, name} pair, Alternatives, or pattern (e.g. _). Got `1`.";
+XMLPattern::nargs = "XMLPattern takes a tag and at most one attribute argument; got `1` arguments. Give several attribute constraints as one list: XMLPattern[tag, {c1, c2, ...}].";
+XMLPattern::badattrs = "The attribute argument should be a list of key -> value rules, a single rule, or a bare key, optionally named (attrs : ...) or tested (...?test) as a whole. Got `1`.";
+XMLPattern::badkey = "Attribute key should be a string, a {namespace, name} pair of strings, or Alternatives of those. Got `1`. To ask a question of the keys, name and test the whole attribute map: XMLPattern[tag, attrs_?test].";
+XMLPattern::dupkey = "Attribute key `1` is constrained more than once, which KeyValuePattern can never satisfy. Combine the constraints into one value pattern.";
+XMLPattern::strpat = "`1` is a string pattern, and a string pattern is never matched against a string by an ordinary pattern. Write _?(StringMatchQ[`1`]) instead.";
 XMLCases::badtree = "First argument should be an XMLObject, XMLElement, or list thereof. Got head `1`.";
-XMLCases::badpat = "Second argument should be an XMLElement pattern, Alternatives of XMLElement patterns, or combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
-XMLCases::condcombinator = "A condition (/;) may wrap an XMLElement pattern or an Alternatives of them, but not a combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
+XMLCases::badpat = "Second argument should be an XMLPattern, Alternatives of XMLPatterns, or combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
+XMLCases::condcombinator = "A condition (/;) may wrap an XMLPattern or an Alternatives of them, but not a combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
 XMLFirstCase::badtree = "First argument should be an XMLObject, XMLElement, or list thereof. Got head `1`.";
-XMLFirstCase::badpat = "Second argument should be an XMLElement pattern, Alternatives of XMLElement patterns, or combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
-XMLFirstCase::condcombinator = "A condition (/;) may wrap an XMLElement pattern or an Alternatives of them, but not a combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
+XMLFirstCase::badpat = "Second argument should be an XMLPattern, Alternatives of XMLPatterns, or combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
+XMLFirstCase::condcombinator = "A condition (/;) may wrap an XMLPattern or an Alternatives of them, but not a combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
 XMLDeleteCases::badtree = "First argument should be an XMLObject, XMLElement, or list thereof. Got head `1`.";
-XMLDeleteCases::badpat = "Second argument should be an XMLElement pattern, Alternatives of XMLElement patterns, or Child/Descendant combinator. Got `1`.";
-XMLDeleteCases::condcombinator = "A condition (/;) may wrap an XMLElement pattern or an Alternatives of them, but not a combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
+XMLDeleteCases::badpat = "Second argument should be an XMLPattern, Alternatives of XMLPatterns, or Child/Descendant combinator. Got `1`.";
+XMLDeleteCases::condcombinator = "A condition (/;) may wrap an XMLPattern or an Alternatives of them, but not a combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
 XMLDeleteCases::unsupported = "Adjacent and Sibling combinators are not supported by XMLDeleteCases. Use XMLCases for filtering semantics instead.";
+XMLMatchQ::badpat = "Pattern should be an XMLPattern, an Alternatives of them, or a conditioned pattern pat /; test. Got `1`.";
+XMLMatchQ::condcombinator = "A condition (/;) may wrap an XMLPattern or an Alternatives of them, but not a combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
+XMLMatchQ::combinator = "`1` relates an element to its parent or siblings, which a lone element does not have. Use XMLCases or XMLFirstCase to search a tree with it.";
 HTMLTextContent::badtree = "First argument should be an XMLObject, XMLElement, or list thereof. Got head `1`.";
 HTMLClassList::notelement = "Argument should be a single XMLElement; for a list of elements, use HTMLClassList /@ elements. Got head `1`.";
 HTMLInnerText::badtree = "First argument should be an XMLObject, XMLElement, or list thereof. Got head `1`.";
 HTMLInnerText::badrole = "Role rule produced `1`, which is not one of \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\", or \"Skip\"; ignoring it and deferring to the frozen user-agent table.";
+HTMLInnerText::badpat = "A rule's left-hand side should be a tag string, an XMLPattern, an Alternatives of them, or a conditioned pattern pat /; test. Got `1`.";
+HTMLInnerText::condcombinator = "A condition (/;) may wrap an XMLPattern or an Alternatives of them, but not a combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
 HTMLToNotebook::badtree = "First argument should be an XMLObject, XMLElement, or list thereof. Got head `1`.";
 HTMLToNotebook::badrole = "Role rule produced `1`, which is not one of \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\", or \"Skip\"; ignoring it and deferring to the frozen user-agent table.";
+HTMLToNotebook::badpat = "A rule's left-hand side should be a tag string, an XMLPattern, an Alternatives of them, or a conditioned pattern pat /; test. Got `1`.";
+HTMLToNotebook::condcombinator = "A condition (/;) may wrap an XMLPattern or an Alternatives of them, but not a combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
 
 Begin["`Private`"];
 
@@ -48,25 +61,11 @@ Begin["`Private`"];
 (* Validation helpers                                           *)
 (* =========================================================== *)
 
-(* Valid class constraint: any ordinary string pattern matched against one class
-   token \[LongDash] a literal string, a StringExpression, Alternatives, a blank (_ for one
-   character, __ for one or more, ___ for zero or more), a PatternTest or a named
-   Pattern \[LongDash] or an Except wrapping one of those. *)
-validCSSClassQ[_String] := True;
-validCSSClassQ[_StringExpression] := True;
-validCSSClassQ[_Alternatives] := True;
-validCSSClassQ[Verbatim[Except][_]] := True;
-validCSSClassQ[_Blank] := True;
-validCSSClassQ[_BlankSequence] := True;
-validCSSClassQ[_BlankNullSequence] := True;
-validCSSClassQ[_PatternTest] := True;
-validCSSClassQ[_Pattern] := True;
-validCSSClassQ[_] := False;
-
-(* Valid tag: a string, or any ordinary pattern matched against the element's
-   tag \[LongDash] Alternatives, Blank(Sequence), a named Pattern, or a predicate-bearing
-   PatternTest (_?f) / Condition (t_ /; test). *)
+(* Valid tag: a string, a {namespace, name} pair, or any ordinary pattern matched
+   against the element's tag \[LongDash] Alternatives, Blank(Sequence), a named Pattern,
+   or a predicate-bearing PatternTest (_?f) / Condition (t_ /; test). *)
 validTagQ[_String] := True;
+validTagQ[{_, _}] := True;
 validTagQ[_Alternatives] := True;
 validTagQ[_Blank] := True;
 validTagQ[_BlankSequence] := True;
@@ -75,67 +74,23 @@ validTagQ[_PatternTest] := True;
 validTagQ[_Condition] := True;
 validTagQ[_] := False;
 
-(* Valid attribute key: a plain name, or an imported {namespace, name} pair
-   (WL imports a namespaced attribute such as xlink:href with a two-element
-   list key {namespaceURI, localName}). Both positions may be patterns. *)
-validAttrKeyQ[_String] := True;
-validAttrKeyQ[{_, _}] := True;
-validAttrKeyQ[_] := False;
+(* A literal attribute key: a plain name, an imported {namespace, name} pair (WL
+   imports a namespaced attribute such as xlink:href with a two-element list key
+   {namespaceURI, localName}), or Alternatives of those. *)
+literalKeyQ[_String] := True;
+literalKeyQ[{_String, _String}] := True;
+literalKeyQ[Verbatim[Alternatives][ks__]] := AllTrue[{ks}, literalKeyQ];
+literalKeyQ[_] := False;
 
-(* Valid constraint for XMLPattern *)
-validConstraintQ[Rule[k_, _]] := validAttrKeyQ[k];  (* key -> val *)
-validConstraintQ[_String] := True;                  (* "attr" \[LongDash] existence shorthand *)
-validConstraintQ[_classTest] := True;               (* absence-tolerant class test *)
-validConstraintQ[cs_List] := AllTrue[cs, validConstraintQ];  (* CSSClass may split *)
-validConstraintQ[_] := False;
+keyLiterals[Verbatim[Alternatives][ks__]] := Join @@ (keyLiterals /@ {ks});
+keyLiterals[k_] := {k};
 
-(* Valid pattern for XMLCases: XMLElement pattern, combinator, Alternatives of
-   XMLElement patterns (including nested Alternatives built via composition),
-   or rule *)
+combinatorQ[_Child | _Adjacent | _Sibling | _Descendant] := True;
+combinatorQ[_] := False;
 
-(* Collect leaves of a possibly-nested Alternatives. Alternatives has no Flat
-   attribute, so `(a|b) | (c|d)` stays as 2-arg nested \[LongDash] we flatten manually.
-   Note: `Alternatives[args___]` in pattern position is the OR pattern, not a
-   head match, so we use `alts_Alternatives` to bind a literal Alternatives. *)
-altLeaves[alts_Alternatives] := Join @@ (altLeaves /@ List @@ alts);
-altLeaves[x_] := {x};
-
-altOfXMLElementsQ[alts_Alternatives] :=
-  AllTrue[altLeaves[alts], MatchQ[#, _XMLElement] &];
-
-(* A top-level Condition (pat /; test) is a filter over the matched element. Its
-   left-hand side may bind the whole matched element by name \[LongDash] el : pat /; test
-   \[LongDash] so the predicate can address the whole element (e.g. HTMLTextContent[el]),
-   exactly as name:patt /; test does natively in the kernel. A leading name is
-   incidental: it never changes what is structurally valid, so we strip it with
-   condLHSBase before checking the base. The base must be an XMLElement pattern
-   or an Alternatives of them, which map directly to Cases/FirstCase/DeleteCases.
-   A Condition wrapping a combinator is not accepted \[LongDash] condition semantics over a
-   multi-step traversal are undefined \[LongDash] named or not; it is reported with
-   ::condcombinator. Condition is HoldAll, so we inspect the held left-hand side
-   with Part rather than by matching. *)
+(* A leading name on a Condition's left-hand side never changes what it is. *)
 condLHSBase[Verbatim[Pattern][_, x_]] := x;
 condLHSBase[x_] := x;
-
-validConditionQ[c_Condition] :=
-  With[{lhs = condLHSBase[c[[1]]]},
-    MatchQ[lhs, _XMLElement] ||
-      (MatchQ[lhs, _Alternatives] && altOfXMLElementsQ[lhs])];
-validConditionQ[_] := False;
-
-condCombinatorQ[c_Condition] :=
-  MatchQ[condLHSBase[c[[1]]], _Child | _Adjacent | _Sibling | _Descendant];
-condCombinatorQ[_] := False;
-
-validPatternQ[_XMLElement] := True;
-validPatternQ[_Child] := True;
-validPatternQ[_Adjacent] := True;
-validPatternQ[_Sibling] := True;
-validPatternQ[_Descendant] := True;
-validPatternQ[_RuleDelayed] := True;
-validPatternQ[alts_Alternatives] := altOfXMLElementsQ[alts];
-validPatternQ[c_Condition] := validConditionQ[c];
-validPatternQ[_] := False;
 
 (* Valid tree for XMLCases *)
 validTreeQ[XMLObject["Document"][_, _XMLElement, _]] := True;
@@ -147,6 +102,17 @@ validTreeQ[_] := False;
    string (text-of-a-string is meaningful, unlike for the selectors). *)
 validTextInputQ[_String] := True;
 validTextInputQ[t_] := validTreeQ[t];
+
+(* The bare string patterns written where a pattern is matched. A StringExpression
+   inside a PatternTest's test or a Condition's test is an argument to a string
+   function, not a pattern, and neither is anything under Verbatim. *)
+SetAttributes[barePatterns, HoldAllComplete];
+barePatterns[s_StringExpression] := {s};
+barePatterns[Verbatim[PatternTest][p_, _]] := barePatterns[p];
+barePatterns[Verbatim[Condition][p_, _]] := barePatterns[p];
+barePatterns[Verbatim[Verbatim][___]] := {};
+barePatterns[_[args___]] := Join @@ (barePatterns /@ Unevaluated[{args}]);
+barePatterns[_] := {};
 
 (* =========================================================== *)
 (* HTMLWhitespace                                               *)
@@ -160,9 +126,19 @@ HTMLWhitespace = (" " | "\t" | "\n" | "\f" | "\r") ..;
 (* =========================================================== *)
 (* HTMLClassList                                                *)
 (* The extraction form of the class reading. Shares classList   *)
-(* and classValue with CSSClass, so extracting and matching     *)
+(* with the class reading's split, so extracting and matching   *)
 (* agree on the same element.                                   *)
 (* =========================================================== *)
+
+(* The class list: the tokens of the class attribute, split on HTMLWhitespace
+   as a browser splits them. Splitting gives the empty list for "", for
+   whitespace-only values, and (via the "" default in classValue) for a missing
+   attribute \[LongDash] the three ways an element ends up carrying no classes, which
+   must be indistinguishable here. *)
+classList[val_String] := StringSplit[val, HTMLWhitespace];
+
+(* Absent class reads as "", the same value a present-but-empty class="" carries. *)
+classValue[attrs_] := Lookup[attrs, "class", ""];
 
 HTMLClassList[XMLElement[_, attrs_List, _]] := classList[classValue[attrs]];
 
@@ -174,168 +150,282 @@ HTMLClassList[other_] :=
 
 (* =========================================================== *)
 (* CSSClass                                                     *)
-(* Produces a constraint for use in XMLPattern.                 *)
-(* Each argument is a string pattern matched against one class  *)
-(* token. Multiple arguments = AND. Alternatives for OR.        *)
+(* Obsolete (ADR 0011): the class list is the "classList" key.  *)
 (* =========================================================== *)
 
-(* The class list: the tokens of the class attribute, split on HTMLWhitespace
-   as a browser splits them. Splitting gives the empty list for "", for
-   whitespace-only values, and (via the "" default in classValue) for a missing
-   attribute \[LongDash] the three ways an element ends up carrying no classes, which
-   must be indistinguishable here. *)
-classList[val_String] := StringSplit[val, HTMLWhitespace];
-
-(* An argument holds for an element when some class token matches it. Matching a
-   token rather than the whole attribute value is what lets each argument be an
-   ordinary string pattern: _ is one character, __ one or more, ___ zero or more,
-   all scoped to a single class. Matching the value as a whole would let a
-   composite pattern such as "col-" ~~ __ run past the space into the next
-   token. *)
-classMatchQ[val_String, cls_] :=
-  AnyTrue[classList[val], StringMatchQ[#, cls] &];
-
-(* Single positive constraint *)
-CSSClass[cls_] :=
-  "class" -> _?(classMatchQ[#, cls] &) /;
-    validCSSClassQ[cls] && !MatchQ[cls, _Except];
-
-(* Single negation: CSSClass[Except["x"]] = does not have class x.
-   A negation cannot be a KeyValuePattern rule: KeyValuePattern requires the key
-   to be present before the value pattern is consulted, so an element carrying no
-   class attribute would never reach the test and would fail the negation. An
-   element with no class attribute has the same (empty) class list as one with
-   class="", so we emit a classTest, which XMLPattern applies to the whole
-   attribute list with an absent class read as "". *)
-CSSClass[Verbatim[Except][cls_]] :=
-  classTest[!classMatchQ[#, cls] &] /;
-    validCSSClassQ[cls];
-
-(* List -> treat as sequence: CSSClass[{"a","b"}] = CSSClass["a","b"] *)
-CSSClass[cls_List] := CSSClass @@ cls;
-
-(* Multiple constraints: AND semantics. The positive constraints stay a
-   KeyValuePattern rule (presence-requiring: nothing without a class attribute
-   can carry a class); the negations are lifted into a single classTest, keeping
-   them absence-tolerant. Either group may be empty; XMLPattern flattens the
-   resulting list back into its constraint sequence. *)
-CSSClass[constraints__] :=
-  With[
-    {positives = DeleteCases[{constraints}, _Except],
-     negations = Cases[{constraints}, Verbatim[Except][cls_] :> cls]},
-    Flatten @ {
-      If[positives === {}, Nothing,
-        "class" -> _?(Function[val, AllTrue[positives, classMatchQ[val, #] &]])],
-      If[negations === {}, Nothing,
-        classTest[Function[val, NoneTrue[negations, classMatchQ[val, #] &]]]]}
-  ] /; Length[{constraints}] > 1 && AllTrue[{constraints}, validCSSClassQ];
-
-(* Bad arguments *)
-CSSClass[cls_] := (Message[CSSClass::badarg, cls]; $Failed) /;
-  !validCSSClassQ[cls];
-
+CSSClass[___] := (Message[CSSClass::obs]; $Failed);
 
 (* =========================================================== *)
-(* XMLPattern                                                   *)
-(* Produces an XMLElement pattern for use with Cases/XMLCases   *)
+(* Readings (ADR 0012)                                          *)
+(* A reading fixes a microsyntax to a literal attribute key and *)
+(* names the list key an XML pattern reaches its token list by. *)
 (* =========================================================== *)
 
-XMLPattern[tag_] :=
-  XMLElement[tag, _, _] /; validTagQ[tag];
+$AttributeReadings = <|
+  "class" -> <|Method -> "SpaceSeparated", Delimiters -> Automatic,
+    "TrimWhitespace" -> Automatic, "ListKey" -> Automatic|>|>;
 
-(* Convert bare strings to existence rules, pass Rules and classTests through *)
-normalizeConstraint[key_String] := key -> _;
-normalizeConstraint[r_Rule] := r;
-normalizeConstraint[t_classTest] := t;
+(* Method is shorthand defining the other two fields. *)
+$methodDefaults = <|
+  "SpaceSeparated" -> <|Delimiters -> HTMLWhitespace, "TrimWhitespace" -> False|>,
+  "CommaSeparated" -> <|Delimiters -> ",", "TrimWhitespace" -> True|>|>;
 
-(* The class list of an element's attributes: absent class reads as "", the same
-   value a present-but-empty class="" carries \[LongDash] the two are indistinguishable in
-   HTML, so they must be indistinguishable to a class test. *)
-classValue[attrs_] := Lookup[attrs, "class", ""];
+splitter[delim_, False] := Function[v, StringSplit[v, delim]];
+splitter[delim_, True] := Function[v, StringTrim /@ StringSplit[v, delim]];
 
-(* Attribute pattern for a normalized constraint list. Rules go into
-   KeyValuePattern (presence-requiring, as KeyValuePattern is); classTests are
-   lifted to a PatternTest on the whole attribute list, where absence is a value
-   rather than a missing key. *)
-attrsPattern[cs_List] :=
-  Module[{tests = Cases[cs, _classTest], rules = DeleteCases[cs, _classTest], kvp},
-    kvp = KeyValuePattern[rules];
-    If[tests === {},
-      kvp,
-      PatternTest[kvp,
-        Function[attrs, AllTrue[tests, First[#][classValue[attrs]] &]]]]];
+(* A readings table resolved for the compiler: list key -> {raw key, split}. *)
+resolveReading[key_String -> spec_Association] :=
+  With[{defaults = $methodDefaults[Lookup[spec, Method, "SpaceSeparated"]]},
+    Replace[Lookup[spec, "ListKey", Automatic], Automatic -> key <> "List"] ->
+      {key, splitter[
+        Replace[Lookup[spec, Delimiters, Automatic], Automatic -> defaults[Delimiters]],
+        Replace[Lookup[spec, "TrimWhitespace", Automatic], Automatic -> defaults["TrimWhitespace"]]]}];
 
-XMLPattern[tag_, constraints__] :=
-  XMLElement[tag, attrsPattern[normalizeConstraint /@ Flatten[{constraints}]], _] /;
-    validTagQ[tag] && AllTrue[{constraints}, validConstraintQ];
+resolveReadings[readings_Association] := Association[resolveReading /@ Normal[readings]];
 
-(* Bad tag *)
-XMLPattern[tag_, ___] :=
-  (Message[XMLPattern::badtag, tag]; $Failed) /; !validTagQ[tag];
+(* =========================================================== *)
+(* Materialisation (ADR 0012)                                   *)
+(* A query naming a list key runs on a tree whose elements each *)
+(* carry the token list beside the raw value, under the private *)
+(* key head tok (inert: no definitions). strip is the exact     *)
+(* inverse: strip[materialise[e, ...]] === e.                   *)
+(* =========================================================== *)
 
-(* Bad constraint \[LongDash] find the first invalid one *)
-XMLPattern[tag_, constraints__] :=
-  Module[{bad = SelectFirst[{constraints}, !validConstraintQ[#] &]},
-    Message[XMLPattern::badconstraint, bad]; $Failed
-  ] /; validTagQ[tag] && !AllTrue[{constraints}, validConstraintQ];
+(* Only the distinct raw values on the tree are split: a page has a handful of
+   distinct class strings across thousands of elements. An absent attribute
+   reads as {}, as a browser's classList does. *)
+tokenMap[tree_, {key_, split_}, level_] :=
+  With[{vals = DeleteDuplicates @
+      Cases[tree, XMLElement[_, a_List, _] :> Lookup[a, key, Nothing], level]},
+    AssociationThread[vals, split /@ vals]];
+
+(* One pass per list key: nearly every query names one. *)
+materialise[tree_, readings_List, level_ : {0, Infinity}] :=
+  Fold[materialiseKey[#1, #2, level] &, tree, readings];
+
+materialiseKey[tree_, reading : {key_, _}, level_] :=
+  With[{map = tokenMap[tree, reading, level]},
+    Replace[tree,
+      XMLElement[t_, a_List, c_] :>
+        XMLElement[t, Append[a, tok[key] -> Lookup[map, Lookup[a, key, None], {}]], c],
+      level]];
+
+stripAttrs[a_] := DeleteCases[a, _tok -> _];
+
+strip[x_] :=
+  Replace[x, XMLElement[t_, a_List, c_] :> XMLElement[t, stripAttrs[a], c], {0, Infinity}];
+
+(* =========================================================== *)
+(* The query compiler                                           *)
+(*                                                              *)
+(* compileQuery[query, head, readings] -> {pattern, readings}:  *)
+(* the plain WL pattern every consumer runs, and the readings   *)
+(* of the list keys it names ({} when it names none, in which   *)
+(* case the pattern runs on the tree as it is). Refusals message*)
+(* under XMLPattern (an XML pattern's own shape) or under head  *)
+(* (the consumer's query shape) and give $Failed.               *)
+(*                                                              *)
+(* When a list key is named, every binding that can see an      *)
+(* element's attributes \[LongDash] an element binding e : XMLPattern[...],  *)
+(* or a name or test on the attribute argument \[LongDash] is renamed to a   *)
+(* fresh symbol, and each place that can see the name (a rule   *)
+(* body, a Condition's test) is wrapped in                      *)
+(* With[{e = strip[e$]}, ...], so it sees the original element. *)
+(* A query is compiled once to learn its list keys and, only if *)
+(* it names one, again with the renaming on.                    *)
+(* =========================================================== *)
+
+compileQuery[q_, head_, readings_Association] :=
+  Catch[
+    Module[{pattern, keys},
+      {pattern, keys} = compilePass[q, head, readings, False];
+      If[keys =!= {}, pattern = First @ compilePass[q, head, readings, True]];
+      {pattern, Lookup[readings, keys]}],
+    $refusal];
+
+compileQuery[q_, head_] := compileQuery[q, head, resolveReadings[$AttributeReadings]];
+
+compilePass[q_, head_, readings_, mat_] :=
+  Block[{$head = head, $readings = readings, $mat = mat, $fresh = <||>},
+    MapAt[Union @@ # &, Reap[First @ Reap[cQuery[q], $bindTag], $listKeyTag], 2]];
+
+(* Held, since a MessageName evaluates to its text. *)
+SetAttributes[refuse, HoldFirst];
+refuse[msg_, args___] := (Message[msg, args]; Throw[$Failed, $refusal]);
+(* An upstream failure (CSSClass::obs) has already said what went wrong. *)
+refuseQuietly[] := Throw[$Failed, $refusal];
+
+(* MessageName holds its first argument, so the consumer head is injected. *)
+refuseAtHead[tag_, args___] := With[{h = $head}, refuse[MessageName[h, tag], args]];
+badpat[q_] := refuseAtHead["badpat", Short[q]];
+
+(* ---- Queries: a rule over a pattern, or a pattern ---- *)
+
+cQuery[r_RuleDelayed] :=
+  Module[{lhs, binds},
+    {lhs, binds} = reapBinds[cStage[r[[1]]]];
+    With[{l = lhs}, RuleDelayed @@ Join[Hold[l], wrapBinds[binds, Extract[r, {2}, Hold]]]]];
+cQuery[q_] := cStage[q];
+
+(* A combinator's stages are element patterns. *)
+cStage[(h : Child | Descendant | Adjacent | Sibling)[a_, b_]] := h[cElem[a], cElem[b]];
+cStage[q_] := cElem[q];
+
+(* ---- Element patterns ---- *)
+
+cElem[XMLPattern[args___]] := cXMLPattern[{args}];
+cElem[alts_Alternatives] := Alternatives @@ (cElem /@ List @@ alts);
+cElem[Verbatim[Pattern][s_Symbol, p_]] :=
+  If[combinatorQ[p], badpat[namedPattern[s, p]], bindAs[s, cElem[p], strip]];
+cElem[c_Condition] :=
+  Module[{lhs, binds},
+    If[combinatorQ[condLHSBase[c[[1]]]],
+      refuseAtHead["condcombinator", Short[c[[1]]]]];
+    {lhs, binds} = reapBinds[cElem[c[[1]]]];
+    Scan[Sow[#, $bindTag] &, binds];
+    With[{l = lhs}, Condition @@ Join[Hold[l], wrapBinds[binds, Extract[c, {2}, Hold]]]]];
+(* A plain XMLElement pattern is already what the consumers run. *)
+cElem[x_XMLElement] := x;
+cElem[q_] := badpat[q];
+
+cXMLPattern[{tag_}] := XMLElement[cTag[tag], _, _];
+cXMLPattern[{tag_, attrs_}] := With[{t = cTag[tag]}, XMLElement[t, cAttrs[attrs], _]];
+cXMLPattern[args_] := refuse[XMLPattern::nargs, Length[args]];
+
+cTag[tag_] := (
+  noStringPatterns[tag];
+  If[!validTagQ[tag], refuse[XMLPattern::badtag, tag]];
+  tag);
+
+noStringPatterns[p_] :=
+  Replace[barePatterns[p], {s_, ___} :> refuse[XMLPattern::strpat, s]];
+
+(* ---- The attribute argument ---- *)
+
+cAttrs[$Failed] := refuseQuietly[];
+cAttrs[Verbatim[Pattern][s_Symbol, inner_]] := bindAs[s, cAttrs[inner], stripAttrs];
+(* A test on the whole attribute map sees the original map. *)
+cAttrs[Verbatim[PatternTest][inner_, test_]] :=
+  With[{p = cAttrs[inner]},
+    If[$mat, PatternTest[p, Function[a, test[stripAttrs[a]]]], PatternTest[p, test]]];
+cAttrs[Verbatim[_]] := _;
+cAttrs[rules_List] :=
+  With[{kvp = KeyValuePattern[cRule /@ rules]}, noDuplicateKeys[rules]; kvp];
+cAttrs[r_Rule] := cAttrs[{r}];
+(* A list is always the rule list, so a bare namespaced key is written {{ns, name}}. *)
+cAttrs[k : (_String | _Alternatives)] /; literalKeyQ[k] := cAttrs[{k}];
+cAttrs[a_] := refuse[XMLPattern::badattrs, a];
+
+cRule[$Failed] := refuseQuietly[];
+cRule[Verbatim[Rule][k_, v_]] :=
+  Module[{listKeys},
+    If[!literalKeyQ[k], refuse[XMLPattern::badkey, k]];
+    noStringPatterns[v];
+    listKeys = Select[keyLiterals[k], StringQ[#] && KeyExistsQ[$readings, #] &];
+    Scan[Sow[#, $listKeyTag] &, listKeys];
+    slotKey[k] -> If[Length[listKeys] === Length[keyLiterals[k]], desugar[v], v]];
+cRule[k_?literalKeyQ] := cRule[k -> _];
+cRule[k_] := refuse[XMLPattern::badkey, k];
+
+(* A list key compiles to its private slot; every other key is itself. *)
+slotKey[Verbatim[Alternatives][ks__]] := Alternatives @@ (slotKey /@ {ks});
+slotKey[k_String] /; KeyExistsQ[$readings, k] := tok[First[$readings[k]]];
+slotKey[k_] := k;
+
+(* The one desugaring (ADR 0011): at a list key, a literal string or an
+   Alternatives of literal strings can never match a list as written, so it
+   means "contains this token". Nothing else is rewritten. *)
+desugar[s : (_String | Verbatim[Alternatives][__String])] := {___, s, ___};
+desugar[v_] := v;
+
+(* KeyValuePattern demands distinct elements, so two rules on one key are a
+   silent False however each would match alone. *)
+noDuplicateKeys[rules_] :=
+  Replace[
+    Select[Tally[Join @@ (keyLiterals[Replace[#, Verbatim[Rule][k_, _] :> k]] & /@ rules)],
+      Last[#] > 1 &],
+    {{k_, _}, ___} :> refuse[XMLPattern::dupkey, k]];
+
+(* ---- Bindings ---- *)
+
+(* The same name gets the same fresh symbol throughout a query, so that
+   (e : XMLPattern["a"]) | (e : XMLPattern["b"]) still binds one name. *)
+SetAttributes[bindAs, HoldFirst];
+bindAs[s_, p_, inverse_] :=
+  If[!$mat,
+    namedPattern[s, p],
+    With[{fresh = If[KeyExistsQ[$fresh, Hold[s]], $fresh[Hold[s]],
+        $fresh[Hold[s]] = freshSymbol[]]},
+      Sow[{Hold[s], fresh, inverse}, $bindTag];
+      namedPattern[fresh, p]]];
+
+(* A temporary private symbol, so nothing is left in the caller's context. *)
+freshSymbol[] := Module[{bound}, bound];
+
+(* s : p, built without a literal Pattern on a right-hand side. *)
+SetAttributes[namedPattern, HoldFirst];
+namedPattern[s_, p_] := Pattern @@ Hold[s, p];
+
+(* Held, so that the bindings its argument sows are reaped here. *)
+SetAttributes[reapBinds, HoldFirst];
+reapBinds[expr_] :=
+  MapAt[DeleteDuplicates[Join @@ #] &, Reap[expr, $bindTag], 2];
+
+(* Hold[body] -> Hold[With[{e = strip[e$], ...}, body]] *)
+wrapBinds[{}, held_Hold] := held;
+wrapBinds[binds_, held_Hold] :=
+  With[{spec = Replace[
+      Join @@ (Replace[#, {Hold[s_], fresh_, inverse_} :> Hold[s = inverse[fresh]]] & /@ binds),
+      Hold[sets___] :> Hold[{sets}]]},
+    Replace[Join[spec, held], Hold[vars_, body_] :> Hold[With[vars, body]]]];
+
+(* =========================================================== *)
+(* Running a compiled query                                     *)
+(* =========================================================== *)
+
+(* Materialise once per query, over the union of the list keys all its stages
+   name; strip once, at the output. *)
+runCompiled[run_, tree_, {pattern_, {}}, rest___] := run[tree, pattern, rest];
+runCompiled[run_, tree_, {pattern_, readings_}, rest___] :=
+  strip @ run[materialise[tree, readings], pattern, rest];
 
 (* =========================================================== *)
 (* XMLCases                                                     *)
 (* =========================================================== *)
 
-(* Base: simple pattern \[LongDash] just Cases *)
-XMLCases[tree_, pat_XMLElement] :=
-  Cases[tree, pat, Infinity] /; validTreeQ[tree];
+XMLCases[tree_, q_] :=
+  With[{c = compileQuery[q, XMLCases]},
+    Which[
+      c === $Failed, $Failed,
+      !validTreeQ[tree], Message[XMLCases::badtree, Head[tree]]; $Failed,
+      True, runCompiled[casesC, tree, c]]];
 
-(* Base: Alternatives of XMLElement patterns (heterogeneous constraints).
-   Flat-check of leaves so composed patterns like (a|b) | (c|d) work. *)
-XMLCases[tree_, pat_Alternatives] :=
-  Cases[tree, pat, Infinity] /;
-    validTreeQ[tree] && altOfXMLElementsQ[pat];
-
-(* Base with rule \[LongDash] catches any RuleDelayed not handled by combinators.
-   Also handles (pat1 | pat2) :> body since the lhs is an Alternatives. *)
-XMLCases[tree_, rule_RuleDelayed] :=
-  Cases[tree, rule, Infinity] /; validTreeQ[tree];
-
-(* Base: top-level Condition (pat /; test) over a base pattern *)
-XMLCases[tree_, pat_Condition] :=
-  Cases[tree, pat, Infinity] /; validTreeQ[tree] && validConditionQ[pat];
-
-(* Condition wrapping a combinator: unsupported *)
-XMLCases[tree_, pat_Condition] :=
-  (Message[XMLCases::condcombinator, Short[pat[[1]]]]; $Failed) /;
-    validTreeQ[tree] && condCombinatorQ[pat];
+(* Base: a pattern, a Condition, or a rule over either \[LongDash] just Cases *)
+casesC[tree_, pat_] := Cases[tree, pat, Infinity];
 
 (* Descendant: chained Cases *)
-XMLCases[tree_, Descendant[outerPat_, innerPat_]] :=
-  Flatten[XMLCases[#, innerPat] & /@ XMLCases[tree, outerPat], 1] /;
-    validTreeQ[tree];
+casesC[tree_, Descendant[outerPat_, innerPat_]] :=
+  Flatten[casesC[#, innerPat] & /@ casesC[tree, outerPat], 1];
 
 (* Descendant with rule \[LongDash] nested Cases keeps outer bindings in scope *)
-XMLCases[tree_, Verbatim[RuleDelayed][Descendant[outerPat_, innerPat_], body_]] :=
+casesC[tree_, Verbatim[RuleDelayed][Descendant[outerPat_, innerPat_], body_]] :=
   Flatten[Cases[tree,
-    parent:outerPat :> XMLCases[parent, innerPat :> body],
-    Infinity], 1
-  ] /; validTreeQ[tree];
+    parent:outerPat :> casesC[parent, innerPat :> body],
+    Infinity], 1];
 
 (* Child: find parents, then direct children of each *)
-XMLCases[tree_, Child[parentPat_, childPat_]] :=
-  Flatten[
-    Cases[#, childPat, {2}] & /@ XMLCases[tree, parentPat],
-    1
-  ] /; validTreeQ[tree];
+casesC[tree_, Child[parentPat_, childPat_]] :=
+  Flatten[Cases[#, childPat, {2}] & /@ casesC[tree, parentPat], 1];
 
 (* Child with rule \[LongDash] nested Cases keeps parent bindings in scope *)
-XMLCases[tree_, Verbatim[RuleDelayed][Child[parentPat_, childPat_], body_]] :=
+casesC[tree_, Verbatim[RuleDelayed][Child[parentPat_, childPat_], body_]] :=
   Flatten[Cases[tree,
     parent:parentPat :> Cases[parent, childPat :> body, {2}],
-    Infinity], 1
-  ] /; validTreeQ[tree];
+    Infinity], 1];
 
 (* Adjacent sibling: find parents containing beforePat,
    then for each, find afterPat immediately after *)
-XMLCases[tree_, Adjacent[beforePat_, afterPat_]] :=
+casesC[tree_, Adjacent[beforePat_, afterPat_]] :=
   Module[{allParents},
     allParents = Cases[tree,
       el:XMLElement[_, _, children_List] /; MemberQ[children, beforePat] :> el,
@@ -350,10 +440,10 @@ XMLCases[tree_, Adjacent[beforePat_, afterPat_]] :=
       ] /@ allParents,
       1
     ]
-  ] /; validTreeQ[tree];
+  ];
 
 (* Adjacent with rule *)
-XMLCases[tree_, Verbatim[RuleDelayed][Adjacent[beforePat_, afterPat_], body_]] :=
+casesC[tree_, Verbatim[RuleDelayed][Adjacent[beforePat_, afterPat_], body_]] :=
   Module[{allParents},
     allParents = Cases[tree,
       el:XMLElement[_, _, children_List] /; MemberQ[children, beforePat] :> el,
@@ -368,11 +458,11 @@ XMLCases[tree_, Verbatim[RuleDelayed][Adjacent[beforePat_, afterPat_], body_]] :
       ] /@ allParents,
       1
     ]
-  ] /; validTreeQ[tree];
+  ];
 
 (* General sibling: find parents containing beforePat,
    then for each, find all afterPat that come after *)
-XMLCases[tree_, Sibling[beforePat_, afterPat_]] :=
+casesC[tree_, Sibling[beforePat_, afterPat_]] :=
   Module[{allParents},
     allParents = Cases[tree,
       el:XMLElement[_, _, children_List] /; MemberQ[children, beforePat] :> el,
@@ -390,10 +480,10 @@ XMLCases[tree_, Sibling[beforePat_, afterPat_]] :=
       ] /@ allParents,
       1
     ]
-  ] /; validTreeQ[tree];
+  ];
 
 (* Sibling with rule \[LongDash] outer Cases keeps beforePat bindings in scope *)
-XMLCases[tree_, Verbatim[RuleDelayed][Sibling[beforePat_, afterPat_], body_]] :=
+casesC[tree_, Verbatim[RuleDelayed][Sibling[beforePat_, afterPat_], body_]] :=
   Flatten[Cases[tree,
     el:XMLElement[_, _, children_List] /; MemberQ[children, beforePat] :>
       Module[{elems = Select[el[[3]], MatchQ[#, _XMLElement] &], idx},
@@ -403,18 +493,7 @@ XMLCases[tree_, Verbatim[RuleDelayed][Sibling[beforePat_, afterPat_], body_]] :=
           {}
         ]
       ],
-    Infinity], 1
-  ] /; validTreeQ[tree];
-
-(* Bad tree *)
-XMLCases[tree_, pat_] :=
-  (Message[XMLCases::badtree, Head[tree]]; $Failed) /;
-    !validTreeQ[tree] && validPatternQ[pat];
-
-(* Bad pattern *)
-XMLCases[tree_, pat_] :=
-  (Message[XMLCases::badpat, Short[pat]]; $Failed) /;
-    validTreeQ[tree] && !validPatternQ[pat];
+    Infinity], 1];
 
 (* =========================================================== *)
 (* XMLFirstCase                                                 *)
@@ -422,62 +501,44 @@ XMLCases[tree_, pat_] :=
 (* as XMLCases. Default (3rd arg) returned when nothing found.  *)
 (* =========================================================== *)
 
-(* Base: simple pattern \[LongDash] FirstCase short-circuits natively *)
-XMLFirstCase[tree_, pat_XMLElement, default_:Missing["NotFound"]] :=
-  FirstCase[tree, pat, default, Infinity] /; validTreeQ[tree];
+XMLFirstCase[tree_, q_, default_:Missing["NotFound"]] :=
+  With[{c = compileQuery[q, XMLFirstCase]},
+    Which[
+      c === $Failed, $Failed,
+      !validTreeQ[tree], Message[XMLFirstCase::badtree, Head[tree]]; $Failed,
+      True, runCompiled[firstC, tree, c, default]]];
 
-(* Base: Alternatives of XMLElement patterns (heterogeneous constraints).
-   Flat-check of leaves so composed patterns like (a|b) | (c|d) work. *)
-XMLFirstCase[tree_, pat_Alternatives, default_:Missing["NotFound"]] :=
-  FirstCase[tree, pat, default, Infinity] /;
-    validTreeQ[tree] && altOfXMLElementsQ[pat];
-
-(* Base with rule.
-   Also handles (pat1 | pat2) :> body since the lhs is an Alternatives. *)
-XMLFirstCase[tree_, rule_RuleDelayed, default_:Missing["NotFound"]] :=
-  FirstCase[tree, rule, default, Infinity] /; validTreeQ[tree];
-
-(* Base: top-level Condition (pat /; test) over a base pattern *)
-XMLFirstCase[tree_, pat_Condition, default_:Missing["NotFound"]] :=
-  FirstCase[tree, pat, default, Infinity] /;
-    validTreeQ[tree] && validConditionQ[pat];
-
-(* Condition wrapping a combinator: unsupported *)
-XMLFirstCase[tree_, pat_Condition, ___] :=
-  (Message[XMLFirstCase::condcombinator, Short[pat[[1]]]]; $Failed) /;
-    validTreeQ[tree] && condCombinatorQ[pat];
+(* Base: FirstCase short-circuits natively *)
+firstC[tree_, pat_, default_] := FirstCase[tree, pat, default, Infinity];
 
 (* Descendant: short-circuit via Catch/Throw on first inner hit *)
-XMLFirstCase[tree_, Descendant[outerPat_, innerPat_],
-    default_:Missing["NotFound"]] :=
+firstC[tree_, Descendant[outerPat_, innerPat_], default_] :=
   Module[{tag},
     Catch[
       Cases[tree, o:outerPat :>
-        With[{r = XMLFirstCase[o, innerPat, tag]},
+        With[{r = firstC[o, innerPat, tag]},
           If[r =!= tag, Throw[r, tag]]
         ], Infinity];
       default,
       tag
     ]
-  ] /; validTreeQ[tree];
+  ];
 
 (* Descendant with rule *)
-XMLFirstCase[tree_, Verbatim[RuleDelayed][Descendant[outerPat_, innerPat_], body_],
-    default_:Missing["NotFound"]] :=
+firstC[tree_, Verbatim[RuleDelayed][Descendant[outerPat_, innerPat_], body_], default_] :=
   Module[{tag},
     Catch[
       Cases[tree, parent:outerPat :>
-        With[{r = XMLFirstCase[parent, innerPat :> body, tag]},
+        With[{r = firstC[parent, innerPat :> body, tag]},
           If[r =!= tag, Throw[r, tag]]
         ], Infinity];
       default,
       tag
     ]
-  ] /; validTreeQ[tree];
+  ];
 
 (* Child: first parent match's first direct child match *)
-XMLFirstCase[tree_, Child[parentPat_, childPat_],
-    default_:Missing["NotFound"]] :=
+firstC[tree_, Child[parentPat_, childPat_], default_] :=
   Module[{tag},
     Catch[
       Cases[tree, p:parentPat :>
@@ -487,11 +548,10 @@ XMLFirstCase[tree_, Child[parentPat_, childPat_],
       default,
       tag
     ]
-  ] /; validTreeQ[tree];
+  ];
 
 (* Child with rule *)
-XMLFirstCase[tree_, Verbatim[RuleDelayed][Child[parentPat_, childPat_], body_],
-    default_:Missing["NotFound"]] :=
+firstC[tree_, Verbatim[RuleDelayed][Child[parentPat_, childPat_], body_], default_] :=
   Module[{tag},
     Catch[
       Cases[tree, parent:parentPat :>
@@ -501,11 +561,10 @@ XMLFirstCase[tree_, Verbatim[RuleDelayed][Child[parentPat_, childPat_], body_],
       default,
       tag
     ]
-  ] /; validTreeQ[tree];
+  ];
 
 (* Adjacent: first parent containing beforePat, first afterPat immediately after *)
-XMLFirstCase[tree_, Adjacent[beforePat_, afterPat_],
-    default_:Missing["NotFound"]] :=
+firstC[tree_, Adjacent[beforePat_, afterPat_], default_] :=
   Module[{tag},
     Catch[
       Cases[tree,
@@ -519,11 +578,10 @@ XMLFirstCase[tree_, Adjacent[beforePat_, afterPat_],
       default,
       tag
     ]
-  ] /; validTreeQ[tree];
+  ];
 
 (* Adjacent with rule *)
-XMLFirstCase[tree_, Verbatim[RuleDelayed][Adjacent[beforePat_, afterPat_], body_],
-    default_:Missing["NotFound"]] :=
+firstC[tree_, Verbatim[RuleDelayed][Adjacent[beforePat_, afterPat_], body_], default_] :=
   Module[{tag},
     Catch[
       Cases[tree,
@@ -537,11 +595,10 @@ XMLFirstCase[tree_, Verbatim[RuleDelayed][Adjacent[beforePat_, afterPat_], body_
       default,
       tag
     ]
-  ] /; validTreeQ[tree];
+  ];
 
 (* Sibling: first parent containing beforePat, first afterPat after it *)
-XMLFirstCase[tree_, Sibling[beforePat_, afterPat_],
-    default_:Missing["NotFound"]] :=
+firstC[tree_, Sibling[beforePat_, afterPat_], default_] :=
   Module[{tag},
     Catch[
       Cases[tree,
@@ -557,11 +614,10 @@ XMLFirstCase[tree_, Sibling[beforePat_, afterPat_],
       default,
       tag
     ]
-  ] /; validTreeQ[tree];
+  ];
 
 (* Sibling with rule *)
-XMLFirstCase[tree_, Verbatim[RuleDelayed][Sibling[beforePat_, afterPat_], body_],
-    default_:Missing["NotFound"]] :=
+firstC[tree_, Verbatim[RuleDelayed][Sibling[beforePat_, afterPat_], body_], default_] :=
   Module[{tag},
     Catch[
       Cases[tree,
@@ -577,17 +633,7 @@ XMLFirstCase[tree_, Verbatim[RuleDelayed][Sibling[beforePat_, afterPat_], body_]
       default,
       tag
     ]
-  ] /; validTreeQ[tree];
-
-(* Bad tree *)
-XMLFirstCase[tree_, pat_, ___] :=
-  (Message[XMLFirstCase::badtree, Head[tree]]; $Failed) /;
-    !validTreeQ[tree] && validPatternQ[pat];
-
-(* Bad pattern *)
-XMLFirstCase[tree_, pat_, ___] :=
-  (Message[XMLFirstCase::badpat, Short[pat]]; $Failed) /;
-    validTreeQ[tree] && !validPatternQ[pat];
+  ];
 
 (* =========================================================== *)
 (* XMLDeleteCases                                               *)
@@ -605,60 +651,54 @@ xmlWalk[XMLElement[tag_, attrs_, children_List], f_] :=
 xmlWalk[list_List, f_] := xmlWalk[#, f] & /@ list;
 xmlWalk[x_, _] := x;
 
-(* Base: single XMLElement pattern *)
-XMLDeleteCases[tree_, pat_XMLElement] :=
-  DeleteCases[tree, pat, Infinity] /; validTreeQ[tree];
+(* A rule has nothing to delete with; deletion by relative position (Adjacent,
+   Sibling) is a niche operation, documented as unsupported here. *)
+XMLDeleteCases[tree_, q_RuleDelayed] :=
+  (Message[XMLDeleteCases::badpat, Short[q]]; $Failed);
 
-(* Base: Alternatives of XMLElement patterns (e.g. XMLPattern["script"] | XMLPattern["style"]).
-   Flat-check of leaves so composed patterns like (a|b) | (c|d) work. *)
-XMLDeleteCases[tree_, pat_Alternatives] :=
-  DeleteCases[tree, pat, Infinity] /;
-    validTreeQ[tree] && altOfXMLElementsQ[pat];
+XMLDeleteCases[tree_, q_] :=
+  With[{c = compileQuery[q, XMLDeleteCases]},
+    Which[
+      c === $Failed, $Failed,
+      !validTreeQ[tree], Message[XMLDeleteCases::badtree, Head[tree]]; $Failed,
+      MatchQ[q, _Adjacent | _Sibling], Message[XMLDeleteCases::unsupported]; $Failed,
+      True, runCompiled[deleteC, tree, c]]];
+
+(* Base: a pattern or a Condition *)
+deleteC[tree_, pat_] := DeleteCases[tree, pat, Infinity];
 
 (* Child: at every matching parent, filter direct children *)
-XMLDeleteCases[tree_, Child[parentPat_, childPat_]] :=
+deleteC[tree_, Child[parentPat_, childPat_]] :=
   xmlWalk[tree,
     Replace[#, p:parentPat :>
       XMLElement[p[[1]], p[[2]], DeleteCases[p[[3]], childPat]]
     ] &
-  ] /; validTreeQ[tree];
+  ];
 
 (* Descendant: at every matching ancestor, DeleteCases innerPat across its subtree *)
-XMLDeleteCases[tree_, Descendant[outerPat_, innerPat_]] :=
+deleteC[tree_, Descendant[outerPat_, innerPat_]] :=
   xmlWalk[tree,
     Replace[#, p:outerPat :>
       XMLElement[p[[1]], p[[2]], DeleteCases[p[[3]], innerPat, Infinity]]
     ] &
-  ] /; validTreeQ[tree];
+  ];
 
-(* Base: top-level Condition (pat /; test) over a base pattern *)
-XMLDeleteCases[tree_, pat_Condition] :=
-  DeleteCases[tree, pat, Infinity] /; validTreeQ[tree] && validConditionQ[pat];
+(* =========================================================== *)
+(* XMLMatchQ (ADR 0013)                                         *)
+(* A whole-element test, as StringMatchQ is a whole-string one. *)
+(* =========================================================== *)
 
-(* Condition wrapping a combinator: unsupported *)
-XMLDeleteCases[tree_, pat_Condition] :=
-  (Message[XMLDeleteCases::condcombinator, Short[pat[[1]]]]; $Failed) /;
-    validTreeQ[tree] && condCombinatorQ[pat];
+XMLMatchQ[_, q_?combinatorQ] := (Message[XMLMatchQ::combinator, Short[q]]; $Failed);
+XMLMatchQ[_, q_RuleDelayed] := (Message[XMLMatchQ::badpat, Short[q]]; $Failed);
 
-(* Adjacent / Sibling: unsupported \[LongDash] deletion by relative position is a niche
-   operation and the combinator API is documented as unsupported here. *)
-XMLDeleteCases[tree_, _Adjacent | _Sibling] :=
-  (Message[XMLDeleteCases::unsupported]; $Failed) /; validTreeQ[tree];
+(* Only the element itself is materialised: its children cannot be reached. *)
+XMLMatchQ[el_, q_] :=
+  Replace[compileQuery[q, XMLMatchQ], {
+    $Failed -> $Failed,
+    {pattern_, {}} :> MatchQ[el, pattern],
+    {pattern_, readings_} :> MatchQ[materialise[el, readings, {0}], pattern]}];
 
-(* Bad tree *)
-XMLDeleteCases[tree_, pat_] :=
-  (Message[XMLDeleteCases::badtree, Head[tree]]; $Failed) /;
-    !validTreeQ[tree] &&
-    (MatchQ[pat, _XMLElement | _Child | _Descendant | _Adjacent | _Sibling] ||
-     (MatchQ[pat, _Alternatives] && altOfXMLElementsQ[pat]) ||
-     validConditionQ[pat]);
-
-(* Bad pattern *)
-XMLDeleteCases[tree_, pat_] :=
-  (Message[XMLDeleteCases::badpat, Short[pat]]; $Failed) /;
-    validTreeQ[tree] &&
-    !MatchQ[pat, _XMLElement | _Child | _Descendant | _Adjacent | _Sibling] &&
-    !(MatchQ[pat, _Alternatives] && altOfXMLElementsQ[pat]);
+XMLMatchQ[q_][el_] := XMLMatchQ[el, q];
 
 (* =========================================================== *)
 (* HTMLTextContent                                             *)
@@ -692,7 +732,7 @@ textContentWalk[_] := "";
 (* build on. Each element is classified by tag alone (the       *)
 (* frozen user-agent stylesheet) into one of five display       *)
 (* roles \[LongDash] Block, Inline, Preformatted, LineBreak, Skip \[LongDash] with   *)
-(* a user "Roles" override layer (normRoleRules + roleOf). The  *)
+(* a user "Roles" override layer (compileRules + roleOf). The  *)
 (* emitters that sit on top of this substrate then decide *what *)
 (* form* each placed element takes (HTMLInnerText: text; *)
 (* HTMLToNotebook: a Cell or box \[LongDash] its own Layer 2). roleOf is   *)
@@ -731,12 +771,30 @@ validRoleQ[r_] := MemberQ[$displayRoles, r];
 sugarRoleLHS[s_String] := XMLPattern[s];
 sugarRoleLHS[lhs_] := lhs;
 
-normRoleRules[rules_] :=
-  Replace[
-    If[AssociationQ[rules], Normal[rules], Flatten[{rules}]],
-    {Verbatim[Rule][lhs_, r_] :> (sugarRoleLHS[lhs] -> r),
-     Verbatim[RuleDelayed][lhs_, r_] :> RuleDelayed[sugarRoleLHS[lhs], r]},
-    {1}];
+(* Each rule's left-hand side is compiled like a query, and must be an element
+   pattern: a rule is tried against one element at a time. compileRules gives
+   {rules, readings}, the readings being those of every list key any rule
+   names, so the caller materialises the tree once, at entry. *)
+compileRule[Verbatim[Rule][lhs_, r_], head_, readings_] :=
+  If[combinatorQ[lhs], refuseRule[head, lhs],
+    Replace[compileQuery[sugarRoleLHS[lhs], head, readings], {p_, rd_} :> {p -> r, rd}]];
+compileRule[rule_RuleDelayed, head_, readings_] :=
+  If[combinatorQ[rule[[1]]], refuseRule[head, rule[[1]]],
+    compileQuery[
+      RuleDelayed @@ Join[Hold @@ {sugarRoleLHS[rule[[1]]]}, Extract[rule, {2}, Hold]],
+      head, readings]];
+compileRule[x_, _, _] := {x, {}};
+
+refuseRule[head_, lhs_] := (Message[MessageName[head, "badpat"], Short[lhs]]; $Failed);
+
+compileRules[rules_, head_] :=
+  With[{readings = resolveReadings[$AttributeReadings]},
+    With[{cs = compileRule[#, head, readings] & /@
+        If[AssociationQ[rules], Normal[rules], Flatten[{rules}]]},
+      If[MemberQ[cs, $Failed], $Failed, {cs[[All, 1]], Union @@ cs[[All, 2]]}]]];
+
+materialiseFor[tree_, {}] := tree;
+materialiseFor[tree_, readings_] := materialise[tree, readings];
 
 (* roleOf: first matching rule wins; a non-role RHS messages (under the caller's
    own ::badrole) and defers to the frozen table; no match defers to the table;
@@ -818,9 +876,11 @@ HTMLInnerText[XMLObject["Document"][_, root_, _], opts : OptionsPattern[]] :=
   HTMLInnerText[root, opts];
 
 HTMLInnerText[tree_, opts : OptionsPattern[]] :=
-  itSerialize[
-    Flatten[itToks[tree, False, normRoleRules[OptionValue["Roles"]]]],
-    OptionValue["BlockSeparator"]
+  With[{roles = compileRules[OptionValue["Roles"], HTMLInnerText]},
+    If[roles === $Failed, $Failed,
+      itSerialize[
+        Flatten[itToks[materialiseFor[tree, Last[roles]], False, First[roles]]],
+        OptionValue["BlockSeparator"]]]
   ] /; validTextInputQ[tree];
 
 HTMLInnerText[tree_, OptionsPattern[]] :=
@@ -864,36 +924,30 @@ blockStyleQ[_] := False;
    (inline) plus the structural block styles. Tried after the user rules,
    first match wins; an unmatched element gets no construct (None). table/hr
    are themselves built-in constructor-function rules. *)
-$defaultConstructRules := {
-  XMLPattern["h1"] -> "Title",
-  XMLPattern["h2"] -> "Chapter",
-  XMLPattern["h3"] -> "Section",
-  XMLPattern["h4"] -> "Subsection",
-  XMLPattern["h5"] -> "Subsubsection",
-  XMLPattern["h6"] -> "Subsubsubsection",
-  XMLPattern["p"] -> "Text",
-  XMLPattern["li"] -> "Item",
-  XMLPattern["b" | "strong"] -> "Bold",
-  XMLPattern["i" | "em" | "cite" | "var" | "dfn"] -> "Italic",
-  XMLPattern["u" | "ins"] -> "Underline",
-  XMLPattern["s" | "del" | "strike"] -> "StrikeThrough",
-  XMLPattern["code" | "kbd" | "samp" | "tt"] -> "Code",
-  XMLPattern["a"] -> "Hyperlink",
-  XMLPattern["img"] -> "Hyperlink",
-  XMLPattern["span" | "mark" | "small" | "q" | "abbr" | "sub" | "sup" |
+(* Plain XMLElement patterns: an XMLPattern is inert, and these name no list
+   key, so they are what compiling XMLPattern[tag] would give. *)
+$defaultConstructRules = {
+  XMLElement["h1", _, _] -> "Title",
+  XMLElement["h2", _, _] -> "Chapter",
+  XMLElement["h3", _, _] -> "Section",
+  XMLElement["h4", _, _] -> "Subsection",
+  XMLElement["h5", _, _] -> "Subsubsection",
+  XMLElement["h6", _, _] -> "Subsubsubsection",
+  XMLElement["p", _, _] -> "Text",
+  XMLElement["li", _, _] -> "Item",
+  XMLElement["b" | "strong", _, _] -> "Bold",
+  XMLElement["i" | "em" | "cite" | "var" | "dfn", _, _] -> "Italic",
+  XMLElement["u" | "ins", _, _] -> "Underline",
+  XMLElement["s" | "del" | "strike", _, _] -> "StrikeThrough",
+  XMLElement["code" | "kbd" | "samp" | "tt", _, _] -> "Code",
+  XMLElement["a", _, _] -> "Hyperlink",
+  XMLElement["img", _, _] -> "Hyperlink",
+  XMLElement["span" | "mark" | "small" | "q" | "abbr" | "sub" | "sup" |
     "time" | "label" | "bdi" | "bdo" | "data" | "ruby" | "rt" | "rp" |
-    "wbr"] -> "Plain",
-  XMLPattern["table"] :> tableConstruct,
-  XMLPattern["hr"] :> hrConstruct
+    "wbr", _, _] -> "Plain",
+  XMLElement["table", _, _] :> tableConstruct,
+  XMLElement["hr", _, _] :> hrConstruct
 };
-
-(* sugarRoleLHS (string -> XMLPattern) is shared with the role rules. *)
-normConstructRules[rules_] :=
-  Replace[
-    If[AssociationQ[rules], Normal[rules], Flatten[{rules}]],
-    {Verbatim[Rule][lhs_, r_] :> (sugarRoleLHS[lhs] -> r),
-     Verbatim[RuleDelayed][lhs_, r_] :> RuleDelayed[sugarRoleLHS[lhs], r]},
-    {1}];
 
 (* First user rule wins, else the default map, else None. *)
 constructOf[el_XMLElement, ctx_] :=
@@ -1121,10 +1175,12 @@ HTMLToNotebook[XMLObject["Document"][_, root_, _], opts : OptionsPattern[]] :=
   HTMLToNotebook[root, opts];
 
 HTMLToNotebook[tree_, opts : OptionsPattern[]] :=
-  Notebook[
-    blockEmit[toChildList[tree],
-      initCtx[normRoleRules[OptionValue["Roles"]],
-        normConstructRules[OptionValue["Constructs"]]]]
+  With[{roles = compileRules[OptionValue["Roles"], HTMLToNotebook],
+        cons = compileRules[OptionValue["Constructs"], HTMLToNotebook]},
+    If[roles === $Failed || cons === $Failed, $Failed,
+      Notebook[
+        blockEmit[toChildList[materialiseFor[tree, Union[Last[roles], Last[cons]]]],
+          initCtx[First[roles], First[cons]]]]]
   ] /; validTextInputQ[tree];
 
 HTMLToNotebook[tree_, OptionsPattern[]] :=

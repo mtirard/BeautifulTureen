@@ -63,9 +63,9 @@ $treeScoped = ImportString["<html><body>
 TestCreate[
   Length @ XMLCases[
     XMLDeleteCases[$treeScoped,
-      Child[XMLPattern["div", CSSClass["article"]], XMLPattern[_, CSSClass["ad"]]]
+      Child[XMLPattern["div", "classList" -> "article"], XMLPattern[_, "classList" -> "ad"]]
     ],
-    XMLPattern[_, CSSClass["ad"]]
+    XMLPattern[_, "classList" -> "ad"]
   ],
   1,
   TestID -> "delete-child-scoped"
@@ -85,9 +85,9 @@ $treeNested = ImportString["<html><body>
 TestCreate[
   HTMLTextContent /@ XMLCases[
     XMLDeleteCases[$treeNested,
-      Descendant[XMLPattern["article"], XMLPattern[_, CSSClass["ad"]]]
+      Descendant[XMLPattern["article"], XMLPattern[_, "classList" -> "ad"]]
     ],
-    XMLPattern[_, CSSClass["ad"]]
+    XMLPattern[_, "classList" -> "ad"]
   ],
   {"outside \[LongDash] keep"},
   TestID -> "delete-descendant-scoped"
@@ -120,4 +120,41 @@ TestCreate[
   $Failed,
   {XMLDeleteCases::badpat},
   TestID -> "delete-bad-pattern"
+];
+
+(* === The classList key === *)
+
+(* Deletion runs on the materialised tree and the whole result is stripped, so
+   what survives is exactly the original. *)
+$treeAds = ImportString[
+  "<div class=\"main\"><p class=\"ad promo\">ad</p><p>keep</p><p class=\"note\">note</p></div>",
+  {"HTML", "XMLObject"}];
+
+TestCreate[
+  XMLDeleteCases[$treeAds, XMLPattern["p", "classList" -> "ad"]],
+  ImportString["<div class=\"main\"><p>keep</p><p class=\"note\">note</p></div>", {"HTML", "XMLObject"}],
+  TestID -> "delete-classlist-result-is-original"
+];
+
+(* Nothing to delete gives the tree back unchanged: strip inverts materialisation
+   exactly, including on elements with no class. *)
+TestCreate[
+  XMLDeleteCases[$treeAds, XMLPattern["p", "classList" -> "zzz"]] === $treeAds,
+  True,
+  TestID -> "delete-classlist-no-match-is-identity"
+];
+
+TestCreate[
+  XMLDeleteCases[$treeAds,
+    Child[XMLPattern["div", "classList" -> "main"], XMLPattern["p", "classList" -> _?(FreeQ["note"])]]],
+  ImportString["<div class=\"main\"><p class=\"note\">note</p></div>", {"HTML", "XMLObject"}],
+  TestID -> "delete-child-classlist-both-stages"
+];
+
+(* A rule has nothing to delete with. *)
+TestCreate[
+  XMLDeleteCases[$treeAds, XMLPattern["p"] :> 1],
+  $Failed,
+  {XMLDeleteCases::badpat},
+  TestID -> "delete-rule-refused"
 ];
