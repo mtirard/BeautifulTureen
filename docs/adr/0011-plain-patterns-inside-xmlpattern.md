@@ -1,10 +1,12 @@
 ---
-status: accepted
+status: accepted (amended after implementation)
 ---
 
 # Inside an `XMLPattern`, everything is a plain WL pattern: literal keys, one attribute argument, one desugaring
 
 An [[XML pattern]] is the paclet's third kind of pattern, beside WL's patterns and string patterns: an inert object that only the XML* functions interpret. Everything written inside one is an **ordinary WL pattern**, matched exactly as `MatchQ` would match it, and the paclet departs from that in as few places as possible — one desugaring, one set of exactly-decidable refusals, and the [[reading]] mechanism of ADR 0012. Nothing is auto-lifted, nothing is made orderless behind the user's back, and set questions about a token list are asked with WL's own list predicates.
+
+> **Amended after implementation** (commit bc5ae39), where the code settled what this ADR left open: a list attribute argument is always the rule list, so a bare namespaced key is written `{{ns, name}}`; overlapping `Alternatives` keys are refused as duplicates; at an `Alternatives` key the desugaring applies only if every alternative is a list key; a `Condition` on the attribute argument is refused; and every refusal fires when a consumer compiles the query, since `XMLPattern` has no definitions. Each is written into the section it belongs to. Combinator scoping is [ADR 0014](./0014-combinators-scope-names-as-wl-does.md).
 
 Supersedes ADR 0006, ADR 0007 and ADR 0008 in part — each of those ADRs states what specifically survives. Read together with [ADR 0012](./0012-readings-and-materialising-emission.md), which covers how a token list is produced and exposed.
 
@@ -18,9 +20,9 @@ A first draft of this ADR stripped the symbols but kept three smaller pieces of 
 
 ### The shape: `XMLPattern[tag]` and `XMLPattern[tag, attrs]`
 
-`XMLPattern` takes a tag and at most **one** attribute argument, and **no options, ever** — so a `Rule` in its argument list can never be mistaken for one. Consumer configuration (`AttributeReadings`, ADR 0012) lives on the consuming functions, which is also what keeps `XMLPattern` inert.
+`XMLPattern` takes a tag and at most **one** attribute argument, and **no options, ever** — so a `Rule` in its argument list can never be mistaken for one. Consumer configuration (`"AttributeReadings"`, ADR 0012) lives on the consuming functions, which is also what keeps `XMLPattern` inert.
 
-The attribute argument is **what `KeyValuePattern` takes**: a list of `key -> value` rules, matched as `KeyValuePattern` matches them — orderless and open-world, because attribute order carries no meaning and an element may carry attributes the query does not mention. A single rule, or a bare key (`"href"`, meaning `"href" -> _`), is a singleton list. The argument may be named and tested as a whole, which is how any question about the whole [[attribute map]] is asked:
+The attribute argument is **what `KeyValuePattern` takes**: a list of `key -> value` rules, matched as `KeyValuePattern` matches them — orderless and open-world, because attribute order carries no meaning and an element may carry attributes the query does not mention. A single rule, or a bare key (`"href"`, meaning `"href" -> _`), is a singleton list. A list is always the rule list, so `{ns, name}` alone is two bare keys, and a bare namespaced key is written `{{ns, name}}`. The argument may be named and tested as a whole, which is how any question about the whole [[attribute map]] is asked:
 
 ```wl
 XMLPattern["a", "href" -> target_]
@@ -28,7 +30,7 @@ XMLPattern["input", {"type" -> "text", "required"}]
 XMLPattern["div", attrs : {"id" -> _}?(Keys /* AnyTrue[StringStartsQ["data-"]])]
 ```
 
-A binding or test on the attribute argument sees the element's **original** attribute map, never a synthesised attribute (ADR 0012). A third argument is refused with a message pointing at the list form.
+A binding or test on the attribute argument sees the element's **original** attribute map, never a synthesised attribute (ADR 0012). A `Condition` on the attribute argument (`attrs_ /; test`) is refused (`XMLPattern::badattrs`): the test is written with `?`, or as a `Condition` on the whole `XMLPattern`. A third argument is refused with a message pointing at the list form.
 
 Varargs (`XMLPattern["a", c1, c2]`) are dropped in favour of the list. The list is what `KeyValuePattern` already takes, it gives the whole attribute map a single place to be named and tested, and it leaves the argument sequence free of rules that look like options.
 
@@ -36,7 +38,7 @@ Varargs (`XMLPattern["a", c1, c2]`) are dropped in favour of the list. The list 
 
 A key is a string, a namespaced `{namespace, name}` pair, or an `Alternatives` of those (`("href" | "src") -> url_`). Anything else — a blank, a predicate, a `StringExpression` — is refused with a message. A question that needs a key pattern ("has some `data-*` attribute", "has `href` in any namespace") is asked of the whole attribute map through the binding above, where it is plain WL.
 
-Two rules on the same key are refused with a message. This is not taste: `KeyValuePattern` demands distinct elements, so `KeyValuePattern[{"a" -> _?(MemberQ["x"]), "a" -> _?(MemberQ["y"])}]` is `False` against `{"a" -> {"x", "y"}}` even though each rule holds alone — a silent wrong answer. Every same-key conjunction is expressible as one value pattern instead.
+Two rules on the same key are refused with a message, and so are two rules whose `Alternatives` keys share a literal (`{("a" | "b") -> _, "a" -> _}`). This is not taste: `KeyValuePattern` demands distinct elements, so `KeyValuePattern[{"a" -> _?(MemberQ["x"]), "a" -> _?(MemberQ["y"])}]` is `False` against `{"a" -> {"x", "y"}}` even though each rule holds alone — a silent wrong answer. Every same-key conjunction is expressible as one value pattern instead.
 
 A namespaced pair is foreign vocabulary by construction, exposed raw rather than normalised to an invented string, and the identical rule governs the tag slot: WL has no canonical namespaced-name string to normalise to (confirmed empty via `Names["System`*QName*"]` and its neighbours), and the importer keeps only the resolved URI, never the written prefix.
 
@@ -44,7 +46,7 @@ A namespaced pair is foreign vocabulary by construction, exposed raw rather than
 
 A value is any WL pattern, matched as written. At a raw attribute key it is matched against the raw string, so `"class" -> "lead"` means a `class` of exactly `"lead"`. At a synthesised list key (ADR 0012) it is matched against the token list, so `"classList" -> {___, "lead", ___}`, `"classList" -> _?(MemberQ["lead"])`, `"classList" -> {}` and `"classList" -> c_` (binding the whole list) all mean what they would mean to `MatchQ`.
 
-**The one desugaring:** at a list key, a literal string or an `Alternatives` of literal strings `s` means `{___, s, ___}`. The criterion is exact: these are precisely the value patterns that can never match any list, so their literal reading is always `False` and the desugaring cannot turn a correct answer into a wrong one. It stops there. `Except["ad"]`, `_`, `_?f` and every blank *can* match a list, so they keep their plain meaning — `"classList" -> Except["ad"]` matches every list, and `:not(.ad)` is `"classList" -> _?(FreeQ["ad"])`. The desugaring applies at the top of a value only, never to the elements of a list pattern.
+**The one desugaring:** at a list key, a literal string or an `Alternatives` of literal strings `s` means `{___, s, ___}`. At an `Alternatives` key it applies only if every alternative is a list key; `("classList" | "id") -> "k"` is matched as written at both. The criterion is exact: these are precisely the value patterns that can never match any list, so their literal reading is always `False` and the desugaring cannot turn a correct answer into a wrong one. It stops there. `Except["ad"]`, `_`, `_?f` and every blank *can* match a list, so they keep their plain meaning — `"classList" -> Except["ad"]` matches every list, and `:not(.ad)` is `"classList" -> _?(FreeQ["ad"])`. The desugaring applies at the top of a value only, never to the elements of a list pattern.
 
 ### Lists are positional; set questions use WL's list predicates
 
@@ -76,7 +78,9 @@ This closes a piece of history that should not be reopened: an interim design au
 
 Exact-set pinning, cardinality (`"classList" -> {_, _}`), and token-level binding fall out of plain list patterns and need no feature of their own.
 
-Messages, each an exactly-decidable refusal in `XMLPattern::strpat`'s tradition: a bare `StringExpression` anywhere a pattern is written; a non-literal key; two rules on the same key; a third argument.
+Messages, each an exactly-decidable refusal in `XMLPattern::strpat`'s tradition: a bare `StringExpression` anywhere a pattern is written (`::strpat`); a non-literal key (`::badkey`); two rules on the same key (`::dupkey`); a third argument (`::nargs`); a malformed tag (`::badtag`) or attribute argument (`::badattrs`). `XMLPattern` has no definitions, so none fires when an `XMLPattern` is written: each fires when a consumer compiles the query, which messages and gives `$Failed`.
+
+A raw `XMLElement` pattern is still accepted wherever an element pattern is, and is run as written, so it cannot reach a list key.
 
 Documentation must carry these as Possible Issues, since each is a silent wrong answer the paclet cannot detect:
 

@@ -1,10 +1,12 @@
 ---
-status: accepted
+status: accepted (amended after implementation)
 ---
 
 # A reading synthesises a `‹key›List` attribute, by an additive, query-driven materialisation
 
 A [[reading]] — a microsyntax fixed to an attribute key — makes a **new, synthesised attribute** available to an [[XML pattern]]: the element's `class` stays the raw string it always was, and `classList` is its [[token list]]. The query says which one it means by naming the key, so a reading never changes what an existing key's value is. This ADR settles the reading table, the synthesised names, what an absent attribute reads as, and the emission that materialises a token list as a real, bindable subexpression without losing the original element.
+
+> **Amended after implementation** (commits bc5ae39, ca3c763, a86bfa5). Corrected in place: the trim field is the string `"TrimWhitespace"`; the option is the string `"AttributeReadings"`, and an entry in it replaces the global's entry for that key whole; trimming strips HTML whitespace only; a `Roles`/`Constructs` function now receives the stripped element, so that Possible Issues residual is gone; the shipped cost is about 2.5×, not 1.7×. Added: the validation of reading tables, including the two list-key collisions it refuses. The design-time measurements are kept as history beside the shipped ones.
 
 Supersedes ADR 0007 (`AttributeTest` and its `Condition` emission do not survive) and ADR 0008 (`TokenTest`/`ClassTest` do not survive; the options table does, renamed and rehomed below). Amends ADR 0009 on absence.
 
@@ -24,17 +26,21 @@ A global, `$AttributeReadings`, maps a literal attribute key to its reading. It 
 | --- | --- |
 | `Method` | `"SpaceSeparated"` (default) or `"CommaSeparated"` — pure shorthand *defining* the next two |
 | `Delimiters` | `Automatic` (from `Method`), or an explicit string pattern |
-| `TrimWhitespace` | `Automatic` (from `Method`), or an explicit Boolean |
+| `"TrimWhitespace"` | `Automatic` (from `Method`), or an explicit Boolean |
 | `"ListKey"` | `Automatic`, meaning `key <> "List"`, or an explicit string |
 
-| `Method` | `Delimiters` | `TrimWhitespace` |
+| `Method` | `Delimiters` | `"TrimWhitespace"` |
 | --- | --- | --- |
 | `"SpaceSeparated"` | `HTMLWhitespace` (ADR 0009) | `False` |
 | `"CommaSeparated"` | `","` | `True` |
 
-An `AttributeReadings` option on the **consuming** functions (`XMLCases`, `XMLFirstCase`, `XMLDeleteCases`, `XMLMatchQ`, `HTMLInnerText`, `HTMLToNotebook`) **adds to** the global rather than replacing it, and is not on `XMLPattern` (ADR 0011: it takes no options, and stays inert so `XMLPattern[…] | XMLPattern[…]` composes and a reading resolves once per query). A global rather than an internal constant is chosen for inspectability: a user can print it. Accepted footgun, routed to documentation: `Block[{$AttributeReadings = …}]` drops the built-ins.
+Trimming strips HTML whitespace (`HTMLWhitespace`, ADR 0009) from each token and nothing else, so a no-break space stays part of a comma-separated token, as the delimiter keeps it part of a space-separated one. A leading comma gives no leading empty token, since `StringSplit` drops it; the WHATWG comma parser keeps it. The divergence is kept.
+
+An `"AttributeReadings"` option on the **consuming** functions (`XMLCases`, `XMLFirstCase`, `XMLDeleteCases`, `XMLMatchQ`, `HTMLInnerText`, `HTMLToNotebook`; a bare symbol `AttributeReadings` is accepted too) **adds to** the global rather than replacing it — the table used is `Join[$AttributeReadings, option]`, so an entry for a key the global already has replaces that entry whole, with no merging of fields — and is not on `XMLPattern` (ADR 0011: it takes no options, and stays inert so `XMLPattern[…] | XMLPattern[…]` composes and a reading resolves once per query). A global rather than an internal constant is chosen for inspectability: a user can print it. Accepted footgun, routed to documentation: `Block[{$AttributeReadings = …}]` drops the built-ins.
 
 Reading keys are **literal strings**. The synthesised name must be computable from the entry, and a string-pattern reading key (`"data-" ~~ __`) would make a query's literal `"data-tagsList"` resolvable only by reversing a pattern.
+
+The table in force — global joined with option — is validated each time a consumer is called, and a failure messages and gives `$Failed`, each an exactly-decidable refusal under `$AttributeReadings`: `::notassoc` (the table is not an `Association`), `::badkey` (a key is not a string), `::badentry` (an entry is not an `Association`), `::badfield` (an unknown field), `::badmethod`, `::badvalue` (a field value of the wrong kind), and two list-key collisions — `::duplistkey`, two readings with one list key, and `::listkeyisreading`, a list key that is itself a key with a reading, so that a query naming it would mean two things.
 
 ### The synthesised attribute, and absence
 
@@ -53,11 +59,11 @@ The compiler wraps every binding that can see the element's attributes in the in
 (* compiler emits *)  pat[e$]                                  :> With[{e = strip[e$]}, body]
 ```
 
-`e` is identical to the original while `cls` binds the materialised list, from one match. A `PatternTest` on the attribute argument is applied to the stripped map. `HTMLInnerText` and `HTMLToNotebook` need no special-casing: output is byte-identical on a materialised tree, verified including hyperlinks and tables. A `Roles`/`Constructs` **function** right-hand side still receives the materialised element; that residual is a Possible Issues entry, since there is no exactly-decidable check against an arbitrary function.
+`e` is identical to the original while `cls` binds the materialised list, from one match. A `PatternTest` on the attribute argument is applied to the stripped map. `HTMLInnerText` and `HTMLToNotebook` need no special-casing: output is byte-identical on a materialised tree, verified including hyperlinks and tables. A `Roles`/`Constructs` **function** right-hand side is applied to the stripped element too.
 
 ### Materialisation is query-driven, and there is no cache
 
-Only the list keys a query names are materialised, and only the **distinct** raw values on the tree are split. Measured: 6.6 ms for one named key, 8.2 ms for two, against 7 ms for the `Condition` emission this replaces and 26 ms for eager tree-wide materialisation — 1.7× for one query on a tree, break-even at two.
+Only the list keys a query names are materialised, and only the **distinct** raw values on the tree are split. Measured at design time: 6.6 ms for one named key, 8.2 ms for two, against 7 ms for the `Condition` emission this replaces and 26 ms for eager tree-wide materialisation — 1.7× for one query on a tree, break-even at two. Measured on the shipped implementation at 5 000 elements: about 17 ms for one `classList` query against 6.8 ms for the superseded emission, about 2.5×. A query naming only raw keys materialises nothing and runs on the tree as it is.
 
 No `Once` cache: whole-tree caching is ≈120× faster warm but retains up to 1.5 MB per tree with no cap, and per-string caching is measured 54× *slower* than a plain split and never warms. Splitting only the distinct values beats both — a real page has on the order of a dozen distinct `class` strings across thousands of elements.
 
@@ -80,6 +86,6 @@ A `{namespace, name}` pair is a literal key but never has a reading: it is forei
 
 **The class list keeps duplicate tokens, and so diverges from a browser's `classList`, deliberately.** `class="lead lead promo"` gives `{"lead", "lead", "promo"}`. The WHATWG ordered-set parser behind `Element.classList` deduplicates on read, but the DOM stores the attribute value with its duplicates — `getAttribute("class")` is `"lead lead promo"` — so the token list agrees with the document, and only differs from one view of it. Deduplication is one `DeleteDuplicates` away; the reverse is impossible.
 
-Materialisation costs about 1.7× the superseded `Condition` emission for one query naming one list key, break-even at two — the price of bindable tokens and a lossless inverse.
+Materialisation costs about 2.5× the superseded `Condition` emission for one query naming one list key (1.7× in the design-time prototype) — the price of bindable tokens and a lossless inverse. Queries on raw keys pay nothing.
 
 Extending `$AttributeReadings` no longer changes the meaning of any existing query: it only makes a new key available.
