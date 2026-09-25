@@ -1,10 +1,12 @@
 ---
-status: accepted
+status: accepted (amended by ADR-0014)
 ---
 
 # `XMLMatchQ` ships, as a whole-element test
 
 `XMLMatchQ[element, pattern]` tests whether one element matches an [[XML pattern]], with an operator form `XMLMatchQ[pattern]`. It is to `XMLCases` what `StringMatchQ` is to `StringCases`: a test of the whole expression, beside a family that searches.
+
+> **Amended by [ADR 0014](./0014-combinators-scope-names-as-wl-does.md).** The searching consumers now accept a `Condition` on a combinator. `XMLMatchQ` still refuses one, with `XMLMatchQ::condcombinator`, for the reason below. Everything else stands.
 
 ## Context
 
@@ -12,7 +14,7 @@ An earlier decision (`.scratch/xmlreplace/map.md`, "No `XMLMatchQ`") held that i
 
 ## Decision
 
-`XMLMatchQ` accepts an element pattern: an `XMLPattern`, an `Alternatives` of them, or a `Condition` on one, and takes the `AttributeReadings` option like the other consumers (ADR 0012). A structural combinator (`Child`, `Descendant`, `Adjacent`, `Sibling`) is refused with a message: each describes an element in relation to its parent or siblings, and a lone element has neither.
+`XMLMatchQ` accepts an element pattern: an `XMLPattern`, an `Alternatives` of them, or a `Condition` on one, and takes the `"AttributeReadings"` option like the other consumers (ADR 0012). A structural combinator (`Child`, `Descendant`, `Adjacent`, `Sibling`) is refused with a message, and so is a `Condition` on one: each describes an element in relation to its parent or siblings, and a lone element has neither.
 
 ## Consequences
 
