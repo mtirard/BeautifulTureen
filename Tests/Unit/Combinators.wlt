@@ -355,3 +355,27 @@ TestCreate[
   {XMLCases::stagename, XMLFirstCase::stagename, XMLDeleteCases::stagename},
   TestID -> "name-bound-at-two-stages-refused"
 ];
+
+(* === One path for every combinator === *)
+
+(* A name on the earlier Sibling stage is bound in the body. *)
+TestCreate[
+  {XMLCases[$treeSiblings,
+     Sibling[a : XMLPattern["h2"], b : XMLPattern["p"]] :> {HTMLTextContent[a], HTMLTextContent[b]}],
+   XMLFirstCase[$treeSiblings,
+     Sibling[a : XMLPattern["h2"], b : XMLPattern["p"]] :> {HTMLTextContent[a], HTMLTextContent[b]}]},
+  {{{"Title", "First"}, {"Title", "Second"}, {"Title", "Fourth"}}, {"Title", "First"}},
+  TestID -> "sibling-rule-binds-both-stages"
+];
+
+(* Siblings may be direct children of a root given as a bare XMLElement. *)
+$bareRoot = XMLElement["div", {},
+  {XMLElement["h2", {}, {"T"}], XMLElement["p", {}, {"1"}], XMLElement["p", {}, {"2"}]}];
+
+TestCreate[
+  {XMLCases[$bareRoot, Adjacent[XMLPattern["h2"], XMLPattern["p"]]][[All, 3, 1]],
+   XMLCases[$bareRoot, Sibling[XMLPattern["h2"], XMLPattern["p"]]][[All, 3, 1]],
+   XMLFirstCase[$bareRoot, Adjacent[XMLPattern["h2"], x : XMLPattern["p"]] :> x[[3, 1]]]},
+  {{"1"}, {"1", "2"}, "1"},
+  TestID -> "sibling-relations-under-bare-root"
+];

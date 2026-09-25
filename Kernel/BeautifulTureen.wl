@@ -480,16 +480,9 @@ runCompiled[run_, tree_, {pattern_, readings_}, rest___] :=
 (* is in scope of every later stage and of the body.            *)
 (* =========================================================== *)
 
-nestedQ[(Child | Descendant | Adjacent | Sibling)[a_, b_]] := combinatorQ[a] || combinatorQ[b];
-nestedQ[Verbatim[RuleDelayed][lhs_, _]] := nestedQ[lhs];
-nestedQ[_] := False;
-
-(* An unnested combinator matches a later stage apart from the earlier ones, so
-   a later stage's test could not see their names; it runs as a chain too. *)
-chainQ[q_] := nestedQ[q] || laterTestQ[q];
-laterTestQ[(Child | Descendant | Adjacent | Sibling)[a_, b_]] := laterTestQ[a] || !FreeQ[b, _Condition];
-laterTestQ[Verbatim[RuleDelayed][lhs_, _]] := laterTestQ[lhs];
-laterTestQ[_] := False;
+(* Every combinator query runs as a chain, nested or not. *)
+chainQ[Verbatim[RuleDelayed][lhs_, _]] := chainQ[lhs];
+chainQ[q_] := combinatorQ[q];
 
 chainOf[(h : Child | Descendant | Adjacent | Sibling)[a_, b_]] := Join[chainOf[a], {h}, chainOf[b]];
 chainOf[s_] := {s};
@@ -508,14 +501,22 @@ below[p_] := Join[p, #] & /@ Position[at[p], _XMLElement, Infinity];
 
 related[Descendant, p_] := below[p];
 related[Child, p_] := Join[p, {3, #}] & /@ elementIndices[at[p][[3]]];
-related[Adjacent, p_] := Take[laterSiblings[p], UpTo[1]];
+related[Adjacent, p_] := nextSibling[p];
 related[Sibling, p_] := laterSiblings[p];
 
 (* Siblings are children of one element, as in the unnested combinators. *)
-laterSiblings[p_] /;
-    Length[p] >= 2 && p[[-2]] === 3 && MatchQ[at[Drop[p, -2]], _XMLElement] :=
+siblingSiteQ[p_] := Length[p] >= 2 && p[[-2]] === 3 && MatchQ[at[Drop[p, -2]], _XMLElement];
+
+laterSiblings[p_?siblingSiteQ] :=
   Join[Most[p], {#}] & /@ Select[elementIndices[at[Most[p]]], # > Last[p] &];
 laterSiblings[_] := {};
+
+(* Scanned from p, not from the first child: a sibling list may be long. *)
+nextSibling[p_?siblingSiteQ] :=
+  With[{kids = at[Most[p]]},
+    With[{i = NestWhile[# + 1 &, Last[p] + 1, # <= Length[kids] && !MatchQ[kids[[#]], _XMLElement] &]},
+      If[i <= Length[kids], {Append[Most[p], i]}, {}]]];
+nextSibling[_] := {};
 
 (* stageRule[s, rhs]: {s, p_} :> rhs[p], rhs giving a held right-hand side. *)
 stageRule[s_, rhs_] :=
@@ -574,102 +575,10 @@ XMLCases[tree_, q_, opts : OptionsPattern[]] :=
 (* Base: a pattern, a Condition, or a rule over either \[LongDash] just Cases *)
 casesC[tree_, pat_] := Cases[tree, pat, Infinity];
 
-(* Descendant: chained Cases *)
-casesC[tree_, Descendant[outerPat_, innerPat_]] :=
-  Flatten[casesC[#, innerPat] & /@ casesC[tree, outerPat], 1];
-
-(* Descendant with rule \[LongDash] nested Cases keeps outer bindings in scope *)
-casesC[tree_, Verbatim[RuleDelayed][Descendant[outerPat_, innerPat_], body_]] :=
-  Flatten[Cases[tree,
-    parent:outerPat :> casesC[parent, innerPat :> body],
-    Infinity], 1];
-
-(* Child: find parents, then direct children of each *)
-casesC[tree_, Child[parentPat_, childPat_]] :=
-  Flatten[Cases[#, childPat, {2}] & /@ casesC[tree, parentPat], 1];
-
-(* Child with rule \[LongDash] nested Cases keeps parent bindings in scope *)
-casesC[tree_, Verbatim[RuleDelayed][Child[parentPat_, childPat_], body_]] :=
-  Flatten[Cases[tree,
-    parent:parentPat :> Cases[parent, childPat :> body, {2}],
-    Infinity], 1];
-
-(* Adjacent sibling: find parents containing beforePat,
-   then for each, find afterPat immediately after *)
-casesC[tree_, Adjacent[beforePat_, afterPat_]] :=
-  Module[{allParents},
-    allParents = Cases[tree,
-      el:XMLElement[_, _, children_List] /; MemberQ[children, beforePat] :> el,
-      Infinity
-    ];
-    Flatten[
-      Function[parent,
-        Module[{elems = Select[parent[[3]], MatchQ[#, _XMLElement] &], pairs},
-          pairs = Partition[elems, 2, 1];
-          Cases[pairs, {beforePat, after:afterPat} :> after]
-        ]
-      ] /@ allParents,
-      1
-    ]
-  ];
-
-(* Adjacent with rule *)
-casesC[tree_, Verbatim[RuleDelayed][Adjacent[beforePat_, afterPat_], body_]] :=
-  Module[{allParents},
-    allParents = Cases[tree,
-      el:XMLElement[_, _, children_List] /; MemberQ[children, beforePat] :> el,
-      Infinity
-    ];
-    Flatten[
-      Function[parent,
-        Module[{elems = Select[parent[[3]], MatchQ[#, _XMLElement] &], pairs},
-          pairs = Partition[elems, 2, 1];
-          Cases[pairs, {beforePat, afterPat} :> body]
-        ]
-      ] /@ allParents,
-      1
-    ]
-  ];
-
-(* General sibling: find parents containing beforePat,
-   then for each, find all afterPat that come after *)
-casesC[tree_, Sibling[beforePat_, afterPat_]] :=
-  Module[{allParents},
-    allParents = Cases[tree,
-      el:XMLElement[_, _, children_List] /; MemberQ[children, beforePat] :> el,
-      Infinity
-    ];
-    Flatten[
-      Function[parent,
-        Module[{elems = Select[parent[[3]], MatchQ[#, _XMLElement] &], idx},
-          idx = FirstPosition[elems, beforePat, None, {1}];
-          If[idx =!= None,
-            Cases[elems[[idx[[1]] + 1 ;;]], afterPat],
-            {}
-          ]
-        ]
-      ] /@ allParents,
-      1
-    ]
-  ];
-
-(* Sibling with rule \[LongDash] outer Cases keeps beforePat bindings in scope *)
-casesC[tree_, Verbatim[RuleDelayed][Sibling[beforePat_, afterPat_], body_]] :=
-  Flatten[Cases[tree,
-    el:XMLElement[_, _, children_List] /; MemberQ[children, beforePat] :>
-      Module[{elems = Select[el[[3]], MatchQ[#, _XMLElement] &], idx},
-        idx = FirstPosition[elems, beforePat, None, {1}];
-        If[idx =!= None,
-          Cases[elems[[idx[[1]] + 1 ;;]], afterPat :> body],
-          {}
-        ]
-      ],
-    Infinity], 1];
-
 (* =========================================================== *)
 (* XMLFirstCase                                                 *)
-(* Short-circuits on the first match; same combinator surface   *)
-(* as XMLCases. Default (3rd arg) returned when nothing found.  *)
+(* The first of what XMLCases gives; the base form short-      *)
+(* circuits. Default (3rd arg) returned when nothing found.     *)
 (* =========================================================== *)
 
 Options[XMLFirstCase] = {"AttributeReadings" -> <||>};
@@ -691,145 +600,11 @@ XMLFirstCase[tree_, q_, default : Except[_?(optionRuleQ[XMLFirstCase])] : Missin
 (* Base: FirstCase short-circuits natively *)
 firstC[tree_, pat_, default_] := FirstCase[tree, pat, default, Infinity];
 
-(* Descendant: short-circuit via Catch/Throw on first inner hit *)
-firstC[tree_, Descendant[outerPat_, innerPat_], default_] :=
-  Module[{tag},
-    Catch[
-      Cases[tree, o:outerPat :>
-        With[{r = firstC[o, innerPat, tag]},
-          If[r =!= tag, Throw[r, tag]]
-        ], Infinity];
-      default,
-      tag
-    ]
-  ];
-
-(* Descendant with rule *)
-firstC[tree_, Verbatim[RuleDelayed][Descendant[outerPat_, innerPat_], body_], default_] :=
-  Module[{tag},
-    Catch[
-      Cases[tree, parent:outerPat :>
-        With[{r = firstC[parent, innerPat :> body, tag]},
-          If[r =!= tag, Throw[r, tag]]
-        ], Infinity];
-      default,
-      tag
-    ]
-  ];
-
-(* Child: first parent match's first direct child match *)
-firstC[tree_, Child[parentPat_, childPat_], default_] :=
-  Module[{tag},
-    Catch[
-      Cases[tree, p:parentPat :>
-        With[{r = FirstCase[p, childPat, tag, {2}]},
-          If[r =!= tag, Throw[r, tag]]
-        ], Infinity];
-      default,
-      tag
-    ]
-  ];
-
-(* Child with rule *)
-firstC[tree_, Verbatim[RuleDelayed][Child[parentPat_, childPat_], body_], default_] :=
-  Module[{tag},
-    Catch[
-      Cases[tree, parent:parentPat :>
-        With[{r = FirstCase[parent, childPat :> body, tag, {2}]},
-          If[r =!= tag, Throw[r, tag]]
-        ], Infinity];
-      default,
-      tag
-    ]
-  ];
-
-(* Adjacent: first parent containing beforePat, first afterPat immediately after *)
-firstC[tree_, Adjacent[beforePat_, afterPat_], default_] :=
-  Module[{tag},
-    Catch[
-      Cases[tree,
-        el:XMLElement[_, _, children_List] /; MemberQ[children, beforePat] :>
-          Module[{elems = Select[el[[3]], MatchQ[#, _XMLElement] &], hit},
-            hit = FirstCase[Partition[elems, 2, 1],
-              {beforePat, after:afterPat} :> after, tag];
-            If[hit =!= tag, Throw[hit, tag]]
-          ],
-        Infinity];
-      default,
-      tag
-    ]
-  ];
-
-(* Adjacent with rule *)
-firstC[tree_, Verbatim[RuleDelayed][Adjacent[beforePat_, afterPat_], body_], default_] :=
-  Module[{tag},
-    Catch[
-      Cases[tree,
-        el:XMLElement[_, _, children_List] /; MemberQ[children, beforePat] :>
-          Module[{elems = Select[el[[3]], MatchQ[#, _XMLElement] &], hit},
-            hit = FirstCase[Partition[elems, 2, 1],
-              {beforePat, afterPat} :> body, tag];
-            If[hit =!= tag, Throw[hit, tag]]
-          ],
-        Infinity];
-      default,
-      tag
-    ]
-  ];
-
-(* Sibling: first parent containing beforePat, first afterPat after it *)
-firstC[tree_, Sibling[beforePat_, afterPat_], default_] :=
-  Module[{tag},
-    Catch[
-      Cases[tree,
-        el:XMLElement[_, _, children_List] /; MemberQ[children, beforePat] :>
-          Module[{elems = Select[el[[3]], MatchQ[#, _XMLElement] &], idx, hit},
-            idx = FirstPosition[elems, beforePat, None, {1}];
-            If[idx =!= None,
-              hit = FirstCase[elems[[idx[[1]] + 1 ;;]], afterPat, tag];
-              If[hit =!= tag, Throw[hit, tag]]
-            ]
-          ],
-        Infinity];
-      default,
-      tag
-    ]
-  ];
-
-(* Sibling with rule *)
-firstC[tree_, Verbatim[RuleDelayed][Sibling[beforePat_, afterPat_], body_], default_] :=
-  Module[{tag},
-    Catch[
-      Cases[tree,
-        el:XMLElement[_, _, children_List] /; MemberQ[children, beforePat] :>
-          Module[{elems = Select[el[[3]], MatchQ[#, _XMLElement] &], idx, hit},
-            idx = FirstPosition[elems, beforePat, None, {1}];
-            If[idx =!= None,
-              hit = FirstCase[elems[[idx[[1]] + 1 ;;]], afterPat :> body, tag];
-              If[hit =!= tag, Throw[hit, tag]]
-            ]
-          ],
-        Infinity];
-      default,
-      tag
-    ]
-  ];
-
 (* =========================================================== *)
 (* XMLDeleteCases                                               *)
 (* Base: native DeleteCases with Infinity levelspec.            *)
-(* Combinators: bottom-up walk so nested matching parents are   *)
-(* processed correctly (ReplaceAll does not re-scan RHS).       *)
+(* Combinators: the chain's last-stage elements are deleted.    *)
 (* =========================================================== *)
-
-(* Bottom-up walker: applies f to each XMLElement *after* recursing children.
-   Preserves XMLObject["Document"] envelope and non-XMLElement leaves. *)
-xmlWalk[XMLObject["Document"][decls_, root_, misc_], f_] :=
-  XMLObject["Document"][decls, xmlWalk[root, f], misc];
-xmlWalk[XMLElement[tag_, attrs_, children_List], f_] :=
-  f[XMLElement[tag, attrs, xmlWalk[#, f] & /@ children]];
-xmlWalk[list_List, f_] := xmlWalk[#, f] & /@ list;
-xmlWalk[x_, _] := x;
 
 (* A rule has nothing to delete with; deletion by relative position (Adjacent,
    Sibling) is a niche operation, documented as unsupported here. *)
@@ -859,22 +634,6 @@ siblingRelationQ[_] := False;
 
 (* Base: a pattern or a Condition *)
 deleteC[tree_, pat_] := DeleteCases[tree, pat, Infinity];
-
-(* Child: at every matching parent, filter direct children *)
-deleteC[tree_, Child[parentPat_, childPat_]] :=
-  xmlWalk[tree,
-    Replace[#, p:parentPat :>
-      XMLElement[p[[1]], p[[2]], DeleteCases[p[[3]], childPat]]
-    ] &
-  ];
-
-(* Descendant: at every matching ancestor, DeleteCases innerPat across its subtree *)
-deleteC[tree_, Descendant[outerPat_, innerPat_]] :=
-  xmlWalk[tree,
-    Replace[#, p:outerPat :>
-      XMLElement[p[[1]], p[[2]], DeleteCases[p[[3]], innerPat, Infinity]]
-    ] &
-  ];
 
 (* =========================================================== *)
 (* XMLMatchQ (ADR 0013)                                         *)
