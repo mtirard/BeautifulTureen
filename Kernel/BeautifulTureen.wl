@@ -34,15 +34,12 @@ XMLPattern::strpat = "`1` is a string pattern, and a string pattern is never mat
 XMLCases::badtree = "First argument should be an XMLObject, XMLElement, or list thereof. Got head `1`.";
 XMLCases::badpat = "Second argument should be an XMLPattern, Alternatives of XMLPatterns, or combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
 XMLCases::condcombinator = "A condition (/;) may wrap an XMLPattern or an Alternatives of them, but not a combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
-XMLCases::stagename = "The name `1` is bound at two stages of a combinator. A name for an element or its attribute map belongs to one stage: give each stage its own name.";
 XMLFirstCase::badtree = "First argument should be an XMLObject, XMLElement, or list thereof. Got head `1`.";
 XMLFirstCase::badpat = "Second argument should be an XMLPattern, Alternatives of XMLPatterns, or combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
 XMLFirstCase::condcombinator = "A condition (/;) may wrap an XMLPattern or an Alternatives of them, but not a combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
-XMLFirstCase::stagename = "The name `1` is bound at two stages of a combinator. A name for an element or its attribute map belongs to one stage: give each stage its own name.";
 XMLDeleteCases::badtree = "First argument should be an XMLObject, XMLElement, or list thereof. Got head `1`.";
 XMLDeleteCases::badpat = "Second argument should be an XMLPattern, Alternatives of XMLPatterns, or Child/Descendant combinator. Got `1`.";
 XMLDeleteCases::condcombinator = "A condition (/;) may wrap an XMLPattern or an Alternatives of them, but not a combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
-XMLDeleteCases::stagename = "The name `1` is bound at two stages of a combinator. A name for an element or its attribute map belongs to one stage: give each stage its own name.";
 XMLDeleteCases::unsupported = "Adjacent and Sibling combinators are not supported by XMLDeleteCases. Use XMLCases for filtering semantics instead.";
 XMLMatchQ::badpat = "Pattern should be an XMLPattern, an Alternatives of them, or a conditioned pattern pat /; test. Got `1`.";
 XMLMatchQ::condcombinator = "A condition (/;) may wrap an XMLPattern or an Alternatives of them, but not a combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
@@ -319,23 +316,8 @@ cQuery[r_RuleDelayed] :=
 cQuery[q_] := cStage[q];
 
 (* A combinator's stages are element patterns or combinators. *)
-cStage[(h : Child | Descendant | Adjacent | Sibling)[a_, b_]] :=
-  Module[{ca, cb, elemA, elemB},
-    {ca, elemA} = reapNames[cStage[a]];
-    {cb, elemB} = reapNames[cStage[b]];
-    oneStageNames[{a, elemA}, {b, elemB}];
-    Scan[Sow[#, $nameTag] &, Join[elemA, elemB]];
-    h[ca, cb]];
+cStage[(h : Child | Descendant | Adjacent | Sibling)[a_, b_]] := h[cStage[a], cStage[b]];
 cStage[q_] := cElem[q];
-
-(* A later stage runs in the scope of an earlier stage's names, where an element
-   name is the element, no longer a name to bind: an element or attribute-map
-   name at one stage may not be bound at another. *)
-oneStageNames[{a_, elemA_}, {b_, elemB_}] :=
-  Replace[Join[Intersection[elemA, patternNames[b]], Intersection[patternNames[a], elemB]],
-    {Hold[s_], ___} :> refuseAtHead["stagename", HoldForm[s]]];
-
-patternNames[x_] := Cases[x, Verbatim[Pattern][s_Symbol, _] :> Hold[s], {0, Infinity}, Heads -> True];
 
 (* ---- Element patterns ---- *)
 
@@ -415,16 +397,17 @@ noDuplicateKeys[rules_] :=
 (* ---- Bindings ---- *)
 
 (* The same name gets the same fresh symbol throughout a query, so that
-   (e : XMLPattern["a"]) | (e : XMLPattern["b"]) still binds one name. *)
+   (e : XMLPattern["a"]) | (e : XMLPattern["b"]) still binds one name, and a name
+   at two stages of a combinator is still one value: materialisation is the same
+   on equal elements. *)
 SetAttributes[bindAs, HoldFirst];
-bindAs[s_, p_, inverse_] := (
-  Sow[Hold[s], $nameTag];
+bindAs[s_, p_, inverse_] :=
   If[!$mat,
     namedPattern[s, p],
     With[{fresh = If[KeyExistsQ[$fresh, Hold[s]], $fresh[Hold[s]],
         $fresh[Hold[s]] = freshSymbol[]]},
       Sow[{Hold[s], fresh, inverse}, $bindTag];
-      namedPattern[fresh, p]]]);
+      namedPattern[fresh, p]]];
 
 (* A temporary private symbol, so nothing is left in the caller's context. *)
 freshSymbol[] := Module[{bound}, bound];
@@ -437,11 +420,6 @@ namedPattern[s_, p_] := Pattern @@ Hold[s, p];
 SetAttributes[reapBinds, HoldFirst];
 reapBinds[expr_] :=
   MapAt[DeleteDuplicates[Join @@ #] &, Reap[expr, $bindTag], 2];
-
-(* The element and attribute-map names bound in expr, which bindAs sows. *)
-SetAttributes[reapNames, HoldFirst];
-reapNames[expr_] :=
-  MapAt[DeleteDuplicates[Join @@ #] &, Reap[expr, $nameTag], 2];
 
 (* Hold[body] -> Hold[With[{e = strip[e$], ...}, body]] *)
 wrapBinds[{}, held_Hold] := held;
@@ -473,8 +451,8 @@ runCompiled[run_, tree_, {pattern_, readings_}, rest___] :=
 (* sites related to the last site of a tuple; each tuple of     *)
 (* elements is then matched against the stages as one plain WL  *)
 (* pattern {s1, ..., sn}, so names scope as they do in WL: a    *)
-(* stage's test sees only its own names, and a rule body sees   *)
-(* every name.                                                  *)
+(* stage's test sees only its own names, a name at two stages   *)
+(* is one value, and a rule body sees every name.               *)
 (* =========================================================== *)
 
 (* Every combinator query runs as a chain, nested or not. *)
