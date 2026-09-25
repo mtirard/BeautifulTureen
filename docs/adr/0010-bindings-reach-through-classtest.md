@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by ADR-0011 (dissolved, not replaced)
 ---
 
 # A binding reaches through `ClassTest`; the test constructs are inert
@@ -7,6 +7,8 @@ status: accepted
 `ClassTest[q]` _is_ a rule, so it offers no slot to bind and a user who matched on it could not name the value they matched. The three test constructs become **inert** — expanded by the `XMLPattern` compiler rather than by evaluation — and the compiler recognises `name : ClassTest[q]`, binding the raw `class` attribute value. Nothing about `Rule` changes: `c : ("href" -> _)` remains an error.
 
 Amends ADR 0006, which states that `ClassTest[…]` evaluates to a `Rule`.
+
+> **Dissolved by [ADR 0011](./0011-plain-patterns-inside-xmlpattern.md), not replaced.** There is no `ClassTest` left for a binding to reach through, and this ADR's whole problem — a construct that evaluates to a `Rule` before `Pattern` can see it, so a user cannot name what they matched — does not arise once tokens are materialised as real subexpressions (ADR 0012) and specifications are written as plain WL patterns: `"classList" -> cls_` binds the whole token list the same way any WL pattern binds, with no compiler-recognised construct required to make it possible.
 
 ## Context
 
