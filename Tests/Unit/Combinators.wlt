@@ -340,15 +340,31 @@ TestCreate[
   TestID -> "firstcase-and-deletecases-stage-test-sees-not-earlier-element"
 ];
 
-(* A name for an element or its attribute map is bound at one stage: the same
-   name at two stages is refused under the consumer's head. *)
+(* === A name at two stages is one value === *)
+
+(* As in WL, where MatchQ[{1, 2}, {a_, a_}] is False, a name bound at two stages
+   means the same value at both: a value, an element or an attribute map, the
+   last two compared as they are in the tree even when a stage names a list key. *)
+$treeTwice = ImportString[
+  "<div id=\"k\"><p data-for=\"z\">0</p><p class=\"a\">1</p><p class=\"a\">2</p><p class=\"a\">1</p><p class=\"b\">1</p>\
+<p data-for=\"k\">3</p></div>",
+  {"HTML", "XMLObject"}];
+
 TestCreate[
-  {XMLCases[$treeCard, Descendant[d : XMLPattern["div"], d : XMLPattern["p"]] :> d],
-   XMLFirstCase[$treeCard, Child[XMLPattern["div", "id" -> d_], d : XMLPattern["p", "classList" -> "ad"]]],
-   XMLDeleteCases[$treeCard, Descendant[XMLPattern["article"], Child[XMLPattern["div", d : _], d : XMLPattern["p"]]]]},
-  {$Failed, $Failed, $Failed},
-  {XMLCases::stagename, XMLFirstCase::stagename, XMLDeleteCases::stagename},
-  TestID -> "name-bound-at-two-stages-refused"
+  {XMLCases[$treeTwice, Child[XMLPattern["div", "id" -> i_], p : XMLPattern["p", "data-for" -> i_]] :> {i, HTMLTextContent[p]}],
+   HTMLTextContent /@ XMLCases[$treeTwice, Sibling[XMLPattern["p", "data-for" -> i_], XMLPattern["p", "data-for" -> i_]]]},
+  {{{"k", "3"}}, {}},
+  TestID -> "value-name-at-two-stages-is-one-value"
+];
+
+TestCreate[
+  {XMLCases[$treeTwice, Sibling[e : XMLPattern["p", "classList" -> "a"], e : XMLPattern["p"]] :> e],
+   HTMLTextContent /@ XMLCases[$treeTwice,
+     Adjacent[XMLPattern["p", as : {"classList" -> _}], XMLPattern["p", as : {"class" -> _}]]],
+   XMLFirstCase[$treeTwice,
+     Adjacent[XMLPattern["p", as : {"classList" -> _}], XMLPattern["p", as : {"class" -> _}]] :> as]},
+  {{XMLElement["p", {"class" -> "a"}, {"1"}]}, {"2", "1"}, {"class" -> "a"}},
+  TestID -> "element-and-attrs-name-at-two-stages-is-one-value"
 ];
 
 (* === One path for every combinator === *)
