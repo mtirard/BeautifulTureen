@@ -329,3 +329,24 @@ TestCreate[
   {HTMLToNotebook::badpat},
   TestID -> "htn-rule-combinator-refused"
 ];
+
+(* A constructor function sees the element as it is in the tree, attributes and
+   descendants alike, even when its rule names a list key. *)
+TestCreate[
+  HTMLToNotebook[XMLElement["div", {}, {XMLElement["p", {"class" -> "x y"}, {XMLElement["b", {"class" -> "z"}, {"t"}]}]}],
+    "Constructs" -> {XMLPattern["p", "classList" -> "x"] -> Function[el, Cell[BoxData[ToBoxes[el]], "Text"]]}],
+  Notebook[{Cell[BoxData[ToBoxes[
+    XMLElement["p", {"class" -> "x y"}, {XMLElement["b", {"class" -> "z"}, {"t"}]}]]], "Text"]}],
+  TestID -> "htn-constructs-function-sees-original-element"
+];
+
+(* So does an element bound in a delayed rule's body, for Roles and Constructs. *)
+TestCreate[
+  nbmd2["<p class=\"x y\">skip</p><p class=\"x\">keep</p>",
+    "Roles" -> {e : XMLPattern["p", "classList" -> "x"] :>
+      If[e[[2]] === {"class" -> "x y"}, "Skip", "Block"]},
+    "Constructs" -> {e : XMLPattern["p", "classList" -> "x"] :>
+      Function[el, Cell[If[e === el && e[[2]] === {"class" -> "x"}, "same", "differs"], "Text"]]}],
+  "same",
+  TestID -> "htn-delayed-rule-body-sees-original-element"
+];

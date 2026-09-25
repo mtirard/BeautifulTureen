@@ -981,7 +981,8 @@ $inlineConstructs = {"Bold", "Italic", "Underline", "StrikeThrough", "Code",
 $styleTokens = {"Bold", "Italic", "Underline", "StrikeThrough", "Code"};
 
 (* A construct value that is neither a string nor None is a constructor
-   function, applied to the matched element (the universal escape hatch). *)
+   function, applied to the matched element (the universal escape hatch) as it
+   is in the tree: the element is stripped of any materialised token lists. *)
 functionConstructQ[c_] := c =!= None && !StringQ[c];
 (* A string construct destined for a block cell-style (not an inline token). *)
 blockStyleQ[c_String] := !MemberQ[$inlineConstructs, c];
@@ -1069,7 +1070,7 @@ hyperResult[el_, inner_] :=
 
 inlineForm[c_, el_, inner_] :=
   Which[
-    functionConstructQ[c], {c[el]},
+    functionConstructQ[c], {c[strip[el]]},
     c === "Hyperlink",     hyperResult[el, inner],
     inner === {},          {},
     MemberQ[$styleTokens, c], {styleBox[c, inner]},
@@ -1131,7 +1132,7 @@ emitBlock[el : XMLElement[tag_, _, ch_], ctx_] :=
   With[{role = roleOf[el, ctx["roles"], HTMLToNotebook],
         c = constructOf[el, ctx]},
     Which[
-      functionConstructQ[c],         wrapCells[c[el]],
+      functionConstructQ[c],         wrapCells[c[strip[el]]],
       blockStyleQ[c],                blockStyleEmit[el, c, ctx],
       role === "Preformatted",       {Cell[preText[el], "Program"]},
       tag === "blockquote",          quoteCells[el, ctx],
