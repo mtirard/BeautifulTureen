@@ -452,3 +452,16 @@ TestCreate[
   {XMLDeleteCases::unsupported},
   TestID -> "firstcase-and-deletecases-combinator-test"
 ];
+
+(* === A PatternTest sees no pattern names === *)
+
+(* As in WL, where Block[{i = "z"}, MatchQ[{"k", "z"}, {i_, _?(Function[v, v === i])}]]
+   is True, the function of a PatternTest sees a symbol, never a name's binding. *)
+TestCreate[
+  {HTMLTextContent /@ XMLCases[$treeFor,
+     Child[XMLPattern["div", "id" -> i_], XMLPattern["p", "data-for" -> _?(Function[v, v === i])]]],
+   Block[{i = "z"}, HTMLTextContent /@ XMLCases[$treeFor,
+     Child[XMLPattern["div", "id" -> i_], XMLPattern["p", "data-for" -> _?(Function[v, v === i])]]]]},
+  {{}, {"2"}},
+  TestID -> "pattern-test-sees-no-names"
+];
