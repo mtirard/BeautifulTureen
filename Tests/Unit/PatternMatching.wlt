@@ -17,9 +17,12 @@ TestCreate[
   TestID -> "nskey-plain-string-misses"
 ];
 
-(* Match the local name in any namespace with a {_, name} pair key *)
+(* A key is literal, so the local name in any namespace is a question about the
+   whole attribute map, asked by naming it. *)
 TestCreate[
-  XMLCases[$svg, XMLPattern["use", {_, "href"} -> href_] :> href],
+  XMLCases[$svg,
+    XMLPattern["use", attrs_?(Keys /* MemberQ[{_, "href"}])] :>
+      FirstCase[attrs, ({_, "href"} -> href_) :> href]],
   {"#a"},
   TestID -> "nskey-pair-any-namespace"
 ];
@@ -32,18 +35,28 @@ TestCreate[
   TestID -> "nskey-pair-exact"
 ];
 
-(* A pair key with a pattern local name (Alternatives) is accepted *)
+(* Alternatives of literal pair keys *)
 TestCreate[
-  XMLCases[$svg, XMLPattern["use", {_, "href" | "src"} -> href_] :> href],
+  XMLCases[$svg,
+    XMLPattern["use",
+      ({"http://www.w3.org/1999/xlink", "href"} | {"http://www.w3.org/1999/xlink", "src"}) -> href_] :> href],
   {"#a"},
-  TestID -> "nskey-pair-alternatives"
+  TestID -> "nskey-alternatives-of-pairs"
 ];
 
-(* A three-element list is not a valid attribute key -> badconstraint *)
+(* A pair with a pattern in it is not a literal key *)
 TestCreate[
-  XMLPattern["p", {"a", "b", "c"} -> _],
+  XMLCases[$svg, XMLPattern["use", {_, "href"} -> _]],
   $Failed,
-  {XMLPattern::badconstraint},
+  {XMLPattern::badkey},
+  TestID -> "nskey-pattern-pair-refused"
+];
+
+(* A three-element list is not a valid attribute key *)
+TestCreate[
+  XMLCases[$svg, XMLPattern["p", {"a", "b", "c"} -> _]],
+  $Failed,
+  {XMLPattern::badkey},
   TestID -> "nskey-bad-triple-list"
 ];
 
@@ -199,7 +212,7 @@ TestCreate[
 TestCreate[
   XMLCases[
     ImportString["<div><a href=\"/buy\" data-id=\"buy\">x</a></div>", {"HTML", "XMLObject"}],
-    (XMLPattern["a", "href" -> h_, "data-id" -> d_] /; StringContainsQ[h, d]) :> {h, d}],
+    (XMLPattern["a", {"href" -> h_, "data-id" -> d_}] /; StringContainsQ[h, d]) :> {h, d}],
   {{"/buy", "buy"}},
   TestID -> "cond-cross-field-known-issue-477310"
 ] // TagTest["KnownIssue"]

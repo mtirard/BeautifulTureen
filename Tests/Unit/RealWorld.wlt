@@ -5,7 +5,7 @@
 (* OG meta tags via prefix pattern test *)
 TestCreate[
   Length @ XMLCases[$realTree,
-    XMLPattern["meta", "property" -> _?(StringStartsQ["og:"]), "content" -> _]
+    XMLPattern["meta", {"property" -> _?(StringStartsQ["og:"]), "content" -> _}]
   ],
   5,
   TestID -> "real-og-count"
@@ -14,7 +14,7 @@ TestCreate[
 (* OG title is extractable via named slot *)
 TestCreate[
   First @ XMLCases[$realTree,
-    XMLPattern["meta", "property" -> "og:title", "content" -> c_] :> c
+    XMLPattern["meta", {"property" -> "og:title", "content" -> c_}] :> c
   ],
   "Wolfram Language: Programming Language + Built-In Knowledge",
   TestID -> "real-og-title"

@@ -33,7 +33,7 @@ TestCreate[
 (* Child *)
 TestCreate[
   HTMLTextContent @ XMLFirstCase[$tree,
-    Child[XMLPattern["div", CSSClass["main"]], XMLPattern["p"]]
+    Child[XMLPattern["div", "classList" -> "main"], XMLPattern["p"]]
   ],
   "Hello",
   TestID -> "firstcase-child"
@@ -42,7 +42,7 @@ TestCreate[
 (* Child with rule *)
 TestCreate[
   XMLFirstCase[$tree,
-    Child[XMLPattern["div", CSSClass["main"]], x:XMLPattern["p"]] :> HTMLTextContent[x]
+    Child[XMLPattern["div", "classList" -> "main"], x:XMLPattern["p"]] :> HTMLTextContent[x]
   ],
   "Hello",
   TestID -> "firstcase-child-rule"
@@ -61,7 +61,7 @@ TestCreate[
 (* Descendant *)
 TestCreate[
   HTMLTextContent @ XMLFirstCase[$tree,
-    Descendant[XMLPattern["div", CSSClass["main"]], XMLPattern["p"]]
+    Descendant[XMLPattern["div", "classList" -> "main"], XMLPattern["p"]]
   ],
   "Hello",
   TestID -> "firstcase-descendant"
@@ -116,7 +116,7 @@ TestCreate[
 (* Real-world: OG title via rule + base *)
 TestCreate[
   XMLFirstCase[$realTree,
-    XMLPattern["meta", "property" -> "og:title", "content" -> c_] :> c
+    XMLPattern["meta", {"property" -> "og:title", "content" -> c_}] :> c
   ],
   "Wolfram Language: Programming Language + Built-In Knowledge",
   TestID -> "firstcase-real-og-title"
