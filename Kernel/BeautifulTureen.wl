@@ -514,7 +514,6 @@ siblingsOf[kids_] /; Length[kids] >= 1 && Last[kids] === 3 && MatchQ[at[Most[kid
     {is, next}];
 siblingsOf[_] := {};
 
-laterSiblings[{}] := {};
 laterSiblings[p_] :=
   Replace[siblingsAt[Most[p]],
     {{is_, _} :> (Append[Most[p], #] & /@ Select[is, # > Last[p] &]), _ -> {}}];
@@ -535,7 +534,7 @@ fromFirstSibling[Sibling, tuples_] := DeleteDuplicatesBy[tuples, {Most[#], Most[
 fromFirstSibling[_, tuples_] := tuples;
 
 extend[tuples_, {Adjacent, s_}] :=
-  Join @@ (nextSiblings[#, s] & /@ GatherBy[DeleteCases[tuples, {___, {}}], Most @* Last]);
+  Join @@ (nextSiblings[#, s] & /@ GatherBy[tuples, Most @* Last]);
 extend[tuples_, {r_, s_}] :=
   Join @@ (Function[t, Append[t, #] & /@ selected[r, Last[t], s]] /@ fromFirstSibling[r, tuples]);
 
