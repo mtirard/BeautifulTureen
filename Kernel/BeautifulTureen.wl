@@ -297,7 +297,7 @@ compileQuery[q_, head_, readings_Association] :=
     $refusal];
 
 compilePass[q_, head_, readings_, mat_] :=
-  Block[{$head = head, $readings = readings, $mat = mat, $fresh = <||>, $outerBinds = {}},
+  Block[{$head = head, $readings = readings, $mat = mat, $fresh = <||>},
     MapAt[Union @@ # &, Reap[First @ Reap[cQuery[q], $bindTag], $listKeyTag], 2]];
 
 (* Held, since a MessageName evaluates to its text. *)
@@ -318,14 +318,11 @@ cQuery[r_RuleDelayed] :=
     With[{l = lhs}, RuleDelayed @@ Join[Hold[l], wrapBinds[binds, Extract[r, {2}, Hold]]]]];
 cQuery[q_] := cStage[q];
 
-(* A combinator's stages are element patterns or combinators. Every consumer
-   puts a later stage in the scope of the earlier stages' names, so a later
-   stage's test is wrapped in the earlier stages' bindings as well as its own. *)
+(* A combinator's stages are element patterns or combinators. *)
 cStage[(h : Child | Descendant | Adjacent | Sibling)[a_, b_]] :=
-  Module[{ca, cb, binds, elemA, elemB},
-    {{ca, binds}, elemA} = reapNames[reapBinds[cStage[a]]];
-    Scan[Sow[#, $bindTag] &, binds];
-    {cb, elemB} = reapNames[Block[{$outerBinds = Join[$outerBinds, binds]}, cStage[b]]];
+  Module[{ca, cb, elemA, elemB},
+    {ca, elemA} = reapNames[cStage[a]];
+    {cb, elemB} = reapNames[cStage[b]];
     oneStageNames[{a, elemA}, {b, elemB}];
     Scan[Sow[#, $nameTag] &, Join[elemA, elemB]];
     h[ca, cb]];
@@ -352,9 +349,7 @@ cElem[c_Condition] :=
       refuseAtHead["condcombinator", Short[c[[1]]]]];
     {lhs, binds} = reapBinds[cElem[c[[1]]]];
     Scan[Sow[#, $bindTag] &, binds];
-    With[{l = lhs},
-      Condition @@ Join[Hold[l],
-        wrapBinds[DeleteDuplicates @ Join[$outerBinds, binds], Extract[c, {2}, Hold]]]]];
+    With[{l = lhs}, Condition @@ Join[Hold[l], wrapBinds[binds, Extract[c, {2}, Hold]]]]];
 (* A plain XMLElement pattern is already what the consumers run. *)
 cElem[x_XMLElement] := x;
 cElem[q_] := badpat[q];
@@ -467,17 +462,19 @@ runCompiled[run_, tree_, {pattern_, readings_}, rest___] :=
   strip @ run[materialise[tree, readings], pattern, rest];
 
 (* =========================================================== *)
-(* Chains: combinators nested as stages                         *)
+(* Chains: every combinator query                               *)
 (*                                                              *)
-(* A combinator whose stage is a combinator reads as a chain,   *)
-(* left to right, as a CSS selector does: Descendant[a,         *)
-(* Child[b, c]] and Child[Descendant[a, b], c] are both the     *)
-(* chain a, Descendant, b, Child, c. A chain runs on sites      *)
-(* {element, position} of the one (materialised) tree, so every *)
-(* relation, siblings included, is between sites of that tree,  *)
-(* and it compiles to one Cases per stage, each rule's right-   *)
-(* hand side holding the next stage: a name bound at any stage  *)
-(* is in scope of every later stage and of the body.            *)
+(* A combinator reads as a chain, left to right, as a CSS       *)
+(* selector does: Descendant[a, Child[b, c]] and                *)
+(* Child[Descendant[a, b], c] are both the chain a, Descendant, *)
+(* b, Child, c. A chain runs on positions in the one            *)
+(* (materialised) tree, so every relation, siblings included,   *)
+(* is between sites of that tree. Each stage alone selects the  *)
+(* sites related to the last site of a tuple; each tuple of     *)
+(* elements is then matched against the stages as one plain WL  *)
+(* pattern {s1, ..., sn}, so names scope as they do in WL: a    *)
+(* stage's test sees only its own names, and a rule body sees   *)
+(* every name.                                                  *)
 (* =========================================================== *)
 
 (* Every combinator query runs as a chain, nested or not. *)
@@ -487,8 +484,15 @@ chainQ[q_] := combinatorQ[q];
 chainOf[(h : Child | Descendant | Adjacent | Sibling)[a_, b_]] := Join[chainOf[a], {h}, chainOf[b]];
 chainOf[s_] := {s};
 
-sitesAt[{}] := {};
-sitesAt[ps_] := Transpose[{Extract[$chainTree, ps], ps}];
+(* The pattern a tuple of elements matches: the list of the chain's stages. *)
+tuplePattern[(Child | Descendant | Adjacent | Sibling)[a_, b_]] := Join[tuplePattern[a], tuplePattern[b]];
+tuplePattern[s_] := {s};
+
+tupleRule[r : Verbatim[RuleDelayed][lhs_, _]] :=
+  RuleDelayed @@ Join[Hold @@ {tuplePattern[lhs]}, Extract[r, {2}, Hold]];
+
+lhsOf[Verbatim[RuleDelayed][lhs_, _]] := lhs;
+lhsOf[q_] := q;
 
 (* Extract reads {} as no positions, not as the whole tree. *)
 at[{}] := $chainTree;
@@ -496,68 +500,78 @@ at[p_] := Extract[$chainTree, p];
 
 elementIndices[l_List] := Flatten @ Position[l, _XMLElement, {1}, Heads -> False];
 
-(* Every element strictly below position p, in the order Cases visits them. *)
-below[p_] := Join[p, #] & /@ Position[at[p], _XMLElement, Infinity];
+(* selected[r, p, s]: the sites related to p by r that stage s selects, in
+   document order. *)
+selected[Descendant, p_, s_] := Join[p, #] & /@ Position[at[p], s, Infinity, Heads -> False];
+selected[Child, p_, s_] := Join[p, {3}, #] & /@ Position[at[p][[3]], s, {1}, Heads -> False];
+selected[Adjacent, p_, s_] := Select[nextSibling[p], MatchQ[at[#], s] &];
+selected[Sibling, p_, s_] := Select[laterSiblings[p], MatchQ[at[#], s] &];
 
-related[Descendant, p_] := below[p];
-related[Child, p_] := Join[p, {3, #}] & /@ elementIndices[at[p][[3]]];
-related[Adjacent, p_] := nextSibling[p];
-related[Sibling, p_] := laterSiblings[p];
+(* Siblings are children of one element. For the children list at position
+   kids: its element indices, and each index's next element index (0 for none),
+   found once per list in a run, since a sibling list may be long; {} when kids
+   is not an element's children. *)
+siblingsAt[kids_] := Replace[$siblings[kids], _Missing :> ($siblings[kids] = siblingsOf[kids])];
 
-(* Siblings are children of one element, as in the unnested combinators. *)
-siblingSiteQ[p_] := Length[p] >= 2 && p[[-2]] === 3 && MatchQ[at[Drop[p, -2]], _XMLElement];
+siblingsOf[kids_] /; Length[kids] >= 1 && Last[kids] === 3 && MatchQ[at[Most[kids]], _XMLElement] :=
+  Module[{is = elementIndices[at[kids]], next = ConstantArray[0, Length[at[kids]]]},
+    next[[Most[is]]] = Rest[is];
+    {is, next}];
+siblingsOf[_] := {};
 
-laterSiblings[p_?siblingSiteQ] :=
-  Join[Most[p], {#}] & /@ Select[elementIndices[at[Most[p]]], # > Last[p] &];
-laterSiblings[_] := {};
+laterSiblings[{}] := {};
+laterSiblings[p_] :=
+  Replace[siblingsAt[Most[p]],
+    {{is_, _} :> (Append[Most[p], #] & /@ Select[is, # > Last[p] &]), _ -> {}}];
 
-(* Scanned from p, not from the first child: a sibling list may be long. *)
-nextSibling[p_?siblingSiteQ] :=
-  With[{kids = at[Most[p]]},
-    With[{i = NestWhile[# + 1 &, Last[p] + 1, # <= Length[kids] && !MatchQ[kids[[#]], _XMLElement] &]},
-      If[i <= Length[kids], {Append[Most[p], i]}, {}]]];
-nextSibling[_] := {};
-
-(* stageRule[s, rhs]: {s, p_} :> rhs[p], rhs giving a held right-hand side. *)
-stageRule[s_, rhs_] :=
-  Module[{p}, With[{lhs = {s, namedPattern[p, _]}}, RuleDelayed @@ Join[Hold[lhs], rhs[p]]]];
-
-chainRule[{s_}, final_] := stageRule[s, final];
-chainRule[{s_, r_, rest__}, final_] :=
-  With[{next = chainRule[{rest}, final], after = afterOf[{rest}]},
-    stageRule[s, Function[p, Hold[chainStage[sitesAt[related[r, p]], next, after]]]]];
-
-afterOf[{_, r_, ___}] := r;
-afterOf[_] := None;
+nextSibling[{}] := {};
+nextSibling[p_] :=
+  If[siblingsAt[Most[p]] === {}, {},
+    Replace[$siblings[Most[p]][[2, Last[p]]], {0 -> {}, i_ :> {Append[Most[p], i]}}]];
 
 (* A stage followed by Sibling starts from its first match among each set of
-   siblings, as the unnested Sibling does. *)
-chainStage[sites_, rule_, Sibling] :=
-  chainStage[DeleteDuplicatesBy[Select[sites, MatchQ[#, First[rule]] &], Most @* Last], rule, None];
-chainStage[sites_, rule_, _] := Join @@ Cases[sites, rule];
+   siblings. *)
+fromFirstSibling[Sibling, tuples_] := DeleteDuplicatesBy[tuples, {Most[#], Most[Last[#]]} &];
+fromFirstSibling[_, tuples_] := tuples;
 
-(* runChain[tree, chain, final, from]: the chain run from every element below
-   tree, and from tree itself when from is {{}}; final[p] is the held
-   right-hand side of the last stage. *)
-runChain[tree_, chain_, final_, from_ : {}] :=
-  Block[{$chainTree = tree},
-    chainStage[sitesAt[Join[below[{}], from]], chainRule[chain, final], afterOf[chain]]];
+extend[tuples_, {r_, s_}] :=
+  Join @@ (Function[t, Append[t, #] & /@ selected[r, Last[t], s]] /@ fromFirstSibling[r, tuples]);
 
-chainCases[tree_, r : Verbatim[RuleDelayed][lhs_, _]] :=
-  With[{held = Extract[r, {2}, Hold]},
-    runChain[tree, chainOf[lhs], Function[p, Replace[held, Hold[b_] :> Hold[{b}]]]]];
-chainCases[tree_, q_] :=
-  runChain[tree, chainOf[q], Function[p, Hold[{at[p]}]]];
+(* The site tuples of a chain, the first stage's sites at level of the tree. *)
+siteTuples[chain_, level_] :=
+  Block[{$siblings = <||>}, Fold[extend,
+    List /@ Position[$chainTree, First[chain], level, Heads -> False],
+    Partition[Rest[chain], 2]]];
 
-(* The first of what chainCases gives, thrown from the last stage. *)
-chainFirst[tree_, r : Verbatim[RuleDelayed][lhs_, _], default_] :=
-  Module[{tag},
-    With[{held = Extract[r, {2}, Hold]},
-      Catch[runChain[tree, chainOf[lhs], Function[p, Replace[held, Hold[b_] :> Hold[Throw[b, tag]]]]];
-        default, tag]]];
+(* The element tuples of the query's chain, matched below the tree. *)
+elementTuples[tree_, q_] :=
+  Block[{$chainTree = tree}, elementsAt @ siteTuples[chainOf[lhsOf[q]], Infinity]];
+
+(* One Extract for every site of every tuple; the tuples have one length. *)
+elementsAt[{}] := {};
+elementsAt[tuples_] := Partition[Extract[$chainTree, Join @@ tuples], Length[First[tuples]]];
+
+(* The plain form picks the last element of a matching tuple rather than binding
+   the tuple: a rule's right-hand side re-evaluates what it is given, and a
+   tuple may hold a large element. *)
+chainCases[tree_, r_RuleDelayed] := Cases[elementTuples[tree, r], tupleRule[r], {1}];
+chainCases[tree_, q_] := Last /@ Select[elementTuples[tree, q], MatchQ[tuplePattern[q]]];
+
+chainFirst[tree_, r_RuleDelayed, default_] :=
+  FirstCase[elementTuples[tree, r], tupleRule[r], default, {1}];
 chainFirst[tree_, q_, default_] :=
-  Module[{tag},
-    Catch[runChain[tree, chainOf[q], Function[p, Hold[Throw[at[p], tag]]]]; default, tag]];
+  Last @ SelectFirst[elementTuples[tree, q], MatchQ[tuplePattern[q]], {default}];
+
+(* A chain deletes the elements its last stage selects. Its first stage may be
+   the root; Delete removes positions nested in one another together. *)
+chainDelete[tree_, q_] :=
+  Block[{$chainTree = tree},
+    With[{sites = siteTuples[chainOf[q], {0, Infinity}]},
+      deleteAt[tree, DeleteDuplicates @
+        Pick[Last /@ sites, MatchQ[tuplePattern[q]] /@ elementsAt[sites]]]]];
+
+deleteAt[tree_, {}] := tree;
+deleteAt[tree_, ps_] := Delete[tree, ps];
 
 (* =========================================================== *)
 (* XMLCases                                                     *)
@@ -620,12 +634,6 @@ XMLDeleteCases[tree_, q_, opts : OptionsPattern[]] :=
       !validTreeQ[tree], Message[XMLDeleteCases::badtree, Head[tree]]; $Failed,
       siblingRelationQ[q], Message[XMLDeleteCases::unsupported]; $Failed,
       True, runCompiled[If[chainQ[First[c]], chainDelete, deleteC], tree, c]]];
-
-(* A chain deletes the elements its last stage selects. Its first stage may be
-   the root, which the unnested combinators' walk also visits; Delete removes
-   positions nested in one another together. *)
-chainDelete[tree_, q_] :=
-  Delete[tree, DeleteDuplicates @ runChain[tree, chainOf[q], Function[p, Hold[{p}]], {{}}]];
 
 (* Whether Adjacent or Sibling relates any two stages, at any depth. *)
 siblingRelationQ[_Adjacent | _Sibling] := True;
