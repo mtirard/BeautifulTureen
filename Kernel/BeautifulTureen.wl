@@ -528,22 +528,68 @@ pairedNext[tuples_, kids_, is_, s_] :=
   With[{sites = Append[kids, #] & /@ DeleteCases[is, 0]},
     Pick[MapThread[Append, {Pick[tuples, Unitize[is], 1], sites}], selects[sites, s]]];
 
-(* A stage followed by Sibling starts from its first match among each set of
-   siblings. *)
-fromFirstSibling[Sibling, tuples_] := DeleteDuplicatesBy[tuples, {Most[#], Most[Last[#]]} &];
-fromFirstSibling[_, tuples_] := tuples;
-
-extend[tuples_, {Adjacent, s_}] :=
+(* Sibling[before, after] matches an element with SOME earlier sibling matching
+   before together with it, the whole chain's names and Condition included, and
+   gives that element once. So a tuple ending at an after site defers its before
+   stage: it holds before[g, k], the choices of group g earlier than the sibling
+   at index k, and a runOf mark for each further stage a choice fixes. A choice
+   fixes the stages back to the start of its run of Adjacent and Sibling links,
+   as they are its siblings; the stages before the run relate to the list, not
+   to the sibling, and group the choices. Adjacent needs no choice: an element
+   has one previous sibling. *)
+extend[tuples_, {Adjacent, s_, _}] :=
   Join @@ (nextSiblings[#, s] & /@ GatherBy[tuples, Most @* Last]);
-extend[tuples_, {r_, s_}] :=
-  Join @@ (Function[t, Append[t, #] & /@ selected[r, Last[t], s]] /@ fromFirstSibling[r, tuples]);
+extend[tuples_, {Sibling, s_, run_}] :=
+  Join @@ (laterThanChoices[#, s, run] & /@ GatherBy[tuples, {Take[#, run - 1], Most[Last[#]]} &]);
+extend[tuples_, {r_, s_, _}] :=
+  Join @@ (Function[t, Append[t, #] & /@ selected[r, Last[t], s]] /@ tuples);
 
-(* The site tuples of a chain, the first stage's sites at level of the tree, in
-   the order Cases visits their last sites: a base XMLCases's order. *)
-siteTuples[chain_, level_] :=
-  Block[{$siblings = <||>}, inCasesOrder @ Fold[extend,
-    List /@ Position[$chainTree, First[chain], level, Heads -> False],
-    Partition[Rest[chain], 2]]];
+(* The choices are a group's tuples from the run on, in document order of their
+   last site; s selects the sites after the first. When the stages' own matches
+   decide the match, the first choice is the one taken, and taken at once. *)
+laterThanChoices[tuples_, s_, run_] :=
+  With[{sorted = tuples[[Ordering[Last /@ Last /@ tuples]]]},
+    With[{sites = selected[Sibling, Last[First[sorted]], s]},
+      If[$stagesDecide,
+        Append[First[sorted], #] & /@ sites,
+        With[{g = Length[$choices] + 1},
+          $choices[g] = sorted[[All, run ;;]];
+          Join[Take[First[sorted], run - 1], {before[g, Last[#]]},
+              ConstantArray[runOf, Length[First[sorted]] - run], {#}] & /@ sites]]]];
+
+(* For each link, the stage its run of Adjacent and Sibling links starts at. *)
+runStarts[links_] :=
+  FoldList[If[MatchQ[First[#2], Adjacent | Sibling], #1, Last[#2]] &, 1,
+    Transpose[{Most[links], Range[2, Length[links]]}]];
+
+(* The first site tuple t stands for that test accepts, or Nothing. The latest
+   deferred stage is chosen first, earliest sibling first: a name bound at the
+   before stage, as in a rule body, sees the first earlier sibling, in document
+   order, with which the element matches the whole pattern. *)
+resolved[t_, test_] := Catch[choose[t, test]; Nothing, $chosen];
+
+choose[t_, test_] :=
+  Replace[FirstPosition[Reverse[t], _before, None, {1}, Heads -> False], {
+    None :> If[test[t], Throw[t, $chosen]],
+    {r_} :> chooseAt[t, Length[t] + 1 - r, test]}];
+
+(* A loop by index: Do over a long list of choices costs its length at once. *)
+chooseAt[t_, p_, test_] :=
+  With[{cs = $choices[t[[p, 1]]], k = t[[p, 2]]},
+    Module[{i = 1},
+      While[i <= Length[cs] && Last[Last[cs[[i]]]] < k,
+        choose[Join[Take[t, p - 1], cs[[i]], Drop[t, p - 1 + Length[cs[[i]]]]], test];
+        i++]]];
+
+(* The site tuples of a chain that test accepts, test None when the stages'
+   own matches decide, the first stage's sites at level of the tree, in the
+   order Cases visits their last sites: a base XMLCases's order. *)
+siteTuples[chain_, level_, test_] :=
+  With[{links = chain[[2 ;; ;; 2]]},
+    Block[{$siblings = <||>, $choices = <||>, $stagesDecide = test === None},
+      If[$stagesDecide, Identity, Map[resolved[#, test] &]] @ inCasesOrder @ Fold[extend,
+        List /@ Position[$chainTree, First[chain], level, Heads -> False],
+        Transpose[{links, chain[[3 ;; ;; 2]], runStarts[links]}]]]];
 
 (* Cases visits a position after every position below it and before every later
    sibling's: lexicographic order, with a position padded past its end sorting
@@ -566,8 +612,7 @@ elementsAt[tuples_] := Partition[atAll[Join @@ tuples], Length[First[tuples]]];
    matches, which selected the sites, decide it unless a Condition wraps a
    combinator or a name is bound at two stages. *)
 matchedSites[q_, level_] :=
-  With[{sites = siteTuples[chainOf[q], level]},
-    If[stagesDecideQ[q], sites, Pick[sites, MatchQ[tuplePattern[q]] /@ elementsAt[sites]]]];
+  siteTuples[chainOf[q], level, If[stagesDecideQ[q], None, MatchQ[tuplePattern[q]] @* atAll]];
 
 stagesDecideQ[q_] :=
   With[{stages = chainOf[q][[1 ;; ;; 2]]},
@@ -580,13 +625,13 @@ namesIn[s_] :=
    the tuple: a rule's right-hand side re-evaluates what it is given, and a
    tuple may hold a large element. *)
 chainCases[tree_, r : Verbatim[RuleDelayed][lhs_, _]] :=
-  Block[{$chainTree = tree}, Cases[elementsAt @ siteTuples[chainOf[lhs], Infinity], tupleRule[r], {1}]];
+  Block[{$chainTree = tree}, Cases[elementsAt @ matchedSites[lhs, Infinity], tupleRule[r], {1}]];
 chainCases[tree_, q_] :=
   Block[{$chainTree = tree}, atAll[Last /@ matchedSites[q, Infinity]]];
 
 chainFirst[tree_, r : Verbatim[RuleDelayed][lhs_, _], default_] :=
   Block[{$chainTree = tree},
-    FirstCase[elementsAt @ siteTuples[chainOf[lhs], Infinity], tupleRule[r], default, {1}]];
+    FirstCase[elementsAt @ matchedSites[lhs, Infinity], tupleRule[r], default, {1}]];
 chainFirst[tree_, q_, default_] :=
   Block[{$chainTree = tree},
     Replace[matchedSites[q, Infinity], {{t_, ___} :> at[Last[t]], {} -> default}]];
