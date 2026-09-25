@@ -165,3 +165,16 @@ TestCreate[
   ImportString["<div class=\"main\"><p class=\"ad\">ad</p></div>", {"HTML", "XMLObject"}],
   TestID -> "cssclass-negation-in-deletecases"
 ];
+
+(* === The class list splits on HTMLWhitespace === *)
+
+(* The importer decodes &nbsp; to U+00A0, which a browser does not split on, so
+   the element carries the single class btn\:00a0btn-primary and .btn does not
+   apply to it. CSSClass must agree with the browser. *)
+TestCreate[
+  XMLCases[
+    ImportString["<div><p class=\"btn&nbsp;btn-primary\">nbsp</p></div>", {"HTML", "XMLObject"}],
+    XMLPattern["p", CSSClass["btn"]]],
+  {},
+  TestID -> "cssclass-nbsp-is-not-a-delimiter"
+];
