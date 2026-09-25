@@ -537,11 +537,22 @@ fromFirstSibling[_, tuples_] := tuples;
 extend[tuples_, {r_, s_}] :=
   Join @@ (Function[t, Append[t, #] & /@ selected[r, Last[t], s]] /@ fromFirstSibling[r, tuples]);
 
-(* The site tuples of a chain, the first stage's sites at level of the tree. *)
+(* The site tuples of a chain, the first stage's sites at level of the tree, in
+   the order Cases visits their last sites: a base XMLCases's order. *)
 siteTuples[chain_, level_] :=
-  Block[{$siblings = <||>}, Fold[extend,
+  Block[{$siblings = <||>}, inCasesOrder @ Fold[extend,
     List /@ Position[$chainTree, First[chain], level, Heads -> False],
     Partition[Rest[chain], 2]]];
+
+(* Cases visits a position after every position below it and before every later
+   sibling's: lexicographic order, with a position padded past its end sorting
+   after any position below it. Ties keep their order. *)
+inCasesOrder[{}] := {};
+inCasesOrder[tuples_] :=
+  With[{lasts = Last /@ tuples},
+    tuples[[Ordering @ Join[
+      PadRight[lasts, {Length[lasts], Max[Length /@ lasts] + 1}, Max[lasts, 0] + 1],
+      List /@ Range[Length[lasts]], 2]]]];
 
 (* The element tuples of the query's chain, matched below the tree. *)
 elementTuples[tree_, q_] :=
