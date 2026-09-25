@@ -33,13 +33,10 @@ XMLPattern::dupkey = "Attribute key `1` is constrained more than once, which Key
 XMLPattern::strpat = "`1` is a string pattern, and a string pattern is never matched against a string by an ordinary pattern. Write _?(StringMatchQ[`1`]) instead.";
 XMLCases::badtree = "First argument should be an XMLObject, XMLElement, or list thereof. Got head `1`.";
 XMLCases::badpat = "Second argument should be an XMLPattern, Alternatives of XMLPatterns, or combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
-XMLCases::condcombinator = "A condition (/;) may wrap an XMLPattern or an Alternatives of them, but not a combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
 XMLFirstCase::badtree = "First argument should be an XMLObject, XMLElement, or list thereof. Got head `1`.";
 XMLFirstCase::badpat = "Second argument should be an XMLPattern, Alternatives of XMLPatterns, or combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
-XMLFirstCase::condcombinator = "A condition (/;) may wrap an XMLPattern or an Alternatives of them, but not a combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
 XMLDeleteCases::badtree = "First argument should be an XMLObject, XMLElement, or list thereof. Got head `1`.";
 XMLDeleteCases::badpat = "Second argument should be an XMLPattern, Alternatives of XMLPatterns, or Child/Descendant combinator. Got `1`.";
-XMLDeleteCases::condcombinator = "A condition (/;) may wrap an XMLPattern or an Alternatives of them, but not a combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
 XMLDeleteCases::unsupported = "Adjacent and Sibling combinators are not supported by XMLDeleteCases. Use XMLCases for filtering semantics instead.";
 XMLMatchQ::badpat = "Pattern should be an XMLPattern, an Alternatives of them, or a conditioned pattern pat /; test. Got `1`.";
 XMLMatchQ::condcombinator = "A condition (/;) may wrap an XMLPattern or an Alternatives of them, but not a combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
@@ -96,9 +93,10 @@ keyLiterals[k_] := {k};
 combinatorQ[_Child | _Adjacent | _Sibling | _Descendant] := True;
 combinatorQ[_] := False;
 
-(* A leading name on a Condition's left-hand side never changes what it is. *)
-condLHSBase[Verbatim[Pattern][_, x_]] := x;
-condLHSBase[x_] := x;
+(* A name or a Condition around a pattern never changes what it is. *)
+patternBase[Verbatim[Pattern][_, x_]] := patternBase[x];
+patternBase[Verbatim[Condition][x_, _]] := patternBase[x];
+patternBase[x_] := x;
 
 (* Valid tree for XMLCases *)
 validTreeQ[XMLObject["Document"][_, _XMLElement, _]] := True;
@@ -311,12 +309,18 @@ badpat[q_] := refuseAtHead["badpat", Short[q]];
 
 cQuery[r_RuleDelayed] :=
   Module[{lhs, binds},
-    {lhs, binds} = reapBinds[cStage[r[[1]]]];
+    {lhs, binds} = reapBinds[cTop[r[[1]]]];
     With[{l = lhs}, RuleDelayed @@ Join[Hold[l], wrapBinds[binds, Extract[r, {2}, Hold]]]]];
-cQuery[q_] := cStage[q];
+cQuery[q_] := cTop[q];
 
-(* A combinator's stages are element patterns or combinators. *)
+(* Only the consumers that search a tree take a combinator; the others take an
+   element pattern. *)
+cTop[q_] := If[MatchQ[$head, XMLCases | XMLFirstCase | XMLDeleteCases], cStage[q], cElem[q]];
+
+(* A combinator's stages are element patterns or combinators. A Condition on a
+   combinator sees the names of all its stages. *)
 cStage[(h : Child | Descendant | Adjacent | Sibling)[a_, b_]] := h[cStage[a], cStage[b]];
+cStage[c_Condition] /; combinatorQ[patternBase[c]] := conditioned[cStage, c];
 cStage[q_] := cElem[q];
 
 (* ---- Element patterns ---- *)
@@ -325,16 +329,19 @@ cElem[XMLPattern[args___]] := cXMLPattern[{args}];
 cElem[alts_Alternatives] := Alternatives @@ (cElem /@ List @@ alts);
 cElem[Verbatim[Pattern][s_Symbol, p_]] :=
   If[combinatorQ[p], badpat[namedPattern[s, p]], bindAs[s, cElem[p], strip]];
-cElem[c_Condition] :=
-  Module[{lhs, binds},
-    If[combinatorQ[condLHSBase[c[[1]]]],
-      refuseAtHead["condcombinator", Short[c[[1]]]]];
-    {lhs, binds} = reapBinds[cElem[c[[1]]]];
-    Scan[Sow[#, $bindTag] &, binds];
-    With[{l = lhs}, Condition @@ Join[Hold[l], wrapBinds[binds, Extract[c, {2}, Hold]]]]];
+cElem[c_Condition] := (
+  If[combinatorQ[patternBase[c]], refuseAtHead["condcombinator", Short[c[[1]]]]];
+  conditioned[cElem, c]);
 (* A plain XMLElement pattern is already what the consumers run. *)
 cElem[x_XMLElement] := x;
 cElem[q_] := badpat[q];
+
+(* A Condition's test sees the names bound in its left-hand side, compiled by comp. *)
+conditioned[comp_, c_] :=
+  Module[{lhs, binds},
+    {lhs, binds} = reapBinds[comp[c[[1]]]];
+    Scan[Sow[#, $bindTag] &, binds];
+    With[{l = lhs}, Condition @@ Join[Hold[l], wrapBinds[binds, Extract[c, {2}, Hold]]]]];
 
 cXMLPattern[{tag_}] := XMLElement[cTag[tag], _, _];
 cXMLPattern[{tag_, attrs_}] := With[{t = cTag[tag]}, XMLElement[t, cAttrs[attrs], _]];
@@ -455,16 +462,26 @@ runCompiled[run_, tree_, {pattern_, readings_}, rest___] :=
 (* is one value, and a rule body sees every name.               *)
 (* =========================================================== *)
 
-(* Every combinator query runs as a chain, nested or not. *)
+(* Every combinator query runs as a chain, nested or not, tested or not. *)
 chainQ[Verbatim[RuleDelayed][lhs_, _]] := chainQ[lhs];
-chainQ[q_] := combinatorQ[q];
+chainQ[q_] := combinatorQ[patternBase[q]];
 
 chainOf[(h : Child | Descendant | Adjacent | Sibling)[a_, b_]] := Join[chainOf[a], {h}, chainOf[b]];
+chainOf[Verbatim[Condition][c_, _]] := chainOf[c];
 chainOf[s_] := {s};
 
-(* The pattern a tuple of elements matches: the list of the chain's stages. *)
-tuplePattern[(Child | Descendant | Adjacent | Sibling)[a_, b_]] := Join[tuplePattern[a], tuplePattern[b]];
-tuplePattern[s_] := {s};
+(* The pattern a tuple of elements matches: the list of the chain's stages. A
+   Condition on the whole combinator wraps the list; one on a combinator that is
+   a stage wraps the sequence of its stages, so it sees only theirs. *)
+tuplePattern[c_Condition] /; chainQ[c] := conditionOn[tuplePattern[c[[1]]], c];
+tuplePattern[q_] := stagesOf[q];
+
+stagesOf[(Child | Descendant | Adjacent | Sibling)[a_, b_]] := Join[stagesOf[a], stagesOf[b]];
+stagesOf[c_Condition] /; chainQ[c] := {conditionOn[PatternSequence @@ stagesOf[c[[1]]], c]};
+stagesOf[s_] := {s};
+
+(* p /; test, the test held as it is in the Condition c. *)
+conditionOn[p_, c_] := Condition @@ Join[Hold[p], Extract[c, {2}, Hold]];
 
 tupleRule[r : Verbatim[RuleDelayed][lhs_, _]] :=
   RuleDelayed @@ Join[Hold @@ {tuplePattern[lhs]}, Extract[r, {2}, Hold]];
@@ -627,6 +644,7 @@ XMLDeleteCases[tree_, q_, opts : OptionsPattern[]] :=
 (* Whether Adjacent or Sibling relates any two stages, at any depth. *)
 siblingRelationQ[_Adjacent | _Sibling] := True;
 siblingRelationQ[(Child | Descendant)[a_, b_]] := siblingRelationQ[a] || siblingRelationQ[b];
+siblingRelationQ[Verbatim[Condition][c_, _]] := siblingRelationQ[c];
 siblingRelationQ[_] := False;
 
 (* Base: a pattern or a Condition *)
