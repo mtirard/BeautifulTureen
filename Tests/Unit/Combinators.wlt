@@ -367,6 +367,59 @@ TestCreate[
   TestID -> "element-and-attrs-name-at-two-stages-is-one-value"
 ];
 
+(* Sibling[before, after] matches an element with some earlier sibling that
+   matches before together with it: here the second h2, not the first. *)
+$treeLaterBefore = ImportString[
+  "<div id=\"k\"><h2 id=\"x\">H</h2><h2 id=\"y\">H2</h2><p data-for=\"k\">1</p><p data-for=\"y\">2</p></div>",
+  {"HTML", "XMLObject"}];
+
+TestCreate[
+  {XMLCases[$treeLaterBefore,
+     Sibling[XMLPattern["h2", "id" -> i_], p : XMLPattern["p", "data-for" -> i_]] :> HTMLTextContent[p]],
+   HTMLTextContent @ XMLFirstCase[$treeLaterBefore,
+     Sibling[XMLPattern["h2", "id" -> i_], XMLPattern["p", "data-for" -> i_]]]},
+  {{"2"}, "2"},
+  TestID -> "sibling-shared-name-reaches-later-before"
+];
+
+(* So does a test on the whole combinator. *)
+TestCreate[
+  {XMLCases[$treeLaterBefore,
+     (Sibling[XMLPattern["h2", "id" -> i_], p : XMLPattern["p", "data-for" -> f_]] /; f === i) :> HTMLTextContent[p]],
+   HTMLTextContent @ XMLFirstCase[$treeLaterBefore,
+     Sibling[h : XMLPattern["h2"], p : XMLPattern["p"]] /; HTMLTextContent[h] === "H2" && HTMLTextContent[p] === "1"]},
+  {{"2"}, "1"},
+  TestID -> "sibling-combinator-test-reaches-later-before"
+];
+
+(* Each matched element comes once, however many earlier siblings match with
+   it; the before stage's name is bound to the first of them. *)
+$treeManyBefore = ImportString[
+  "<div><h2 class=\"a\">1</h2><h2 class=\"b\">2</h2><h2 class=\"a\">3</h2><p class=\"a\">x</p><p class=\"b\">y</p></div>",
+  {"HTML", "XMLObject"}];
+
+TestCreate[
+  {XMLCases[$treeManyBefore,
+     Sibling[h : XMLPattern["h2", "class" -> c_], p : XMLPattern["p", "class" -> c_]] :> {HTMLTextContent[h], HTMLTextContent[p]}],
+   XMLFirstCase[$treeManyBefore,
+     (Sibling[h : XMLPattern["h2"], p : XMLPattern["p"]] /; h[[2]] === p[[2]]) :> {HTMLTextContent[h], HTMLTextContent[p]}]},
+  {{{"1", "x"}, {"2", "y"}}, {"1", "x"}},
+  TestID -> "sibling-shared-name-element-once-bound-to-first-before"
+];
+
+(* Sibling as any link of a chain. An element that follows the p after some h2
+   comes once, whichever h2 and p lead to it. *)
+TestCreate[
+  {XMLCases[$treeManyBefore,
+     Child[XMLPattern["div"], Sibling[XMLPattern["h2", "class" -> c_], p : XMLPattern["p", "class" -> c_]]] :> HTMLTextContent[p]],
+   HTMLTextContent /@ XMLCases[$treeManyBefore,
+     Sibling[Sibling[XMLPattern["h2", "class" -> c_], XMLPattern["h2", "class" -> c_]], XMLPattern["p"]]],
+   HTMLTextContent /@ XMLCases[$treeManyBefore,
+     Sibling[Adjacent[XMLPattern["h2"], XMLPattern["h2"]], XMLPattern["p"]]]},
+  {{"x", "y"}, {"x", "y"}, {"x", "y"}},
+  TestID -> "sibling-in-chain-element-once"
+];
+
 (* === One path for every combinator === *)
 
 (* A name on the earlier Sibling stage is bound in the body. *)

@@ -55,3 +55,13 @@ TestCreate[
   TimeConstraint -> 0.5,
   TestID -> "perf-adjacent-5000-siblings"
 ];
+
+(* Sibling starts, within each list of siblings, from the first site its earlier
+   stage selects: pairing every earlier site with every later one is quadratic
+   in these 5000 siblings. Measured at about 15 ms. *)
+TestCreate[
+  Length @ XMLCases[$big, Sibling[XMLPattern["div"], XMLPattern["div", "class" -> "c3 lead"]]],
+  714,
+  TimeConstraint -> 0.5,
+  TestID -> "perf-sibling-5000-siblings"
+];
