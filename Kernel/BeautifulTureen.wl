@@ -7,20 +7,20 @@ BeginPackage["MaximilienTirard`BeautifulTureen`"];
 
 XMLPattern::usage = "XMLPattern[tag] is an XML pattern matching any element with the given tag. XMLPattern[tag, attrs] additionally constrains the element's attribute map, where attrs is what KeyValuePattern takes: a list of \"key\" -> value rules, a single rule, or a bare \"key\" (meaning \"key\" -> _), optionally named and tested as a whole. Keys are literal: a string, a {namespace, name} pair, or Alternatives of those. Values are ordinary WL patterns. A key with a reading also has a list key, \"classList\" for \"class\", matched against the element's token list; at a list key, a literal string or Alternatives of strings means \"contains this token\". XMLPattern is inert: only XMLCases, XMLFirstCase, XMLDeleteCases, XMLMatchQ and the Roles and Constructs options interpret it; MatchQ and Cases do not.";
 CSSClass::usage = "CSSClass is obsolete. Match an element's class list with the \"classList\" key of XMLPattern instead: XMLPattern[tag, \"classList\" -> \"cls\"].";
-$AttributeReadings::usage = "$AttributeReadings is an Association from a literal attribute key to its reading: how the key's value is split into a token list, and the list key under which an XML pattern reaches that list. Each entry has the fields Method (\"SpaceSeparated\" or \"CommaSeparated\"), Delimiters, \"TrimWhitespace\" and \"ListKey\" (Automatic means key <> \"List\"). It ships with one entry, class, whose list key is \"classList\".";
+$AttributeReadings::usage = "$AttributeReadings is an Association from a literal attribute key to its reading: how the key's value is split into a token list, and the list key under which an XML pattern reaches that list. Each entry has the fields Method (\"SpaceSeparated\" or \"CommaSeparated\"), Delimiters, \"TrimWhitespace\" and \"ListKey\" (Automatic means key <> \"List\"). Method is shorthand for the next two: \"SpaceSeparated\" (the default) splits on HTMLWhitespace without trimming, and \"CommaSeparated\" splits on \",\" and trims HTML whitespace from each token; an explicit Delimiters (a string pattern) or \"TrimWhitespace\" overrides the Method's. Keys are literal strings; a {namespace, name} key never has a reading. It ships with one entry, class, whose list key is \"classList\". The consumers' \"AttributeReadings\" option adds to it, an entry for a key already present replacing that key's entry; Block[{$AttributeReadings = ...}, ...] replaces it, built-in entry included.";
 HTMLWhitespace::usage = "HTMLWhitespace is a string pattern matching a run of one or more HTML ASCII whitespace characters (space, tab, line feed, form feed, carriage return): the delimiter HTML splits a class attribute on. Use it as StringSplit[value, HTMLWhitespace]. Unlike StringSplit's default, it does not treat no-break space or other Unicode whitespace as a delimiter, so it splits as a browser does.";
 HTMLClassList::usage = "HTMLClassList[element] gives the class list of an XMLElement: the tokens of its class attribute, split on HTMLWhitespace, in document order and with duplicates kept. An element with no class attribute, class=\"\", or a whitespace-only class gives {}. It takes a single element; use HTMLClassList /@ XMLCases[tree, pattern] for many.";
-XMLCases::usage = "XMLCases[tree, pattern] gives a list of all elements of the XML tree that match pattern, searched at any depth. pattern can be an XMLPattern, an Alternatives of them, a Child, Descendant, Adjacent, or Sibling combinator, a conditioned pattern pat /; test, or a rule pattern :> body. A name bound to a whole element, e : XMLPattern[...], always sees the element as it is in tree.";
-XMLFirstCase::usage = "XMLFirstCase[tree, pattern] gives the first element of tree matching pattern, or Missing[\"NotFound\"] if there is none. XMLFirstCase[tree, pattern, default] gives default instead. It accepts the same patterns as XMLCases and short-circuits on the first match.";
-XMLDeleteCases::usage = "XMLDeleteCases[tree, pattern] gives tree with every element matching pattern removed, at any depth. It accepts XMLPattern, Alternatives of them, conditioned patterns pat /; test, and Child or Descendant combinators; Adjacent and Sibling are not supported.";
-XMLMatchQ::usage = "XMLMatchQ[element, pattern] gives True if element matches pattern, an XMLPattern, an Alternatives of them, or a conditioned pattern pat /; test, and False otherwise. XMLMatchQ[pattern] is an operator form. It tests the whole element, as StringMatchQ tests a whole string; use XMLCases to search a tree.";
+XMLCases::usage = "XMLCases[tree, pattern] gives a list of all elements of the XML tree that match pattern, searched at any depth. pattern can be an XMLPattern, an Alternatives of them, a Child, Descendant, Adjacent, or Sibling combinator, a conditioned pattern pat /; test, or a rule pattern :> body. A name bound to a whole element, e : XMLPattern[...], always sees the element as it is in tree. XMLCases[tree, pattern, \"AttributeReadings\" -> readings] adds readings to $AttributeReadings for this query.";
+XMLFirstCase::usage = "XMLFirstCase[tree, pattern] gives the first element of tree matching pattern, or Missing[\"NotFound\"] if there is none. XMLFirstCase[tree, pattern, default] gives default instead. It accepts the same patterns as XMLCases and short-circuits on the first match. The \"AttributeReadings\" option adds readings to $AttributeReadings, as for XMLCases.";
+XMLDeleteCases::usage = "XMLDeleteCases[tree, pattern] gives tree with every element matching pattern removed, at any depth. It accepts XMLPattern, Alternatives of them, conditioned patterns pat /; test, and Child or Descendant combinators; Adjacent and Sibling are not supported. The \"AttributeReadings\" option adds readings to $AttributeReadings, as for XMLCases.";
+XMLMatchQ::usage = "XMLMatchQ[element, pattern] gives True if element matches pattern, an XMLPattern, an Alternatives of them, or a conditioned pattern pat /; test, and False otherwise. XMLMatchQ[pattern] is an operator form. It tests the whole element, as StringMatchQ tests a whole string; use XMLCases to search a tree. The \"AttributeReadings\" option adds readings to $AttributeReadings, in either form: XMLMatchQ[element, pattern, opts] or XMLMatchQ[pattern, opts].";
 Child::usage = "Child[parentPat, childPat] is a combinator for XMLCases matching elements that satisfy childPat and occur as direct children of an element satisfying parentPat. Both arguments are XMLPattern element patterns.";
 Adjacent::usage = "Adjacent[beforePat, afterPat] is a combinator for XMLCases matching an element that satisfies afterPat and immediately follows a sibling satisfying beforePat. Both arguments are XMLPattern element patterns.";
 Sibling::usage = "Sibling[beforePat, afterPat] is a combinator for XMLCases matching elements that satisfy afterPat and follow a sibling satisfying beforePat. Both arguments are XMLPattern element patterns.";
 Descendant::usage = "Descendant[ancestorPat, descPat] is a combinator for XMLCases matching elements that satisfy descPat and are nested anywhere below an element satisfying ancestorPat. Both arguments are XMLPattern element patterns.";
 HTMLTextContent::usage = "HTMLTextContent[tree] gives the text content of an XML tree: the lossless concatenation, in document order, of every descendant string. It inserts and removes no whitespace, so source indentation and <pre> whitespace survive unchanged. tree may be an XMLElement, an XMLObject document, a list, or a string.";
-HTMLInnerText::usage = "HTMLInnerText[tree] gives the readable text of an XML tree: internal whitespace is collapsed, block-level tags are placed on their own lines, <br> becomes a newline, <pre> content is preserved verbatim, non-rendered tags such as script and style are dropped, and the result is trimmed. Each element is classified by tag alone using a frozen user-agent stylesheet. HTMLInnerText[tree, \"Roles\" -> rules] overrides the classification, where each rule's left-hand side is an XMLPattern or a tag string; \"BlockSeparator\" -> sep sets the string joining block boundaries (default \"\\n\"). tree may be an XMLElement, an XMLObject document, a list, or a string.";
-HTMLToNotebook::usage = "HTMLToNotebook[tree] converts an HTML/XML tree into a Notebook[...] expression, from which Markdown, PDF, RTF, and display follow via Export. Block-level tags become cells (headings -> Title/Chapter/Section/..., p -> Text, li -> Item/Subitem/..., blockquote -> a framed quote, pre -> a Program cell, table -> Dataset or Grid) and inline tags become boxes inside the surrounding cell (b -> bold, i -> italic, code -> inline code, a -> hyperlink, ...). Classification is by tag alone using a frozen user-agent stylesheet. HTMLToNotebook[tree, \"Roles\" -> rules] overrides the block/inline classification; \"Constructs\" -> rules overrides the form each element takes (an inline token, a cell-style string, or a constructor function element :> Cell/boxes). Each rule's left-hand side is an XMLPattern or a tag string. tree may be an XMLElement, an XMLObject document, a list, or a string.";
+HTMLInnerText::usage = "HTMLInnerText[tree] gives the readable text of an XML tree: internal whitespace is collapsed, block-level tags are placed on their own lines, <br> becomes a newline, <pre> content is preserved verbatim, non-rendered tags such as script and style are dropped, and the result is trimmed. Each element is classified by tag alone using a frozen user-agent stylesheet. HTMLInnerText[tree, \"Roles\" -> rules] overrides the classification, where each rule's left-hand side is an XMLPattern or a tag string; \"BlockSeparator\" -> sep sets the string joining block boundaries (default \"\\n\"); \"AttributeReadings\" -> readings adds readings to $AttributeReadings for the rules' patterns. tree may be an XMLElement, an XMLObject document, a list, or a string.";
+HTMLToNotebook::usage = "HTMLToNotebook[tree] converts an HTML/XML tree into a Notebook[...] expression, from which Markdown, PDF, RTF, and display follow via Export. Block-level tags become cells (headings -> Title/Chapter/Section/..., p -> Text, li -> Item/Subitem/..., blockquote -> a framed quote, pre -> a Program cell, table -> Dataset or Grid) and inline tags become boxes inside the surrounding cell (b -> bold, i -> italic, code -> inline code, a -> hyperlink, ...). Classification is by tag alone using a frozen user-agent stylesheet. HTMLToNotebook[tree, \"Roles\" -> rules] overrides the block/inline classification; \"Constructs\" -> rules overrides the form each element takes (an inline token, a cell-style string, or a constructor function element :> Cell/boxes). Each rule's left-hand side is an XMLPattern or a tag string; \"AttributeReadings\" -> readings adds readings to $AttributeReadings for the rules' patterns. tree may be an XMLElement, an XMLObject document, a list, or a string.";
 
 (* === Messages === *)
 
@@ -43,6 +43,14 @@ XMLDeleteCases::condcombinator = "A condition (/;) may wrap an XMLPattern or an 
 XMLDeleteCases::unsupported = "Adjacent and Sibling combinators are not supported by XMLDeleteCases. Use XMLCases for filtering semantics instead.";
 XMLMatchQ::badpat = "Pattern should be an XMLPattern, an Alternatives of them, or a conditioned pattern pat /; test. Got `1`.";
 XMLMatchQ::condcombinator = "A condition (/;) may wrap an XMLPattern or an Alternatives of them, but not a combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
+$AttributeReadings::badkey = "A reading key should be a literal string, from which its list key is computed. Got `1`.";
+$AttributeReadings::notassoc = "A readings table should be an Association from attribute key to reading. Got `1`.";
+$AttributeReadings::badentry = "The reading for `1` should be an Association of Method, Delimiters, \"TrimWhitespace\" and \"ListKey\", any of them omitted. Got `2`.";
+$AttributeReadings::badfield = "The reading for `1` has the field `2`; a reading's fields are Method, Delimiters, \"TrimWhitespace\" and \"ListKey\".";
+$AttributeReadings::badmethod = "The reading for `1` has Method `2`; Method should be \"SpaceSeparated\" or \"CommaSeparated\".";
+$AttributeReadings::badvalue = "The reading for `1` has `2` -> `3`; Delimiters should be a string pattern, \"TrimWhitespace\" True or False, and \"ListKey\" a string, or any of them Automatic.";
+$AttributeReadings::duplistkey = "More than one reading has the list key `1`.";
+$AttributeReadings::listkeyisreading = "The list key `1` is also a key with a reading, so a query naming it would mean two things.";
 XMLMatchQ::combinator = "`1` relates an element to its parent or siblings, which a lone element does not have. Use XMLCases or XMLFirstCase to search a tree with it.";
 HTMLTextContent::badtree = "First argument should be an XMLObject, XMLElement, or list thereof. Got head `1`.";
 HTMLClassList::notelement = "Argument should be a single XMLElement; for a list of elements, use HTMLClassList /@ elements. Got head `1`.";
@@ -171,17 +179,58 @@ $methodDefaults = <|
   "CommaSeparated" -> <|Delimiters -> ",", "TrimWhitespace" -> True|>|>;
 
 splitter[delim_, False] := Function[v, StringSplit[v, delim]];
-splitter[delim_, True] := Function[v, StringTrim /@ StringSplit[v, delim]];
+(* Trimming strips HTML whitespace, as the comma microsyntax does: a no-break
+   space is part of a token. *)
+splitter[delim_, True] := Function[v, StringTrim[#, HTMLWhitespace] & /@ StringSplit[v, delim]];
 
 (* A readings table resolved for the compiler: list key -> {raw key, split}. *)
 resolveReading[key_String -> spec_Association] :=
   With[{defaults = $methodDefaults[Lookup[spec, Method, "SpaceSeparated"]]},
-    Replace[Lookup[spec, "ListKey", Automatic], Automatic -> key <> "List"] ->
+    listKeyOf[key, spec] ->
       {key, splitter[
         Replace[Lookup[spec, Delimiters, Automatic], Automatic -> defaults[Delimiters]],
         Replace[Lookup[spec, "TrimWhitespace", Automatic], Automatic -> defaults["TrimWhitespace"]]]}];
 
 resolveReadings[readings_Association] := Association[resolveReading /@ Normal[readings]];
+
+(* A consumer's AttributeReadings option adds to the global; an entry for a key
+   the global already has replaces that key's entry whole. A table that fails
+   validation has said why, and gives $Failed. *)
+readingsWith[extra_] :=
+  Catch[resolveReadings[validReadings[Join @@ (validTable /@ {$AttributeReadings, extra})]], $refusal];
+
+validTable[t_Association] := t;
+validTable[t_] := refuse[$AttributeReadings::notassoc, Short[t]];
+
+validReadings[readings_] :=
+  (KeyValueMap[validReading, readings]; validListKeys[readings]; readings);
+
+listKeyOf[key_, spec_] := Replace[Lookup[spec, "ListKey", Automatic], Automatic -> key <> "List"];
+
+validListKeys[readings_] :=
+  With[{listKeys = KeyValueMap[listKeyOf, readings]},
+    Replace[Select[Tally[listKeys], Last[#] > 1 &],
+      {{k_, _}, ___} :> refuse[$AttributeReadings::duplistkey, k]];
+    Replace[Intersection[listKeys, Keys[readings]],
+      {k_, ___} :> refuse[$AttributeReadings::listkeyisreading, k]]];
+
+$readingFields = {Method, Delimiters, "TrimWhitespace", "ListKey"};
+
+validReading[key_, _] /; !StringQ[key] := refuse[$AttributeReadings::badkey, key];
+validReading[key_, spec_] /; !AssociationQ[spec] := refuse[$AttributeReadings::badentry, key, Short[spec]];
+validReading[key_, spec_] := (
+  Replace[Complement[Keys[spec], $readingFields],
+    {f_, ___} :> refuse[$AttributeReadings::badfield, key, f]];
+  If[!KeyExistsQ[$methodDefaults, Lookup[spec, Method, "SpaceSeparated"]],
+    refuse[$AttributeReadings::badmethod, key, spec[Method]]];
+  KeyValueMap[
+    If[!validFieldQ[#1, #2], refuse[$AttributeReadings::badvalue, key, #1, Short[#2]]] &,
+    KeyDrop[spec, Method]]);
+
+(* Whether a value is a string pattern is the string functions' own judgement. *)
+validFieldQ[Delimiters, d_] := d === Automatic || Quiet[Check[StringFreeQ["", d]; True, False]];
+validFieldQ["TrimWhitespace", t_] := MatchQ[t, Automatic | True | False];
+validFieldQ["ListKey", k_] := MatchQ[k, Automatic | _String];
 
 (* =========================================================== *)
 (* Materialisation (ADR 0012)                                   *)
@@ -235,6 +284,7 @@ strip[x_] :=
 (* it names one, again with the renaming on.                    *)
 (* =========================================================== *)
 
+compileQuery[_, _, $Failed] := $Failed;
 compileQuery[q_, head_, readings_Association] :=
   Catch[
     Module[{pattern, keys},
@@ -242,8 +292,6 @@ compileQuery[q_, head_, readings_Association] :=
       If[keys =!= {}, pattern = First @ compilePass[q, head, readings, True]];
       {pattern, Lookup[readings, keys]}],
     $refusal];
-
-compileQuery[q_, head_] := compileQuery[q, head, resolveReadings[$AttributeReadings]];
 
 compilePass[q_, head_, readings_, mat_] :=
   Block[{$head = head, $readings = readings, $mat = mat, $fresh = <||>},
@@ -393,8 +441,10 @@ runCompiled[run_, tree_, {pattern_, readings_}, rest___] :=
 (* XMLCases                                                     *)
 (* =========================================================== *)
 
-XMLCases[tree_, q_] :=
-  With[{c = compileQuery[q, XMLCases]},
+Options[XMLCases] = {"AttributeReadings" -> <||>};
+
+XMLCases[tree_, q_, opts : OptionsPattern[]] :=
+  With[{c = compileQuery[q, XMLCases, readingsWith[OptionValue["AttributeReadings"]]]},
     Which[
       c === $Failed, $Failed,
       !validTreeQ[tree], Message[XMLCases::badtree, Head[tree]]; $Failed,
@@ -501,8 +551,17 @@ casesC[tree_, Verbatim[RuleDelayed][Sibling[beforePat_, afterPat_], body_]] :=
 (* as XMLCases. Default (3rd arg) returned when nothing found.  *)
 (* =========================================================== *)
 
-XMLFirstCase[tree_, q_, default_:Missing["NotFound"]] :=
-  With[{c = compileQuery[q, XMLFirstCase]},
+Options[XMLFirstCase] = {"AttributeReadings" -> <||>};
+
+(* Only a rule naming an option is read as one: any other default, a rule
+   included, stays the default. *)
+optionRuleQ[f_][(Rule | RuleDelayed)[name_, _]] :=
+  MemberQ[Keys[Options[f]], ToString[name]];
+optionRuleQ[_][_] := False;
+
+XMLFirstCase[tree_, q_, default : Except[_?(optionRuleQ[XMLFirstCase])] : Missing["NotFound"],
+    opts : OptionsPattern[]] :=
+  With[{c = compileQuery[q, XMLFirstCase, readingsWith[OptionValue["AttributeReadings"]]]},
     Which[
       c === $Failed, $Failed,
       !validTreeQ[tree], Message[XMLFirstCase::badtree, Head[tree]]; $Failed,
@@ -653,11 +712,13 @@ xmlWalk[x_, _] := x;
 
 (* A rule has nothing to delete with; deletion by relative position (Adjacent,
    Sibling) is a niche operation, documented as unsupported here. *)
-XMLDeleteCases[tree_, q_RuleDelayed] :=
+Options[XMLDeleteCases] = {"AttributeReadings" -> <||>};
+
+XMLDeleteCases[tree_, q_RuleDelayed, OptionsPattern[]] :=
   (Message[XMLDeleteCases::badpat, Short[q]]; $Failed);
 
-XMLDeleteCases[tree_, q_] :=
-  With[{c = compileQuery[q, XMLDeleteCases]},
+XMLDeleteCases[tree_, q_, opts : OptionsPattern[]] :=
+  With[{c = compileQuery[q, XMLDeleteCases, readingsWith[OptionValue["AttributeReadings"]]]},
     Which[
       c === $Failed, $Failed,
       !validTreeQ[tree], Message[XMLDeleteCases::badtree, Head[tree]]; $Failed,
@@ -688,17 +749,22 @@ deleteC[tree_, Descendant[outerPat_, innerPat_]] :=
 (* A whole-element test, as StringMatchQ is a whole-string one. *)
 (* =========================================================== *)
 
-XMLMatchQ[_, q_?combinatorQ] := (Message[XMLMatchQ::combinator, Short[q]]; $Failed);
-XMLMatchQ[_, q_RuleDelayed] := (Message[XMLMatchQ::badpat, Short[q]]; $Failed);
+Options[XMLMatchQ] = {"AttributeReadings" -> <||>};
+
+(* An option rule is never a pattern, so XMLMatchQ[pattern, opts] is the operator form. *)
+XMLMatchQ[q_, opts : Longest[__?(optionRuleQ[XMLMatchQ])]][el_] := XMLMatchQ[el, q, opts];
+XMLMatchQ[q_][el_] := XMLMatchQ[el, q];
+
+XMLMatchQ[_, q_?combinatorQ, OptionsPattern[]] :=
+  (Message[XMLMatchQ::combinator, Short[q]]; $Failed);
+XMLMatchQ[_, q_RuleDelayed, OptionsPattern[]] := (Message[XMLMatchQ::badpat, Short[q]]; $Failed);
 
 (* Only the element itself is materialised: its children cannot be reached. *)
-XMLMatchQ[el_, q_] :=
-  Replace[compileQuery[q, XMLMatchQ], {
+XMLMatchQ[el_, q : Except[_?(optionRuleQ[XMLMatchQ])], opts : OptionsPattern[]] :=
+  Replace[compileQuery[q, XMLMatchQ, readingsWith[OptionValue["AttributeReadings"]]], {
     $Failed -> $Failed,
     {pattern_, {}} :> MatchQ[el, pattern],
     {pattern_, readings_} :> MatchQ[materialise[el, readings, {0}], pattern]}];
-
-XMLMatchQ[q_][el_] := XMLMatchQ[el, q];
 
 (* =========================================================== *)
 (* HTMLTextContent                                             *)
@@ -787,11 +853,11 @@ compileRule[x_, _, _] := {x, {}};
 
 refuseRule[head_, lhs_] := (Message[MessageName[head, "badpat"], Short[lhs]]; $Failed);
 
-compileRules[rules_, head_] :=
-  With[{readings = resolveReadings[$AttributeReadings]},
-    With[{cs = compileRule[#, head, readings] & /@
-        If[AssociationQ[rules], Normal[rules], Flatten[{rules}]]},
-      If[MemberQ[cs, $Failed], $Failed, {cs[[All, 1]], Union @@ cs[[All, 2]]}]]];
+compileRules[_, _, $Failed] := $Failed;
+compileRules[rules_, head_, readings_] :=
+  With[{cs = compileRule[#, head, readings] & /@
+      If[AssociationQ[rules], Normal[rules], Flatten[{rules}]]},
+    If[MemberQ[cs, $Failed], $Failed, {cs[[All, 1]], Union @@ cs[[All, 2]]}]];
 
 materialiseFor[tree_, {}] := tree;
 materialiseFor[tree_, readings_] := materialise[tree, readings];
@@ -870,13 +936,14 @@ itSerialize[toks_, bsep_] :=
     Flatten[atomize /@ toks]];
 
 (* ---- Public interface ---- *)
-Options[HTMLInnerText] = {"Roles" -> {}, "BlockSeparator" -> "\n"};
+Options[HTMLInnerText] = {"Roles" -> {}, "BlockSeparator" -> "\n", "AttributeReadings" -> <||>};
 
 HTMLInnerText[XMLObject["Document"][_, root_, _], opts : OptionsPattern[]] :=
   HTMLInnerText[root, opts];
 
 HTMLInnerText[tree_, opts : OptionsPattern[]] :=
-  With[{roles = compileRules[OptionValue["Roles"], HTMLInnerText]},
+  With[{roles = compileRules[OptionValue["Roles"], HTMLInnerText,
+      readingsWith[OptionValue["AttributeReadings"]]]},
     If[roles === $Failed, $Failed,
       itSerialize[
         Flatten[itToks[materialiseFor[tree, Last[roles]], False, First[roles]]],
@@ -1169,18 +1236,19 @@ toChildList[s_String] := {s};
 toChildList[l_List] := l;
 toChildList[e_XMLElement] := {e};
 
-Options[HTMLToNotebook] = {"Roles" -> {}, "Constructs" -> {}};
+Options[HTMLToNotebook] = {"Roles" -> {}, "Constructs" -> {}, "AttributeReadings" -> <||>};
 
 HTMLToNotebook[XMLObject["Document"][_, root_, _], opts : OptionsPattern[]] :=
   HTMLToNotebook[root, opts];
 
 HTMLToNotebook[tree_, opts : OptionsPattern[]] :=
-  With[{roles = compileRules[OptionValue["Roles"], HTMLToNotebook],
-        cons = compileRules[OptionValue["Constructs"], HTMLToNotebook]},
+  With[{readings = readingsWith[OptionValue["AttributeReadings"]]},
+   With[{roles = compileRules[OptionValue["Roles"], HTMLToNotebook, readings],
+         cons = compileRules[OptionValue["Constructs"], HTMLToNotebook, readings]},
     If[roles === $Failed || cons === $Failed, $Failed,
       Notebook[
         blockEmit[toChildList[materialiseFor[tree, Union[Last[roles], Last[cons]]]],
-          initCtx[First[roles], First[cons]]]]]
+          initCtx[First[roles], First[cons]]]]]]
   ] /; validTextInputQ[tree];
 
 HTMLToNotebook[tree_, OptionsPattern[]] :=
