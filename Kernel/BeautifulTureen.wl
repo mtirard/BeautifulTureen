@@ -7,6 +7,8 @@ BeginPackage["MaximilienTirard`BeautifulTureen`"];
 
 XMLPattern::usage = "XMLPattern[tag] constructs an XMLElement pattern matching any element with the given tag. XMLPattern[tag, constraints...] additionally constrains attributes, where each constraint is \"attr\" -> value, a bare \"attr\" for existence, or CSSClass[...].";
 CSSClass::usage = "CSSClass[cls] gives an attribute constraint, for use in XMLPattern, matching elements whose class list contains a class matching cls. Each argument is an ordinary string pattern matched against a single class, so \"col-\" ~~ __ matches one class beginning with col- and ___ matches any class at all. CSSClass[cls1, cls2, ...] requires all of the given classes; use Alternatives for or-semantics and Except[cls] to negate. A negation reads a missing class attribute as an empty class list, so Except[cls] also matches elements carrying no class at all (as CSS :not(.cls) does) and Except[___] means \"carries no classes\".";
+HTMLWhitespace::usage = "HTMLWhitespace is a string pattern matching a run of one or more HTML ASCII whitespace characters (space, tab, line feed, form feed, carriage return): the delimiter HTML splits a class attribute on. Use it as StringSplit[value, HTMLWhitespace]. Unlike StringSplit's default, it does not treat no-break space or other Unicode whitespace as a delimiter, so it splits as a browser does.";
+HTMLClassList::usage = "HTMLClassList[element] gives the class list of an XMLElement: the tokens of its class attribute, split on HTMLWhitespace, in document order and with duplicates kept. An element with no class attribute, class=\"\", or a whitespace-only class gives {}. It takes a single element; use HTMLClassList /@ XMLCases[tree, pattern] for many.";
 XMLCases::usage = "XMLCases[tree, pattern] gives a list of all elements of the XML tree that match pattern, searched at any depth. pattern can be an XMLElement pattern (see XMLPattern), an Alternatives of them, a Child, Descendant, Adjacent, or Sibling combinator, a conditioned pattern pat /; test, or a rule pattern :> body.";
 XMLFirstCase::usage = "XMLFirstCase[tree, pattern] gives the first element of tree matching pattern, or Missing[\"NotFound\"] if there is none. XMLFirstCase[tree, pattern, default] gives default instead. It accepts the same patterns as XMLCases and short-circuits on the first match.";
 XMLDeleteCases::usage = "XMLDeleteCases[tree, pattern] gives tree with every element matching pattern removed, at any depth. It accepts XMLElement patterns, Alternatives of them, conditioned patterns pat /; test, and Child or Descendant combinators; Adjacent and Sibling are not supported.";
@@ -34,6 +36,7 @@ XMLDeleteCases::badpat = "Second argument should be an XMLElement pattern, Alter
 XMLDeleteCases::condcombinator = "A condition (/;) may wrap an XMLElement pattern or an Alternatives of them, but not a combinator (Child, Adjacent, Sibling, Descendant). Got `1`.";
 XMLDeleteCases::unsupported = "Adjacent and Sibling combinators are not supported by XMLDeleteCases. Use XMLCases for filtering semantics instead.";
 HTMLTextContent::badtree = "First argument should be an XMLObject, XMLElement, or list thereof. Got head `1`.";
+HTMLClassList::notelement = "Argument should be a single XMLElement; for a list of elements, use HTMLClassList /@ elements. Got head `1`.";
 HTMLInnerText::badtree = "First argument should be an XMLObject, XMLElement, or list thereof. Got head `1`.";
 HTMLInnerText::badrole = "Role rule produced `1`, which is not one of \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\", or \"Skip\"; ignoring it and deferring to the frozen user-agent table.";
 HTMLToNotebook::badtree = "First argument should be an XMLObject, XMLElement, or list thereof. Got head `1`.";
@@ -146,17 +149,42 @@ validTextInputQ[_String] := True;
 validTextInputQ[t_] := validTreeQ[t];
 
 (* =========================================================== *)
+(* HTMLWhitespace                                               *)
+(* The delimiter of the space-separated microsyntax.            *)
+(* =========================================================== *)
+
+(* A run, not one character, mirroring Whitespace rather than
+   WhitespaceCharacter: splitting "a  b" on it gives no phantom empty token. *)
+HTMLWhitespace = (" " | "\t" | "\n" | "\f" | "\r") ..;
+
+(* =========================================================== *)
+(* HTMLClassList                                                *)
+(* The extraction form of the class reading. Shares classList   *)
+(* and classValue with CSSClass, so extracting and matching     *)
+(* agree on the same element.                                   *)
+(* =========================================================== *)
+
+HTMLClassList[XMLElement[_, attrs_List, _]] := classList[classValue[attrs]];
+
+(* A list, a document or a bare string is refused, not interpreted: a list is a
+   forest elsewhere in the paclet (one answer), where concatenated class lists
+   mean nothing, and a bare string is a text node, not an attribute value. *)
+HTMLClassList[other_] :=
+  (Message[HTMLClassList::notelement, Head[other]]; $Failed);
+
+(* =========================================================== *)
 (* CSSClass                                                     *)
 (* Produces a constraint for use in XMLPattern.                 *)
 (* Each argument is a string pattern matched against one class  *)
 (* token. Multiple arguments = AND. Alternatives for OR.        *)
 (* =========================================================== *)
 
-(* The class list: the whitespace-separated tokens of the class attribute.
-   StringSplit gives the empty list for "", for whitespace-only values, and (via
-   the "" default in classValue) for a missing attribute \[LongDash] the three ways an
-   element ends up carrying no classes, which must be indistinguishable here. *)
-classList[val_String] := StringSplit[val];
+(* The class list: the tokens of the class attribute, split on HTMLWhitespace
+   as a browser splits them. Splitting gives the empty list for "", for
+   whitespace-only values, and (via the "" default in classValue) for a missing
+   attribute \[LongDash] the three ways an element ends up carrying no classes, which
+   must be indistinguishable here. *)
+classList[val_String] := StringSplit[val, HTMLWhitespace];
 
 (* An argument holds for an element when some class token matches it. Matching a
    token rather than the whole attribute value is what lets each argument be an
