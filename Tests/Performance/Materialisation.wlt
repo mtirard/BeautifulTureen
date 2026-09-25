@@ -36,11 +36,22 @@ TestCreate[
 ];
 
 (* A chain (a combinator as a stage) runs on positions in the one materialised
-   tree. Measured at about 30 ms here, against about 15 ms unnested. *)
+   tree, as an unnested combinator does. Measured at about 17 ms here. *)
 TestCreate[
   Length @ XMLCases[$big,
     Descendant[XMLPattern["html"], Child[XMLPattern["body"], XMLPattern["div", "classList" -> "c3"]]]],
   714,
   TimeConstraint -> 0.5,
   TestID -> "perf-classlist-nested-chain-5000-elements"
+];
+
+(* Every combinator runs as a chain. A sibling relation reads each site's next
+   sibling from a table built once per list of siblings: scanning the list per
+   site is quadratic in these 5000 siblings. Measured at about 12 ms, against
+   about 6 ms before combinators shared one path. *)
+TestCreate[
+  Length @ XMLCases[$big, Adjacent[XMLPattern["div"], XMLPattern["div", "class" -> "c3 lead"]]],
+  714,
+  TimeConstraint -> 0.5,
+  TestID -> "perf-adjacent-5000-siblings"
 ];
