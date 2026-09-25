@@ -1,5 +1,5 @@
 ---
-status: accepted (amended by ADR-0010)
+status: superseded by ADR-0011, ADR-0012
 ---
 
 # `XMLPattern` matching has three levels: token predicate, quantifier, conjunction
@@ -8,7 +8,9 @@ An `XMLPattern` attribute constraint operates at three distinct levels, and unti
 
 Supersedes ADR 0004 and ADR 0005, both outright.
 
-> **Amended by [ADR 0010](./0010-bindings-reach-through-classtest.md).** This ADR states that `ClassTest[…]` **evaluates** to a `Rule`. It no longer does: `ClassTest`, `TokenTest` and `AttributeTest` are inert, expanded by the `XMLPattern` compiler, so that `cls : ClassTest[q]` can be recognised and bound. Every holding below survives — including the rejection of element-level `Not`, whose argument shifts from "it is a `Rule`" to "it is not a Boolean" and whose conclusion is unchanged.
+> **Superseded by [ADR 0011](./0011-plain-patterns-inside-xmlpattern.md) and [ADR 0012](./0012-readings-and-materialising-emission.md), bodies retained.** `ClassTest`, `TokenTest`, `AttributeTest` and `Matching` are all dropped — a later reshape found the three named levels below to be real, but the vocabulary naming them a sublanguage over WL's own list-pattern matching, once the token list and attribute set are recognised as ordinary WL lists. The three levels do not survive as vocabulary either: inside an `XMLPattern` a value is an ordinary WL pattern, and conjunction is the attribute rule list or a predicate, with no orderless rewriting (ADR 0011). Every measured finding below — the confinement rejection, the `Except`-width trap, `RegularExpression` falling through for free, `f[q_] := pat /; cond`'s silent non-definition — remains true and is carried forward by ADR 0011 and ADR 0012. What does not survive is every named symbol, including the quantifier heads as *adopted* vocabulary: `AnyTrue`/`AllTrue`/`NoneTrue` remain usable, just never as something this paclet ships a rule for.
+>
+> **Amendment by [ADR 0010](./0010-bindings-reach-through-classtest.md) is now moot**, since ADR 0010 is itself superseded — see that ADR.
 
 ## Context
 

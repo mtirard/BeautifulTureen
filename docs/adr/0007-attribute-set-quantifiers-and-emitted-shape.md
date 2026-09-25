@@ -1,10 +1,12 @@
 ---
-status: accepted
+status: superseded by ADR-0012
 ---
 
 # `AttributeTest` quantifies the attribute set; emission stays `KeyValuePattern` plus one `Condition`
 
 `AttributeTest[q]` is an element-level constraint, sitting alongside `ClassTest[…]` and `"href" -> _` in `XMLPattern`'s constraint slot. Its quantifier `q` — the same `AnyTrue` / `AllTrue` / `NoneTrue` trio as the token level (ADR 0006) — ranges over the element's **whole attribute set**, and its operand is an **attribute pattern**. The emitted pattern remains `KeyValuePattern` for positive rules plus **one** `Condition` `&&`-joining every quantifier.
+
+> **Superseded by [ADR 0012](./0012-readings-and-materialising-emission.md), body retained.** `AttributeTest` is dropped along with the rest of the quantifier vocabulary (ADR 0011): the attribute argument is now what `KeyValuePattern` takes, with literal keys only (ADR 0011), and the `Condition` emission this ADR chose is replaced by the materialising emission (ADR 0012). **What survives outright, and is carried forward by name:** the `OrderlessPatternSequence` rejection at attribute-map length — 377× slower at six positives — and the `f[q_] := pat /; cond` trap. The paclet no longer emits `OrderlessPatternSequence` at any level.
 
 ## Context
 

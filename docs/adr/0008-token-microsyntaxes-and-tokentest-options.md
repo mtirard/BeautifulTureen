@@ -1,10 +1,12 @@
 ---
-status: accepted
+status: superseded by ADR-0012
 ---
 
 # `TokenTest` takes options, with `Method` as pure shorthand for `Delimiters` and `TrimTokens`
 
 A [[token list]] is produced by `StringSplit`, and `TokenTest` is told how to split by three symbol-keyed options — `Method`, `Delimiters`, `TrimTokens` — where `Method` is **pure shorthand** _defining_ the other two rather than an opaque enum beside them. `ClassTest` is a **reading**: it fixes a key _and_ a microsyntax, and it is the only reading that ships.
+
+> **Superseded by [ADR 0012](./0012-readings-and-materialising-emission.md), body retained.** `TokenTest` and `ClassTest` are dropped along with the rest of the pattern-construct vocabulary (ADR 0011). **What survives outright, rehomed onto the `$AttributeReadings` table:** the `Method`/`Delimiters`/`TrimTokens` two-layer resolution (renamed `TrimWhitespace`, and joined by a `"ListKey"` field naming the synthesised attribute), the `StringSplit`-for-both-microsyntaxes finding, and the reasoning against key inference and a user-supplied tokeniser. `class` remains the only reading that ships by default; the table now lives as a global a caller can extend, rather than as an argument to a dropped constructor.
 
 ## Context
 

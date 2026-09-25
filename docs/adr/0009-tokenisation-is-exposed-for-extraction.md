@@ -1,10 +1,12 @@
 ---
-status: accepted
+status: accepted (amended by ADR-0012)
 ---
 
 # Tokenisation is exposed for extraction: `HTMLClassList` and `HTMLWhitespace`
 
 ADR 0006 named the [[token list]] and the [[class list]], but they existed only _inside_ the matcher — a user who matched an element and then wanted its classes had to re-derive them, and the obvious spelling is silently wrong. Two public symbols close the gap: **`HTMLClassList[element]`**, the extraction form of the `class` [[reading]], and **`HTMLWhitespace`**, the delimiter the space-separated [[microsyntax]] splits on.
+
+> **Amended by [ADR 0012](./0012-readings-and-materialising-emission.md).** An element with no `class` attribute now gives `{}`, not `Missing["KeyAbsent", "class"]`, so that `HTMLClassList` agrees with the synthesised `"classList"` attribute a query matches against, and with a browser's `classList`. The "Absence" section below is retained as history. `ClassTest`, named below as the testing form of the reading, is dropped (ADR 0011); the testing form is now `"classList" -> …`. Everything else stands.
 
 ## Context
 
