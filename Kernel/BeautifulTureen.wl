@@ -12,12 +12,12 @@ HTMLWhitespace::usage = "HTMLWhitespace is a string pattern matching a run of on
 HTMLClassList::usage = "HTMLClassList[element] gives the class list of an XMLElement: the tokens of its class attribute, split on HTMLWhitespace, in document order and with duplicates kept. An element with no class attribute, class=\"\", or a whitespace-only class gives {}. It takes a single element; use HTMLClassList /@ XMLCases[tree, pattern] for many.";
 XMLCases::usage = "XMLCases[tree, pattern] gives a list of all elements of the XML tree that match pattern, searched at any depth. pattern can be an XMLPattern, an Alternatives of them, a Child, Descendant, Adjacent, or Sibling combinator, a conditioned pattern pat /; test, or a rule pattern :> body. A name bound to a whole element, e : XMLPattern[...], always sees the element as it is in tree. XMLCases[tree, pattern, \"AttributeReadings\" -> readings] adds readings to $AttributeReadings for this query.";
 XMLFirstCase::usage = "XMLFirstCase[tree, pattern] gives the first element of tree matching pattern, or Missing[\"NotFound\"] if there is none. XMLFirstCase[tree, pattern, default] gives default instead. It accepts the same patterns as XMLCases and short-circuits on the first match. The \"AttributeReadings\" option adds readings to $AttributeReadings, as for XMLCases.";
-XMLDeleteCases::usage = "XMLDeleteCases[tree, pattern] gives tree with every element matching pattern removed, at any depth. It accepts XMLPattern, Alternatives of them, conditioned patterns pat /; test, and Child or Descendant combinators; Adjacent and Sibling are not supported. The \"AttributeReadings\" option adds readings to $AttributeReadings, as for XMLCases.";
+XMLDeleteCases::usage = "XMLDeleteCases[tree, pattern] gives tree with every element matching pattern removed, at any depth. It accepts XMLPattern, Alternatives of them, conditioned patterns pat /; test, and Child or Descendant combinators, nested in one another or not; Adjacent and Sibling are not supported, at any depth. The \"AttributeReadings\" option adds readings to $AttributeReadings, as for XMLCases.";
 XMLMatchQ::usage = "XMLMatchQ[element, pattern] gives True if element matches pattern, an XMLPattern, an Alternatives of them, or a conditioned pattern pat /; test, and False otherwise. XMLMatchQ[pattern] is an operator form. It tests the whole element, as StringMatchQ tests a whole string; use XMLCases to search a tree. The \"AttributeReadings\" option adds readings to $AttributeReadings, in either form: XMLMatchQ[element, pattern, opts] or XMLMatchQ[pattern, opts].";
-Child::usage = "Child[parentPat, childPat] is a combinator for XMLCases matching elements that satisfy childPat and occur as direct children of an element satisfying parentPat. Both arguments are XMLPattern element patterns.";
-Adjacent::usage = "Adjacent[beforePat, afterPat] is a combinator for XMLCases matching an element that satisfies afterPat and immediately follows a sibling satisfying beforePat. Both arguments are XMLPattern element patterns.";
-Sibling::usage = "Sibling[beforePat, afterPat] is a combinator for XMLCases matching elements that satisfy afterPat and follow a sibling satisfying beforePat. Both arguments are XMLPattern element patterns.";
-Descendant::usage = "Descendant[ancestorPat, descPat] is a combinator for XMLCases matching elements that satisfy descPat and are nested anywhere below an element satisfying ancestorPat. Both arguments are XMLPattern element patterns.";
+Child::usage = "Child[parentPat, childPat] is a combinator for XMLCases matching elements that satisfy childPat and occur as direct children of an element satisfying parentPat. Each argument is an XMLPattern element pattern or itself a combinator: stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements.";
+Adjacent::usage = "Adjacent[beforePat, afterPat] is a combinator for XMLCases matching an element that satisfies afterPat and immediately follows a sibling satisfying beforePat. Each argument is an XMLPattern element pattern or itself a combinator: stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements.";
+Sibling::usage = "Sibling[beforePat, afterPat] is a combinator for XMLCases matching elements that satisfy afterPat and follow a sibling satisfying beforePat. Each argument is an XMLPattern element pattern or itself a combinator: stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements.";
+Descendant::usage = "Descendant[ancestorPat, descPat] is a combinator for XMLCases matching elements that satisfy descPat and are nested anywhere below an element satisfying ancestorPat. Each argument is an XMLPattern element pattern or itself a combinator: stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements.";
 HTMLTextContent::usage = "HTMLTextContent[tree] gives the text content of an XML tree: the lossless concatenation, in document order, of every descendant string. It inserts and removes no whitespace, so source indentation and <pre> whitespace survive unchanged. tree may be an XMLElement, an XMLObject document, a list, or a string.";
 HTMLInnerText::usage = "HTMLInnerText[tree] gives the readable text of an XML tree: internal whitespace is collapsed, block-level tags are placed on their own lines, <br> becomes a newline, <pre> content is preserved verbatim, non-rendered tags such as script and style are dropped, and the result is trimmed. Each element is classified by tag alone using a frozen user-agent stylesheet. HTMLInnerText[tree, \"Roles\" -> rules] overrides the classification, where each rule's left-hand side is an XMLPattern or a tag string; \"BlockSeparator\" -> sep sets the string joining block boundaries (default \"\\n\"); \"AttributeReadings\" -> readings adds readings to $AttributeReadings for the rules' patterns. tree may be an XMLElement, an XMLObject document, a list, or a string.";
 HTMLToNotebook::usage = "HTMLToNotebook[tree] converts an HTML/XML tree into a Notebook[...] expression, from which Markdown, PDF, RTF, and display follow via Export. Block-level tags become cells (headings -> Title/Chapter/Section/..., p -> Text, li -> Item/Subitem/..., blockquote -> a framed quote, pre -> a Program cell, table -> Dataset or Grid) and inline tags become boxes inside the surrounding cell (b -> bold, i -> italic, code -> inline code, a -> hyperlink, ...). Classification is by tag alone using a frozen user-agent stylesheet. HTMLToNotebook[tree, \"Roles\" -> rules] overrides the block/inline classification; \"Constructs\" -> rules overrides the form each element takes (an inline token, a cell-style string, or a constructor function element :> Cell/boxes). Each rule's left-hand side is an XMLPattern or a tag string; \"AttributeReadings\" -> readings adds readings to $AttributeReadings for the rules' patterns. tree may be an XMLElement, an XMLObject document, a list, or a string.";
@@ -315,8 +315,8 @@ cQuery[r_RuleDelayed] :=
     With[{l = lhs}, RuleDelayed @@ Join[Hold[l], wrapBinds[binds, Extract[r, {2}, Hold]]]]];
 cQuery[q_] := cStage[q];
 
-(* A combinator's stages are element patterns. *)
-cStage[(h : Child | Descendant | Adjacent | Sibling)[a_, b_]] := h[cElem[a], cElem[b]];
+(* A combinator's stages are element patterns or combinators. *)
+cStage[(h : Child | Descendant | Adjacent | Sibling)[a_, b_]] := h[cStage[a], cStage[b]];
 cStage[q_] := cElem[q];
 
 (* ---- Element patterns ---- *)
@@ -438,6 +438,91 @@ runCompiled[run_, tree_, {pattern_, readings_}, rest___] :=
   strip @ run[materialise[tree, readings], pattern, rest];
 
 (* =========================================================== *)
+(* Chains: combinators nested as stages                         *)
+(*                                                              *)
+(* A combinator whose stage is a combinator reads as a chain,   *)
+(* left to right, as a CSS selector does: Descendant[a,         *)
+(* Child[b, c]] and Child[Descendant[a, b], c] are both the     *)
+(* chain a, Descendant, b, Child, c. A chain runs on sites      *)
+(* {element, position} of the one (materialised) tree, so every *)
+(* relation, siblings included, is between sites of that tree,  *)
+(* and it compiles to one Cases per stage, each rule's right-   *)
+(* hand side holding the next stage: a name bound at any stage  *)
+(* is in scope of every later stage and of the body.            *)
+(* =========================================================== *)
+
+nestedQ[(Child | Descendant | Adjacent | Sibling)[a_, b_]] := combinatorQ[a] || combinatorQ[b];
+nestedQ[Verbatim[RuleDelayed][lhs_, _]] := nestedQ[lhs];
+nestedQ[_] := False;
+
+chainOf[(h : Child | Descendant | Adjacent | Sibling)[a_, b_]] := Join[chainOf[a], {h}, chainOf[b]];
+chainOf[s_] := {s};
+
+sitesAt[{}] := {};
+sitesAt[ps_] := Transpose[{Extract[$chainTree, ps], ps}];
+
+(* Extract reads {} as no positions, not as the whole tree. *)
+at[{}] := $chainTree;
+at[p_] := Extract[$chainTree, p];
+
+elementIndices[l_List] := Flatten @ Position[l, _XMLElement, {1}, Heads -> False];
+
+(* Every element strictly below position p, in the order Cases visits them. *)
+below[p_] := Join[p, #] & /@ Position[at[p], _XMLElement, Infinity];
+
+related[Descendant, p_] := below[p];
+related[Child, p_] := Join[p, {3, #}] & /@ elementIndices[at[p][[3]]];
+related[Adjacent, p_] := Take[laterSiblings[p], UpTo[1]];
+related[Sibling, p_] := laterSiblings[p];
+
+(* Siblings are children of one element, as in the unnested combinators. *)
+laterSiblings[p_] /;
+    Length[p] >= 2 && p[[-2]] === 3 && MatchQ[at[Drop[p, -2]], _XMLElement] :=
+  Join[Most[p], {#}] & /@ Select[elementIndices[at[Most[p]]], # > Last[p] &];
+laterSiblings[_] := {};
+
+(* stageRule[s, rhs]: {s, p_} :> rhs[p], rhs giving a held right-hand side. *)
+stageRule[s_, rhs_] :=
+  Module[{p}, With[{lhs = {s, namedPattern[p, _]}}, RuleDelayed @@ Join[Hold[lhs], rhs[p]]]];
+
+chainRule[{s_}, final_] := stageRule[s, final];
+chainRule[{s_, r_, rest__}, final_] :=
+  With[{next = chainRule[{rest}, final], after = afterOf[{rest}]},
+    stageRule[s, Function[p, Hold[chainStage[sitesAt[related[r, p]], next, after]]]]];
+
+afterOf[{_, r_, ___}] := r;
+afterOf[_] := None;
+
+(* A stage followed by Sibling starts from its first match among each set of
+   siblings, as the unnested Sibling does. *)
+chainStage[sites_, rule_, Sibling] :=
+  chainStage[DeleteDuplicatesBy[Select[sites, MatchQ[#, First[rule]] &], Most @* Last], rule, None];
+chainStage[sites_, rule_, _] := Join @@ Cases[sites, rule];
+
+(* runChain[tree, chain, final, from]: the chain run from every element below
+   tree, and from tree itself when from is {{}}; final[p] is the held
+   right-hand side of the last stage. *)
+runChain[tree_, chain_, final_, from_ : {}] :=
+  Block[{$chainTree = tree},
+    chainStage[sitesAt[Join[below[{}], from]], chainRule[chain, final], afterOf[chain]]];
+
+chainCases[tree_, r : Verbatim[RuleDelayed][lhs_, _]] :=
+  With[{held = Extract[r, {2}, Hold]},
+    runChain[tree, chainOf[lhs], Function[p, Replace[held, Hold[b_] :> Hold[{b}]]]]];
+chainCases[tree_, q_] :=
+  runChain[tree, chainOf[q], Function[p, Hold[{at[p]}]]];
+
+(* The first of what chainCases gives, thrown from the last stage. *)
+chainFirst[tree_, r : Verbatim[RuleDelayed][lhs_, _], default_] :=
+  Module[{tag},
+    With[{held = Extract[r, {2}, Hold]},
+      Catch[runChain[tree, chainOf[lhs], Function[p, Replace[held, Hold[b_] :> Hold[Throw[b, tag]]]]];
+        default, tag]]];
+chainFirst[tree_, q_, default_] :=
+  Module[{tag},
+    Catch[runChain[tree, chainOf[q], Function[p, Hold[Throw[at[p], tag]]]]; default, tag]];
+
+(* =========================================================== *)
 (* XMLCases                                                     *)
 (* =========================================================== *)
 
@@ -448,7 +533,7 @@ XMLCases[tree_, q_, opts : OptionsPattern[]] :=
     Which[
       c === $Failed, $Failed,
       !validTreeQ[tree], Message[XMLCases::badtree, Head[tree]]; $Failed,
-      True, runCompiled[casesC, tree, c]]];
+      True, runCompiled[If[nestedQ[First[c]], chainCases, casesC], tree, c]]];
 
 (* Base: a pattern, a Condition, or a rule over either \[LongDash] just Cases *)
 casesC[tree_, pat_] := Cases[tree, pat, Infinity];
@@ -565,7 +650,7 @@ XMLFirstCase[tree_, q_, default : Except[_?(optionRuleQ[XMLFirstCase])] : Missin
     Which[
       c === $Failed, $Failed,
       !validTreeQ[tree], Message[XMLFirstCase::badtree, Head[tree]]; $Failed,
-      True, runCompiled[firstC, tree, c, default]]];
+      True, runCompiled[If[nestedQ[First[c]], chainFirst, firstC], tree, c, default]]];
 
 (* Base: FirstCase short-circuits natively *)
 firstC[tree_, pat_, default_] := FirstCase[tree, pat, default, Infinity];
@@ -722,8 +807,19 @@ XMLDeleteCases[tree_, q_, opts : OptionsPattern[]] :=
     Which[
       c === $Failed, $Failed,
       !validTreeQ[tree], Message[XMLDeleteCases::badtree, Head[tree]]; $Failed,
-      MatchQ[q, _Adjacent | _Sibling], Message[XMLDeleteCases::unsupported]; $Failed,
-      True, runCompiled[deleteC, tree, c]]];
+      siblingRelationQ[q], Message[XMLDeleteCases::unsupported]; $Failed,
+      True, runCompiled[If[nestedQ[First[c]], chainDelete, deleteC], tree, c]]];
+
+(* A chain deletes the elements its last stage selects. Its first stage may be
+   the root, which the unnested combinators' walk also visits; Delete removes
+   positions nested in one another together. *)
+chainDelete[tree_, q_] :=
+  Delete[tree, DeleteDuplicates @ runChain[tree, chainOf[q], Function[p, Hold[{p}]], {{}}]];
+
+(* Whether Adjacent or Sibling relates any two stages, at any depth. *)
+siblingRelationQ[_Adjacent | _Sibling] := True;
+siblingRelationQ[(Child | Descendant)[a_, b_]] := siblingRelationQ[a] || siblingRelationQ[b];
+siblingRelationQ[_] := False;
 
 (* Base: a pattern or a Condition *)
 deleteC[tree_, pat_] := DeleteCases[tree, pat, Infinity];

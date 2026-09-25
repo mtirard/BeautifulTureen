@@ -206,10 +206,73 @@ TestCreate[
   TestID -> "firstcase-child-classlist-absent-parent"
 ];
 
-(* A combinator's stages are element patterns. *)
+(* === Combinators as stages === *)
+
+(* A combinator's stage may itself be a combinator: the stages chain from left to
+   right, as a CSS selector does, whichever way they are nested. *)
+$treeNest = ImportString[
+  "<div class=\"outer\"><section><p>1</p><div><p>2</p></div></section><p>3</p></div>\
+<section><p>4</p></section>",
+  {"HTML", "XMLObject"}];
+
+nestTexts[q_] := HTMLTextContent /@ XMLCases[$treeNest, q];
+
 TestCreate[
-  XMLCases[$treeCards, Descendant[XMLPattern["div"], Child[XMLPattern["div"], XMLPattern["p"]]]],
-  $Failed,
-  {XMLCases::badpat},
-  TestID -> "combinator-stage-must-be-element-pattern"
+  nestTexts @ Descendant[XMLPattern["div", "classList" -> "outer"], Child[XMLPattern["section"], XMLPattern["p"]]],
+  {"1"},
+  TestID -> "nested-descendant-of-child"
+];
+
+(* A combinator as the ancestor or parent stage. *)
+TestCreate[
+  {nestTexts @ Descendant[Child[XMLPattern["section"], XMLPattern["div"]], XMLPattern["p"]],
+   nestTexts @ Child[Descendant[XMLPattern["div", "classList" -> "outer"], XMLPattern["section"]], XMLPattern["p"]]},
+  {{"2"}, {"1"}},
+  TestID -> "nested-combinator-as-first-stage"
+];
+
+(* A combinator as the child stage: Child[a, Descendant[b, c]] is Descendant[Child[a, b], c]. *)
+TestCreate[
+  nestTexts @ Child[XMLPattern["section"], Descendant[XMLPattern["div"], XMLPattern["p"]]],
+  {"2"},
+  TestID -> "nested-child-of-descendant"
+];
+
+(* In the rule form, a name bound at any stage is in scope of the body, and an
+   element binding is the original even when a stage names a list key. *)
+TestCreate[
+  XMLCases[$treeNest,
+    Descendant[d : XMLPattern["div", "classList" -> "outer"], Child[s : XMLPattern["section"], x : XMLPattern["p"]]] :>
+      {d[[2]], s[[1]], HTMLTextContent[x]}],
+  {{{"class" -> "outer"}, "section", "1"}},
+  TestID -> "nested-rule-binds-every-stage"
+];
+
+(* Sibling relations chain too. The siblings may be direct children of the
+   ancestor, and a Sibling stage starts from its first match, as unnested. *)
+TestCreate[
+  {HTMLTextContent /@ XMLCases[$treeSiblings, Descendant[XMLPattern["div"], Adjacent[XMLPattern["h2"], XMLPattern["p"]]]],
+   HTMLTextContent /@ XMLCases[$treeSiblings, Child[XMLPattern["div"], Sibling[XMLPattern["p"], XMLPattern["p"]]]],
+   HTMLTextContent /@ XMLCases[$treeSiblings, Sibling[XMLPattern["p", "classList" -> "lead"], XMLPattern["p"]]]},
+  {{"First"}, {"Second", "Fourth"}, {"Second", "Fourth"}},
+  TestID -> "nested-sibling-relations"
+];
+
+(* A sibling stage followed by a child stage. *)
+TestCreate[
+  nestTexts @ Child[Adjacent[XMLPattern["p"], XMLPattern["div"]], XMLPattern["p"]],
+  {"2"},
+  TestID -> "nested-child-of-adjacent"
+];
+
+(* XMLFirstCase gives the first of what XMLCases gives, plain and rule forms. *)
+TestCreate[
+  {XMLFirstCase[$treeNest, Descendant[XMLPattern["div"], Child[XMLPattern["div"], XMLPattern["p"]]]],
+   XMLFirstCase[$treeNest,
+     Descendant[d : XMLPattern["div", "classList" -> "outer"], Child[XMLPattern["section"], x : XMLPattern["p"]]] :>
+       {d[[2]], HTMLTextContent[x]}],
+   XMLFirstCase[$treeNest, Child[XMLPattern["section"], Descendant[XMLPattern["div"], XMLPattern["p"]]], "none"],
+   XMLFirstCase[$treeNest, Child[XMLPattern["section"], Descendant[XMLPattern["div"], XMLPattern["span"]]], "none"]},
+  {XMLElement["p", {}, {"2"}], {{"class" -> "outer"}, "1"}, XMLElement["p", {}, {"2"}], "none"},
+  TestID -> "nested-firstcase"
 ];

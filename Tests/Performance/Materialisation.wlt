@@ -34,3 +34,13 @@ TestCreate[
   TimeConstraint -> 0.5,
   TestID -> "perf-classlist-delete-5000-elements"
 ];
+
+(* A chain (a combinator as a stage) runs on positions in the one materialised
+   tree. Measured at about 30 ms here, against about 15 ms unnested. *)
+TestCreate[
+  Length @ XMLCases[$big,
+    Descendant[XMLPattern["html"], Child[XMLPattern["body"], XMLPattern["div", "classList" -> "c3"]]]],
+  714,
+  TimeConstraint -> 0.5,
+  TestID -> "perf-classlist-nested-chain-5000-elements"
+];
