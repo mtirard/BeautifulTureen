@@ -406,3 +406,49 @@ TestCreate[
   {{"2", "B2"}, {"2", "B2", "3"}, "2", "2"},
   TestID -> "combinator-results-in-document-order"
 ];
+
+(* === A test on a whole combinator sees every stage's names === *)
+
+(* As a Condition on {a_, b_} sees a and b, a Condition on a combinator sees the
+   names of all its stages, an element or attribute map as it is in the tree. *)
+$treeFor = ImportString[
+  "<article><div class=\"card\" id=\"k\"><p data-for=\"k\">1</p><p data-for=\"z\">2</p></div></article>",
+  {"HTML", "XMLObject"}];
+
+TestCreate[
+  {HTMLTextContent /@ XMLCases[$treeFor,
+     Descendant[d : XMLPattern["div", "id" -> i_], p : XMLPattern["p", "data-for" -> f_]] /; f === i],
+   XMLCases[$treeFor,
+     (Descendant[XMLPattern["div", "id" -> i_], p : XMLPattern["p", "data-for" -> f_]] /; f === i) :> HTMLTextContent[p]],
+   HTMLTextContent /@ XMLCases[$treeFor,
+     Child[d : XMLPattern["div", as : {"classList" -> "card"}], p : XMLPattern["p", "classList" -> {}]] /;
+       d[[2]] === as === {"class" -> "card", "id" -> "k"} && p[[2]] === {"data-for" -> "z"}]},
+  {{"1"}, {"1"}, {"2"}},
+  TestID -> "combinator-test-sees-every-stage"
+];
+
+(* On a chain, and on a combinator that is a stage, where it sees only that
+   combinator's stages. *)
+TestCreate[
+  {HTMLTextContent /@ XMLCases[$treeFor,
+     Descendant[a : XMLPattern["article"], Child[XMLPattern["div", "id" -> i_], XMLPattern["p", "data-for" -> f_]]] /;
+       a[[1]] === "article" && f === i],
+   HTMLTextContent /@ XMLCases[$treeFor,
+     Descendant[XMLPattern["article"], Child[XMLPattern["div", "id" -> i_], XMLPattern["p", "data-for" -> f_]] /; f =!= i]],
+   HTMLTextContent /@ XMLCases[$treeFor,
+     Descendant[a : XMLPattern["article"], Child[XMLPattern["div", "classList" -> "card"], XMLPattern["p"]] /; Head[a] === Symbol]]},
+  {{"1"}, {"2"}, {"1", "2"}},
+  TestID -> "chain-combinator-test"
+];
+
+TestCreate[
+  {XMLFirstCase[$treeFor,
+     (Child[XMLPattern["div", "id" -> i_], p : XMLPattern["p", "data-for" -> f_]] /; f =!= i) :> HTMLTextContent[p]],
+   HTMLTextContent /@ XMLCases[
+     XMLDeleteCases[$treeFor, Child[XMLPattern["div", "id" -> i_], XMLPattern["p", "data-for" -> f_]] /; f === i],
+     XMLPattern["p"]],
+   XMLDeleteCases[$treeFor, Adjacent[XMLPattern["p"], XMLPattern["p"]] /; True]},
+  {"2", {"2"}, $Failed},
+  {XMLDeleteCases::unsupported},
+  TestID -> "firstcase-and-deletecases-combinator-test"
+];

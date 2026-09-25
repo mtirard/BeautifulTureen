@@ -143,12 +143,31 @@ TestCreate[
   TestID -> "cond-deletecases"
 ];
 
-(* A Condition wrapping a combinator is rejected with a clean message *)
+(* A Condition may wrap a combinator where the consumer takes one; its test sees
+   every stage's names. XMLMatchQ and the Roles take an element pattern, and
+   refuse it. *)
 TestCreate[
-  XMLCases[$treeCond, Child[XMLPattern["div"], XMLPattern["span"]] /; True],
-  $Failed,
-  {XMLCases::condcombinator},
-  TestID -> "cond-combinator-rejected"
+  XMLCases[$treeCond, Child[XMLPattern["div"], s : XMLPattern["span"]] /; HTMLTextContent[s] === "y"],
+  {XMLElement["span", {}, {"y"}]},
+  TestID -> "cond-combinator"
+];
+
+TestCreate[
+  {XMLMatchQ[XMLElement["span", {}, {}], Child[XMLPattern["div"], XMLPattern["span"]] /; True],
+   HTMLInnerText[$treeCond, "Roles" -> {(Child[XMLPattern["div"], XMLPattern["span"]] /; True) -> "Block"}]},
+  {$Failed, $Failed},
+  {XMLMatchQ::condcombinator, HTMLInnerText::condcombinator},
+  TestID -> "cond-combinator-refused-for-an-element-pattern"
+];
+
+(* An Alternatives of combinators, or a combinator inside an Alternatives, is not
+   a query, tested or not. *)
+TestCreate[
+  {XMLCases[$treeCond, (Child[XMLPattern["div"], XMLPattern["span"]] | Child[XMLPattern["section"], XMLPattern["p"]]) /; True],
+   XMLCases[$treeCond, Child[XMLPattern["section"], XMLPattern["p"] | Child[XMLPattern["div"], XMLPattern["span"]]] /; True]},
+  {$Failed, $Failed},
+  {XMLCases::badpat, XMLCases::badpat},
+  TestID -> "cond-combinator-alternatives-refused"
 ];
 
 (* === Named whole-element conditions (el : pat /; test) === *)
@@ -193,12 +212,11 @@ TestCreate[
   TestID -> "cond-named-alternatives"
 ];
 
-(* A name never changes structural validity: a named combinator condition is
-   still rejected, and with the specific ::condcombinator message (not badpat) *)
+(* A combinator binds no name: a named combinator is refused, tested or not. *)
 TestCreate[
   XMLCases[$treeCond, (x : Child[XMLPattern["div"], XMLPattern["span"]]) /; True],
   $Failed,
-  {XMLCases::condcombinator},
+  {XMLCases::badpat},
   TestID -> "cond-named-combinator-rejected"
 ];
 
