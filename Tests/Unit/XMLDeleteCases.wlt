@@ -158,3 +158,41 @@ TestCreate[
   {XMLDeleteCases::badpat},
   TestID -> "delete-rule-refused"
 ];
+
+(* === Nested Child and Descendant === *)
+
+(* A chain of Child and Descendant stages deletes the elements its last stage
+   selects, as XMLCases would give them. *)
+$treeNestDel = XMLElement["div", {"class" -> "outer"}, {
+  XMLElement["section", {}, {XMLElement["p", {}, {"1"}], XMLElement["div", {}, {XMLElement["p", {}, {"2"}]}]}],
+  XMLElement["p", {}, {"3"}]}];
+
+TestCreate[
+  {XMLDeleteCases[{$treeNestDel}, Descendant[XMLPattern["div", "classList" -> "outer"], Child[XMLPattern["section"], XMLPattern["p"]]]],
+   XMLDeleteCases[{$treeNestDel}, Child[Descendant[XMLPattern["div"], XMLPattern["section"]], XMLPattern["div"]]]},
+  {{XMLElement["div", {"class" -> "outer"}, {
+     XMLElement["section", {}, {XMLElement["div", {}, {XMLElement["p", {}, {"2"}]}]}],
+     XMLElement["p", {}, {"3"}]}]},
+   {XMLElement["div", {"class" -> "outer"}, {
+     XMLElement["section", {}, {XMLElement["p", {}, {"1"}]}],
+     XMLElement["p", {}, {"3"}]}]}},
+  TestID -> "delete-nested-child-descendant"
+];
+
+(* As unnested, the root may be the first stage. *)
+TestCreate[
+  XMLDeleteCases[$treeNestDel, Descendant[XMLPattern["div", "classList" -> "outer"], Child[XMLPattern["section"], XMLPattern["p"]]]],
+  XMLElement["div", {"class" -> "outer"}, {
+    XMLElement["section", {}, {XMLElement["div", {}, {XMLElement["p", {}, {"2"}]}]}],
+    XMLElement["p", {}, {"3"}]}],
+  TestID -> "delete-nested-root-first-stage"
+];
+
+(* Adjacent and Sibling stay unsupported at any depth. *)
+TestCreate[
+  {XMLDeleteCases[$treeNestDel, Descendant[XMLPattern["section"], Adjacent[XMLPattern["p"], XMLPattern["div"]]]],
+   XMLDeleteCases[$treeNestDel, Child[Sibling[XMLPattern["p"], XMLPattern["div"]], XMLPattern["p"]]]},
+  {$Failed, $Failed},
+  {XMLDeleteCases::unsupported, XMLDeleteCases::unsupported},
+  TestID -> "delete-nested-adjacent-sibling-unsupported"
+];
