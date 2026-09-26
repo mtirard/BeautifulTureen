@@ -121,11 +121,18 @@ TestCreate[
   TestID -> "xmlpattern-refuses-duplicate-key"
 ];
 
+(* An Alternatives key that shares a key with another constraint can match: each
+   constraint takes a different attribute, as with KeyValuePattern. *)
+TestCreate[
+  XMLMatchQ[XMLElement["p", {"a" -> "2", "b" -> "1"}, {}], XMLPattern["p", {("a" | "b") -> "1", "a" -> "2"}]],
+  True,
+  TestID -> "xmlpattern-accepts-overlapping-alternative-keys"
+];
+
 TestCreate[
   XMLCases[$links, XMLPattern["a", {("href" | "name") -> _, "href"}]],
-  $Failed,
-  {XMLPattern::dupkey},
-  TestID -> "xmlpattern-refuses-overlapping-alternative-keys"
+  {},
+  TestID -> "xmlpattern-overlapping-alternative-keys-need-two-attributes"
 ];
 
 (* A bare string pattern is never matched against a string by MatchQ, so it

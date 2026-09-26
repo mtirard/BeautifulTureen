@@ -396,10 +396,11 @@ desugar[s : (_String | Verbatim[Alternatives][__String])] := {___, s, ___};
 desugar[v_] := v;
 
 (* KeyValuePattern demands distinct elements, so two rules on one key are a
-   silent False however each would match alone. *)
+   silent False however each would match alone. An Alternatives key may share
+   a key with another rule, as each can take a different attribute. *)
 noDuplicateKeys[rules_] :=
   Replace[
-    Select[Tally[Join @@ (keyLiterals[Replace[#, Verbatim[Rule][k_, _] :> k]] & /@ rules)],
+    Select[Tally[DeleteCases[Replace[#, Verbatim[Rule][k_, _] :> k] & /@ rules, _Alternatives]],
       Last[#] > 1 &],
     {{k_, _}, ___} :> refuse[XMLPattern::dupkey, k]];
 
