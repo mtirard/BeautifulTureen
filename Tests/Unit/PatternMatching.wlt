@@ -288,6 +288,14 @@ TestCreate[
   TestID -> "cond-cross-field-backtracks"
 ];
 
+(* Each constraint takes a different attribute, with a condition as without. *)
+TestCreate[
+  XMLMatchQ[XMLElement["p", {"a" -> "1", "b" -> "2"}, {}],
+    XMLPattern["p", {("a" | "b") -> "1", ("a" | "b") -> w_}] /; w === "1"],
+  False,
+  TestID -> "cond-cross-field-distinct-attributes"
+];
+
 (* The match backtracks into a value: another token is tried. *)
 TestCreate[
   XMLCases[XMLElement["div", {}, {XMLElement["a", {"href" -> "/buy", "class" -> "x buy"}, {}]}],
