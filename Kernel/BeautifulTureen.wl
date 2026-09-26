@@ -460,12 +460,12 @@ wrapBinds[binds_, held_Hold] :=
    body that can see it. A rule's body is evaluated once, for that match. Any
    other pattern is left as it is. *)
 solvable[r : Verbatim[RuleDelayed][lhs_, _]] /;
-    brokenConditionsQ[lhs] || (laterNamesQ[lhs] && bodyConditionQ[Extract[r, {2}, Hold]]) :=
+    brokenConditionsQ[lhs] || overlappingKeysQ[lhs] || (laterNamesQ[lhs] && bodyConditionQ[Extract[r, {2}, Hold]]) :=
   Module[{v = freshSymbol[], n = copyCount[lhs]},
     Replace[copiedRule[lhs, Extract[r, {2}, Hold]],
       Hold[rule_] :> RuleDelayed @@ Join[Hold @@ {namedPattern[v, skeleton[lhs]]},
         Hold[With[{s = {Replace[copied[v, n], {rule, _ :> $unmatched}]}}, Sequence @@ s /; s =!= {$unmatched}]]]]];
-solvable[p_] /; brokenConditionsQ[p] :=
+solvable[p_] /; brokenConditionsQ[p] || overlappingKeysQ[p] :=
   With[{v = freshSymbol[], n = copyCount[p], c = copiedPattern[p]},
     Condition @@ Join[Hold @@ {namedPattern[v, skeleton[p]]}, Hold[MatchQ[copied[v, n], c]]]];
 solvable[x_] := x;
@@ -476,11 +476,28 @@ laterNamesQ[p_] :=
 
 brokenConditionsQ[p_] := !FreeQ[p, Verbatim[Condition][l_, _] /; laterNamesQ[l]];
 
+(* A KeyValuePattern with an Alternatives key that shares a key with another of
+   its rules. WL does not backtrack over which attribute the Alternatives key
+   takes: MatchQ[{"x" -> 1, "y" -> 2}, KeyValuePattern[{("x" | "y") -> _,
+   "x" -> _}]] is False. So such a pattern is matched in two steps too, with or
+   without a Condition, and its skeleton leaves out those Alternatives rules. *)
+overlappingKeysQ[p_] := !FreeQ[p, Verbatim[KeyValuePattern][r_List] /; MemberQ[overlapping[r], True]];
+
+(* For each rule, whether it is an Alternatives rule whose key shares a key with
+   another rule. *)
+overlapping[rules_List] :=
+  With[{keys = Replace[rules, {Verbatim[Rule][k_, _] :> DeleteDuplicates[keyLiterals[k]], _ -> {}}, {1}]},
+    MapIndexed[
+      MatchQ[rules[[First[#2]]], Verbatim[Rule][_Alternatives, _]] &&
+        IntersectingQ[#1, Join @@ Delete[keys, #2]] &, keys]];
+
 bodyConditionQ[Hold[_Condition]] := True;
 bodyConditionQ[Hold[(With | Module | Block)[_, body_]]] := bodyConditionQ[Hold[body]];
 bodyConditionQ[_] := False;
 
 (* The pattern with no names and no Conditions, which every match matches. *)
+skeleton[Verbatim[KeyValuePattern][r_List]] /; MemberQ[overlapping[r], True] :=
+  KeyValuePattern[skeleton /@ Pick[r, overlapping[r], False]];
 skeleton[Verbatim[Pattern][_, p_]] := skeleton[p];
 skeleton[Verbatim[Condition][l_, _]] := skeleton[l];
 skeleton[Verbatim[PatternTest][p_, f_]] := PatternTest[skeleton[p], f];
