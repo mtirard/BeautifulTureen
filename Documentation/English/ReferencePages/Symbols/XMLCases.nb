@@ -415,17 +415,6 @@ XMLCases[list,Sibling[XMLPattern[\"li\",\"class\"->c_],item:XMLPattern[\"li\",\"
 
 Cell[BoxData[RowBox[{"{", "\"3\"", "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["In a condition on the whole pattern, only the name in the first constraint is bound:", "ExampleText"], Cell[BoxData["links=ImportString[\"<a href=\\\"/buy\\\" data-id=\\\"buy\\\">x</a><a href=\\\"/sell\\\" data-id=\\\"s2\\\">y</a>\",{\"HTML\",\"XMLObject\"}];
-XMLCases[links,XMLPattern[\"a\",{\"href\"->href_,\"data-id\"->id_}]/;StringContainsQ[href,id]]"], "Input"],
-
-Cell[BoxData[RowBox[{"{", "}"}]], "Output"],
-
-Cell["Name the attributes as a whole, and look up the values in the condition:", "ExampleText"],
-
-Cell[BoxData["XMLCases[links,XMLPattern[\"a\",attrs:{\"href\"->_,\"data-id\"->_}]/;StringContainsQ[Lookup[attrs,\"href\"],Lookup[attrs,\"data-id\"]]]"], "Input"],
-
-Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{RowBox[{"\"shape\"", "\[Rule]", "\"rect\""}], ",", RowBox[{"\"href\"", "\[Rule]", "\"/buy\""}], ",", RowBox[{"\"data-id\"", "\[Rule]", "\"buy\""}]}], "}"}], ",", RowBox[{"{", "\"x\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
-
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["XMLCases issues a message for a malformed XMLPattern, such as one with a string pattern as a value:", "ExampleText"], Cell[BoxData["tree=ImportString[\"<p class=\\\"col-6\\\">x</p>\",{\"HTML\",\"XMLObject\"}];
 XMLCases[tree,XMLPattern[\"p\",\"classList\"->\"col-\"~~__]]"], "Input"],
 
