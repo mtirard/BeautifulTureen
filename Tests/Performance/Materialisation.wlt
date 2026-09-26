@@ -81,3 +81,24 @@ TestCreate[
   TimeConstraint -> 0.5,
   TestID -> "perf-descendant-50-deep"
 ];
+
+(* A condition on several attribute names is matched in two steps: a skeleton
+   with no names finds the candidates, and each candidate is matched with
+   plain list patterns. {OrderlessPatternSequence[rules..., ___]}, which also
+   binds every name, costs the factorial of the attribute count: about 18 s
+   here at six rules, against about 60 ms. *)
+$wide = XMLElement["div", {}, Table[
+  XMLElement["a", Join[
+    {"href" -> "/p/" <> ToString[i], "class" -> "c", "id" -> "n" <> ToString[i],
+     "rel" -> "next", "name" -> "f", "type" -> "text"},
+    Take[{"title" -> "v", "lang" -> "v", "role" -> "v", "target" -> "v"}, Mod[i, 5]]], {"t"}],
+  {i, 5000}]];
+
+TestCreate[
+  Length @ XMLCases[$wide,
+    XMLPattern["a", {"href" -> h_, "class" -> _, "id" -> i_, "rel" -> _, "name" -> _, "type" -> t_}] /;
+      StringEndsQ[i, "7"] && StringQ[h] && StringQ[t]],
+  500,
+  TimeConstraint -> 0.5,
+  TestID -> "perf-condition-on-six-attribute-names"
+];

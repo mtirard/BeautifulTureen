@@ -36,6 +36,15 @@ TestCreate[
   TestID -> "xmlmatchq-condition-sees-original"
 ];
 
+(* A condition on the whole pattern sees every attribute name, not only the
+   first constraint's. *)
+TestCreate[
+  XMLMatchQ[XMLElement["a", {"href" -> "/buy", "data-id" -> "buy"}, {}],
+    XMLPattern["a", {"href" -> h_, "data-id" -> i_}] /; StringContainsQ[h, i]],
+  True,
+  TestID -> "xmlmatchq-condition-sees-every-attribute-name"
+];
+
 TestCreate[
   Select[{$lead, XMLElement["p", {}, {}], "text"}, XMLMatchQ[XMLPattern["p", "classList" -> {}]]],
   {XMLElement["p", {}, {}]},
