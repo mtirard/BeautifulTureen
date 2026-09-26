@@ -11,13 +11,23 @@ Notebook[{
 Cell[CellGroupData[{
 Cell["Sibling", "ObjectName"],
 
-Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"], "[", RowBox[{StyleBox["beforePat", "TI"], ",", " ", StyleBox["afterPat", "TI"]}], "]"}]], "InlineFormula"], " \[LineSeparator]represents a pattern matching elements satisfying ", Cell[BoxData[StyleBox["afterPat", "TI"]], "InlineFormula"], " that follow a sibling satisfying ", Cell[BoxData[StyleBox["beforePat", "TI"]], "InlineFormula"], "."}], "Usage"],
+Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"], "[", RowBox[{StyleBox["beforePat", "TI"], ",", " ", StyleBox["afterPat", "TI"]}], "]"}]], "InlineFormula"], " \[LineSeparator]represents a pattern matching elements satisfying ", Cell[BoxData[StyleBox["afterPat", "TI"]], "InlineFormula"], " that follow a sibling satisfying ", Cell[BoxData[StyleBox["beforePat", "TI"]], "InlineFormula"], ", each element once."}], "Usage"],
 
-Cell[TextData[{Cell[BoxData[RowBox[{ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"], "[", RowBox[{StyleBox["beforePat", "TI"], ",", " ", StyleBox["afterPat", "TI"]}], "]"}]], "InlineFormula"], " matches every element matching ", Cell[BoxData[StyleBox["afterPat", "TI"]], "InlineFormula"], " that appears after a sibling matching ", Cell[BoxData[StyleBox["beforePat", "TI"]], "InlineFormula"], " under the same parent, analogous to the CSS general sibling combinator before ~ after."}], "Notes"],
+Cell[TextData[{Cell[BoxData[RowBox[{ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"], "[", RowBox[{StyleBox["beforePat", "TI"], ",", " ", StyleBox["afterPat", "TI"]}], "]"}]], "InlineFormula"], " is a combinator for ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["XMLFirstCase", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"]], "InlineFormula"], ". It selects the elements matching ", Cell[BoxData[StyleBox["afterPat", "TI"]], "InlineFormula"], " that come after some sibling matching ", Cell[BoxData[StyleBox["beforePat", "TI"]], "InlineFormula"], " under the same parent, like the CSS subsequent-sibling combinator before ~ after."}], "Notes"],
 
-Cell[TextData[{"All later element siblings are considered, not only the immediately following one; use ", Cell[BoxData[ButtonBox["Adjacent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Adjacent"]], "InlineFormula"], " to match only the immediate successor."}], "Notes"],
+Cell[TextData[{"All earlier element siblings are considered, not only the immediately preceding one; use ", Cell[BoxData[ButtonBox["Adjacent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Adjacent"]], "InlineFormula"], " to require the immediate predecessor."}], "Notes"],
 
-Cell[TextData[{Cell[BoxData[ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"]], "InlineFormula"], " is supported by ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["XMLFirstCase", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"]], "InlineFormula"], ", but not by ", Cell[BoxData[ButtonBox["XMLDeleteCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDeleteCases"]], "InlineFormula"], "."}], "Notes"]
+Cell[TextData[{"Each argument of ", Cell[BoxData[ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"]], "InlineFormula"], " is a stage: an element pattern (an ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"]], "InlineFormula"], ", an ", Cell[BoxData[ButtonBox["Alternatives", BaseStyle -> "Link", ButtonData -> "paclet:ref/Alternatives"]], "InlineFormula"], " of them, either with or without a condition) or another combinator. Nested combinators read left to right as a chain, as in a CSS selector: ", Cell[BoxData[RowBox[{ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"], "[", RowBox[{StyleBox["a", "TR"], ",", " ", RowBox[{ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"], "[", RowBox[{StyleBox["b", "TR"], ",", " ", StyleBox["c", "TR"]}], "]"}]}], "]"}]], "InlineFormula"], " and ", Cell[BoxData[RowBox[{ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"], "[", RowBox[{RowBox[{ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"], "[", RowBox[{StyleBox["a", "TR"], ",", " ", StyleBox["b", "TR"]}], "]"}], ",", " ", StyleBox["c", "TR"]}], "]"}]], "InlineFormula"], " both mean the selector a b > c and select the same elements."}], "Notes"],
+
+Cell["A combinator selects the elements matched by its last stage, each once, in document order.", "Notes"],
+
+Cell[TextData[{"Names scope as in the list pattern ", Cell[BoxData[RowBox[{"{", RowBox[{StyleBox[SubscriptBox["s", StyleBox["1", "TR"]], "TI"], ",", " ", StyleBox[SubscriptBox["s", StyleBox["2", "TR"]], "TI"], ",", " ", StyleBox["\[Ellipsis]", "TR"]}], "}"}]], "InlineFormula"], " over the stages. A condition on one stage sees only that stage's names; a condition on the whole combinator, as in ", Cell[BoxData["Descendant[d : XMLPattern[\"div\"], p : XMLPattern[\"p\"]] /; test"], "InlineFormula"], ", sees the names of every stage inside it. A name used at two stages must take the same value at both, and the function of a ", Cell[BoxData[ButtonBox["PatternTest", BaseStyle -> "Link", ButtonData -> "paclet:ref/PatternTest"]], "InlineFormula"], " sees no names."}], "Notes"],
+
+Cell[TextData[{"An element after several matching siblings is selected once. A name bound at ", Cell[BoxData[StyleBox["beforePat", "TI"]], "InlineFormula"], " is the first qualifying earlier sibling in document order, not the nearest one. With a condition on the combinator or a name shared between the stages, the first earlier sibling that satisfies them is used."}], "Notes"],
+
+Cell[TextData[{Cell[BoxData[ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"]], "InlineFormula"], " is accepted by ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["XMLFirstCase", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"]], "InlineFormula"], ". ", Cell[BoxData[ButtonBox["XMLDeleteCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDeleteCases"]], "InlineFormula"], " does not accept it, as the pattern or as a stage at any depth, and ", Cell[BoxData[ButtonBox["XMLMatchQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLMatchQ"]], "InlineFormula"], " does not accept it, since a lone element has no siblings."}], "Notes"],
+
+Cell[TextData[{"The root of the tree searched has no siblings, so it never matches ", Cell[BoxData[StyleBox["beforePat", "TI"]], "InlineFormula"], "."}], "Notes"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -35,7 +45,7 @@ Cell[TextData[{
    "MoreInfoOpenerButtonTemplate"]]]
 }], "SeeAlsoSection"],
 
-Cell[TextData[{Cell[BoxData[TemplateBox[{Cell[TextData["Child"]], "paclet:MaximilienTirard/BeautifulTureen/ref/Child"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["Adjacent"]], "paclet:MaximilienTirard/BeautifulTureen/ref/Adjacent"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["Descendant"]], "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLCases"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLFirstCase"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLDeleteCases"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDeleteCases"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLPattern"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}]}], "SeeAlso"]
+Cell[TextData[{Cell[BoxData[TemplateBox[{Cell[TextData["Adjacent"]], "paclet:MaximilienTirard/BeautifulTureen/ref/Adjacent"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["Child"]], "paclet:MaximilienTirard/BeautifulTureen/ref/Child"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["Descendant"]], "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLCases"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLFirstCase"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLPattern"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}]}], "SeeAlso"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -114,12 +124,12 @@ Cell[CellGroupData[{Cell[BoxData[
    }],
   $Line = 0; Null]], "PrimaryExamplesSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Match every paragraph following an ", Cell[BoxData[StyleBox["h2", "TR"]], "InlineFormula"], " under the same parent:"}], "ExampleText"], Cell[BoxData["doc=ImportString[\"<section><h2>A</h2><p>a1</p><p>a2</p><h2>B</h2><p>b1</p></section>\",{\"HTML\",\"XMLObject\"}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Match every paragraph following an h2 under the same parent:", "ExampleText"], Cell[BoxData["doc=ImportString[\"<section><h2>A</h2><p>a1</p><p>a2</p><h2>B</h2><p>b1</p></section>\",{\"HTML\",\"XMLObject\"}];
 XMLCases[doc,Sibling[XMLPattern[\"h2\"],XMLPattern[\"p\"]]]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"a1\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"a2\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"b1\"", "}"}]}], "]"}]}], "}"}]], "Output"],
 
-Cell["Match every later-sibling paragraph following a paragraph:", "ExampleText"],
+Cell["Match every paragraph that follows another paragraph:", "ExampleText"],
 
 Cell[BoxData["XMLCases[doc,Sibling[XMLPattern[\"p\"],XMLPattern[\"p\"]]]"], "Input"],
 
@@ -145,7 +155,7 @@ Cell[CellGroupData[{Cell[BoxData[
   "Scope", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The trailing pattern may be an ", Cell[BoxData[ButtonBox["Alternatives", BaseStyle -> "Link", ButtonData -> "paclet:ref/Alternatives"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["doc=ImportString[\"<section><h2>A</h2><p>a1</p><p>a2</p><h2>B</h2><p>b1</p></section>\",{\"HTML\",\"XMLObject\"}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["The trailing stage may be an Alternatives:", "ExampleText"], Cell[BoxData["doc=ImportString[\"<section><h2>A</h2><p>a1</p><p>a2</p><h2>B</h2><p>b1</p></section>\",{\"HTML\",\"XMLObject\"}];
 XMLCases[doc,Sibling[XMLPattern[\"h2\"],XMLPattern[\"p\"]|XMLPattern[\"h2\"]]]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"a1\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"a2\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"h2\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"B\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"b1\"", "}"}]}], "]"}]}], "}"}]], "Output"],
@@ -156,11 +166,31 @@ Cell[BoxData["XMLCases[doc,Sibling[XMLPattern[\"h2\"],para:XMLPattern[\"p\"]]:>H
 
 Cell[BoxData[RowBox[{"{", RowBox[{"\"a1\"", ",", "\"a2\"", ",", "\"b1\""}], "}"}]], "Output"],
 
-Cell[TextData[{"Take just the first following sibling with ", Cell[BoxData[ButtonBox["XMLFirstCase", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"]], "InlineFormula"], ":"}], "ExampleText"],
+Cell["Take just the first following sibling with XMLFirstCase:", "ExampleText"],
 
 Cell[BoxData["XMLFirstCase[doc,Sibling[XMLPattern[\"h2\"],XMLPattern[\"p\"]]]"], "Input"],
 
-Cell[BoxData[RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"a1\"", "}"}]}], "]"}]], "Output"]}, Open]]}, Open]],
+Cell[BoxData[RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"a1\"", "}"}]}], "]"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A name bound at the leading stage is the first matching earlier sibling:", "ExampleText"], Cell[BoxData["doc=ImportString[\"<section><h2>A</h2><p>a1</p><p>a2</p><h2>B</h2><p>b1</p></section>\",{\"HTML\",\"XMLObject\"}];
+XMLCases[doc,Sibling[heading:XMLPattern[\"h2\"],para:XMLPattern[\"p\"]]:>HTMLTextContent[heading]->HTMLTextContent[para]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"\"A\"", "\[Rule]", "\"a1\""}], ",", RowBox[{"\"A\"", "\[Rule]", "\"a2\""}], ",", RowBox[{"\"A\"", "\[Rule]", "\"b1\""}]}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Use the same name at both stages to require equal values:", "ExampleText"], Cell[BoxData["list=ImportString[\"<ul><li class=\\\"x\\\">1</li><li class=\\\"y\\\">2</li><li class=\\\"x\\\">3</li><li class=\\\"y\\\">4</li></ul>\",{\"HTML\",\"XMLObject\"}];
+XMLCases[list,Sibling[first:XMLPattern[\"li\",\"class\"->c_],later:XMLPattern[\"li\",\"class\"->c_]]:>HTMLTextContent/@{first,later}]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"\"1\"", ",", "\"3\""}], "}"}], ",", RowBox[{"{", RowBox[{"\"2\"", ",", "\"4\""}], "}"}]}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Chain stages, as in the CSS selector h2 + p ~ p:", "ExampleText"], Cell[BoxData["doc=ImportString[\"<section><h2>A</h2><p>a1</p><p>a2</p><h2>B</h2><p>b1</p></section>\",{\"HTML\",\"XMLObject\"}];
+XMLCases[doc,Sibling[Adjacent[XMLPattern[\"h2\"],XMLPattern[\"p\"]],XMLPattern[\"p\"]]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"a2\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"b1\"", "}"}]}], "]"}]}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Put a condition on the whole combinator to compare the two siblings:", "ExampleText"], Cell[BoxData["row=ImportString[\"<ol><li value=\\\"3\\\">a</li><li value=\\\"1\\\">b</li><li value=\\\"2\\\">c</li></ol>\",{\"HTML\",\"XMLObject\"}];
+XMLCases[row,(Sibling[XMLPattern[\"li\",\"value\"->v1_],item:XMLPattern[\"li\",\"value\"->v2_]]/;ToExpression[v2]<ToExpression[v1]):>HTMLTextContent[item]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"\"b\"", ",", "\"c\""}], "}"}]], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
@@ -190,22 +220,27 @@ Cell[CellGroupData[{Cell[BoxData[
   "Applications", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["List every paragraph belonging to a section heading:", "ExampleText"], Cell[BoxData["doc=ImportString[\"<section><h2>A</h2><p>a1</p><p>a2</p><h2>B</h2><p>b1</p></section>\",{\"HTML\",\"XMLObject\"}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["List every paragraph that follows a section heading:", "ExampleText"], Cell[BoxData["doc=ImportString[\"<section><h2>A</h2><p>a1</p><p>a2</p><h2>B</h2><p>b1</p></section>\",{\"HTML\",\"XMLObject\"}];
 XMLCases[doc,Sibling[XMLPattern[\"h2\"],para:XMLPattern[\"p\"]]:>HTMLTextContent[para]]"], "Input"],
 
-Cell[BoxData[RowBox[{"{", RowBox[{"\"a1\"", ",", "\"a2\"", ",", "\"b1\""}], "}"}]], "Output"]}, Open]]}, Open]],
+Cell[BoxData[RowBox[{"{", RowBox[{"\"a1\"", ",", "\"a2\"", ",", "\"b1\""}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Find the rows after a table's header row:", "ExampleText"], Cell[BoxData["table=ImportString[\"<table><tr><th>Dish</th></tr><tr><td>Miso</td></tr><tr><td>Pho</td></tr></table>\",{\"HTML\",\"XMLObject\"}];
+XMLCases[table,Sibling[XMLPattern[\"tr\"],row:XMLPattern[\"tr\"]]:>HTMLTextContent[row]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"\"Miso\"", ",", "\"Pho\""}], "}"}]], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
   "Properties & Relations", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["Adjacent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Adjacent"]], "InlineFormula"], " returns the first of the ", Cell[BoxData[ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"]], "InlineFormula"], " matches:"}], "ExampleText"], Cell[BoxData["doc=ImportString[\"<section><h2>A</h2><p>a1</p><p>a2</p><h2>B</h2><p>b1</p></section>\",{\"HTML\",\"XMLObject\"}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Adjacent gives the first of the Sibling matches:", "ExampleText"], Cell[BoxData["doc=ImportString[\"<section><h2>A</h2><p>a1</p><p>a2</p><h2>B</h2><p>b1</p></section>\",{\"HTML\",\"XMLObject\"}];
 XMLFirstCase[doc,Sibling[XMLPattern[\"h2\"],XMLPattern[\"p\"]]]===XMLFirstCase[doc,Adjacent[XMLPattern[\"h2\"],XMLPattern[\"p\"]]]"], "Input"],
 
 Cell[BoxData["True"], "Output"],
 
-Cell[TextData[{Cell[BoxData[ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"]], "InlineFormula"], " returns every later sibling, not only the first:"}], "ExampleText"],
+Cell["Sibling selects every later sibling, not only the next one:", "ExampleText"],
 
 Cell[BoxData["{Length[XMLCases[doc,Adjacent[XMLPattern[\"h2\"],XMLPattern[\"p\"]]]],Length[XMLCases[doc,Sibling[XMLPattern[\"h2\"],XMLPattern[\"p\"]]]]}"], "Input"],
 
@@ -221,10 +256,26 @@ XMLCases[withNesting,Sibling[XMLPattern[\"h2\"],XMLPattern[\"p\"]]]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"sib\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["XMLDeleteCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDeleteCases"]], "InlineFormula"], " does not accept ", Cell[BoxData[ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["doc=ImportString[\"<section><h2>A</h2><p>a1</p><p>a2</p><h2>B</h2><p>b1</p></section>\",{\"HTML\",\"XMLObject\"}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A name bound at the leading stage is the first matching sibling, not the nearest:", "ExampleText"], Cell[BoxData["doc=ImportString[\"<section><h2>A</h2><p>a1</p><p>a2</p><h2>B</h2><p>b1</p></section>\",{\"HTML\",\"XMLObject\"}];
+XMLCases[doc,Sibling[heading:XMLPattern[\"h2\"],XMLPattern[\"p\"]]:>HTMLTextContent[heading]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"\"A\"", ",", "\"A\"", ",", "\"A\""}], "}"}]], "Output"],
+
+Cell["Adjacent binds the immediately preceding sibling, but selects only the next element:", "ExampleText"],
+
+Cell[BoxData["XMLCases[doc,Adjacent[heading:XMLPattern[\"h2\"],XMLPattern[\"p\"]]:>HTMLTextContent[heading]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"\"A\"", ",", "\"B\""}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A shared name costs time quadratic in the number of siblings when no pair matches:", "ExampleText"], Cell[BoxData["siblings[n_]:=XMLElement[\"ul\",{},Table[XMLElement[\"li\",{\"id\"->ToString[i]},{}],{i,n}]];
+Table[First@AbsoluteTiming[XMLCases[siblings[n],Sibling[XMLPattern[\"li\",\"id\"->id_],XMLPattern[\"li\",\"id\"->id_]]]],{n,{200,400}}]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"0.156191`", ",", "0.613185`"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["XMLDeleteCases does not accept Sibling:", "ExampleText"], Cell[BoxData["doc=ImportString[\"<section><h2>A</h2><p>a1</p><p>a2</p><h2>B</h2><p>b1</p></section>\",{\"HTML\",\"XMLObject\"}];
 XMLDeleteCases[doc,Sibling[XMLPattern[\"h2\"],XMLPattern[\"p\"]]]"], "Input"],
 
-Cell[BoxData["XMLDeleteCases::unsupported: Adjacent and Sibling combinators are not supported by XMLDeleteCases. Use XMLCases for filtering semantics instead."], "Message", "MSG"],
+Cell["XMLDeleteCases::unsupported: Adjacent and Sibling cannot be used with XMLDeleteCases, as the query or as a stage at any depth.", "Message", "MSG"],
 
 Cell[BoxData["$Failed"], "Output"]}, Open]]}, Open]],
 

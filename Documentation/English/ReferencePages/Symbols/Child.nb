@@ -13,11 +13,21 @@ Cell["Child", "ObjectName"],
 
 Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"], "[", RowBox[{StyleBox["parentPat", "TI"], ",", " ", StyleBox["childPat", "TI"]}], "]"}]], "InlineFormula"], " \[LineSeparator]represents a pattern matching elements satisfying ", Cell[BoxData[StyleBox["childPat", "TI"]], "InlineFormula"], " that are direct children of an element satisfying ", Cell[BoxData[StyleBox["parentPat", "TI"]], "InlineFormula"], "."}], "Usage"],
 
-Cell[TextData[{Cell[BoxData[RowBox[{ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"], "[", RowBox[{StyleBox["parentPat", "TI"], ",", " ", StyleBox["childPat", "TI"]}], "]"}]], "InlineFormula"], " is a combinator for ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"]], "InlineFormula"], " and related functions that matches elements matching ", Cell[BoxData[StyleBox["childPat", "TI"]], "InlineFormula"], " only when they are direct children of an element matching ", Cell[BoxData[StyleBox["parentPat", "TI"]], "InlineFormula"], ", analogous to the CSS child combinator parent > child."}], "Notes"],
+Cell[TextData[{Cell[BoxData[RowBox[{ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"], "[", RowBox[{StyleBox["parentPat", "TI"], ",", " ", StyleBox["childPat", "TI"]}], "]"}]], "InlineFormula"], " is a combinator for ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"]], "InlineFormula"], " and related functions. It selects the elements matching ", Cell[BoxData[StyleBox["childPat", "TI"]], "InlineFormula"], " whose parent matches ", Cell[BoxData[StyleBox["parentPat", "TI"]], "InlineFormula"], ", like the CSS child combinator parent > child."}], "Notes"],
 
-Cell[TextData[{"Matching is restricted to immediate children, one level down; use ", Cell[BoxData[ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"]], "InlineFormula"], " to match at any depth."}], "Notes"],
+Cell[TextData[{"Only immediate children are selected; use ", Cell[BoxData[ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"]], "InlineFormula"], " to select at any depth."}], "Notes"],
 
-Cell[TextData[{Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"]], "InlineFormula"], " is accepted by ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["XMLFirstCase", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["XMLDeleteCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDeleteCases"]], "InlineFormula"], "."}], "Notes"]
+Cell[TextData[{"Each argument of ", Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"]], "InlineFormula"], " is a stage: an element pattern (an ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"]], "InlineFormula"], ", an ", Cell[BoxData[ButtonBox["Alternatives", BaseStyle -> "Link", ButtonData -> "paclet:ref/Alternatives"]], "InlineFormula"], " of them, either with or without a condition) or another combinator. Nested combinators read left to right as a chain, as in a CSS selector: ", Cell[BoxData[RowBox[{ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"], "[", RowBox[{StyleBox["a", "TR"], ",", " ", RowBox[{ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"], "[", RowBox[{StyleBox["b", "TR"], ",", " ", StyleBox["c", "TR"]}], "]"}]}], "]"}]], "InlineFormula"], " and ", Cell[BoxData[RowBox[{ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"], "[", RowBox[{RowBox[{ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"], "[", RowBox[{StyleBox["a", "TR"], ",", " ", StyleBox["b", "TR"]}], "]"}], ",", " ", StyleBox["c", "TR"]}], "]"}]], "InlineFormula"], " both mean the selector a b > c and select the same elements."}], "Notes"],
+
+Cell["A combinator selects the elements matched by its last stage, each once, in document order.", "Notes"],
+
+Cell[TextData[{"Names scope as in the list pattern ", Cell[BoxData[RowBox[{"{", RowBox[{StyleBox[SubscriptBox["s", StyleBox["1", "TR"]], "TI"], ",", " ", StyleBox[SubscriptBox["s", StyleBox["2", "TR"]], "TI"], ",", " ", StyleBox["\[Ellipsis]", "TR"]}], "}"}]], "InlineFormula"], " over the stages. A condition on one stage sees only that stage's names; a condition on the whole combinator, as in ", Cell[BoxData["Descendant[d : XMLPattern[\"div\"], p : XMLPattern[\"p\"]] /; test"], "InlineFormula"], ", sees the names of every stage inside it. A name used at two stages must take the same value at both, and the function of a ", Cell[BoxData[ButtonBox["PatternTest", BaseStyle -> "Link", ButtonData -> "paclet:ref/PatternTest"]], "InlineFormula"], " sees no names."}], "Notes"],
+
+Cell[TextData[{"A name bound at ", Cell[BoxData[StyleBox["parentPat", "TI"]], "InlineFormula"], " is the parent of the selected element, in a rule body as in a condition on the combinator."}], "Notes"],
+
+Cell[TextData[{Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"]], "InlineFormula"], " is accepted by ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["XMLFirstCase", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["XMLDeleteCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDeleteCases"]], "InlineFormula"], ". It cannot be used with ", Cell[BoxData[ButtonBox["XMLMatchQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLMatchQ"]], "InlineFormula"], ", which tests a lone element. An ", Cell[BoxData[ButtonBox["Alternatives", BaseStyle -> "Link", ButtonData -> "paclet:ref/Alternatives"]], "InlineFormula"], " containing a combinator and a named combinator are not accepted as patterns."}], "Notes"],
+
+Cell[TextData[{"When the tree searched is a bare ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], ", its root may match ", Cell[BoxData[StyleBox["parentPat", "TI"]], "InlineFormula"], "."}], "Notes"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -35,7 +45,7 @@ Cell[TextData[{
    "MoreInfoOpenerButtonTemplate"]]]
 }], "SeeAlsoSection"],
 
-Cell[TextData[{Cell[BoxData[TemplateBox[{Cell[TextData["Adjacent"]], "paclet:MaximilienTirard/BeautifulTureen/ref/Adjacent"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["Sibling"]], "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["Descendant"]], "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLCases"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLPattern"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLFirstCase"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLDeleteCases"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDeleteCases"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}]}], "SeeAlso"]
+Cell[TextData[{Cell[BoxData[TemplateBox[{Cell[TextData["Descendant"]], "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["Adjacent"]], "paclet:MaximilienTirard/BeautifulTureen/ref/Adjacent"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["Sibling"]], "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLCases"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLFirstCase"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLDeleteCases"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDeleteCases"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLPattern"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}]}], "SeeAlso"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -114,7 +124,7 @@ Cell[CellGroupData[{Cell[BoxData[
    }],
   $Line = 0; Null]], "PrimaryExamplesSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Match every paragraph that is a direct child of the ", Cell[BoxData[StyleBox["article", "TR"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["tree=ImportString[\"<article><h2>Intro</h2><p>First para.</p><p>Second para.</p><section><h3>Sub</h3><p>Nested para.</p></section></article>\",{\"HTML\",\"XMLObject\"}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Match every paragraph that is a direct child of the article:", "ExampleText"], Cell[BoxData["tree=ImportString[\"<article><h2>Intro</h2><p>First para.</p><p>Second para.</p><section><h3>Sub</h3><p>Nested para.</p></section></article>\",{\"HTML\",\"XMLObject\"}];
 XMLCases[tree,Child[XMLPattern[\"article\"],XMLPattern[\"p\"]]]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"First para.\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Second para.\"", "}"}]}], "]"}]}], "}"}]], "Output"],
@@ -145,28 +155,54 @@ Cell[CellGroupData[{Cell[BoxData[
   "Scope", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The child pattern may be an ", Cell[BoxData[ButtonBox["Alternatives", BaseStyle -> "Link", ButtonData -> "paclet:ref/Alternatives"]], "InlineFormula"], ", matching several kinds of direct child in one pass:"}], "ExampleText"], Cell[BoxData["tree=ImportString[\"<article><h2>Intro</h2><p>First para.</p><p>Second para.</p><section><h3>Sub</h3><p>Nested para.</p></section></article>\",{\"HTML\",\"XMLObject\"}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["The child stage may be an Alternatives, matching several kinds of direct child in one pass:", "ExampleText"], Cell[BoxData["tree=ImportString[\"<article><h2>Intro</h2><p>First para.</p><p>Second para.</p><section><h3>Sub</h3><p>Nested para.</p></section></article>\",{\"HTML\",\"XMLObject\"}];
 XMLCases[tree,Child[XMLPattern[\"article\"],XMLPattern[\"h2\"]|XMLPattern[\"p\"]]]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"h2\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Intro\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"First para.\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Second para.\"", "}"}]}], "]"}]}], "}"}]], "Output"],
 
 Cell["Return a function of each match with a delayed rule:", "ExampleText"],
 
-Cell[BoxData["XMLCases[tree,Child[XMLPattern[\"article\"],element:XMLPattern[_]]:>element[[1]]]"], "Input"],
+Cell[BoxData["XMLCases[tree,Child[XMLPattern[\"article\"],element:XMLPattern[_]]:>element〚1〛]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"\"h2\"", ",", "\"p\"", ",", "\"p\"", ",", "\"section\""}], "}"}]], "Output"],
 
-Cell[TextData[{"Take just the first direct child with ", Cell[BoxData[ButtonBox["XMLFirstCase", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"]], "InlineFormula"], ":"}], "ExampleText"],
+Cell["Take just the first direct child with XMLFirstCase:", "ExampleText"],
 
 Cell[BoxData["XMLFirstCase[tree,Child[XMLPattern[\"article\"],XMLPattern[\"p\"]]]"], "Input"],
 
 Cell[BoxData[RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"First para.\"", "}"}]}], "]"}]], "Output"],
 
-Cell[TextData[{"Remove matching direct children with ", Cell[BoxData[ButtonBox["XMLDeleteCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDeleteCases"]], "InlineFormula"], ":"}], "ExampleText"],
+Cell["Remove matching direct children with XMLDeleteCases:", "ExampleText"],
 
 Cell[BoxData["XMLCases[XMLDeleteCases[tree,Child[XMLPattern[\"article\"],XMLPattern[\"p\"]]],XMLPattern[\"p\"]]"], "Input"],
 
-Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Nested para.\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]]}, Open]],
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Nested para.\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Use a name bound at the parent stage in a rule body:", "ExampleText"], Cell[BoxData["lists=ImportString[\"<ul id=\\\"soups\\\"><li>Miso</li><li>Pho</li></ul><ul id=\\\"sides\\\"><li>Rice</li></ul>\",{\"HTML\",\"XMLObject\"}];
+XMLCases[lists,Child[XMLPattern[\"ul\",\"id\"->list_],item:XMLPattern[\"li\"]]:>list->HTMLTextContent[item]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"\"soups\"", "\[Rule]", "\"Miso\""}], ",", RowBox[{"\"soups\"", "\[Rule]", "\"Pho\""}], ",", RowBox[{"\"sides\"", "\[Rule]", "\"Rice\""}]}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Nest a combinator as a stage to chain three stages, as in the CSS selector article section > p:", "ExampleText"], Cell[BoxData["tree=ImportString[\"<article><p>Top.</p><section><p>Nested.</p><div><p>Deeper.</p></div></section></article>\",{\"HTML\",\"XMLObject\"}];
+XMLCases[tree,Descendant[XMLPattern[\"article\"],Child[XMLPattern[\"section\"],XMLPattern[\"p\"]]]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Nested.\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Put a condition on the whole combinator to compare names from both stages:", "ExampleText"], Cell[BoxData["tree=ImportString[\"<div lang=\\\"en\\\"><p lang=\\\"en\\\">Hello</p><p lang=\\\"fr\\\">Bonjour</p></div>\",{\"HTML\",\"XMLObject\"}];
+XMLCases[tree,Child[XMLPattern[\"div\",\"lang\"->outer_],XMLPattern[\"p\",\"lang\"->inner_]]/;inner=!=outer]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"lang\"", "\[Rule]", "\"fr\""}], "}"}], ",", RowBox[{"{", "\"Bonjour\"", "}"}]}], "]"}], "}"}]], "Output"],
+
+Cell["Use the same name at both stages to require equal values:", "ExampleText"],
+
+Cell[BoxData["XMLCases[tree,Child[XMLPattern[\"div\",\"lang\"->lang_],XMLPattern[\"p\",\"lang\"->lang_]]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"lang\"", "\[Rule]", "\"en\""}], "}"}], ",", RowBox[{"{", "\"Hello\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["The root of a bare XMLElement may match the parent stage:", "ExampleText"], Cell[BoxData["body=XMLElement[\"body\",{},{XMLElement[\"div\",{},{\"one\"}],XMLElement[\"p\",{},{XMLElement[\"div\",{},{\"two\"}]}]}];
+XMLCases[body,Child[XMLPattern[\"body\"],XMLPattern[\"div\"]]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"one\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
@@ -199,37 +235,73 @@ Cell[CellGroupData[{Cell[BoxData[
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Collect the link targets in a navigation menu list:", "ExampleText"], Cell[BoxData["menu=ImportString[\"<nav><ul><li><a href=\\\"/soup\\\">Soup</a></li><li><a href=\\\"/salad\\\">Salad</a></li></ul></nav>\",{\"HTML\",\"XMLObject\"}];
 XMLCases[menu,Child[XMLPattern[\"li\"],XMLPattern[\"a\",\"href\"->target_]]:>target]"], "Input"],
 
-Cell[BoxData[RowBox[{"{", RowBox[{"\"/soup\"", ",", "\"/salad\""}], "}"}]], "Output"]}, Open]]}, Open]],
+Cell[BoxData[RowBox[{"{", RowBox[{"\"/soup\"", ",", "\"/salad\""}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Read the cells of each table row as a list:", "ExampleText"], Cell[BoxData["table=ImportString[\"<table><tr><td>Miso</td><td>4</td></tr><tr><td>Pho</td><td>9</td></tr></table>\",{\"HTML\",\"XMLObject\"}];
+XMLCases[table,Child[XMLPattern[\"table\"|\"tbody\"],row:XMLPattern[\"tr\"]]:>(HTMLTextContent/@XMLCases[row,XMLPattern[\"td\"]])]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"\"Miso\"", ",", "\"4\""}], "}"}], ",", RowBox[{"{", RowBox[{"\"Pho\"", ",", "\"9\""}], "}"}]}], "}"}]], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
   "Properties & Relations", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Every ", Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"]], "InlineFormula"], " match is also a ", Cell[BoxData[ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"]], "InlineFormula"], " match:"}], "ExampleText"], Cell[BoxData["tree=ImportString[\"<article><h2>Intro</h2><p>First para.</p><p>Second para.</p><section><h3>Sub</h3><p>Nested para.</p></section></article>\",{\"HTML\",\"XMLObject\"}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Every Child match is also a Descendant match:", "ExampleText"], Cell[BoxData["tree=ImportString[\"<article><h2>Intro</h2><p>First para.</p><p>Second para.</p><section><h3>Sub</h3><p>Nested para.</p></section></article>\",{\"HTML\",\"XMLObject\"}];
 SubsetQ[XMLCases[tree,Descendant[XMLPattern[\"article\"],XMLPattern[\"p\"]]],XMLCases[tree,Child[XMLPattern[\"article\"],XMLPattern[\"p\"]]]]"], "Input"],
 
 Cell[BoxData["True"], "Output"],
 
-Cell[TextData[{Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"]], "InlineFormula"], " with a blank parent pattern matches the immediate children of every element in the tree:"}], "ExampleText"],
+Cell["Child with a blank parent pattern matches the child elements of every element, in document order:", "ExampleText"],
 
-Cell[BoxData["XMLCases[tree,Child[XMLPattern[_],element:XMLPattern[_]]:>element[[1]]]"], "Input"],
+Cell[BoxData["XMLCases[tree,Child[XMLPattern[_],element:XMLPattern[_]]:>element〚1〛]"], "Input"],
 
-Cell[BoxData[RowBox[{"{", RowBox[{"\"h3\"", ",", "\"p\"", ",", "\"h2\"", ",", "\"p\"", ",", "\"p\"", ",", "\"section\""}], "}"}]], "Output"]}, Open]]}, Open]],
+Cell[BoxData[RowBox[{"{", RowBox[{"\"h2\"", ",", "\"p\"", ",", "\"p\"", ",", "\"section\"", ",", "\"h3\"", ",", "\"p\""}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A chain reads left to right however it is nested:", "ExampleText"], Cell[BoxData["tree=ImportString[\"<article><p>Top.</p><section><p>Nested.</p><div><p>Deeper.</p></div></section></article>\",{\"HTML\",\"XMLObject\"}];
+XMLCases[tree,Descendant[XMLPattern[\"article\"],Child[XMLPattern[\"section\"],XMLPattern[\"p\"]]]]===XMLCases[tree,Child[Descendant[XMLPattern[\"article\"],XMLPattern[\"section\"]],XMLPattern[\"p\"]]]"], "Input"],
+
+Cell[BoxData["True"], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
   "Possible Issues", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"]], "InlineFormula"], " skips grandchildren, finding fewer paragraphs than ", Cell[BoxData[ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["tree=ImportString[\"<article><h2>Intro</h2><p>First para.</p><p>Second para.</p><section><h3>Sub</h3><p>Nested para.</p></section></article>\",{\"HTML\",\"XMLObject\"}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Child skips grandchildren, finding fewer paragraphs than Descendant:", "ExampleText"], Cell[BoxData["tree=ImportString[\"<article><h2>Intro</h2><p>First para.</p><p>Second para.</p><section><h3>Sub</h3><p>Nested para.</p></section></article>\",{\"HTML\",\"XMLObject\"}];
 {Length[XMLCases[tree,Child[XMLPattern[\"article\"],XMLPattern[\"p\"]]]],Length[XMLCases[tree,Descendant[XMLPattern[\"article\"],XMLPattern[\"p\"]]]]}"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"2", ",", "3"}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A bare ", Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"]], "InlineFormula"], " expression is inert outside ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["MatchQ[Child[XMLPattern[\"article\"],XMLPattern[\"p\"]],_Child]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A condition on the child stage cannot see a name bound at the parent stage:", "ExampleText"], Cell[BoxData["tree=ImportString[\"<div id=\\\"x\\\"><p>one</p></div><div id=\\\"y\\\"><p>two</p></div>\",{\"HTML\",\"XMLObject\"}];
+XMLCases[tree,Child[XMLPattern[\"div\",\"id\"->id_],XMLPattern[\"p\"]/;id===\"x\"]]"], "Input"],
 
-Cell[BoxData["True"], "Output"]}, Open]]}, Open]],
+Cell[BoxData[RowBox[{"{", "}"}]], "Output"],
+
+Cell["Put the condition on the whole combinator:", "ExampleText"],
+
+Cell[BoxData["XMLCases[tree,Child[XMLPattern[\"div\",\"id\"->id_],XMLPattern[\"p\"]]/;id===\"x\"]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"one\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["An Alternatives may not contain a combinator:", "ExampleText"], Cell[BoxData["tree=ImportString[\"<article><p>Top.</p><section><p>Nested.</p></section></article>\",{\"HTML\",\"XMLObject\"}];
+XMLCases[tree,Child[XMLPattern[\"article\"],XMLPattern[\"p\"]]|Child[XMLPattern[\"section\"],XMLPattern[\"p\"]]]"], "Input"],
+
+Cell["XMLCases::badpat: Second argument should be an element pattern (an XMLPattern or Alternatives of them, named or conditioned with /; or not), a combinator (Child, Descendant, Adjacent, Sibling) whose stages are element patterns or combinators, conditioned with /; or not, or a rule pattern :> body over either. Got Child[XMLPattern[\"article\"], XMLPattern[\"p\"]] | Child[XMLPattern[\"section\"], XMLPattern[\"p\"]].", "Message", "MSG"],
+
+Cell[BoxData["$Failed"], "Output"],
+
+Cell["Put the alternatives inside a stage instead:", "ExampleText"],
+
+Cell[BoxData["XMLCases[tree,Child[XMLPattern[\"article\"|\"section\"],XMLPattern[\"p\"]]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Top.\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Nested.\"", "}"}]}], "]"}]}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["XMLMatchQ tests a lone element, which has no parent, so it does not accept Child:", "ExampleText"], Cell[BoxData["XMLMatchQ[XMLElement[\"p\",{},{\"x\"}],Child[XMLPattern[\"div\"],XMLPattern[\"p\"]]]"], "Input"],
+
+Cell["XMLMatchQ::combinator: Child[XMLPattern[\"div\"], XMLPattern[\"p\"]] relates an element to its parent or siblings, which a lone element does not have. Use XMLCases or XMLFirstCase to search a tree with it.", "Message", "MSG"],
+
+Cell[BoxData["$Failed"], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[

@@ -11,7 +11,7 @@ Notebook[{
 Cell[CellGroupData[{
 Cell["HTMLInnerText", "ObjectName"],
 
-Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLInnerText"], "[", StyleBox["tree", "TI"], "]"}]], "InlineFormula"], " \[LineSeparator]gives the readable text of ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], ": internal whitespace collapsed, block-level tags on their own lines, ", Cell[BoxData[StyleBox["br", "TR"]], "InlineFormula"], " as newlines, ", Cell[BoxData[StyleBox["pre", "TR"]], "InlineFormula"], " preserved verbatim, non-rendered tags dropped, and the result trimmed.", "\n", Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLInnerText"], "[", RowBox[{StyleBox["tree", "TI"], ",", " ", RowBox[{StyleBox["\"Roles\"", "TR"], "\[Rule]", StyleBox["rules", "TI"]}]}], "]"}]], "InlineFormula"], " \[LineSeparator]classifies elements using ", Cell[BoxData[StyleBox["rules", "TI"]], "InlineFormula"], " before falling back to the frozen user-agent table."}], "Usage"],
+Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLInnerText"], "[", StyleBox["tree", "TI"], "]"}]], "InlineFormula"], " \[LineSeparator]gives the readable text of ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], ": internal whitespace collapsed, block-level tags on their own lines, ", Cell[BoxData[StyleBox["br", "TR"]], "InlineFormula"], " as newlines, ", Cell[BoxData[StyleBox["pre", "TR"]], "InlineFormula"], " preserved verbatim, non-rendered tags dropped, and the result trimmed.", "\n", Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLInnerText"], "[", RowBox[{StyleBox["tree", "TI"], ",", " ", RowBox[{StyleBox["\"Roles\"", "TR"], "\[Rule]", StyleBox["rules", "TI"]}]}], "]"}]], "InlineFormula"], " \[LineSeparator]classifies elements using ", Cell[BoxData[StyleBox["rules", "TI"]], "InlineFormula"], ", each an XML pattern paired with a display role, before falling back to the frozen user-agent table."}], "Usage"],
 
 Cell[TextData[{"Each element is classified by tag alone into a display role, using a frozen snapshot of the WHATWG HTML default user-agent stylesheet. CSS \[LongDash] classes, ", Cell[BoxData[StyleBox["style", "TR"]], "InlineFormula"], " blocks, external sheets, and even inline ", Cell[BoxData[StyleBox["style", "TR"]], "InlineFormula"], " \[LongDash] is never consulted, so ", Cell[BoxData[ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLInnerText"]], "InlineFormula"], " reproduces HTML under default styles, not a particular page as rendered."}], "Notes"],
 
@@ -19,9 +19,15 @@ Cell[TextData[{"Whitespace runs collapse to a single space; block-level tags suc
 
 Cell[TextData[{Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " may be an ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], ", an ", Cell[BoxData[ButtonBox["XMLObject", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLObject"]], "InlineFormula"], " document (its root element is used), a list of ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], " objects, or a bare string."}], "Notes"],
 
-Cell[TextData[{"The option \"Roles\" -> ", Cell[BoxData[StyleBox["rules", "TI"]], "InlineFormula"], " overrides the classification. Each rule is ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " -> ", Cell[BoxData[StyleBox["role", "TI"]], "InlineFormula"], " or ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " :> ", Cell[BoxData[StyleBox["role", "TI"]], "InlineFormula"], ", where ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " is an ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"]], "InlineFormula"], " (a bare string sugars to ", Cell[BoxData[RowBox[{ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"], "[", StyleBox["string", "TI"], "]"}]], "InlineFormula"], "); an ", Cell[BoxData[ButtonBox["Association", BaseStyle -> "Link", ButtonData -> "paclet:ref/Association"]], "InlineFormula"], " sugars to an ordered rule list. Rules are tried in order, first match wins; an element matching no rule defers to the frozen table, and an unknown tag defaults to inline."}], "Notes"],
+Cell[TextData[{"The option \"Roles\" -> ", Cell[BoxData[StyleBox["rules", "TI"]], "InlineFormula"], " overrides the classification. Each rule is ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " -> ", Cell[BoxData[StyleBox["role", "TI"]], "InlineFormula"], " or ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " :> ", Cell[BoxData[StyleBox["role", "TI"]], "InlineFormula"], ", where ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " is an element pattern: an ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"]], "InlineFormula"], ", an ", Cell[BoxData[ButtonBox["Alternatives", BaseStyle -> "Link", ButtonData -> "paclet:ref/Alternatives"]], "InlineFormula"], " of them, or a conditioned pattern ", Cell[BoxData["pat$ /; test$"], "InlineFormula"], ". A bare string sugars to ", Cell[BoxData[RowBox[{ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"], "[", StyleBox["string", "TI"], "]"}]], "InlineFormula"], ", and an ", Cell[BoxData[ButtonBox["Association", BaseStyle -> "Link", ButtonData -> "paclet:ref/Association"]], "InlineFormula"], " sugars to an ordered rule list. Rules are tried in order, first match wins; an element matching no rule defers to the frozen table, and an unknown tag defaults to inline."}], "Notes"],
 
 Cell["The five role tokens are \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\", and \"Skip\". A rule producing anything else issues a message and is ignored, deferring to the frozen table.", "Notes"],
+
+Cell[TextData[{"A rule pattern may use a list key such as \"classList\", which matches the token list of the element's ", Cell[BoxData[StyleBox["class", "TR"]], "InlineFormula"], " attribute. Names bound in ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], ", including a name on the whole element (", Cell[BoxData["e$ : XMLPattern[$$]"], "InlineFormula"], "), see the element as it is in ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], "."}], "Notes"],
+
+Cell[TextData[{"A rule is tried against one element at a time, so a combinator (", Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["Adjacent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Adjacent"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"]], "InlineFormula"], "), conditioned or not, cannot be a rule pattern; ", Cell[BoxData[ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLInnerText"]], "InlineFormula"], " issues a message and returns ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], "."}], "Notes"],
+
+Cell[TextData[{"The option \"AttributeReadings\" -> ", Cell[BoxData[StyleBox["readings", "TI"]], "InlineFormula"], " (default ", Cell[BoxData[StyleBox["<||>", "TR"]], "InlineFormula"], ") adds readings to ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"]], "InlineFormula"], " for the rules' patterns, so that they can use list keys other than \"classList\"."}], "Notes"],
 
 Cell[TextData[{"The option \"BlockSeparator\" -> ", Cell[BoxData[StyleBox["sep", "TI"]], "InlineFormula"], " (default \"\\n\") sets the string inserted between block boundaries; \"\\n\\n\" gives paragraph-style gaps. A ", Cell[BoxData[StyleBox["br", "TR"]], "InlineFormula"], " is always a single newline, independent of this option."}], "Notes"],
 
@@ -43,7 +49,7 @@ Cell[TextData[{
    "MoreInfoOpenerButtonTemplate"]]]
 }], "SeeAlsoSection"],
 
-Cell[TextData[{Cell[BoxData[TemplateBox[{Cell[TextData["HTMLTextContent"]], "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLTextContent"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["HTMLToNotebook"]], "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLToNotebook"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLPattern"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["CSSClass"]], "paclet:MaximilienTirard/BeautifulTureen/ref/CSSClass"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLCases"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}]}], "SeeAlso"]
+Cell[TextData[{Cell[BoxData[TemplateBox[{Cell[TextData["HTMLTextContent"]], "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLTextContent"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["HTMLToNotebook"]], "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLToNotebook"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLPattern"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLMatchQ"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLMatchQ"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["$AttributeReadings"]], "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLDeleteCases"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDeleteCases"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLCases"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}]}], "SeeAlso"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -182,17 +188,32 @@ Cell[CellGroupData[{Cell[BoxData[
   "Generalizations & Extensions", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["Options", "ExampleSection"], $Line = 0; Null]], "ExampleSection"], Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Skip screenreader-only spans by class with a \"Roles\" override:", "ExampleText"], Cell[BoxData["HTMLInnerText[
-XMLElement[\"div\",{},{\"keep \",XMLElement[\"span\",{\"class\"->\"sr-only\"},{\"screenreader\"}],\" this\"}],
-\"Roles\"->{XMLPattern[\"span\",CSSClass[\"sr-only\"]]->\"Skip\"}]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["Options", "ExampleSection"], $Line = 0; Null]], "ExampleSection"],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["Roles", "ExampleSubsection"], $Line = 0; Null]], "ExampleSubsection"], Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Skip screenreader-only spans by class:", "ExampleText"], Cell[BoxData["HTMLInnerText[
+XMLElement[\"div\",{},{\"keep \",XMLElement[\"span\",{\"class\"->\"sr-only visually-hidden\"},{\"screenreader\"}],\" this\"}],
+\"Roles\"->{XMLPattern[\"span\",\"classList\"->\"sr-only\"]->\"Skip\"}]"], "Input"],
 
 Cell[BoxData["\"keep this\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["\"BlockSeparator\" widens the gap between blocks to a blank line:", "ExampleText"], Cell[BoxData["HTMLInnerText[XMLElement[\"div\",{},{
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A rule pattern may be conditioned, here on the text of the element:", "ExampleText"], Cell[BoxData["HTMLInnerText[
+XMLElement[\"ul\",{},{XMLElement[\"li\",{},{\"Miso\"}],XMLElement[\"li\",{},{\"Ramen (sold out)\"}]}],
+\"Roles\"->{(e:XMLPattern[\"li\"]/;StringContainsQ[HTMLTextContent[e],\"sold out\"])->\"Skip\"}]"], "Input"],
+
+Cell[BoxData["\"Miso\""], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["BlockSeparator", "ExampleSubsection"], $Line = 0; Null]], "ExampleSubsection"], Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Widen the gap between blocks to a blank line:", "ExampleText"], Cell[BoxData["HTMLInnerText[XMLElement[\"div\",{},{
 XMLElement[\"p\",{},{\"First.\"}],XMLElement[\"p\",{},{\"Second.\"}]}],
 \"BlockSeparator\"->\"\\n\\n\"]"], "Input"],
 
 Cell[BoxData["\"First.\\n\\nSecond.\""], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["AttributeReadings", "ExampleSubsection"], $Line = 0; Null]], "ExampleSubsection"], Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Add a reading for ", Cell[BoxData[StyleBox["rel", "TR"]], "InlineFormula"], " so that a rule can use the list key \"relList\":"}], "ExampleText"], Cell[BoxData["HTMLInnerText[
+XMLElement[\"p\",{},{\"Read \",XMLElement[\"a\",{\"rel\"->\"nofollow sponsored\"},{\"this ad\"}],\" the docs.\"}],
+\"Roles\"->{XMLPattern[\"a\",\"relList\"->\"sponsored\"]->\"Skip\"},
+\"AttributeReadings\"-><|\"rel\"-><||>|>]"], "Input"],
+
+Cell[BoxData["\"Read the docs.\""], "Output"]}, Open]]}, Open]]}, Open]],
 
 Cell[CellGroupData[{
 
@@ -253,9 +274,27 @@ Cell[BoxData["\"abc\""], "Output"]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A \"Roles\" rule producing an invalid role issues a message and is ignored:", "ExampleText"], Cell[BoxData["HTMLInnerText[XMLElement[\"p\",{},{\"hi\"}],\"Roles\"->{\"p\"->\"Purple\"}]"], "Input"],
 
-Cell[BoxData["HTMLInnerText::badrole: Role rule produced \"Purple\", which is not one of \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\", or \"Skip\"; ignoring it and deferring to the frozen user-agent table."], "Message", "MSG"],
+Cell["HTMLInnerText::badrole: Role rule produced \"Purple\", which is not one of \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\", or \"Skip\"; ignoring it and deferring to the frozen user-agent table.", "Message", "MSG"],
 
-Cell[BoxData["\"hi\""], "Output"]}, Open]]}, Open]],
+Cell[BoxData["\"hi\""], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A rule on \"class\" matches the whole attribute string, so it misses a span with two classes; \"classList\" does not:", "ExampleText"], Cell[BoxData["fragment=XMLElement[\"div\",{},{\"keep \",XMLElement[\"span\",{\"class\"->\"sr-only visually-hidden\"},{\"screenreader\"}],\" this\"}];
+{HTMLInnerText[fragment,\"Roles\"->{XMLPattern[\"span\",\"class\"->\"sr-only\"]->\"Skip\"}],
+HTMLInnerText[fragment,\"Roles\"->{XMLPattern[\"span\",\"classList\"->\"sr-only\"]->\"Skip\"}]}"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"\"keep screenreader this\"", ",", "\"keep this\""}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A combinator cannot be a \"Roles\" pattern, since each rule is tried against one element:", "ExampleText"], Cell[BoxData["HTMLInnerText[XMLElement[\"nav\",{},{XMLElement[\"a\",{},{\"Home\"}]}],\"Roles\"->{Child[XMLPattern[\"nav\"],XMLPattern[\"a\"]]->\"Skip\"}]"], "Input"],
+
+Cell["HTMLInnerText::badpat: A rule's left-hand side should be a tag string, an XMLPattern, an Alternatives of them, or a conditioned pattern pat /; test. Got Child[XMLPattern[\"nav\"], XMLPattern[\"a\"]].", "Message", "MSG"],
+
+Cell[BoxData["$Failed"], "Output"],
+
+Cell[TextData[{"Remove those elements first with ", Cell[BoxData[ButtonBox["XMLDeleteCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDeleteCases"]], "InlineFormula"], ", which accepts ", Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"]], "InlineFormula"], ":"}], "ExampleText"],
+
+Cell[BoxData["HTMLInnerText[XMLDeleteCases[XMLElement[\"div\",{},{XMLElement[\"nav\",{},{XMLElement[\"a\",{},{\"Home\"}]}],XMLElement[\"p\",{},{\"Body.\"}]}],Child[XMLPattern[\"nav\"],XMLPattern[\"a\"]]]]"], "Input"],
+
+Cell[BoxData["\"Body.\""], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
