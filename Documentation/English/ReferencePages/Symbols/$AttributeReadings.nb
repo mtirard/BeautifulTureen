@@ -11,54 +11,43 @@ Notebook[{
 Cell[CellGroupData[{
 Cell["$AttributeReadings", "ObjectName"],
 
-Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"]], "InlineFormula"], " \[LineSeparator]is an ", Cell[BoxData[ButtonBox["Association", BaseStyle -> "Link", ButtonData -> "paclet:ref/Association"]], "InlineFormula"], " that gives, for each attribute key with a reading, how its value is split into a token list and the list key under which ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"]], "InlineFormula"], " reaches that list."}], "Usage"],
+Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"]], "InlineFormula"], " \[LineSeparator]is an ", Cell[BoxData[ButtonBox["Association", BaseStyle -> "Link", ButtonData -> "paclet:ref/Association"]], "InlineFormula"], " that gives, for each attribute it names, how the attribute value is split into a list of tokens and the list key that gives that list in ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"]], "InlineFormula"], "."}], "Usage"],
 
-Cell[TextData[{"By default, ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"]], "InlineFormula"], " has one entry, for ", Cell[BoxData[StyleBox["class", "TR"]], "InlineFormula"], ", whose list key is ", Cell[BoxData[StyleBox["\"classList\"", "TR"]], "InlineFormula"], ". Every other attribute is reached only as its raw string value."}], "Notes"],
+Cell[TextData[{"Each entry of ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"]], "InlineFormula"], " is called a ", StyleBox["reading", FontSlant->"Italic"], ". With a reading, the value of an attribute is split into a list of tokens, which ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"]], "InlineFormula"], " matches under a new key, called a ", StyleBox["list key", FontSlant->"Italic"], "."}], "Notes"],
 
-Cell[TextData[{"Each key of ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"]], "InlineFormula"], " is a literal attribute name. Each value is an ", Cell[BoxData[ButtonBox["Association", BaseStyle -> "Link", ButtonData -> "paclet:ref/Association"]], "InlineFormula"], " with any of the following fields:
+Cell[TextData[{"By default, only ", Cell[BoxData[StyleBox["class", "TR"]], "InlineFormula"], " has a reading, with the list key ", Cell[BoxData[StyleBox["\"classList\"", "TR"]], "InlineFormula"], "."}], "Notes"],
+
+Cell[TextData[{"The option ", Cell[BoxData[RowBox[{StyleBox["\"AttributeReadings\"", "TR"], "\[Rule]", StyleBox["readings", "TI"]}]], "InlineFormula"], " of ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["XMLFirstCase", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["XMLDeleteCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDeleteCases"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["XMLMatchQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLMatchQ"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLInnerText"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["HTMLToNotebook", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLToNotebook"]], "InlineFormula"], " adds ", Cell[BoxData[StyleBox["readings", "TI"]], "InlineFormula"], " for one call. The readings used are ", Cell[BoxData[RowBox[{ButtonBox["Join", BaseStyle -> "Link", ButtonData -> "paclet:ref/Join"], "[", RowBox[{ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"], ",", " ", StyleBox["readings", "TI"]}], "]"}]], "InlineFormula"], ", so an entry for an attribute that already has a reading replaces that reading whole."}], "Notes"],
+
+Cell[TextData[{"Assigning to ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"]], "InlineFormula"], " changes the readings for all later calls."}], "Notes"],
+
+Cell[TextData[{"Each key is an attribute name given as a string. A namespaced attribute ", Cell[BoxData[RowBox[{"{", RowBox[{StyleBox["namespace", "TI"], ",", " ", StyleBox["name", "TI"]}], "}"}]], "InlineFormula"], " cannot have a reading. Each value is an ", Cell[BoxData[ButtonBox["Association", BaseStyle -> "Link", ButtonData -> "paclet:ref/Association"]], "InlineFormula"], " with any of the following fields:
 
 | field | default | description |
 | --- | --- | --- |
-| ", Cell[BoxData[ButtonBox["Method", BaseStyle -> "Link", ButtonData -> "paclet:ref/Method"]], "InlineFormula"], " | ", Cell[BoxData[StyleBox["\"SpaceSeparated\"", "TR"]], "InlineFormula"], " | the microsyntax: ", Cell[BoxData[StyleBox["\"SpaceSeparated\"", "TR"]], "InlineFormula"], " or ", Cell[BoxData[StyleBox["\"CommaSeparated\"", "TR"]], "InlineFormula"], " |
-| ", Cell[BoxData[ButtonBox["Delimiters", BaseStyle -> "Link", ButtonData -> "paclet:ref/Delimiters"]], "InlineFormula"], " | ", Cell[BoxData[ButtonBox["Automatic", BaseStyle -> "Link", ButtonData -> "paclet:ref/Automatic"]], "InlineFormula"], " | the string pattern the value is split on |
-| ", Cell[BoxData[StyleBox["\"TrimWhitespace\"", "TR"]], "InlineFormula"], " | ", Cell[BoxData[ButtonBox["Automatic", BaseStyle -> "Link", ButtonData -> "paclet:ref/Automatic"]], "InlineFormula"], " | whether to trim HTML whitespace from each token |
-| ", Cell[BoxData[StyleBox["\"ListKey\"", "TR"]], "InlineFormula"], " | ", Cell[BoxData[ButtonBox["Automatic", BaseStyle -> "Link", ButtonData -> "paclet:ref/Automatic"]], "InlineFormula"], " | the list key; ", Cell[BoxData[ButtonBox["Automatic", BaseStyle -> "Link", ButtonData -> "paclet:ref/Automatic"]], "InlineFormula"], " means the attribute name followed by ", Cell[BoxData[ButtonBox["List", BaseStyle -> "Link", ButtonData -> "paclet:ref/List"]], "InlineFormula"], " |"}], "Notes"],
+| ", Cell[BoxData[ButtonBox["Method", BaseStyle -> "Link", ButtonData -> "paclet:ref/Method"]], "InlineFormula"], " | ", Cell[BoxData[StyleBox["\"SpaceSeparated\"", "TR"]], "InlineFormula"], " | how the value is split: ", Cell[BoxData[StyleBox["\"SpaceSeparated\"", "TR"]], "InlineFormula"], " or ", Cell[BoxData[StyleBox["\"CommaSeparated\"", "TR"]], "InlineFormula"], " |
+| ", Cell[BoxData[ButtonBox["Delimiters", BaseStyle -> "Link", ButtonData -> "paclet:ref/Delimiters"]], "InlineFormula"], " | ", Cell[BoxData[ButtonBox["Automatic", BaseStyle -> "Link", ButtonData -> "paclet:ref/Automatic"]], "InlineFormula"], " | a string pattern to split the value on |
+| ", Cell[BoxData[StyleBox["\"TrimWhitespace\"", "TR"]], "InlineFormula"], " | ", Cell[BoxData[ButtonBox["Automatic", BaseStyle -> "Link", ButtonData -> "paclet:ref/Automatic"]], "InlineFormula"], " | whether to trim HTML whitespace from each token: ", Cell[BoxData[ButtonBox["True", BaseStyle -> "Link", ButtonData -> "paclet:ref/True"]], "InlineFormula"], " or ", Cell[BoxData[ButtonBox["False", BaseStyle -> "Link", ButtonData -> "paclet:ref/False"]], "InlineFormula"], " |
+| ", Cell[BoxData[StyleBox["\"ListKey\"", "TR"]], "InlineFormula"], " | ", Cell[BoxData[ButtonBox["Automatic", BaseStyle -> "Link", ButtonData -> "paclet:ref/Automatic"]], "InlineFormula"], " | the list key, a string; ", Cell[BoxData[ButtonBox["Automatic", BaseStyle -> "Link", ButtonData -> "paclet:ref/Automatic"]], "InlineFormula"], " gives the attribute name followed by ", Cell[BoxData[StyleBox["\"List\"", "TR"]], "InlineFormula"], " |"}], "Notes"],
 
-Cell[TextData[{Cell[BoxData[ButtonBox["Method", BaseStyle -> "Link", ButtonData -> "paclet:ref/Method"]], "InlineFormula"], " is shorthand for the defaults of ", Cell[BoxData[ButtonBox["Delimiters", BaseStyle -> "Link", ButtonData -> "paclet:ref/Delimiters"]], "InlineFormula"], " and ", Cell[BoxData[StyleBox["\"TrimWhitespace\"", "TR"]], "InlineFormula"], ":
+Cell[TextData[{Cell[BoxData[ButtonBox["Method", BaseStyle -> "Link", ButtonData -> "paclet:ref/Method"]], "InlineFormula"], " sets the defaults of ", Cell[BoxData[ButtonBox["Delimiters", BaseStyle -> "Link", ButtonData -> "paclet:ref/Delimiters"]], "InlineFormula"], " and ", Cell[BoxData[StyleBox["\"TrimWhitespace\"", "TR"]], "InlineFormula"], ":
 
 | ", Cell[BoxData[ButtonBox["Method", BaseStyle -> "Link", ButtonData -> "paclet:ref/Method"]], "InlineFormula"], " | ", Cell[BoxData[ButtonBox["Delimiters", BaseStyle -> "Link", ButtonData -> "paclet:ref/Delimiters"]], "InlineFormula"], " | ", Cell[BoxData[StyleBox["\"TrimWhitespace\"", "TR"]], "InlineFormula"], " |
 | --- | --- | --- |
 | ", Cell[BoxData[StyleBox["\"SpaceSeparated\"", "TR"]], "InlineFormula"], " | ", Cell[BoxData[ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLWhitespace"]], "InlineFormula"], " | ", Cell[BoxData[ButtonBox["False", BaseStyle -> "Link", ButtonData -> "paclet:ref/False"]], "InlineFormula"], " |
 | ", Cell[BoxData[StyleBox["\"CommaSeparated\"", "TR"]], "InlineFormula"], " | ", Cell[BoxData[StyleBox["\",\"", "TR"]], "InlineFormula"], " | ", Cell[BoxData[ButtonBox["True", BaseStyle -> "Link", ButtonData -> "paclet:ref/True"]], "InlineFormula"], " |"}], "Notes"],
 
-Cell[TextData[{"An explicit ", Cell[BoxData[ButtonBox["Delimiters", BaseStyle -> "Link", ButtonData -> "paclet:ref/Delimiters"]], "InlineFormula"], " or ", Cell[BoxData[StyleBox["\"TrimWhitespace\"", "TR"]], "InlineFormula"], " setting overrides the one given by ", Cell[BoxData[ButtonBox["Method", BaseStyle -> "Link", ButtonData -> "paclet:ref/Method"]], "InlineFormula"], ". ", Cell[BoxData[ButtonBox["Delimiters", BaseStyle -> "Link", ButtonData -> "paclet:ref/Delimiters"]], "InlineFormula"], " can be any string pattern."}], "Notes"],
+Cell[TextData[{"An explicit ", Cell[BoxData[ButtonBox["Delimiters", BaseStyle -> "Link", ButtonData -> "paclet:ref/Delimiters"]], "InlineFormula"], " or ", Cell[BoxData[StyleBox["\"TrimWhitespace\"", "TR"]], "InlineFormula"], " setting overrides the one from ", Cell[BoxData[ButtonBox["Method", BaseStyle -> "Link", ButtonData -> "paclet:ref/Method"]], "InlineFormula"], "."}], "Notes"],
 
-Cell[TextData[{"Trimming removes ", Cell[BoxData[ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLWhitespace"]], "InlineFormula"], " from both ends of each token, and nothing else: a no-break space stays part of a token."}], "Notes"],
+Cell[TextData[{"A list key matches as ", Cell[BoxData[StyleBox["\"classList\"", "TR"]], "InlineFormula"], " does. With a reading for ", Cell[BoxData[StyleBox["rel", "TR"]], "InlineFormula"], ", ", Cell[BoxData[RowBox[{StyleBox["\"relList\"", "TR"], "\[Rule]", StyleBox["\"nofollow\"", "TR"]}]], "InlineFormula"], " matches an element whose ", Cell[BoxData[StyleBox["rel", "TR"]], "InlineFormula"], " contains the token ", Cell[BoxData[StyleBox["nofollow", "TR"]], "InlineFormula"], ", and ", Cell[BoxData[RowBox[{StyleBox["\"relList\"", "TR"], "\[Rule]", "r_"}]], "InlineFormula"], " binds ", Cell[BoxData[StyleBox["r", "TR"]], "InlineFormula"], " to the list of tokens."}], "Notes"],
 
-Cell[TextData[{"A pattern naming a list key, such as ", Cell[BoxData[RowBox[{ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"], "[", RowBox[{StyleBox["\"a\"", "TR"], ",", " ", RowBox[{StyleBox["\"relList\"", "TR"], "\[Rule]", StyleBox["\"nofollow\"", "TR"]}]}], "]"}]], "InlineFormula"], ", is matched against the token list of the raw attribute. An element without the raw attribute has the token list ", Cell[BoxData[RowBox[{"{", "}"}]], "InlineFormula"], ", as do an empty value and a value of whitespace only."}], "Notes"],
+Cell[TextData[{"An element without the attribute, or with an empty or whitespace-only value, gives the list ", Cell[BoxData[RowBox[{"{", "}"}]], "InlineFormula"], "."}], "Notes"],
 
-Cell[TextData[{"The raw key keeps its meaning: ", Cell[BoxData[RowBox[{StyleBox["\"rel\"", "TR"], "\[Rule]", StyleBox["\"nofollow\"", "TR"]}]], "InlineFormula"], " is still an exact match on the string, and a bare ", Cell[BoxData[StyleBox["\"rel\"", "TR"]], "InlineFormula"], " still asks whether the attribute is present. Adding a reading makes a new key available and never changes what an existing key means."}], "Notes"],
+Cell[TextData[{"The attribute itself keeps its meaning. ", Cell[BoxData[RowBox[{StyleBox["\"rel\"", "TR"], "\[Rule]", StyleBox["\"nofollow\"", "TR"]}]], "InlineFormula"], " matches only the exact value ", Cell[BoxData[StyleBox["nofollow", "TR"]], "InlineFormula"], ", and ", Cell[BoxData[StyleBox["\"rel\"", "TR"]], "InlineFormula"], " matches an element that has a ", Cell[BoxData[StyleBox["rel", "TR"]], "InlineFormula"], " attribute."}], "Notes"],
 
-Cell[TextData[{"A namespaced key ", Cell[BoxData[RowBox[{"{", RowBox[{StyleBox["namespace", "TI"], ",", " ", StyleBox["name", "TI"]}], "}"}]], "InlineFormula"], " never has a reading, and the keys of ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"]], "InlineFormula"], " must be strings."}], "Notes"],
+Cell[TextData[{"The readings are checked each time a function uses them. A malformed reading gives a message, such as ", Cell[BoxData["$AttributeReadings::badmethod"], "InlineFormula"], ", and the function returns ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], "."}], "Notes"],
 
-Cell[TextData[{"The option ", Cell[BoxData[RowBox[{StyleBox["\"AttributeReadings\"", "TR"], "\[Rule]", StyleBox["readings", "TI"]}]], "InlineFormula"], " of ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["XMLFirstCase", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["XMLDeleteCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDeleteCases"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["XMLMatchQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLMatchQ"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLInnerText"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["HTMLToNotebook", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLToNotebook"]], "InlineFormula"], " adds ", Cell[BoxData[StyleBox["readings", "TI"]], "InlineFormula"], " to ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"]], "InlineFormula"], " for one call. The table used is ", Cell[BoxData[RowBox[{ButtonBox["Join", BaseStyle -> "Link", ButtonData -> "paclet:ref/Join"], "[", RowBox[{ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"], ",", " ", StyleBox["readings", "TI"]}], "]"}]], "InlineFormula"], ", so an entry for a key that ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"]], "InlineFormula"], " already has replaces that entry whole; fields are not merged."}], "Notes"],
-
-Cell[TextData[{"Assigning to ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"]], "InlineFormula"], " changes the readings for every later query. Setting ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"]], "InlineFormula"], " in a ", Cell[BoxData[ButtonBox["Block", BaseStyle -> "Link", ButtonData -> "paclet:ref/Block"]], "InlineFormula"], " replaces the whole table, the ", Cell[BoxData[StyleBox["class", "TR"]], "InlineFormula"], " entry included."}], "Notes"],
-
-Cell[TextData[{"The table in force is checked each time a consuming function is called. If it is malformed, the function issues one of the following messages and returns ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], ":
-
-| message | cause |
-| --- | --- |
-| ", Cell[BoxData["$AttributeReadings::notassoc"], "InlineFormula"], " | the table is not an ", Cell[BoxData[ButtonBox["Association", BaseStyle -> "Link", ButtonData -> "paclet:ref/Association"]], "InlineFormula"], " |
-| ", Cell[BoxData["$AttributeReadings::badkey"], "InlineFormula"], " | a key is not a string |
-| ", Cell[BoxData["$AttributeReadings::badentry"], "InlineFormula"], " | an entry is not an ", Cell[BoxData[ButtonBox["Association", BaseStyle -> "Link", ButtonData -> "paclet:ref/Association"]], "InlineFormula"], " |
-| ", Cell[BoxData["$AttributeReadings::badfield"], "InlineFormula"], " | an entry has an unknown field |
-| ", Cell[BoxData["$AttributeReadings::badmethod"], "InlineFormula"], " | ", Cell[BoxData[ButtonBox["Method", BaseStyle -> "Link", ButtonData -> "paclet:ref/Method"]], "InlineFormula"], " is not ", Cell[BoxData[StyleBox["\"SpaceSeparated\"", "TR"]], "InlineFormula"], " or ", Cell[BoxData[StyleBox["\"CommaSeparated\"", "TR"]], "InlineFormula"], " |
-| ", Cell[BoxData["$AttributeReadings::badvalue"], "InlineFormula"], " | a field has a value of the wrong kind |
-| ", Cell[BoxData["$AttributeReadings::duplistkey"], "InlineFormula"], " | two readings have the same list key |
-| ", Cell[BoxData["$AttributeReadings::listkeyisreading"], "InlineFormula"], " | a list key is itself a key with a reading |"}], "Notes"],
-
-Cell[TextData[{Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLClassList"]], "InlineFormula"], " always uses the built-in ", Cell[BoxData[StyleBox["class", "TR"]], "InlineFormula"], " reading."}], "Notes"]
+Cell[TextData[{Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLClassList"]], "InlineFormula"], " ignores ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"]], "InlineFormula"], "."}], "Notes"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -157,7 +146,7 @@ Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"
 
 Cell[BoxData[RowBox[{"\[LeftAssociation]", RowBox[{"\"class\"", "\[Rule]", RowBox[{"\[LeftAssociation]", RowBox[{RowBox[{"Method", "\[Rule]", "\"SpaceSeparated\""}], ",", RowBox[{"Delimiters", "\[Rule]", "Automatic"}], ",", RowBox[{"\"TrimWhitespace\"", "\[Rule]", "Automatic"}], ",", RowBox[{"\"ListKey\"", "\[Rule]", "Automatic"}]}], "\[RightAssociation]"}]}], "\[RightAssociation]"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Add a reading for ", Cell[BoxData[StyleBox["rel", "TR"]], "InlineFormula"], " for one query, and find the links marked ", Cell[BoxData[StyleBox["nofollow", "TR"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["links=ImportString[\"<p><a rel=\\\"nofollow noopener\\\" href=\\\"/ad\\\">Ad</a><a href=\\\"/home\\\">Home</a><a rel=\\\"noopener\\\" href=\\\"/x\\\">X</a></p>\",{\"HTML\",\"XMLObject\"}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Add a reading for ", Cell[BoxData[StyleBox["rel", "TR"]], "InlineFormula"], " for one call, and find the links marked ", Cell[BoxData[StyleBox["nofollow", "TR"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["links=ImportString[\"<p><a rel=\\\"nofollow noopener\\\" href=\\\"/ad\\\">Ad</a><a href=\\\"/home\\\">Home</a><a rel=\\\"noopener\\\" href=\\\"/x\\\">X</a></p>\",{\"HTML\",\"XMLObject\"}];
 XMLCases[links,XMLPattern[\"a\",\"relList\"->\"nofollow\"],\"AttributeReadings\"-> <|\"rel\"-> <||>|>]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{RowBox[{"\"shape\"", "\[Rule]", "\"rect\""}], ",", RowBox[{"\"rel\"", "\[Rule]", "\"nofollow noopener\""}], ",", RowBox[{"\"href\"", "\[Rule]", "\"/ad\""}]}], "}"}], ",", RowBox[{"{", "\"Ad\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]]}, Open]],
@@ -182,12 +171,12 @@ Cell[CellGroupData[{Cell[BoxData[
   "Scope", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Bind the token list, which is empty for a link without ", Cell[BoxData[StyleBox["rel", "TR"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["links=ImportString[\"<p><a rel=\\\"nofollow noopener\\\" href=\\\"/ad\\\">Ad</a><a href=\\\"/home\\\">Home</a><a rel=\\\"noopener\\\" href=\\\"/x\\\">X</a></p>\",{\"HTML\",\"XMLObject\"}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Bind the list of tokens, which is empty for a link without ", Cell[BoxData[StyleBox["rel", "TR"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["links=ImportString[\"<p><a rel=\\\"nofollow noopener\\\" href=\\\"/ad\\\">Ad</a><a href=\\\"/home\\\">Home</a><a rel=\\\"noopener\\\" href=\\\"/x\\\">X</a></p>\",{\"HTML\",\"XMLObject\"}];
 XMLCases[links,XMLPattern[\"a\",{\"relList\"->rels_,\"href\"->href_}]:>href->rels,\"AttributeReadings\"-> <|\"rel\"-> <||>|>]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"\"/ad\"", "\[Rule]", RowBox[{"{", RowBox[{"\"nofollow\"", ",", "\"noopener\""}], "}"}]}], ",", RowBox[{"\"/home\"", "\[Rule]", RowBox[{"{", "}"}]}], ",", RowBox[{"\"/x\"", "\[Rule]", RowBox[{"{", "\"noopener\"", "}"}]}]}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Read a comma-separated attribute with the ", Cell[BoxData[StyleBox["\"CommaSeparated\"", "TR"]], "InlineFormula"], " method:"}], "ExampleText"], Cell[BoxData["upload=ImportString[\"<form><input type=\\\"file\\\" accept=\\\"image/png, image/jpeg\\\"><input type=\\\"file\\\" accept=\\\".pdf\\\"></form>\",{\"HTML\",\"XMLObject\"}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Split a comma-separated attribute with the ", Cell[BoxData[StyleBox["\"CommaSeparated\"", "TR"]], "InlineFormula"], " method:"}], "ExampleText"], Cell[BoxData["upload=ImportString[\"<form><input type=\\\"file\\\" accept=\\\"image/png, image/jpeg\\\"><input type=\\\"file\\\" accept=\\\".pdf\\\"></form>\",{\"HTML\",\"XMLObject\"}];
 XMLCases[upload,XMLPattern[\"input\",\"acceptList\"->types_]:>types,\"AttributeReadings\"-> <|\"accept\"-> <|Method->\"CommaSeparated\"|>|>]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"\"image/png\"", ",", "\"image/jpeg\""}], "}"}], ",", RowBox[{"{", "\".pdf\"", "}"}]}], "}"}]], "Output"],
@@ -203,12 +192,12 @@ XMLCases[upload,XMLPattern[\"input\",\"types\"->types_]:>types,\"AttributeReadin
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"\"image/png\"", ",", "\"image/jpeg\""}], "}"}], ",", RowBox[{"{", "\".pdf\"", "}"}]}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Give any string pattern as ", Cell[BoxData[ButtonBox["Delimiters", BaseStyle -> "Link", ButtonData -> "paclet:ref/Delimiters"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["tagged=XMLElement[\"div\",{\"data-tags\"->\"news; sport ;weather\"},{}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Split on any string pattern with ", Cell[BoxData[ButtonBox["Delimiters", BaseStyle -> "Link", ButtonData -> "paclet:ref/Delimiters"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["tagged=XMLElement[\"div\",{\"data-tags\"->\"news; sport ;weather\"},{}];
 XMLCases[{tagged},XMLPattern[\"div\",\"data-tagsList\"->tags_]:>tags,\"AttributeReadings\"-> <|\"data-tags\"-> <|Delimiters->\";\",\"TrimWhitespace\"->True|>|>]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"{", RowBox[{"\"news\"", ",", "\"sport\"", ",", "\"weather\""}], "}"}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Add a reading for every query in a ", Cell[BoxData[ButtonBox["Block", BaseStyle -> "Link", ButtonData -> "paclet:ref/Block"]], "InlineFormula"], " by appending to ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["links=ImportString[\"<p><a rel=\\\"nofollow noopener\\\" href=\\\"/ad\\\">Ad</a><a href=\\\"/home\\\">Home</a><a rel=\\\"noopener\\\" href=\\\"/x\\\">X</a></p>\",{\"HTML\",\"XMLObject\"}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Add a reading for every call inside a ", Cell[BoxData[ButtonBox["Block", BaseStyle -> "Link", ButtonData -> "paclet:ref/Block"]], "InlineFormula"], " by appending to ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["links=ImportString[\"<p><a rel=\\\"nofollow noopener\\\" href=\\\"/ad\\\">Ad</a><a href=\\\"/home\\\">Home</a><a rel=\\\"noopener\\\" href=\\\"/x\\\">X</a></p>\",{\"HTML\",\"XMLObject\"}];
 Block[{$AttributeReadings=Append[$AttributeReadings,\"rel\"-> <||>]},XMLCases[links,e:XMLPattern[\"a\",\"relList\"->\"noopener\"]:>HTMLTextContent[e]]]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"\"Ad\"", ",", "\"X\""}], "}"}]], "Output"]}, Open]],
@@ -218,7 +207,7 @@ Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"
 
 Cell[BoxData[RowBox[{"{", RowBox[{"False", ",", "True"}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Use a reading in the ", Cell[BoxData[StyleBox["\"Roles\"", "TR"]], "InlineFormula"], " option of ", Cell[BoxData[ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLInnerText"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["links=ImportString[\"<p><a rel=\\\"nofollow noopener\\\" href=\\\"/ad\\\">Ad</a><a href=\\\"/home\\\">Home</a><a rel=\\\"noopener\\\" href=\\\"/x\\\">X</a></p>\",{\"HTML\",\"XMLObject\"}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Use a list key in the ", Cell[BoxData[StyleBox["\"Roles\"", "TR"]], "InlineFormula"], " option of ", Cell[BoxData[ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLInnerText"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["links=ImportString[\"<p><a rel=\\\"nofollow noopener\\\" href=\\\"/ad\\\">Ad</a><a href=\\\"/home\\\">Home</a><a rel=\\\"noopener\\\" href=\\\"/x\\\">X</a></p>\",{\"HTML\",\"XMLObject\"}];
 HTMLInnerText[links,\"Roles\"->{XMLPattern[\"a\",\"relList\"->\"nofollow\"]->\"Skip\"},\"AttributeReadings\"-> <|\"rel\"-> <||>|>]"], "Input"],
 
 Cell[BoxData["\"HomeX\""], "Output"]}, Open]]}, Open]],
@@ -256,7 +245,7 @@ XMLCases[page,XMLPattern[\"a\",{\"relList\"->_?(FreeQ[\"nofollow\"]),\"href\"->h
 
 Cell[BoxData[RowBox[{"{", RowBox[{"\"/docs\"", ",", "\"https://w3.org\""}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Map each table cell to the header cells it names in its ", Cell[BoxData[StyleBox["headers", "TR"]], "InlineFormula"], " attribute:"}], "ExampleText"], Cell[BoxData["table=ImportString[\"<table><tr><th id=\\\"name\\\">Name</th><th id=\\\"q1\\\">Q1</th><th id=\\\"q2\\\">Q2</th></tr><tr><td headers=\\\"name\\\">Ada</td><td headers=\\\"q1 total\\\">3</td><td headers=\\\"q2 total\\\">5</td></tr></table>\",{\"HTML\",\"XMLObject\"}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Map each table cell to the header ids in its ", Cell[BoxData[StyleBox["headers", "TR"]], "InlineFormula"], " attribute:"}], "ExampleText"], Cell[BoxData["table=ImportString[\"<table><tr><th id=\\\"name\\\">Name</th><th id=\\\"q1\\\">Q1</th><th id=\\\"q2\\\">Q2</th></tr><tr><td headers=\\\"name\\\">Ada</td><td headers=\\\"q1 total\\\">3</td><td headers=\\\"q2 total\\\">5</td></tr></table>\",{\"HTML\",\"XMLObject\"}];
 XMLCases[table,e:XMLPattern[\"td\",\"headersList\"->ids_]:>HTMLTextContent[e]->ids,\"AttributeReadings\"-> <|\"headers\"-> <||>|>]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"\"Ada\"", "\[Rule]", RowBox[{"{", "\"name\"", "}"}]}], ",", RowBox[{"\"3\"", "\[Rule]", RowBox[{"{", RowBox[{"\"q1\"", ",", "\"total\""}], "}"}]}], ",", RowBox[{"\"5\"", "\[Rule]", RowBox[{"{", RowBox[{"\"q2\"", ",", "\"total\""}], "}"}]}]}], "}"}]], "Output"],
@@ -272,18 +261,18 @@ Cell[CellGroupData[{Cell[BoxData[
   "Properties & Relations", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["An entry in the option replaces the entry for the same key whole:", "ExampleText"], Cell[BoxData["element=XMLElement[\"p\",{\"class\"->\"lead promo\"},{}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["An entry in the option replaces the reading for the same attribute whole:", "ExampleText"], Cell[BoxData["element=XMLElement[\"p\",{\"class\"->\"lead promo\"},{}];
 XMLCases[{element},XMLPattern[\"p\",\"classes\"->c_]:>c,\"AttributeReadings\"-> <|\"class\"-> <|\"ListKey\"->\"classes\"|>|>]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"{", RowBox[{"\"lead\"", ",", "\"promo\""}], "}"}], "}"}]], "Output"],
 
-Cell[TextData[{"The replaced entry no longer provides ", Cell[BoxData[StyleBox["\"classList\"", "TR"]], "InlineFormula"], ":"}], "ExampleText"],
+Cell[TextData[{"The key ", Cell[BoxData[StyleBox["\"classList\"", "TR"]], "InlineFormula"], " now matches nothing:"}], "ExampleText"],
 
 Cell[BoxData["XMLCases[{element},XMLPattern[\"p\",\"classList\"->c_]:>c,\"AttributeReadings\"-> <|\"class\"-> <|\"ListKey\"->\"classes\"|>|>]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A reading adds a list key and leaves the raw key an exact match on the string:", "ExampleText"], Cell[BoxData["links=ImportString[\"<p><a rel=\\\"nofollow noopener\\\" href=\\\"/ad\\\">Ad</a><a href=\\\"/home\\\">Home</a><a rel=\\\"noopener\\\" href=\\\"/x\\\">X</a></p>\",{\"HTML\",\"XMLObject\"}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"With a reading for ", Cell[BoxData[StyleBox["rel", "TR"]], "InlineFormula"], ", the key ", Cell[BoxData[StyleBox["\"rel\"", "TR"]], "InlineFormula"], " still matches only the whole attribute value:"}], "ExampleText"], Cell[BoxData["links=ImportString[\"<p><a rel=\\\"nofollow noopener\\\" href=\\\"/ad\\\">Ad</a><a href=\\\"/home\\\">Home</a><a rel=\\\"noopener\\\" href=\\\"/x\\\">X</a></p>\",{\"HTML\",\"XMLObject\"}];
 XMLCases[links,e:XMLPattern[\"a\",\"rel\"->\"nofollow\"]:>HTMLTextContent[e],\"AttributeReadings\"-> <|\"rel\"-> <||>|>]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", "}"}]], "Output"]}, Open]],
@@ -303,48 +292,48 @@ Cell[CellGroupData[{Cell[BoxData[
   "Possible Issues", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["Block", BaseStyle -> "Link", ButtonData -> "paclet:ref/Block"]], "InlineFormula"], " replaces the whole table, so the ", Cell[BoxData[StyleBox["class", "TR"]], "InlineFormula"], " reading is gone:"}], "ExampleText"], Cell[BoxData["element=XMLElement[\"p\",{\"class\"->\"lead promo\"},{}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A ", Cell[BoxData[ButtonBox["Block", BaseStyle -> "Link", ButtonData -> "paclet:ref/Block"]], "InlineFormula"], " that sets ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"]], "InlineFormula"], " also removes the ", Cell[BoxData[StyleBox["class", "TR"]], "InlineFormula"], " reading:"}], "ExampleText"], Cell[BoxData["element=XMLElement[\"p\",{\"class\"->\"lead promo\"},{}];
 Block[{$AttributeReadings= <|\"rel\"-> <||>|>},XMLMatchQ[element,XMLPattern[\"p\",\"classList\"->\"lead\"]]]"], "Input"],
 
 Cell[BoxData["False"], "Output"],
 
-Cell[TextData[{"Append to the table instead, or use the ", Cell[BoxData[StyleBox["\"AttributeReadings\"", "TR"]], "InlineFormula"], " option:"}], "ExampleText"],
+Cell[TextData[{"Append to ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"]], "InlineFormula"], " instead, or use the ", Cell[BoxData[StyleBox["\"AttributeReadings\"", "TR"]], "InlineFormula"], " option:"}], "ExampleText"],
 
 Cell[BoxData["Block[{$AttributeReadings=Append[$AttributeReadings,\"rel\"-> <||>]},XMLMatchQ[element,XMLPattern[\"p\",\"classList\"->\"lead\"]]]"], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["With a reading, every element has the list key, so a bare list key matches every element:", "ExampleText"], Cell[BoxData["links=ImportString[\"<p><a rel=\\\"nofollow noopener\\\" href=\\\"/ad\\\">Ad</a><a href=\\\"/home\\\">Home</a><a rel=\\\"noopener\\\" href=\\\"/x\\\">X</a></p>\",{\"HTML\",\"XMLObject\"}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A list key alone matches every element, even one without the attribute:", "ExampleText"], Cell[BoxData["links=ImportString[\"<p><a rel=\\\"nofollow noopener\\\" href=\\\"/ad\\\">Ad</a><a href=\\\"/home\\\">Home</a><a rel=\\\"noopener\\\" href=\\\"/x\\\">X</a></p>\",{\"HTML\",\"XMLObject\"}];
 XMLCases[links,e:XMLPattern[\"a\",\"relList\"]:>HTMLTextContent[e],\"AttributeReadings\"-> <|\"rel\"-> <||>|>]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"\"Ad\"", ",", "\"Home\"", ",", "\"X\""}], "}"}]], "Output"],
 
-Cell["Ask for a non-empty token list, or for the raw attribute:", "ExampleText"],
+Cell["Match a nonempty list, or the attribute itself:", "ExampleText"],
 
 Cell[BoxData["{XMLCases[links,e:XMLPattern[\"a\",\"relList\"->{__}]:>HTMLTextContent[e],\"AttributeReadings\"-> <|\"rel\"-> <||>|>],XMLCases[links,e:XMLPattern[\"a\",\"rel\"]:>HTMLTextContent[e]]}"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"\"Ad\"", ",", "\"X\""}], "}"}], ",", RowBox[{"{", RowBox[{"\"Ad\"", ",", "\"X\""}], "}"}]}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["The comma method drops a leading empty token, which the HTML comma parser keeps:", "ExampleText"], Cell[BoxData["element=XMLElement[\"input\",{\"accept\"->\",image/png,,image/gif\"},{}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The ", Cell[BoxData[StyleBox["\"CommaSeparated\"", "TR"]], "InlineFormula"], " method drops an empty first token, which HTML keeps:"}], "ExampleText"], Cell[BoxData["element=XMLElement[\"input\",{\"accept\"->\",image/png,,image/gif\"},{}];
 XMLCases[{element},XMLPattern[\"input\",\"acceptList\"->types_]:>types,\"AttributeReadings\"-> <|\"accept\"-> <|Method->\"CommaSeparated\"|>|>]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"{", RowBox[{"\"image/png\"", ",", "\"\"", ",", "\"image/gif\""}], "}"}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Readings are given to the consuming function, not to ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["links=ImportString[\"<p><a rel=\\\"nofollow noopener\\\" href=\\\"/ad\\\">Ad</a><a href=\\\"/home\\\">Home</a><a rel=\\\"noopener\\\" href=\\\"/x\\\">X</a></p>\",{\"HTML\",\"XMLObject\"}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Give the ", Cell[BoxData[StyleBox["\"AttributeReadings\"", "TR"]], "InlineFormula"], " option to the function, not to ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["links=ImportString[\"<p><a rel=\\\"nofollow noopener\\\" href=\\\"/ad\\\">Ad</a><a href=\\\"/home\\\">Home</a><a rel=\\\"noopener\\\" href=\\\"/x\\\">X</a></p>\",{\"HTML\",\"XMLObject\"}];
 XMLCases[links,XMLPattern[\"a\",\"relList\"->\"nofollow\",\"AttributeReadings\"-> <|\"rel\"-> <||>|>]]"], "Input"],
 
-Cell["XMLPattern::nargs: XMLPattern takes a tag and at most one attribute argument; got 3 arguments. Give several attribute constraints as one list: XMLPattern[tag, {c1, c2, ...}].", "Message", "MSG"],
+Cell["XMLPattern::nargs: XMLPattern was given 3 arguments, but takes a tag and at most one attribute argument. Put several attribute constraints in one list: XMLPattern[tag, {c1, c2, ...}].", "Message", "MSG"],
 
 Cell[BoxData["$Failed"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A malformed reading is refused when a consuming function is called:", "ExampleText"], Cell[BoxData["links=ImportString[\"<p><a rel=\\\"nofollow noopener\\\" href=\\\"/ad\\\">Ad</a><a href=\\\"/home\\\">Home</a><a rel=\\\"noopener\\\" href=\\\"/x\\\">X</a></p>\",{\"HTML\",\"XMLObject\"}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A malformed reading gives a message when a function uses it:", "ExampleText"], Cell[BoxData["links=ImportString[\"<p><a rel=\\\"nofollow noopener\\\" href=\\\"/ad\\\">Ad</a><a href=\\\"/home\\\">Home</a><a rel=\\\"noopener\\\" href=\\\"/x\\\">X</a></p>\",{\"HTML\",\"XMLObject\"}];
 XMLCases[links,XMLPattern[\"a\"],\"AttributeReadings\"-> <|\"rel\"-> <|Method->\"TabSeparated\"|>|>]"], "Input"],
 
 Cell["$AttributeReadings::badmethod", "Message", "MSG"],
 
 Cell[BoxData["$Failed"], "Output"],
 
-Cell["A reading key must be a string:", "ExampleText"],
+Cell["An attribute name must be a string:", "ExampleText"],
 
 Cell[BoxData["XMLCases[links,XMLPattern[\"a\"],\"AttributeReadings\"-> <|{\"urn:example\",\"rel\"}-> <||>|>]"], "Input"],
 
@@ -360,7 +349,7 @@ Cell["$AttributeReadings::duplistkey", "Message", "MSG"],
 
 Cell[BoxData["$Failed"], "Output"],
 
-Cell["A list key cannot be a key that has a reading:", "ExampleText"],
+Cell["A list key cannot be the name of an attribute that has a reading:", "ExampleText"],
 
 Cell[BoxData["XMLCases[links,XMLPattern[\"a\"],\"AttributeReadings\"-> <|\"rel\"-> <|\"ListKey\"->\"class\"|>|>]"], "Input"],
 
