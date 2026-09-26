@@ -114,7 +114,7 @@ TestCreate[
    of a top-level condition, not expressible via XMLPattern constraints *)
 TestCreate[
   XMLCases[$treeCond, XMLElement[tag_, _, kids_] /; Count[kids, _XMLElement] >= 2][[All, 1]],
-  {"div", "section"},
+  {"section", "div"},
   TestID -> "cond-childcount"
 ];
 

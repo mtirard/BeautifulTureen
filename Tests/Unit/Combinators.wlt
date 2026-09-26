@@ -531,13 +531,14 @@ TestCreate[
    XMLCases[$root, Descendant[b : XMLPattern["body"], p : XMLPattern["p"]] :> {First[b], HTMLTextContent[p]}],
    XMLFirstCase[$root, (Child[b : XMLPattern[_], XMLPattern["div"]] /; First[b] === "body") :> First[b]],
    XMLCases[$root, Descendant[XMLPattern[_], b : XMLPattern["body"]]]},
-  {{"1", "x1"}, {"1"}, {"1"}, {{"body", "1"}}, "body", {}},
+  {{"x1", "1"}, {"1"}, {"1"}, {{"body", "1"}}, "body", {}},
   TestID -> "root-as-ancestor-nested-and-bound"
 ];
 
-(* Results come in the order a base XMLCases gives the last-stage elements,
-   not grouped by the earlier stages' matches. The first h2's next sibling, the
-   section, holds the second h2 and its next sibling, the p "2". *)
+(* Results come in document order of the last-stage elements, as a base
+   XMLCases gives them, not grouped by the earlier stages' matches. The first
+   h2's next sibling, the section, holds the second h2 and its next sibling, the
+   p "2". *)
 $treeOrder = ImportString[
   "<div><h2>A</h2><section><h2>B</h2><p>2</p></section><p>3</p></div>",
   {"HTML", "XMLObject"}];
@@ -547,7 +548,7 @@ TestCreate[
    XMLCases[$treeOrder, Sibling[XMLPattern["h2"], x : XMLPattern[_]] :> HTMLTextContent[x]],
    HTMLTextContent @ XMLFirstCase[$treeOrder, Adjacent[XMLPattern["h2"], XMLPattern[_]]],
    XMLFirstCase[$treeOrder, Sibling[XMLPattern["h2"], x : XMLPattern[_]] :> HTMLTextContent[x]]},
-  {{"2", "B2"}, {"2", "B2", "3"}, "2", "2"},
+  {{"B2", "2"}, {"B2", "2", "3"}, "B2", "B2"},
   TestID -> "combinator-results-in-document-order"
 ];
 
