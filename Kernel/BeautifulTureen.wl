@@ -536,7 +536,10 @@ pairedNext[tuples_, kids_, is_, s_] :=
    fixes the stages back to the start of its run of Adjacent and Sibling links,
    as they are its siblings; the stages before the run relate to the list, not
    to the sibling, and group the choices. Adjacent needs no choice: an element
-   has one previous sibling. *)
+   has one previous sibling. The root has no siblings: only a first stage can
+   be the root, and a sibling link drops it. *)
+extend[tuples_, link : {Adjacent | Sibling, _, _}] /; MemberQ[tuples, {{}}] :=
+  extend[DeleteCases[tuples, {{}}], link];
 extend[tuples_, {Adjacent, s_, _}] :=
   Join @@ (nextSiblings[#, s] & /@ GatherBy[tuples, Most @* Last]);
 extend[tuples_, {Sibling, s_, run_}] :=
@@ -582,13 +585,16 @@ chooseAt[t_, p_, test_] :=
         i++]]];
 
 (* The site tuples of a chain that test accepts, test None when the stages'
-   own matches decide, the first stage's sites at level of the tree, in the
-   order Cases visits their last sites: a base XMLCases's order. *)
-siteTuples[chain_, level_, test_] :=
+   own matches decide, in the order Cases visits their last sites: a base
+   XMLCases's order. The first stage's sites include the root, which a bare
+   XMLElement tree makes an element; only a first stage can be the root, as
+   every later one is below or beside an earlier one, so the root is never a
+   result, as it is never one of a base XMLCases. *)
+siteTuples[chain_, test_] :=
   With[{links = chain[[2 ;; ;; 2]]},
     Block[{$siblings = <||>, $choices = <||>, $stagesDecide = test === None},
       If[$stagesDecide, Identity, Map[resolved[#, test] &]] @ inCasesOrder @ Fold[extend,
-        List /@ Position[$chainTree, First[chain], level, Heads -> False],
+        List /@ Position[$chainTree, First[chain], {0, Infinity}, Heads -> False],
         Transpose[{links, chain[[3 ;; ;; 2]], runStarts[links]}]]]];
 
 (* Cases visits a position after every position below it and before every later
@@ -611,8 +617,8 @@ elementsAt[tuples_] := Partition[atAll[Join @@ tuples], Length[First[tuples]]];
 (* The site tuples whose elements match the tuple pattern. The stages' own
    matches, which selected the sites, decide it unless a Condition wraps a
    combinator or a name is bound at two stages. *)
-matchedSites[q_, level_] :=
-  siteTuples[chainOf[q], level, If[stagesDecideQ[q], None, MatchQ[tuplePattern[q]] @* atAll]];
+matchedSites[q_] :=
+  siteTuples[chainOf[q], If[stagesDecideQ[q], None, MatchQ[tuplePattern[q]] @* atAll]];
 
 stagesDecideQ[q_] :=
   With[{stages = chainOf[q][[1 ;; ;; 2]]},
@@ -625,22 +631,22 @@ namesIn[s_] :=
    the tuple: a rule's right-hand side re-evaluates what it is given, and a
    tuple may hold a large element. *)
 chainCases[tree_, r : Verbatim[RuleDelayed][lhs_, _]] :=
-  Block[{$chainTree = tree}, Cases[elementsAt @ matchedSites[lhs, Infinity], tupleRule[r], {1}]];
+  Block[{$chainTree = tree}, Cases[elementsAt @ matchedSites[lhs], tupleRule[r], {1}]];
 chainCases[tree_, q_] :=
-  Block[{$chainTree = tree}, atAll[Last /@ matchedSites[q, Infinity]]];
+  Block[{$chainTree = tree}, atAll[Last /@ matchedSites[q]]];
 
 chainFirst[tree_, r : Verbatim[RuleDelayed][lhs_, _], default_] :=
   Block[{$chainTree = tree},
-    FirstCase[elementsAt @ matchedSites[lhs, Infinity], tupleRule[r], default, {1}]];
+    FirstCase[elementsAt @ matchedSites[lhs], tupleRule[r], default, {1}]];
 chainFirst[tree_, q_, default_] :=
   Block[{$chainTree = tree},
-    Replace[matchedSites[q, Infinity], {{t_, ___} :> at[Last[t]], {} -> default}]];
+    Replace[matchedSites[q], {{t_, ___} :> at[Last[t]], {} -> default}]];
 
-(* A chain deletes the elements its last stage selects. Its first stage may be
-   the root; Delete removes positions nested in one another together. *)
+(* A chain deletes the elements its last stage selects. Delete removes
+   positions nested in one another together. *)
 chainDelete[tree_, q_] :=
   Block[{$chainTree = tree},
-    deleteAt[tree, DeleteDuplicates[Last /@ matchedSites[q, {0, Infinity}]]]];
+    deleteAt[tree, DeleteDuplicates[Last /@ matchedSites[q]]]];
 
 deleteAt[tree_, {}] := tree;
 deleteAt[tree_, ps_] := Delete[tree, ps];

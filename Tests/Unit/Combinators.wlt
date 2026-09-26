@@ -444,6 +444,45 @@ TestCreate[
   TestID -> "sibling-relations-under-bare-root"
 ];
 
+(* === The root may be any stage but the last === *)
+
+(* A bare XMLElement root may match a stage, as the root element of a document
+   or a list's top-level element does, but is never returned: base XMLCases
+   never returns it. *)
+$root = XMLElement["body", {}, {XMLElement["div", {}, {"x", XMLElement["p", {}, {"1"}]}]}];
+
+TestCreate[
+  {XMLCases[$root, Child[XMLPattern["body"], XMLPattern["div"]]],
+   XMLFirstCase[$root, Child[XMLPattern["body"], XMLPattern["div"]]]},
+  {{XMLElement["div", {}, {"x", XMLElement["p", {}, {"1"}]}]}, XMLElement["div", {}, {"x", XMLElement["p", {}, {"1"}]}]},
+  TestID -> "root-as-child-parent"
+];
+
+(* The root has no siblings, so an Adjacent or Sibling stage after it selects
+   nothing, alone or in a chain. *)
+TestCreate[
+  {XMLCases[$root, Adjacent[XMLPattern["body"], XMLPattern[_]]],
+   XMLCases[$root, Sibling[XMLPattern["body"], XMLPattern[_]]],
+   XMLFirstCase[$root, Sibling[XMLPattern["body"], XMLPattern[_]] :> 1, "none"],
+   XMLCases[$root, Child[Sibling[XMLPattern["body"], XMLPattern[_]], XMLPattern[_]]],
+   XMLCases[$root, Sibling[XMLPattern["body", "id" -> i_], XMLPattern[_, "id" -> i_]]]},
+  {{}, {}, "none", {}, {}},
+  TestID -> "root-has-no-siblings"
+];
+
+(* As an ancestor, in a nested chain, and bound in a rule body or a combinator
+   test; never as the last stage. *)
+TestCreate[
+  {HTMLTextContent /@ XMLCases[$root, Descendant[XMLPattern["body"], XMLPattern[_]]],
+   HTMLTextContent /@ XMLCases[$root, Descendant[XMLPattern["body"], Child[XMLPattern["div"], XMLPattern["p"]]]],
+   HTMLTextContent /@ XMLCases[$root, Child[Child[XMLPattern["body"], XMLPattern["div"]], XMLPattern["p"]]],
+   XMLCases[$root, Descendant[b : XMLPattern["body"], p : XMLPattern["p"]] :> {First[b], HTMLTextContent[p]}],
+   XMLFirstCase[$root, (Child[b : XMLPattern[_], XMLPattern["div"]] /; First[b] === "body") :> First[b]],
+   XMLCases[$root, Descendant[XMLPattern[_], b : XMLPattern["body"]]]},
+  {{"1", "x1"}, {"1"}, {"1"}, {{"body", "1"}}, "body", {}},
+  TestID -> "root-as-ancestor-nested-and-bound"
+];
+
 (* Results come in the order a base XMLCases gives the last-stage elements,
    not grouped by the earlier stages' matches. The first h2's next sibling, the
    section, holds the second h2 and its next sibling, the p "2". *)
