@@ -188,6 +188,23 @@ TestCreate[
   TestID -> "delete-nested-root-first-stage"
 ];
 
+(* Descendant selects an element under any matching ancestor, the pairing
+   satisfying a name at two stages or a test on the combinator: the inner div
+   for the p "1", the outer for "2" and "3". *)
+$treeDeepDel = XMLElement["div", {"id" -> "a"}, {
+  XMLElement["div", {"id" -> "b"}, {XMLElement["p", {"data-for" -> "b"}, {"1"}], XMLElement["p", {"data-for" -> "a"}, {"2"}]}],
+  XMLElement["p", {"data-for" -> "a"}, {"3"}], XMLElement["p", {"data-for" -> "c"}, {"4"}]}];
+
+TestCreate[
+  {HTMLTextContent @ XMLDeleteCases[$treeDeepDel,
+     Descendant[XMLPattern["div", "id" -> i_], XMLPattern["p", "data-for" -> i_]]],
+   HTMLTextContent @ XMLDeleteCases[$treeDeepDel,
+     Descendant[XMLPattern["div", "id" -> i_], XMLPattern["p", "data-for" -> f_]] /; f === i],
+   HTMLTextContent @ XMLDeleteCases[$treeDeepDel, Descendant[XMLPattern["div"], XMLPattern["p"]]]},
+  {"4", "4", ""},
+  TestID -> "delete-descendant-any-matching-ancestor"
+];
+
 (* Adjacent and Sibling stay unsupported at any depth. *)
 TestCreate[
   {XMLDeleteCases[$treeNestDel, Descendant[XMLPattern["section"], Adjacent[XMLPattern["p"], XMLPattern["div"]]]],

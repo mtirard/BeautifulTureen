@@ -420,6 +420,58 @@ TestCreate[
   TestID -> "sibling-in-chain-element-once"
 ];
 
+(* === Descendant gives each element once === *)
+
+(* As querySelectorAll and soupsieve's select do, Descendant gives each matched
+   element once, however many ancestors match. *)
+$treeDeep = ImportString[
+  "<div id=\"a\"><div id=\"b\"><p data-for=\"b\">1</p><p data-for=\"a\">2</p></div><p data-for=\"a\">3</p></div>",
+  {"HTML", "XMLObject"}];
+
+TestCreate[
+  {HTMLTextContent /@ XMLCases[$treeDeep, Descendant[XMLPattern["div"], XMLPattern["p"]]],
+   HTMLTextContent @ XMLFirstCase[$treeDeep, Descendant[XMLPattern["div"], XMLPattern["p"]]]},
+  {{"1", "2", "3"}, "1"},
+  TestID -> "descendant-element-once"
+];
+
+(* A name at the ancestor stage is bound to the outermost matching ancestor,
+   the first in document order. *)
+TestCreate[
+  {XMLCases[$treeDeep, Descendant[XMLPattern["div", "id" -> i_], p : XMLPattern["p"]] :> {i, HTMLTextContent[p]}],
+   XMLFirstCase[$treeDeep, Descendant[d : XMLPattern["div"], XMLPattern["p"]] :> d[[2]]]},
+  {{{"a", "1"}, {"a", "2"}, {"a", "3"}}, {"id" -> "a"}},
+  TestID -> "descendant-binds-outermost-ancestor"
+];
+
+(* In a chain too: each element once, whichever ancestors lead to it. *)
+TestCreate[
+  {HTMLTextContent /@ XMLCases[$treeDeep, Descendant[XMLPattern["div"], Child[XMLPattern["div"], XMLPattern["p"]]]],
+   HTMLTextContent /@ XMLCases[$treeDeep, Descendant[XMLPattern["html"], Descendant[XMLPattern["div"], XMLPattern["p"]]]],
+   HTMLTextContent /@ XMLCases[$treeDeep, Child[Descendant[XMLPattern[_], XMLPattern["div"]], XMLPattern["p"]]],
+   HTMLTextContent /@ XMLCases[$treeDeep, Descendant[XMLPattern["div"], Adjacent[XMLPattern["p"], XMLPattern["p"]]]],
+   HTMLTextContent /@ XMLCases[$treeDeep, Descendant[XMLPattern["div"], Sibling[XMLPattern[_], XMLPattern["p"]]]]},
+  {{"1", "2"}, {"1", "2", "3"}, {"1", "2", "3"}, {"2"}, {"2", "3"}},
+  TestID -> "descendant-in-chain-element-once"
+];
+
+(* With a test on the combinator or a name at two stages, the ancestor is the
+   outermost with which the whole pattern matches: here the inner div for the
+   p "1". *)
+TestCreate[
+  {XMLCases[$treeDeep,
+     (Descendant[XMLPattern["div", "id" -> i_], p : XMLPattern["p"]] /; StringQ[i]) :> {i, HTMLTextContent[p]}],
+   XMLCases[$treeDeep,
+     Descendant[XMLPattern["div", "id" -> i_], p : XMLPattern["p", "data-for" -> i_]] :> {i, HTMLTextContent[p]}],
+   XMLCases[$treeDeep,
+     Descendant[d : XMLPattern[_], Descendant[XMLPattern["div"], p : XMLPattern["p"]] /; True] /; True :>
+       {First[d], HTMLTextContent[p]}],
+   HTMLTextContent /@ XMLCases[$treeDeep,
+     Descendant[XMLPattern["div", "id" -> i_], Sibling[XMLPattern["p"], XMLPattern["p", "data-for" -> f_]]] /; f === i]},
+  {{{"a", "1"}, {"a", "2"}, {"a", "3"}}, {{"b", "1"}, {"a", "2"}, {"a", "3"}}, {{"html", "1"}, {"html", "2"}, {"html", "3"}}, {"2"}},
+  TestID -> "descendant-tested-element-once"
+];
+
 (* === One path for every combinator === *)
 
 (* A name on the earlier Sibling stage is bound in the body. *)

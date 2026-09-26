@@ -65,3 +65,19 @@ TestCreate[
   TimeConstraint -> 0.5,
   TestID -> "perf-sibling-5000-siblings"
 ];
+
+(* Descendant gives each element once. When the stages' own matches decide, it
+   searches below the outermost matching ancestors only: searching below every
+   matching ancestor costs the depth times the elements, here 127 500 pairs from
+   50 nested divs of 100 p each. Measured at about 18 ms, against about 600 ms
+   searching below every ancestor. *)
+$deep = XMLObject["Document"][{},
+  XMLElement["body", {}, {Nest[XMLElement["div", {}, Append[Table[XMLElement["p", {}, {"x"}], 100], #]] &,
+    XMLElement["div", {}, {}], 50]}], {}];
+
+TestCreate[
+  Length @ XMLCases[$deep, Descendant[XMLPattern["div"], XMLPattern["p"]]],
+  5000,
+  TimeConstraint -> 0.5,
+  TestID -> "perf-descendant-50-deep"
+];
