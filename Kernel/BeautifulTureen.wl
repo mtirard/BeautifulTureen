@@ -544,8 +544,30 @@ extend[tuples_, {Adjacent, s_, _}] :=
   Join @@ (nextSiblings[#, s] & /@ GatherBy[tuples, Most @* Last]);
 extend[tuples_, {Sibling, s_, run_}] :=
   Join @@ (laterThanChoices[#, s, run] & /@ GatherBy[tuples, {Take[#, run - 1], Most[Last[#]]} &]);
-extend[tuples_, {r_, s_, _}] :=
-  Join @@ (Function[t, Append[t, #] & /@ selected[r, Last[t], s]] /@ tuples);
+extend[tuples_, {Descendant, s_, _}] /; $stagesDecide := related[Descendant, outermost[tuples], s];
+extend[tuples_, {r_, s_, _}] := related[r, tuples, s];
+
+related[r_, tuples_, s_] := Join @@ (Function[t, Append[t, #] & /@ selected[r, Last[t], s]] /@ tuples);
+
+(* Descendant[ancestor, desc] gives each element once, as querySelectorAll and
+   soupsieve's select do. When the stages' own matches decide, any ancestor
+   will do, and the first in document order, the outermost, is taken: a name
+   bound at the ancestor stage, as in a rule body, sees the outermost ancestor.
+   So a site below another tuple's last site is dropped, its descendants being
+   the other's too; the subtrees searched are then disjoint. When the stages
+   decide, a site is the last of at most one tuple after every link, so the
+   dropped tuples are the only duplicates. *)
+outermost[tuples_] :=
+  Module[{cover = None},
+    Select[tuples[[documentOrdering[Last /@ tuples]]],
+      Function[t, If[cover =!= None && Take[Last[t], UpTo[Length[cover]]] === cover,
+        False, cover = Last[t]; True]]]];
+
+(* Document order: lexicographic, with a position before every position below
+   it. Ties keep their order. *)
+documentOrdering[{}] := {};
+documentOrdering[ps_] :=
+  Ordering @ Join[PadRight[ps, {Length[ps], Max[Length /@ ps]}, 0], List /@ Range[Length[ps]], 2];
 
 (* The choices are a group's tuples from the run on, in document order of their
    last site; s selects the sites after the first. When the stages' own matches
@@ -593,9 +615,25 @@ chooseAt[t_, p_, test_] :=
 siteTuples[chain_, test_] :=
   With[{links = chain[[2 ;; ;; 2]]},
     Block[{$siblings = <||>, $choices = <||>, $stagesDecide = test === None},
-      If[$stagesDecide, Identity, Map[resolved[#, test] &]] @ inCasesOrder @ Fold[extend,
+      If[$stagesDecide, Identity, firstPerSite[#, test] &] @ inCasesOrder @ Fold[extend,
         List /@ Position[$chainTree, First[chain], {0, Infinity}, Heads -> False],
         Transpose[{links, chain[[3 ;; ;; 2]], runStarts[links]}]]]];
+
+(* Each element once: of the tuples ending at one site, which are together in
+   Cases order, the first that test accepts, by their stages in document order,
+   the latest stage first, as a Sibling choice is made. So a name bound at a
+   Descendant's ancestor stage sees the outermost ancestor with which the
+   element matches the whole pattern. A tuple with a deferred Sibling stage is
+   ordered once its choices are made. *)
+firstPerSite[tuples_, test_] := firstAccepted[#, test] & /@ SplitBy[tuples, Last];
+
+firstAccepted[ts_, test_] /; FreeQ[ts, _before] := SelectFirst[inDocumentOrder[ts], test, Nothing];
+firstAccepted[ts_, test_] := Replace[resolved[#, test] & /@ ts, {{} -> Nothing, rs_ :> First[inDocumentOrder[rs]]}];
+
+inDocumentOrder[{t_}] := {t};
+inDocumentOrder[ts_] :=
+  With[{n = Max[Map[Length, ts, {2}]]},
+    ts[[documentOrdering[Flatten[PadRight[Reverse[Most[#]], {Automatic, n}]] & /@ ts]]]];
 
 (* Cases visits a position after every position below it and before every later
    sibling's: lexicographic order, with a position padded past its end sorting
