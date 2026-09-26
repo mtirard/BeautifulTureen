@@ -220,17 +220,118 @@ TestCreate[
   TestID -> "cond-named-combinator-rejected"
 ];
 
-(* KNOWN ISSUE (bug 477310 / family of 472952): a /; test that references two or
-   more attribute captures from XMLPattern's (nested) KeyValuePattern silently
-   drops all but one binding, so both h and d are lost and this yields {} instead
-   of {{"/buy", "buy"}}. Tagged KnownIssue: it is expected to fail on today's
-   kernel (reported as a Known Issue, not a CI failure) and will flip to "Fixed"
-   the moment the upstream fix reaches our kernel \[LongDash] the signal to promote
-   attribute cross-field conditions to supported. *)
+(* === A condition sees every attribute name ===
+   WL tests a Condition around a nested KeyValuePattern with only the first
+   rule's names bound (bug 477310 / family of 472952), and ReplaceList binds
+   only those. The compiler matches such a pattern so that every name is bound,
+   in every form that takes a condition. *)
+
+$cross = XMLElement["div", {}, {
+  XMLElement["a", {"href" -> "/buy", "data-id" -> "buy"}, {"x"}],
+  XMLElement["a", {"href" -> "/sell", "data-id" -> "buy"}, {"y"}],
+  XMLElement["b", {}, {"z"}]}];
+
+$crossPattern = XMLPattern["a", {"href" -> h_, "data-id" -> d_}];
+
 TestCreate[
   XMLCases[
     ImportString["<div><a href=\"/buy\" data-id=\"buy\">x</a></div>", {"HTML", "XMLObject"}],
     (XMLPattern["a", {"href" -> h_, "data-id" -> d_}] /; StringContainsQ[h, d]) :> {h, d}],
   {{"/buy", "buy"}},
-  TestID -> "cond-cross-field-known-issue-477310"
-] // TagTest["KnownIssue"]
+  TestID -> "cond-cross-field-rule"
+];
+
+TestCreate[
+  XMLCases[$cross, $crossPattern /; StringContainsQ[h, d]][[All, 3]],
+  {{"x"}},
+  TestID -> "cond-cross-field-cases"
+];
+
+TestCreate[
+  XMLCases[$cross, $crossPattern :> {h, d} /; StringContainsQ[h, d]],
+  {{"/buy", "buy"}},
+  TestID -> "cond-cross-field-body-condition"
+];
+
+TestCreate[
+  XMLFirstCase[$cross, $crossPattern /; !StringContainsQ[h, d]][[3]],
+  {"y"},
+  TestID -> "cond-cross-field-firstcase"
+];
+
+TestCreate[
+  XMLDeleteCases[$cross, $crossPattern /; StringContainsQ[h, d]][[3, All, 3]],
+  {{"y"}, {"z"}},
+  TestID -> "cond-cross-field-deletecases"
+];
+
+(* In an Alternatives, the condition applies to its own alternative only. *)
+TestCreate[
+  XMLCases[$cross, ($crossPattern /; StringContainsQ[h, d]) | XMLPattern["b"]][[All, 3]],
+  {{"x"}, {"z"}},
+  TestID -> "cond-cross-field-alternatives"
+];
+
+(* A rule body is evaluated once for each match. *)
+TestCreate[
+  Reap[XMLCases[$cross, ($crossPattern /; StringQ[h] && StringQ[d]) :> Sow[h]]],
+  {{"/buy", "/sell"}, {{"/buy", "/sell"}}},
+  TestID -> "cond-cross-field-body-evaluated-once"
+];
+
+(* The match backtracks: another key of the Alternatives is tried when the
+   condition fails on the first. *)
+TestCreate[
+  XMLMatchQ[XMLElement["p", {"x" -> "1", "y" -> "2", "z" -> "3"}, {}],
+    XMLPattern["p", {("x" | "y") -> v_, "z" -> w_}] /; v === "2" && StringQ[w]],
+  True,
+  TestID -> "cond-cross-field-backtracks"
+];
+
+(* The match backtracks into a value: another token is tried. *)
+TestCreate[
+  XMLCases[XMLElement["div", {}, {XMLElement["a", {"href" -> "/buy", "class" -> "x buy"}, {}]}],
+    XMLPattern["a", {"href" -> h_, "classList" -> {___, c_, ___}}] /; StringContainsQ[h, c] :> c],
+  {"buy"},
+  TestID -> "cond-cross-field-backtracks-into-value"
+];
+
+(* A list key and an element name: the test sees the tokens and the original
+   element. *)
+TestCreate[
+  XMLCases[
+    XMLElement["div", {}, {
+      XMLElement["p", {"class" -> "a b", "id" -> "b"}, {"1"}],
+      XMLElement["p", {"class" -> "a b", "id" -> "c"}, {"2"}]}],
+    (e : XMLPattern["p", {"classList" -> c_, "id" -> i_}]) /; MemberQ[c, i] && e[[2, 1]] === ("class" -> "a b")
+  ][[All, 3]],
+  {{"1"}},
+  TestID -> "cond-cross-field-list-key-and-element-name"
+];
+
+TestCreate[
+  XMLCases[$cross, Child[XMLPattern["div"], $crossPattern] /; StringContainsQ[h, d]][[All, 3]],
+  {{"x"}},
+  TestID -> "cond-cross-field-combinator"
+];
+
+TestCreate[
+  XMLCases[$cross, Child[XMLPattern["div"], $crossPattern /; StringContainsQ[h, d]] :> h],
+  {"/buy"},
+  TestID -> "cond-cross-field-combinator-stage"
+];
+
+TestCreate[
+  HTMLInnerText[$cross, "Roles" -> {($crossPattern /; StringContainsQ[h, d]) -> "Skip"}],
+  "yz",
+  TestID -> "cond-cross-field-roles"
+];
+
+TestCreate[
+  HTMLToNotebook[XMLElement["p", {}, {
+      XMLElement["span", {"title" -> "t", "lang" -> "t"}, {"x"}],
+      XMLElement["span", {"title" -> "t", "lang" -> "u"}, {"y"}]}],
+    "Constructs" -> {(XMLPattern["span", {"title" -> t_, "lang" -> l_}] /; StringQ[l] && t === l) -> "Bold"}],
+  Notebook[{Cell[TextData[{StyleBox["x", FontWeight -> Bold], "y"}], "Text"]}],
+  TestID -> "cond-cross-field-constructs"
+];

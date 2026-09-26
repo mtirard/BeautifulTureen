@@ -288,7 +288,7 @@ compileQuery[q_, head_, readings_Association] :=
     Module[{pattern, keys},
       {pattern, keys} = compilePass[q, head, readings, False];
       If[keys =!= {}, pattern = First @ compilePass[q, head, readings, True]];
-      {pattern, Lookup[readings, keys]}],
+      {If[chainQ[pattern], pattern, solvable[pattern]], Lookup[readings, keys]}],
     $refusal];
 
 compilePass[q_, head_, readings_, mat_] :=
@@ -438,6 +438,115 @@ wrapBinds[binds_, held_Hold] :=
       Hold[sets___] :> Hold[{sets}]]},
     Replace[Join[spec, held], Hold[vars_, body_] :> Hold[With[vars, body]]]];
 
+(* ---- Conditions over a KeyValuePattern ---- *)
+
+(* WL tests a Condition around a nested KeyValuePattern as soon as the first of
+   its rules is matched, with the names of the later rules bound to nothing, and
+   a False then is final: XMLPattern["a", {"href" -> h_, "data-id" -> i_}] /;
+   StringContainsQ[h, i] never matches. A body condition, lhs :> body /; test,
+   is tested the same way, and ReplaceList binds only the first rule's names.
+   {OrderlessPatternSequence[rules..., ___]} binds them all but costs the
+   factorial of the attribute count (ADR 0007: seconds at six rules).
+
+   So a pattern or rule with such a Condition is matched in two steps. Its
+   skeleton, with no names and no Conditions, finds the candidates as fast as a
+   plain query. Each candidate is then matched with plain list patterns only:
+   each element's attribute list is repeated, and each rule of a
+   KeyValuePattern is matched, as {___, rule, ___}, in a copy of its own, the
+   first copy keeping the KeyValuePattern as a test with no names. Each rule
+   matches a different attribute, as KeyValuePattern requires. An element name
+   sees the element with one attribute list, restored around each test and
+   body that can see it. A rule's body is evaluated once, for that match. Any
+   other pattern is left as it is. *)
+solvable[r : Verbatim[RuleDelayed][lhs_, _]] /;
+    brokenConditionsQ[lhs] || (laterNamesQ[lhs] && bodyConditionQ[Extract[r, {2}, Hold]]) :=
+  Module[{v = freshSymbol[], n = copyCount[lhs]},
+    Replace[copiedRule[lhs, Extract[r, {2}, Hold]],
+      Hold[rule_] :> RuleDelayed @@ Join[Hold @@ {namedPattern[v, skeleton[lhs]]},
+        Hold[With[{s = {Replace[copied[v, n], {rule, _ :> $unmatched}]}}, Sequence @@ s /; s =!= {$unmatched}]]]]];
+solvable[p_] /; brokenConditionsQ[p] :=
+  With[{v = freshSymbol[], n = copyCount[p], c = copiedPattern[p]},
+    Condition @@ Join[Hold @@ {namedPattern[v, skeleton[p]]}, Hold[MatchQ[copied[v, n], c]]]];
+solvable[x_] := x;
+
+(* A KeyValuePattern with a name after its first rule. *)
+laterNamesQ[p_] :=
+  !FreeQ[p, Verbatim[KeyValuePattern][{_, rest__}] /; !FreeQ[{rest}, Verbatim[Pattern][_Symbol, _]]];
+
+brokenConditionsQ[p_] := !FreeQ[p, Verbatim[Condition][l_, _] /; laterNamesQ[l]];
+
+bodyConditionQ[Hold[_Condition]] := True;
+bodyConditionQ[Hold[(With | Module | Block)[_, body_]]] := bodyConditionQ[Hold[body]];
+bodyConditionQ[_] := False;
+
+(* The pattern with no names and no Conditions, which every match matches. *)
+skeleton[Verbatim[Pattern][_, p_]] := skeleton[p];
+skeleton[Verbatim[Condition][l_, _]] := skeleton[l];
+skeleton[Verbatim[PatternTest][p_, f_]] := PatternTest[skeleton[p], f];
+skeleton[v_Verbatim] := v;
+skeleton[h_[args___]] := skeleton[h] @@ (skeleton /@ {args});
+skeleton[x_] := x;
+
+(* The candidate, the element or each element of a tuple, with its attribute
+   list repeated n times. *)
+copied[x_, n_] :=
+  Replace[x, XMLElement[t_, a_List, c_] :> XMLElement[t, ConstantArray[a, n], c], {0, 1}];
+
+uncopied[x_] := Replace[x, XMLElement[t_, {a_, ___}, c_] :> XMLElement[t, a, c]];
+
+copyCount[p_] := 1 + Max[0, Cases[p, Verbatim[KeyValuePattern][r_List] :> Length[r], {0, Infinity}]];
+
+copiedPattern[p_] := Block[{$renamed = renaming[p]}, copiedIn[p]];
+
+copiedRule[lhs_, body_Hold] :=
+  Block[{$renamed = renaming[lhs]},
+    Hold @@ {RuleDelayed @@ Join[Hold @@ {copiedIn[lhs]}, restored[lhs, body]]}];
+
+(* Each name that binds an element is renamed, and is the uncopied element in
+   each test and body that can see it. *)
+renaming[p_] := Association[# -> freshSymbol[] & /@ elementNames[p]];
+
+restored[l_, held_Hold] :=
+  wrapBinds[{#, $renamed[#], uncopied} & /@ Select[elementNames[l], KeyExistsQ[$renamed, #] &], held];
+
+copiedIn[Verbatim[Pattern][s_, p_]] /; KeyExistsQ[$renamed, Hold[s]] :=
+  With[{f = $renamed[Hold[s]]}, namedPattern[f, copiedIn[p]]];
+copiedIn[Verbatim[Pattern][s_, p_]] := namedPattern[s, copiedIn[p]];
+copiedIn[c : Verbatim[Condition][l_, _]] :=
+  Condition @@ Join[Hold @@ {copiedIn[l]}, restored[l, Extract[c, {2}, Hold]]];
+copiedIn[XMLElement[t_, a_, c_]] := XMLElement[t, copiedAttributes[a], c];
+copiedIn[Verbatim[PatternTest][p_, f_]] := PatternTest[copiedIn[p], f];
+copiedIn[h_[args___]] := copiedIn[h] @@ (copiedIn /@ {args});
+copiedIn[x_] := x;
+
+(* {first, {___, rule1, ___}, ..., ___}: first is the attribute argument, which
+   sees the original list, with its KeyValuePattern made a test. *)
+copiedAttributes[a_] :=
+  With[{rules = attributeRules[a]},
+    With[{marks = Table[freshSymbol[], Length[rules]]},
+      With[{list = Join[{firstCopy[a]}, MapThread[{___, namedPattern[#1, #2], ___} &, {marks, rules}], {___}]},
+        If[Length[rules] < 2, list, Condition @@ Join[Hold[list], Hold[DuplicateFreeQ[marks]]]]]]];
+
+attributeRules[Verbatim[KeyValuePattern][r_List]] := r;
+attributeRules[Verbatim[Pattern][_, p_]] := attributeRules[p];
+attributeRules[Verbatim[PatternTest][p_, _]] := attributeRules[p];
+attributeRules[_] := {};
+
+firstCopy[k : Verbatim[KeyValuePattern][_List]] := With[{sk = skeleton[k]}, _?(MatchQ[sk])];
+firstCopy[Verbatim[Pattern][s_, p_]] := namedPattern[s, firstCopy[p]];
+firstCopy[Verbatim[PatternTest][p_, f_]] := PatternTest[firstCopy[p], f];
+firstCopy[x_] := x;
+
+(* The names that bind an element, not those in its children or tests. *)
+elementNames[p_] := DeleteDuplicates @ Flatten[Last @ Reap[sowElementNames[p]]];
+sowElementNames[Verbatim[Pattern][s_Symbol, p_]] :=
+  (If[!FreeQ[p, XMLElement], Sow[Hold[s]]]; sowElementNames[p]);
+sowElementNames[Verbatim[Condition][l_, _]] := sowElementNames[l];
+sowElementNames[Verbatim[PatternTest][p_, _]] := sowElementNames[p];
+sowElementNames[_XMLElement] := Null;
+sowElementNames[_[args___]] := Scan[sowElementNames, {args}];
+sowElementNames[_] := Null;
+
 (* =========================================================== *)
 (* Running a compiled query                                     *)
 (* =========================================================== *)
@@ -486,7 +595,7 @@ stagesOf[s_] := {s};
 conditionOn[p_, c_] := Condition @@ Join[Hold[p], Extract[c, {2}, Hold]];
 
 tupleRule[r : Verbatim[RuleDelayed][lhs_, _]] :=
-  RuleDelayed @@ Join[Hold @@ {tuplePattern[lhs]}, Extract[r, {2}, Hold]];
+  solvable[RuleDelayed @@ Join[Hold @@ {tuplePattern[lhs]}, Extract[r, {2}, Hold]]];
 
 (* Extract reads {} as no positions, not as the whole tree. *)
 at[{}] := $chainTree;
@@ -654,7 +763,8 @@ elementsAt[tuples_] := Partition[atAll[Join @@ tuples], Length[First[tuples]]];
    matches, which selected the sites, decide it unless a Condition wraps a
    combinator or a name is bound at two stages. *)
 matchedSites[q_] :=
-  siteTuples[chainOf[q], If[stagesDecideQ[q], None, MatchQ[tuplePattern[q]] @* atAll]];
+  siteTuples[MapAt[solvable, chainOf[q], {1 ;; ;; 2}],
+    If[stagesDecideQ[q], None, MatchQ[solvable[tuplePattern[q]]] @* atAll]];
 
 stagesDecideQ[q_] :=
   With[{stages = chainOf[q][[1 ;; ;; 2]]},
