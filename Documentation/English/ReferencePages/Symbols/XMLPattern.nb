@@ -248,7 +248,12 @@ Cell[TextData[{"Test the attributes as a whole, here for some ", Cell[BoxData["d
 
 Cell[BoxData["XMLCases[divs,XMLPattern[\"div\",_?(Keys/*AnyTrue[StringStartsQ[\"data-\"]])]]"], "Input"],
 
-Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", RowBox[{RowBox[{"\"id\"", "\[Rule]", "\"a\""}], ",", RowBox[{"\"data-x\"", "\[Rule]", "\"1\""}]}], "}"}], ",", RowBox[{"{", "\"A\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]]}, Open]],
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", RowBox[{RowBox[{"\"id\"", "\[Rule]", "\"a\""}], ",", RowBox[{"\"data-x\"", "\[Rule]", "\"1\""}]}], "}"}], ",", RowBox[{"{", "\"A\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Compare two attribute values in a condition on the whole pattern:", "ExampleText"], Cell[BoxData["links=ImportString[\"<p><a href=\\\"/buy\\\" data-id=\\\"buy\\\">Buy</a><a href=\\\"/help\\\" data-id=\\\"faq\\\">Help</a></p>\",{\"HTML\",\"XMLObject\"}];
+XMLCases[links,XMLPattern[\"a\",{\"href\"->h_,\"data-id\"->i_}]/;StringContainsQ[h,i]:>h]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", "\"/buy\"", "}"}]], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["Values", "ExampleSubsection"], $Line = 0; Null]], "ExampleSubsection"], Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Match any of several values with an ", Cell[BoxData[ButtonBox["Alternatives", BaseStyle -> "Link", ButtonData -> "paclet:ref/Alternatives"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["form=ImportString[\"<form><input type=\\\"text\\\" name=\\\"q\\\" required><input type=\\\"checkbox\\\" name=\\\"ok\\\"><input type=\\\"search\\\" name=\\\"s\\\"></form>\",{\"HTML\",\"XMLObject\"}];
 XMLCases[form,XMLPattern[\"input\",{\"type\"->\"text\"|\"search\",\"name\"->name_}]:>name]"], "Input"],
@@ -542,18 +547,7 @@ Cell[BoxData["XMLCases[XMLElement[\"div\",{},{XMLElement[\"p\",{\"id\"->\"x\"},{
 
 Cell["XMLPattern::badkey: An attribute key should be a string, a {namespace, name} pair of strings, or alternatives of these. Got _. To test the keys, test the attributes as a whole: XMLPattern[tag, attrs_?test].", "Message", "MSG"],
 
-Cell[BoxData["$Failed"], "Output"]}, Open]],
-
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["In a condition on the whole pattern, only the name in the first constraint is bound:", "ExampleText"], Cell[BoxData["link=XMLElement[\"a\",{\"href\"->\"/buy\",\"data-id\"->\"buy\"},{}];
-XMLMatchQ[link,XMLPattern[\"a\",{\"href\"->h_,\"data-id\"->i_}]/;StringContainsQ[h,i]]"], "Input"],
-
-Cell[BoxData["False"], "Output"],
-
-Cell["Name the attributes as a whole and look the values up in the condition:", "ExampleText"],
-
-Cell[BoxData["XMLMatchQ[link,XMLPattern[\"a\",attrs:{\"href\"->_,\"data-id\"->_}]/;StringContainsQ[Lookup[attrs,\"href\"],Lookup[attrs,\"data-id\"]]]"], "Input"],
-
-Cell[BoxData["True"], "Output"]}, Open]]}, Open]],
+Cell[BoxData["$Failed"], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
