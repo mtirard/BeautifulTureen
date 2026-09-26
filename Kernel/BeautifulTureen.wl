@@ -198,7 +198,7 @@ readingsWith[extra_] :=
   Catch[resolveReadings[validReadings[Join @@ (validTable /@ {$AttributeReadings, extra})]], $refusal];
 
 validTable[t_Association] := t;
-validTable[t_] := refuse[$AttributeReadings::notassoc, Short[t]];
+validTable[t_] := refuse[$AttributeReadings::notassoc, t];
 
 validReadings[readings_] :=
   (KeyValueMap[validReading, readings]; validListKeys[readings]; readings);
@@ -215,14 +215,14 @@ validListKeys[readings_] :=
 $readingFields = {Method, Delimiters, "TrimWhitespace", "ListKey"};
 
 validReading[key_, _] /; !StringQ[key] := refuse[$AttributeReadings::badkey, key];
-validReading[key_, spec_] /; !AssociationQ[spec] := refuse[$AttributeReadings::badentry, key, Short[spec]];
+validReading[key_, spec_] /; !AssociationQ[spec] := refuse[$AttributeReadings::badentry, key, spec];
 validReading[key_, spec_] := (
   Replace[Complement[Keys[spec], $readingFields],
     {f_, ___} :> refuse[$AttributeReadings::badfield, key, f]];
   If[!KeyExistsQ[$methodDefaults, Lookup[spec, Method, "SpaceSeparated"]],
     refuse[$AttributeReadings::badmethod, key, spec[Method]]];
   KeyValueMap[
-    If[!validFieldQ[#1, #2], refuse[$AttributeReadings::badvalue, key, #1, Short[#2]]] &,
+    If[!validFieldQ[#1, #2], refuse[$AttributeReadings::badvalue, key, #1, #2]] &,
     KeyDrop[spec, Method]]);
 
 (* Whether a value is a string pattern is the string functions' own judgement. *)
@@ -303,7 +303,7 @@ refuseQuietly[] := Throw[$Failed, $refusal];
 
 (* MessageName holds its first argument, so the consumer head is injected. *)
 refuseAtHead[tag_, args___] := With[{h = $head}, refuse[MessageName[h, tag], args]];
-badpat[q_] := refuseAtHead["badpat", Short[q]];
+badpat[q_] := refuseAtHead["badpat", q];
 
 (* ---- Queries: a rule over a pattern, or a pattern ---- *)
 
@@ -326,11 +326,13 @@ cStage[q_] := cElem[q];
 (* ---- Element patterns ---- *)
 
 cElem[XMLPattern[args___]] := cXMLPattern[{args}];
+(* A combinator is not an element pattern; the whole Alternatives is named. *)
+cElem[alts_Alternatives] /; AnyTrue[List @@ alts, combinatorQ] := badpat[alts];
 cElem[alts_Alternatives] := Alternatives @@ (cElem /@ List @@ alts);
 cElem[Verbatim[Pattern][s_Symbol, p_]] :=
   If[combinatorQ[p], badpat[namedPattern[s, p]], bindAs[s, cElem[p], strip]];
 cElem[c_Condition] := (
-  If[combinatorQ[patternBase[c]], refuseAtHead["condcombinator", Short[c[[1]]]]];
+  If[combinatorQ[patternBase[c]], refuseAtHead["condcombinator", c[[1]]]];
   conditioned[cElem, c]);
 (* A plain XMLElement pattern is already what the consumers run. *)
 cElem[x_XMLElement] := x;
@@ -793,7 +795,7 @@ firstMatchPosition[tree_, pat_] :=
 Options[XMLDeleteCases] = {"AttributeReadings" -> <||>};
 
 XMLDeleteCases[tree_, q_RuleDelayed, OptionsPattern[]] :=
-  (Message[XMLDeleteCases::badpat, Short[q]]; $Failed);
+  (Message[XMLDeleteCases::badpat, q]; $Failed);
 
 XMLDeleteCases[tree_, q_, opts : OptionsPattern[]] :=
   With[{c = compileQuery[q, XMLDeleteCases, readingsWith[OptionValue["AttributeReadings"]]]},
@@ -824,8 +826,8 @@ XMLMatchQ[q_, opts : Longest[__?(optionRuleQ[XMLMatchQ])]][el_] := XMLMatchQ[el,
 XMLMatchQ[q_][el_] := XMLMatchQ[el, q];
 
 XMLMatchQ[_, q_?combinatorQ, OptionsPattern[]] :=
-  (Message[XMLMatchQ::combinator, Short[q]]; $Failed);
-XMLMatchQ[_, q_RuleDelayed, OptionsPattern[]] := (Message[XMLMatchQ::badpat, Short[q]]; $Failed);
+  (Message[XMLMatchQ::combinator, q]; $Failed);
+XMLMatchQ[_, q_RuleDelayed, OptionsPattern[]] := (Message[XMLMatchQ::badpat, q]; $Failed);
 
 (* Only the element itself is materialised: its children cannot be reached. *)
 XMLMatchQ[el_, q : Except[_?(optionRuleQ[XMLMatchQ])], opts : OptionsPattern[]] :=
@@ -919,7 +921,7 @@ compileRule[rule_RuleDelayed, head_, readings_] :=
       head, readings]];
 compileRule[x_, _, _] := {x, {}};
 
-refuseRule[head_, lhs_] := (Message[MessageName[head, "badpat"], Short[lhs]]; $Failed);
+refuseRule[head_, lhs_] := (Message[MessageName[head, "badpat"], lhs]; $Failed);
 
 compileRules[_, _, $Failed] := $Failed;
 compileRules[rules_, head_, readings_] :=
