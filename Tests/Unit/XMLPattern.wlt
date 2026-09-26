@@ -135,6 +135,68 @@ TestCreate[
   TestID -> "xmlpattern-overlapping-alternative-keys-need-two-attributes"
 ];
 
+(* Overlapping keys match whatever the order of the constraints: the
+   Alternatives key takes whichever attribute the other constraint leaves. *)
+$xy = XMLElement["p", {"x" -> "1", "y" -> "2"}, {}];
+
+TestCreate[
+  {XMLMatchQ[$xy, XMLPattern["p", {("x" | "y") -> v_, "x" -> w_}]],
+    XMLMatchQ[$xy, XMLPattern["p", {"x" -> w_, ("x" | "y") -> v_}]]},
+  {True, True},
+  TestID -> "xmlpattern-overlapping-keys-any-order"
+];
+
+TestCreate[
+  {XMLCases[{$xy}, XMLPattern["p", {("x" | "y") -> v_, "x" -> w_}] :> {v, w}],
+    XMLCases[{$xy}, XMLPattern["p", {"x" -> w_, ("x" | "y") -> v_}] :> {v, w}]},
+  {{{"2", "1"}}, {{"2", "1"}}},
+  TestID -> "xmlpattern-overlapping-keys-rule-body"
+];
+
+TestCreate[
+  {XMLMatchQ[$xy, XMLPattern["p", {("x" | "y") -> v_, "x" -> w_}] /; v === "2"],
+    XMLCases[{$xy}, XMLPattern["p", {("x" | "y") -> v_, "x" -> w_}] :> v /; w === "1"]},
+  {True, {"2"}},
+  TestID -> "xmlpattern-overlapping-keys-condition"
+];
+
+TestCreate[
+  {XMLFirstCase[{$xy}, XMLPattern["p", {("x" | "y") -> v_, "x" -> w_}] :> {v, w}],
+    XMLDeleteCases[{$xy}, XMLPattern["p", {("x" | "y") -> _, "x" -> _}]]},
+  {{"2", "1"}, {}},
+  TestID -> "xmlpattern-overlapping-keys-first-and-delete"
+];
+
+TestCreate[
+  XMLCases[XMLElement["div", {}, {$xy}],
+    Child[XMLPattern["div"], XMLPattern["p", {("x" | "y") -> v_, "x" -> w_}]] :> {v, w}],
+  {{"2", "1"}},
+  TestID -> "xmlpattern-overlapping-keys-combinator-stage"
+];
+
+TestCreate[
+  HTMLInnerText[XMLElement["div", {}, {XMLElement["span", {"x" -> "1", "y" -> "2"}, {"gone"}], "kept"}],
+    "Roles" -> {XMLPattern["span", {("x" | "y") -> _, "x" -> "1"}] -> "Skip"}],
+  "kept",
+  TestID -> "xmlpattern-overlapping-keys-roles"
+];
+
+(* Two Alternatives keys on one shared key, and a list key among them. *)
+TestCreate[
+  {XMLCases[{$xy}, XMLPattern["p", {("x" | "y") -> w_, ("x" | "y") -> "1"}] :> w],
+    XMLCases[{XMLElement["p", {"title" -> "t", "class" -> "a b"}, {}]},
+      XMLPattern["p", {("classList" | "title") -> v_, "title" -> w_}] :> {v, w}]},
+  {{"2"}, {{{"a", "b"}, "t"}}},
+  TestID -> "xmlpattern-overlapping-keys-two-alternatives-and-list-key"
+];
+
+(* Each constraint still takes a different attribute. *)
+TestCreate[
+  XMLMatchQ[XMLElement["p", {"x" -> "1"}, {}], XMLPattern["p", {("x" | "y") -> _, "x" -> _}]],
+  False,
+  TestID -> "xmlpattern-overlapping-keys-one-attribute-for-two-constraints"
+];
+
 (* A bare string pattern is never matched against a string by MatchQ, so it
    would fail forever: refused in the tag, a value, and a list element. *)
 TestCreate[
