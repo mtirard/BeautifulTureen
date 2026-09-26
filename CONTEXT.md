@@ -4,6 +4,8 @@ BeautifulSoup-style HTML element selection and text extraction for the Wolfram L
 
 This file is a glossary, not a spec. It defines the language we use to talk about the domain. Implementation lives in the code; decisions live in `docs/adr/`.
 
+**Audience**: people working on the repository. The terms here are for code, tests, ADRs and design discussion; they are not the vocabulary of what users see. User-facing text — documentation pages, `::usage` strings and messages — is written in plain language for its reader, and uses a term from here only when the reader needs the concept, defining it on first use. An _Avoid_ entry governs internal discussion and does not rule out the plain word in user-facing text: the pages say "attributes", not "attribute map". Internal names (private functions, helpers, comments) may use the glossary freely.
+
 **Naming convention** (not a domain term, but load-bearing for reading the glossary): a symbol reading a (near-)canonical property off the tree is named `HTML‹Noun›` — "the ‹noun› of the tree." A symbol performing a directed, lossy, opinionated projection — where there is no canonical answer — is named `‹X›To‹Y›`, signaling "expect loss, do not expect a round-trip."
 
 ## Language
