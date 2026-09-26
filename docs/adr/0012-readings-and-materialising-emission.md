@@ -88,4 +88,4 @@ A `{namespace, name}` pair is a literal key but never has a reading: it is forei
 
 Materialisation costs about 2.5× the superseded `Condition` emission for one query naming one list key (1.7× in the design-time prototype) — the price of bindable tokens and a lossless inverse. Queries on raw keys pay nothing.
 
-Extending `$AttributeReadings` no longer changes the meaning of any existing query: it only makes a new key available.
+Extending `$AttributeReadings` no longer changes the meaning of any existing query: it only makes a new key available. This holds for the default `key <> "List"` names, which the HTML importer's lowercasing keeps apart from every imported attribute. An explicit `"ListKey"` is taken at its word: one that names a real attribute, such as `"ListKey" -> "href"`, takes that name over, and that is the caller's choice. It is neither refused nor warned about.
