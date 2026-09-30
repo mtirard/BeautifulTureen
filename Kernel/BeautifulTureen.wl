@@ -470,9 +470,11 @@ solvable[p_] /; brokenConditionsQ[p] || overlappingKeysQ[p] :=
     Condition @@ Join[Hold @@ {namedPattern[v, skeleton[p]]}, Hold[MatchQ[copied[v, n], c]]]];
 solvable[x_] := x;
 
-(* A KeyValuePattern with a name after its first rule. *)
+(* A KeyValuePattern with a name after its first rule. Held, since a Condition
+   in a rule's body holds the caller's code. *)
+SetAttributes[laterNamesQ, HoldFirst];
 laterNamesQ[p_] :=
-  !FreeQ[p, Verbatim[KeyValuePattern][{_, rest__}] /; !FreeQ[{rest}, Verbatim[Pattern][_Symbol, _]]];
+  !FreeQ[Unevaluated[p], Verbatim[KeyValuePattern][{_, rest__}] /; !FreeQ[Unevaluated[{rest}], Verbatim[Pattern][_Symbol, _]]];
 
 brokenConditionsQ[p_] := !FreeQ[p, Verbatim[Condition][l_, _] /; laterNamesQ[l]];
 
@@ -794,17 +796,33 @@ namesIn[s_] :=
 (* The plain form picks the last element of a matching tuple rather than binding
    the tuple: a rule's right-hand side re-evaluates what it is given, and a
    tuple may hold a large element. *)
+chainCases[tree_, r : Verbatim[RuleDelayed][lhs_, _]] /; bodyConditionQ[Extract[r, {2}, Hold]] :=
+  Block[{$chainTree = tree}, ruleValues[r]];
 chainCases[tree_, r : Verbatim[RuleDelayed][lhs_, _]] :=
   Block[{$chainTree = tree}, Cases[elementsAt @ matchedSites[lhs], tupleRule[r], {1}]];
 chainCases[tree_, q_] :=
   Block[{$chainTree = tree}, atAll[Last /@ matchedSites[q]]];
 
+chainFirst[tree_, r : Verbatim[RuleDelayed][lhs_, _], default_] /; bodyConditionQ[Extract[r, {2}, Hold]] :=
+  Block[{$chainTree = tree}, Replace[ruleValues[r], {{v_, ___} :> v, {} -> default}]];
 chainFirst[tree_, r : Verbatim[RuleDelayed][lhs_, _], default_] :=
   Block[{$chainTree = tree},
     FirstCase[elementsAt @ matchedSites[lhs], tupleRule[r], default, {1}]];
 chainFirst[tree_, q_, default_] :=
   Block[{$chainTree = tree},
     Replace[matchedSites[q], {{t_, ___} :> at[Last[t]], {} -> default}]];
+
+(* A Condition in a rule's body can reject a tuple, so it takes part in
+   choosing one, as a Condition on the combinator does: as Cases gives the
+   places where a rule gives a value, a tuple is accepted when the rule gives
+   it one. The value is kept, so the body is not evaluated again once the tuple
+   is chosen. *)
+ruleValues[r : Verbatim[RuleDelayed][lhs_, _]] :=
+  Module[{rule = tupleRule[r], values = <||>, tuples},
+    tuples = siteTuples[MapAt[solvable, chainOf[lhs], {1 ;; ;; 2}],
+      Function[t, With[{v = Replace[atAll[t], {rule, _ :> $unmatched}]},
+        v =!= $unmatched && (values[t] = v; True)]]];
+    Lookup[values, Key /@ tuples]];
 
 (* A chain deletes the elements its last stage selects. Delete removes
    positions nested in one another together. *)
