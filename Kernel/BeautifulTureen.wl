@@ -1133,7 +1133,7 @@ compileRule[rule_RuleDelayed, head_, readings_] :=
       compileWith[RuleDelayed @@ Join[Hold @@ {sugarRoleLHS[rule[[1]]]}, Extract[rule, {2}, Hold]], head, readings],
       rule[[1]], head, "badpat"],
     c_Association :> {plainQuery[c], c["Readings"]}];
-compileRule[x_, _, _] := {x, {}};
+compileRule[x_, head_, _] := With[{h = head}, Message[MessageName[h, "badpat"], x]; $Failed];
 
 (* ruleLookups[{rules1, rules2, ...}, head, opt, tree]: for each rule set, a
    function from an element of tree to the value of the first rule that matches

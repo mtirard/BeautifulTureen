@@ -178,6 +178,17 @@ TestCreate[
   TestID -> "innertext-roles-delayed-valid"
 ];
 
+(* A "Roles" entry that is not a rule is refused once, when the option is read *)
+TestCreate[
+  HTMLInnerText[
+    XMLElement["div", {}, {XMLElement["p", {}, {"a"}], XMLElement["p", {}, {"b"}]}],
+    "Roles" -> {"p"}
+  ],
+  $Failed,
+  {HTMLInnerText::badpat},
+  TestID -> "innertext-roles-non-rule-refused"
+];
+
 (* Bad argument: a non-tree messages and returns $Failed *)
 TestCreate[
   HTMLInnerText[37],
