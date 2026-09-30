@@ -466,7 +466,14 @@ SetAttributes[reapBinds, HoldFirst];
 reapBinds[expr_] :=
   MapAt[DeleteDuplicates[Join @@ #] &, Reap[expr, $bindTag], 2];
 
-(* Hold[body] -> Hold[With[{e = strip[e$], ...}, body]] *)
+(* Hold[body] -> Hold[With[{e = strip[e$], ...}, body]]
+
+   The two-step match (restored, below) renames an element name a second time
+   and wraps what this gives, so the two compose as
+   With[{e$ = uncopied[e$$]}, With[{e = strip[e$]}, body]]. The order is
+   required: strip removes token lists from an attribute list, not from a list
+   of copies of one, so an element is uncopied before it is stripped. Issue #3
+   proposes one module for both renamings. *)
 wrapBinds[{}, held_Hold] := held;
 wrapBinds[binds_, held_Hold] :=
   With[{spec = Replace[
@@ -558,7 +565,9 @@ copiedRule[lhs_, body_Hold] :=
     Hold @@ {RuleDelayed @@ Join[Hold @@ {copiedIn[lhs]}, restored[lhs, body]]}];
 
 (* Each name that binds an element is renamed, and is the uncopied element in
-   each test and body that can see it. *)
+   each test and body that can see it. When the query names a list key, the
+   name was already renamed for materialisation; see wrapBinds for how the two
+   compose. *)
 renaming[p_] := Association[# -> freshSymbol[] & /@ elementNames[p]];
 
 restored[l_, held_Hold] :=
