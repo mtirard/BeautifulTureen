@@ -335,7 +335,7 @@ TestCreate[
   HTMLToNotebook[XMLElement["div", {}, {XMLElement["p", {}, {"a"}], XMLElement["p", {}, {"b"}]}],
     "Constructs" -> {42}],
   $Failed,
-  {HTMLToNotebook::badpat},
+  {HTMLToNotebook::notrule},
   TestID -> "htn-constructs-non-rule-refused"
 ];
 
@@ -343,7 +343,7 @@ TestCreate[
   HTMLToNotebook[XMLElement["div", {}, {XMLElement["p", {}, {"a"}], XMLElement["p", {}, {"b"}]}],
     "Roles" -> {"p" -> "Block", "p"}],
   $Failed,
-  {HTMLToNotebook::badpat},
+  {HTMLToNotebook::notrule},
   TestID -> "htn-roles-non-rule-refused"
 ];
 
