@@ -257,6 +257,16 @@ materialiseKey[tree_, reading : {key_, _}, level_] :=
         XMLElement[t, Append[a, tok[key] -> Lookup[map, Lookup[a, key, None], {}]], c],
       level]];
 
+(* An element materialised when it is asked for, the distinct raw values on
+   tree split once, up front: for rules tried on one element at a time. *)
+materialiser[_, {}] := Identity;
+materialiser[tree_, readings_] :=
+  With[{maps = {First[#], tokenMap[tree, #, {0, Infinity}]} & /@ readings},
+    attachTokens[maps, #] &];
+
+attachTokens[maps_, XMLElement[t_, a_List, c_]] :=
+  XMLElement[t, Join[a, Function[{key, map}, tok[key] -> Lookup[map, Lookup[a, key, None], {}]] @@@ maps], c];
+
 stripAttrs[a_] := DeleteCases[a, _tok -> _];
 
 strip[x_] :=
@@ -265,8 +275,9 @@ strip[x_] :=
 (* =========================================================== *)
 (* The query compiler                                           *)
 (*                                                              *)
-(* compileQuery[query, head, readings] -> the query's normal    *)
-(* form, an Association every decision about the query reads:  *)
+(* compileQuery[query, head, opt] -> the query's normal form,   *)
+(* opt being the consumer's "AttributeReadings" option: an      *)
+(* Association every decision about the query reads:           *)
 (*   "Stages"     the compiled element patterns, in chain order *)
 (*   "Links"      the combinator heads between them ({} for a   *)
 (*                plain query, which has one stage)             *)
@@ -277,10 +288,12 @@ strip[x_] :=
 (*   "Readings"   the readings of the list keys it names ({}    *)
 (*                when it names none, in which case it runs on  *)
 (*                the tree as it is)                            *)
+(*   "Head"       the consumer, whose messages refusals use     *)
+(*   "Query"      the query as written, for messages            *)
 (* Refusals message under XMLPattern (an XML pattern's own      *)
-(* shape) or under head and give $Failed. Which query shapes a  *)
-(* consumer takes is the consumer's to check, on the normal     *)
-(* form.                                                        *)
+(* shape) or under head and give $Failed. Which query shapes an *)
+(* operation can run is the operation's to check, on the normal *)
+(* form (see Running a compiled query).                         *)
 (*                                                              *)
 (* When a list key is named, every binding that can see an      *)
 (* element's attributes \[LongDash] an element binding e : XMLPattern[...],  *)
@@ -292,13 +305,17 @@ strip[x_] :=
 (* it names one, again with the renaming on.                    *)
 (* =========================================================== *)
 
-compileQuery[_, _, $Failed] := $Failed;
-compileQuery[q_, head_, readings_Association] :=
+compileQuery[q_, head_, opt_] := compileWith[q, head, readingsWith[opt]];
+
+(* With the readings table resolved, for a caller that compiles several queries
+   against one table. *)
+compileWith[_, _, $Failed] := $Failed;
+compileWith[q_, head_, readings_Association] :=
   Catch[
     Module[{query, keys},
       {query, keys} = compilePass[q, head, readings, False];
       If[keys =!= {}, query = First @ compilePass[q, head, readings, True]];
-      Append[query, "Readings" -> Lookup[readings, keys]]],
+      Join[query, <|"Readings" -> Lookup[readings, keys], "Head" -> head, "Query" -> q|>]],
     $refusal];
 
 compilePass[q_, head_, readings_, mat_] :=
@@ -587,7 +604,54 @@ sowElementNames[_] := Null;
 
 (* =========================================================== *)
 (* Running a compiled query                                     *)
+(*                                                              *)
+(* The operations the XML* functions are: each takes a compiled *)
+(* query (or $Failed, having messaged) and a tree, refuses what *)
+(* it cannot run under the query's head, and gives the elements *)
+(* as they are in the tree.                                     *)
 (* =========================================================== *)
+
+queryCases[$Failed, _] := $Failed;
+queryCases[c_, tree_] :=
+  If[treeRefusedQ[c, tree], $Failed, runCompiled[If[chainQ[c], chainCases, casesC], tree, c]];
+
+queryFirst[$Failed, _, _] := $Failed;
+queryFirst[c_, tree_, default_] :=
+  If[treeRefusedQ[c, tree], $Failed, runCompiled[If[chainQ[c], chainFirst, firstC], tree, c, default]];
+
+(* A rule has nothing to delete with; deletion by relative position (Adjacent,
+   Sibling) is a niche operation, documented as unsupported. *)
+queryDelete[$Failed, _] := $Failed;
+queryDelete[c_, tree_] :=
+  With[{h = c["Head"]},
+    Which[
+      c["Body"] =!= None, Message[MessageName[h, "badpat"], c["Query"]]; $Failed,
+      MemberQ[c["Links"], Adjacent | Sibling], Message[MessageName[h, "unsupported"]]; $Failed,
+      treeRefusedQ[c, tree], $Failed,
+      True, runCompiled[If[chainQ[c], chainDelete, deleteC], tree, c]]];
+
+(* Only the element itself is materialised: its children cannot be reached. *)
+queryMatchQ[$Failed, _] := $Failed;
+queryMatchQ[c_, el_] :=
+  With[{h = c["Head"]},
+    Which[
+      elementQuery[c, c["Query"], h, "combinator"] === $Failed, $Failed,
+      c["Body"] =!= None, Message[MessageName[h, "badpat"], c["Query"]]; $Failed,
+      True, MatchQ[If[c["Readings"] === {}, el, materialise[el, c["Readings"], {0}]], plainQuery[c]]]];
+
+treeRefusedQ[c_, tree_] :=
+  !validTreeQ[tree] && With[{h = c["Head"]}, Message[MessageName[h, "badtree"], Head[tree]]; True];
+
+(* A query tested on one element at a time takes no links: a combinator is
+   refused under tag, and a combinator with a Condition under condcombinator.
+   q is the query as written. *)
+elementQuery[$Failed, _, _, _] := $Failed;
+elementQuery[c_, q_, head_, tag_] :=
+  With[{h = head},
+    Which[
+      c["Links"] === {}, c,
+      c["Conditions"] === {}, Message[MessageName[h, tag], q]; $Failed,
+      True, Message[MessageName[h, "condcombinator"], patternBase[q]]; $Failed]];
 
 (* Materialise once per query, over the union of the list keys all its stages
    name; strip once, at the output. A chain runner is given the normal form, a
@@ -867,11 +931,7 @@ deleteAt[tree_, ps_] := Delete[tree, ps];
 Options[XMLCases] = {"AttributeReadings" -> <||>};
 
 XMLCases[tree_, q_, opts : OptionsPattern[]] :=
-  With[{c = compileQuery[q, XMLCases, readingsWith[OptionValue["AttributeReadings"]]]},
-    Which[
-      c === $Failed, $Failed,
-      !validTreeQ[tree], Message[XMLCases::badtree, Head[tree]]; $Failed,
-      True, runCompiled[If[chainQ[c], chainCases, casesC], tree, c]]];
+  queryCases[compileQuery[q, XMLCases, OptionValue["AttributeReadings"]], tree];
 
 (* Base: a pattern, a Condition, or a rule over either, in document order. Cases
    and Position visit an element after the elements nested in it, so the
@@ -931,11 +991,7 @@ optionRuleQ[_][_] := False;
 
 XMLFirstCase[tree_, q_, default : Except[_?(optionRuleQ[XMLFirstCase])] : Missing["NotFound"],
     opts : OptionsPattern[]] :=
-  With[{c = compileQuery[q, XMLFirstCase, readingsWith[OptionValue["AttributeReadings"]]]},
-    Which[
-      c === $Failed, $Failed,
-      !validTreeQ[tree], Message[XMLFirstCase::badtree, Head[tree]]; $Failed,
-      True, runCompiled[If[chainQ[c], chainFirst, firstC], tree, c, default]]];
+  queryFirst[compileQuery[q, XMLFirstCase, OptionValue["AttributeReadings"]], tree, default];
 
 (* Base: the first match in document order, the search stopping early. A rule's
    body is evaluated for that match only, unless a Condition on the body
@@ -963,18 +1019,10 @@ firstMatchPosition[tree_, pat_] :=
 (* Combinators: the chain's last-stage elements are deleted.    *)
 (* =========================================================== *)
 
-(* A rule has nothing to delete with; deletion by relative position (Adjacent,
-   Sibling) is a niche operation, documented as unsupported here. *)
 Options[XMLDeleteCases] = {"AttributeReadings" -> <||>};
 
 XMLDeleteCases[tree_, q_, opts : OptionsPattern[]] :=
-  With[{c = compileQuery[q, XMLDeleteCases, readingsWith[OptionValue["AttributeReadings"]]]},
-    Which[
-      c === $Failed, $Failed,
-      c["Body"] =!= None, Message[XMLDeleteCases::badpat, q]; $Failed,
-      MemberQ[c["Links"], Adjacent | Sibling], Message[XMLDeleteCases::unsupported]; $Failed,
-      !validTreeQ[tree], Message[XMLDeleteCases::badtree, Head[tree]]; $Failed,
-      True, runCompiled[If[chainQ[c], chainDelete, deleteC], tree, c]]];
+  queryDelete[compileQuery[q, XMLDeleteCases, OptionValue["AttributeReadings"]], tree];
 
 (* Base: a pattern or a Condition *)
 deleteC[tree_, pat_] := DeleteCases[tree, pat, Infinity];
@@ -990,24 +1038,8 @@ Options[XMLMatchQ] = {"AttributeReadings" -> <||>};
 XMLMatchQ[q_, opts : Longest[__?(optionRuleQ[XMLMatchQ])]][el_] := XMLMatchQ[el, q, opts];
 XMLMatchQ[q_][el_] := XMLMatchQ[el, q];
 
-(* Only the element itself is materialised: its children cannot be reached. *)
 XMLMatchQ[el_, q : Except[_?(optionRuleQ[XMLMatchQ])], opts : OptionsPattern[]] :=
-  Replace[
-    elementQuery[compileQuery[q, XMLMatchQ, readingsWith[OptionValue["AttributeReadings"]]], q, XMLMatchQ, "combinator"], {
-    c_Association /; c["Body"] =!= None :> (Message[XMLMatchQ::badpat, q]; $Failed),
-    c_Association :> MatchQ[
-      If[c["Readings"] === {}, el, materialise[el, c["Readings"], {0}]], plainQuery[c]]}];
-
-(* A consumer that tests one element at a time takes a query with no links: a
-   combinator is refused under tag, and a combinator with a Condition under
-   condcombinator. q is the query as written. *)
-elementQuery[$Failed, _, _, _] := $Failed;
-elementQuery[c_, q_, head_, tag_] :=
-  With[{h = head},
-    Which[
-      c["Links"] === {}, c,
-      c["Conditions"] === {}, Message[MessageName[h, tag], q]; $Failed,
-      True, Message[MessageName[h, "condcombinator"], patternBase[q]]; $Failed]];
+  queryMatchQ[compileQuery[q, XMLMatchQ, OptionValue["AttributeReadings"]], el];
 
 (* =========================================================== *)
 (* HTMLTextContent                                             *)
@@ -1041,7 +1073,7 @@ textContentWalk[_] := "";
 (* build on. Each element is classified by tag alone (the       *)
 (* frozen user-agent stylesheet) into one of five display       *)
 (* roles \[LongDash] Block, Inline, Preformatted, LineBreak, Skip \[LongDash] with   *)
-(* a user "Roles" override layer (compileRules + roleOf). The  *)
+(* a user "Roles" override layer (ruleLookups + roleOf). The   *)
 (* emitters that sit on top of this substrate then decide *what *)
 (* form* each placed element takes (HTMLInnerText: text; *)
 (* HTMLToNotebook: a Cell or box \[LongDash] its own Layer 2). roleOf is   *)
@@ -1081,36 +1113,44 @@ sugarRoleLHS[s_String] := XMLPattern[s];
 sugarRoleLHS[lhs_] := lhs;
 
 (* Each rule's left-hand side is compiled like a query, and must be an element
-   pattern: a rule is tried against one element at a time. compileRules gives
-   {rules, readings}, the readings being those of every list key any rule
-   names, so the caller materialises the tree once, at entry. *)
+   pattern: a rule is tried against one element at a time. compileRule gives
+   {rule, readings}, the readings being those of the list keys it names. *)
 compileRule[Verbatim[Rule][lhs_, r_], head_, readings_] :=
-  Replace[elementQuery[compileQuery[sugarRoleLHS[lhs], head, readings], lhs, head, "badpat"],
+  Replace[elementQuery[compileWith[sugarRoleLHS[lhs], head, readings], lhs, head, "badpat"],
     c_Association :> {plainQuery[c] -> r, c["Readings"]}];
 compileRule[rule_RuleDelayed, head_, readings_] :=
   Replace[
     elementQuery[
-      compileQuery[RuleDelayed @@ Join[Hold @@ {sugarRoleLHS[rule[[1]]]}, Extract[rule, {2}, Hold]], head, readings],
+      compileWith[RuleDelayed @@ Join[Hold @@ {sugarRoleLHS[rule[[1]]]}, Extract[rule, {2}, Hold]], head, readings],
       rule[[1]], head, "badpat"],
     c_Association :> {plainQuery[c], c["Readings"]}];
 compileRule[x_, _, _] := {x, {}};
 
-compileRules[_, _, $Failed] := $Failed;
-compileRules[rules_, head_, readings_] :=
-  With[{cs = compileRule[#, head, readings] & /@
-      If[AssociationQ[rules], Normal[rules], Flatten[{rules}]]},
-    If[MemberQ[cs, $Failed], $Failed, {cs[[All, 1]], Union @@ cs[[All, 2]]}]];
+(* ruleLookups[{rules1, rules2, ...}, head, opt, tree]: for each rule set, a
+   function from an element of tree to the value of the first rule that matches
+   it, or noRule; $Failed if any set is refused. The readings table is resolved
+   once for them all. A rule naming a list key is matched on the element with
+   its token lists attached, each distinct raw value on the tree split once;
+   the element itself is never changed, so a caller walks the tree as it is. *)
+ruleLookups[sets_List, head_, opt_, tree_] :=
+  With[{readings = readingsWith[opt]},
+    If[readings === $Failed, $Failed,
+      With[{lookups = ruleLookup[#, head, readings, tree] & /@ sets},
+        If[MemberQ[lookups, $Failed], $Failed, lookups]]]];
 
-materialiseFor[tree_, {}] := tree;
-materialiseFor[tree_, readings_] := materialise[tree, readings];
+ruleLookup[rules_, head_, readings_, tree_] :=
+  With[{cs = compileRule[#, head, readings] & /@ If[AssociationQ[rules], Normal[rules], Flatten[{rules}]]},
+    If[MemberQ[cs, $Failed], $Failed,
+      With[{rs = Append[cs[[All, 1]], _ -> noRule], attach = materialiser[tree, Union @@ cs[[All, 2]]]},
+        Replace[attach[#], rs] &]]];
 
 (* roleOf: first matching rule wins; a non-role RHS messages (under the caller's
    own ::badrole) and defers to the frozen table; no match defers to the table;
    unknown tag -> Inline. *)
-roleOf[el : XMLElement[tag_, _, _], rules_, msgHead_] :=
-  With[{r = Replace[el, rules]},
+roleOf[el : XMLElement[tag_, _, _], lookup_, msgHead_] :=
+  With[{r = lookup[el]},
     Which[
-      MatchQ[r, _XMLElement], defaultRole[tag],
+      MatchQ[r, noRule | _XMLElement], defaultRole[tag],
       validRoleQ[r],          r,
       True, (Message[MessageName[msgHead, "badrole"], r]; defaultRole[tag])
     ]];
@@ -1184,12 +1224,9 @@ HTMLInnerText[XMLObject["Document"][_, root_, _], opts : OptionsPattern[]] :=
   HTMLInnerText[root, opts];
 
 HTMLInnerText[tree_, opts : OptionsPattern[]] :=
-  With[{roles = compileRules[OptionValue["Roles"], HTMLInnerText,
-      readingsWith[OptionValue["AttributeReadings"]]]},
-    If[roles === $Failed, $Failed,
-      itSerialize[
-        Flatten[itToks[materialiseFor[tree, Last[roles]], False, First[roles]]],
-        OptionValue["BlockSeparator"]]]
+  Replace[ruleLookups[{OptionValue["Roles"]}, HTMLInnerText, OptionValue["AttributeReadings"], tree], {
+    $Failed -> $Failed,
+    {roles_} :> itSerialize[Flatten[itToks[tree, False, roles]], OptionValue["BlockSeparator"]]}
   ] /; validTextInputQ[tree];
 
 HTMLInnerText[tree_, OptionsPattern[]] :=
@@ -1261,7 +1298,7 @@ $defaultConstructRules = {
 
 (* First user rule wins, else the default map, else None. *)
 constructOf[el_XMLElement, ctx_] :=
-  With[{r = Replace[el, Join[ctx["constructs"], $defaultConstructRules]]},
+  With[{r = Replace[ctx["constructs"][el], noRule :> Replace[el, $defaultConstructRules]]},
     If[MatchQ[r, _XMLElement], None, r]];
 
 (* ---- Inline emission: node -> list of box atoms (strings + boxes) ---- *)
@@ -1312,7 +1349,7 @@ hyperResult[el_, inner_] :=
 
 inlineForm[c_, el_, inner_] :=
   Which[
-    functionConstructQ[c], {c[strip[el]]},
+    functionConstructQ[c], {c[el]},
     c === "Hyperlink",     hyperResult[el, inner],
     inner === {},          {},
     MemberQ[$styleTokens, c], {styleBox[c, inner]},
@@ -1374,7 +1411,7 @@ emitBlock[el : XMLElement[tag_, _, ch_], ctx_] :=
   With[{role = roleOf[el, ctx["roles"], HTMLToNotebook],
         c = constructOf[el, ctx]},
     Which[
-      functionConstructQ[c],         wrapCells[c[strip[el]]],
+      functionConstructQ[c],         wrapCells[c[el]],
       blockStyleQ[c],                blockStyleEmit[el, c, ctx],
       role === "Preformatted",       {Cell[preText[el], "Program"]},
       tag === "blockquote",          quoteCells[el, ctx],
@@ -1485,13 +1522,10 @@ HTMLToNotebook[XMLObject["Document"][_, root_, _], opts : OptionsPattern[]] :=
   HTMLToNotebook[root, opts];
 
 HTMLToNotebook[tree_, opts : OptionsPattern[]] :=
-  With[{readings = readingsWith[OptionValue["AttributeReadings"]]},
-   With[{roles = compileRules[OptionValue["Roles"], HTMLToNotebook, readings],
-         cons = compileRules[OptionValue["Constructs"], HTMLToNotebook, readings]},
-    If[roles === $Failed || cons === $Failed, $Failed,
-      Notebook[
-        blockEmit[toChildList[materialiseFor[tree, Union[Last[roles], Last[cons]]]],
-          initCtx[First[roles], First[cons]]]]]]
+  Replace[
+    ruleLookups[{OptionValue["Roles"], OptionValue["Constructs"]}, HTMLToNotebook, OptionValue["AttributeReadings"], tree], {
+    $Failed -> $Failed,
+    {roles_, cons_} :> Notebook[blockEmit[toChildList[tree], initCtx[roles, cons]]]}
   ] /; validTextInputQ[tree];
 
 HTMLToNotebook[tree_, OptionsPattern[]] :=
