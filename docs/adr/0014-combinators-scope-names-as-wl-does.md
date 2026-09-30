@@ -1,10 +1,12 @@
 ---
-status: accepted
+status: accepted (amended after implementation)
 ---
 
 # A combinator is one plain pattern over its stages, and its names scope as WL's do
 
 A structural combinator — `Child`, `Descendant`, `Adjacent`, `Sibling` — relates the elements matched by its **stages**, and a stage may itself be a combinator. The paclet reads the whole thing as one plain WL pattern over the list of its stages' elements, `{s1, …, sn}`, and gives every name in it exactly the scope that list pattern would give: a `Condition` on a stage sees that stage's names, a `Condition` on the combinator sees all of them, a name at two stages is one value, and a `PatternTest` sees none. This is ADR 0011's "everything inside is a plain WL pattern" carried from the element up to the combinator.
+
+> **Amended after implementation.** A `Condition` in a rule's body (`comb :> body /; test`) now takes part in choosing an ancestor or earlier sibling, as a `Condition` on the combinator does; before, the first candidate was chosen without it, and a body that rejected that candidate lost the match. Written into "What a query returns, and in what order".
 
 ## Context
 
@@ -40,6 +42,8 @@ A combinator query returns each matched element once, as the DOM's `querySelecto
 - `Descendant[ancestor, desc]` matches a `desc` element that has *some* ancestor matching `ancestor` with which the whole pattern matches. An `ancestor` name used in a rule body binds to the first such ancestor in document order, which is the outermost; with a shared name or a combinator `Condition`, an inner ancestor serves when it is the only one that qualifies. `Descendant[a, Child[b, c]]` gives each `c` once, however many `a` ancestors its parent has.
 
 Where several earlier stages could be chosen, the choice is the first in document order at the latest such stage, then at the one before, and so on.
+
+A rule whose body can reject — a `Condition` at the top of the body, or under `With`, `Module` or `Block` — is matched where it gives a value, as `Cases` matches a rule: a candidate counts only if the body accepts it, so `Descendant[XMLPattern["div", "id" -> i_], XMLPattern["p"]] :> i /; i == "inner"` binds `i` to the inner `div` when the outer one is rejected. The value is kept from that test, so the body is evaluated once for each result, as `Cases` evaluates it. A candidate that is tested and rejected evaluates the body up to its `Condition`, as it would in `Cases`.
 
 ### `XMLDeleteCases`
 
