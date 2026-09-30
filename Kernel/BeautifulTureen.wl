@@ -54,10 +54,12 @@ HTMLClassList::notelement = "The argument should be a single XMLElement. Got hea
 HTMLInnerText::badtree = "The first argument should be an XMLObject, an XMLElement, a string, or a list of these. Got head `1`.";
 HTMLInnerText::badrole = "A \"Roles\" rule gave `1`, which is not \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\" or \"Skip\". The element gets its role from the built-in user-agent stylesheet instead.";
 HTMLInnerText::badpat = "The left-hand side of a rule should be a tag string, an XMLPattern, alternatives of them, or either with a condition pat /; test. Got `1`.";
+HTMLInnerText::notrule = "Each \"Roles\" entry should be a rule pattern -> value or pattern :> value. Got `1`.";
 HTMLInnerText::condcombinator = "A condition (/;) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Got `1`.";
 HTMLToNotebook::badtree = "The first argument should be an XMLObject, an XMLElement, a string, or a list of these. Got head `1`.";
 HTMLToNotebook::badrole = "A \"Roles\" rule gave `1`, which is not \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\" or \"Skip\". The element gets its role from the built-in user-agent stylesheet instead.";
 HTMLToNotebook::badpat = "The left-hand side of a rule should be a tag string, an XMLPattern, alternatives of them, or either with a condition pat /; test. Got `1`.";
+HTMLToNotebook::notrule = "Each \"Roles\" or \"Constructs\" entry should be a rule pattern -> value or pattern :> value. Got `1`.";
 HTMLToNotebook::condcombinator = "A condition (/;) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Got `1`.";
 
 Begin["`Private`"];
@@ -1134,7 +1136,7 @@ compileRule[rule_RuleDelayed, head_, readings_] :=
       compileWith[RuleDelayed @@ Join[Hold @@ {sugarRoleLHS[rule[[1]]]}, Extract[rule, {2}, Hold]], head, readings],
       rule[[1]], head, "badpat"],
     c_Association :> {plainQuery[c], c["Readings"]}];
-compileRule[x_, head_, _] := With[{h = head}, Message[MessageName[h, "badpat"], x]; $Failed];
+compileRule[x_, head_, _] := With[{h = head}, Message[MessageName[h, "notrule"], x]; $Failed];
 
 (* ruleLookups[{rules1, rules2, ...}, head, opt, tree]: for each rule set, a
    function from an element of tree to the value of the first rule that matches

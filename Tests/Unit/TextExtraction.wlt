@@ -185,7 +185,7 @@ TestCreate[
     "Roles" -> {"p"}
   ],
   $Failed,
-  {HTMLInnerText::badpat},
+  {HTMLInnerText::notrule},
   TestID -> "innertext-roles-non-rule-refused"
 ];
 
