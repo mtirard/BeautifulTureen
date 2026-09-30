@@ -330,6 +330,23 @@ TestCreate[
   TestID -> "htn-rule-combinator-refused"
 ];
 
+(* An entry that is not a rule is refused once, when the option is read. *)
+TestCreate[
+  HTMLToNotebook[XMLElement["div", {}, {XMLElement["p", {}, {"a"}], XMLElement["p", {}, {"b"}]}],
+    "Constructs" -> {42}],
+  $Failed,
+  {HTMLToNotebook::badpat},
+  TestID -> "htn-constructs-non-rule-refused"
+];
+
+TestCreate[
+  HTMLToNotebook[XMLElement["div", {}, {XMLElement["p", {}, {"a"}], XMLElement["p", {}, {"b"}]}],
+    "Roles" -> {"p" -> "Block", "p"}],
+  $Failed,
+  {HTMLToNotebook::badpat},
+  TestID -> "htn-roles-non-rule-refused"
+];
+
 (* A constructor function sees the element as it is in the tree, attributes and
    descendants alike, even when its rule names a list key. *)
 TestCreate[
