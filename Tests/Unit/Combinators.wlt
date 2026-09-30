@@ -598,6 +598,48 @@ TestCreate[
   TestID -> "firstcase-and-deletecases-combinator-test"
 ];
 
+(* === A Condition in a rule's body takes part in choosing === *)
+
+(* As Cases gives the places where a rule gives a value, a combinator rule whose
+   body can reject is matched where its body accepts: the ancestor or earlier
+   sibling a name binds to is the first with which the body gives a value, as it
+   is for a Condition on the combinator. *)
+$treeNested = ImportString[
+  "<div id=\"outer\"><div id=\"inner\"><p>x</p></div></div>",
+  {"HTML", "XMLObject"}];
+$treeHeads = ImportString[
+  "<div><h2 id=\"a\">A</h2><p id=\"1\">1</p><h2 id=\"b\">B</h2><p id=\"2\">2</p><span>s</span></div>",
+  {"HTML", "XMLObject"}];
+
+TestCreate[
+  {XMLCases[$treeNested, Descendant[XMLPattern["div", "id" -> i_], XMLPattern["p"]] :> i /; i === "inner"],
+   XMLFirstCase[$treeNested, Descendant[XMLPattern["div", "id" -> i_], XMLPattern["p"]] :> i /; i === "inner"],
+   XMLCases[$treeNested,
+     Descendant[XMLPattern["div", "id" -> i_], XMLPattern["p"]] :> Module[{v = i}, v /; v === "inner"]]},
+  {{"inner"}, "inner", {"inner"}},
+  TestID -> "descendant-body-condition-chooses-ancestor"
+];
+
+TestCreate[
+  {XMLCases[$treeHeads, Sibling[XMLPattern["h2", "id" -> i_], XMLPattern["span"]] :> i /; i === "b"],
+   XMLFirstCase[$treeHeads, Sibling[XMLPattern["h2", "id" -> i_], XMLPattern["span"]] :> i /; i === "b"],
+   XMLCases[$treeHeads,
+     Sibling[Adjacent[XMLPattern["h2", "id" -> i_], XMLPattern["p", "id" -> j_]], XMLPattern["span"]] :>
+       {i, j} /; i === "b"]},
+  {{"b"}, "b", {{"b", "2"}}},
+  TestID -> "sibling-body-condition-chooses-sibling"
+];
+
+(* The body is evaluated for each result once, as Cases evaluates it: not when
+   the query is compiled, and not again once a tuple is chosen. *)
+TestCreate[
+  {Module[{n = 0},
+    {XMLCases[$treeNested, Descendant[XMLPattern["div", "id" -> i_], XMLPattern["p"]] :> (n++; i) /; True], n}],
+   Module[{n = 0}, {XMLCases[$treeNested, XMLPattern["div", "id" -> i_] :> (n++; i) /; True], n}]},
+  {{{"outer"}, 1}, {{"outer", "inner"}, 2}},
+  TestID -> "combinator-body-condition-evaluates-body-once"
+];
+
 (* === A PatternTest sees no pattern names === *)
 
 (* As in WL, where Block[{i = "z"}, MatchQ[{"k", "z"}, {i_, _?(Function[v, v === i])}]]
