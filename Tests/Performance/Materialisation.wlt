@@ -102,3 +102,34 @@ TestCreate[
   TimeConstraint -> 0.5,
   TestID -> "perf-condition-on-six-attribute-names"
 ];
+
+(* A "Roles" or "Constructs" rule naming a list key splits each distinct raw
+   value on the tree once, not once for each element a rule is tried on:
+   HTMLToNotebook asks for an element's role up to three times. Here every
+   element carries one of seven class values of a thousand tokens each.
+   Measured at about 120 ms and 290 ms on a 2026 laptop; splitting per element
+   measured about 350 ms and 1.1 s. The bounds are about twice the first, so
+   they are tighter than the others in this file. *)
+$longClasses = ImportString[
+  "<body>" <> StringJoin @ Table[
+    "<div class=\"" <> StringRiffle[Table["t" <> ToString[k], {k, 1000}]] <>
+      " c" <> ToString[Mod[i, 7]] <> "\">x</div>",
+    {i, 2000}] <> "</body>",
+  {"HTML", "XMLObject"}];
+
+TestCreate[
+  StringLength @ HTMLInnerText[$longClasses,
+    "Roles" -> {XMLPattern["div", "classList" -> "c3"] -> "Skip", XMLPattern[_, "classList" -> "hidden"] -> "Inline"}],
+  3427,
+  TimeConstraint -> 0.25,
+  TestID -> "perf-innertext-classlist-roles"
+];
+
+TestCreate[
+  Length @ First @ HTMLToNotebook[$longClasses,
+    "Roles" -> {XMLPattern["div", "classList" -> "c3"] -> "Skip", XMLPattern[_, "classList" -> "hidden"] -> "Inline"},
+    "Constructs" -> {XMLPattern["div", "classList" -> "c2"] -> "Section", XMLPattern[_, "classList" -> "c1"] -> "Bold"}],
+  1714,
+  TimeConstraint -> 0.6,
+  TestID -> "perf-tonotebook-classlist-rules"
+];
