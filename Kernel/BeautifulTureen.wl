@@ -265,12 +265,22 @@ strip[x_] :=
 (* =========================================================== *)
 (* The query compiler                                           *)
 (*                                                              *)
-(* compileQuery[query, head, readings] -> {pattern, readings}:  *)
-(* the plain WL pattern every consumer runs, and the readings   *)
-(* of the list keys it names ({} when it names none, in which   *)
-(* case the pattern runs on the tree as it is). Refusals message*)
-(* under XMLPattern (an XML pattern's own shape) or under head  *)
-(* (the consumer's query shape) and give $Failed.               *)
+(* compileQuery[query, head, readings] -> the query's normal    *)
+(* form, an Association every decision about the query reads:  *)
+(*   "Stages"     the compiled element patterns, in chain order *)
+(*   "Links"      the combinator heads between them ({} for a   *)
+(*                plain query, which has one stage)             *)
+(*   "Conditions" {{i, j}, Hold[test]} for each Condition on a  *)
+(*                combinator, over its stages i to j, innermost *)
+(*                first                                         *)
+(*   "Body"       the rule's held body, or None                 *)
+(*   "Readings"   the readings of the list keys it names ({}    *)
+(*                when it names none, in which case it runs on  *)
+(*                the tree as it is)                            *)
+(* Refusals message under XMLPattern (an XML pattern's own      *)
+(* shape) or under head and give $Failed. Which query shapes a  *)
+(* consumer takes is the consumer's to check, on the normal     *)
+(* form.                                                        *)
 (*                                                              *)
 (* When a list key is named, every binding that can see an      *)
 (* element's attributes \[LongDash] an element binding e : XMLPattern[...],  *)
@@ -285,10 +295,10 @@ strip[x_] :=
 compileQuery[_, _, $Failed] := $Failed;
 compileQuery[q_, head_, readings_Association] :=
   Catch[
-    Module[{pattern, keys},
-      {pattern, keys} = compilePass[q, head, readings, False];
-      If[keys =!= {}, pattern = First @ compilePass[q, head, readings, True]];
-      {If[chainQ[pattern], pattern, solvable[pattern]], Lookup[readings, keys]}],
+    Module[{query, keys},
+      {query, keys} = compilePass[q, head, readings, False];
+      If[keys =!= {}, query = First @ compilePass[q, head, readings, True]];
+      Append[query, "Readings" -> Lookup[readings, keys]]],
     $refusal];
 
 compilePass[q_, head_, readings_, mat_] :=
@@ -309,19 +319,25 @@ badpat[q_] := refuseAtHead["badpat", q];
 
 cQuery[r_RuleDelayed] :=
   Module[{lhs, binds},
-    {lhs, binds} = reapBinds[cTop[r[[1]]]];
-    With[{l = lhs}, RuleDelayed @@ Join[Hold[l], wrapBinds[binds, Extract[r, {2}, Hold]]]]];
-cQuery[q_] := cTop[q];
+    {lhs, binds} = reapBinds[cStage[r[[1]]]];
+    normalForm[lhs, wrapBinds[binds, Extract[r, {2}, Hold]]]];
+cQuery[q_] := normalForm[cStage[q], None];
 
-(* Only the consumers that search a tree take a combinator; the others take an
-   element pattern. *)
-cTop[q_] := If[MatchQ[$head, XMLCases | XMLFirstCase | XMLDeleteCases], cStage[q], cElem[q]];
+normalForm[chain[stages_, links_, conditions_], body_] :=
+  <|"Stages" -> stages, "Links" -> links, "Conditions" -> conditions, "Body" -> body|>;
 
-(* A combinator's stages are element patterns or combinators. A Condition on a
-   combinator sees the names of all its stages. *)
-cStage[(h : Child | Descendant | Adjacent | Sibling)[a_, b_]] := h[cStage[a], cStage[b]];
-cStage[c_Condition] /; combinatorQ[patternBase[c]] := conditioned[cStage, c];
-cStage[q_] := cElem[q];
+(* A combinator's stages are element patterns or combinators, compiled to
+   chain[stages, links, conditions]. A Condition on a combinator sees the names
+   of all its stages, and covers them. *)
+cStage[(h : Child | Descendant | Adjacent | Sibling)[a_, b_]] := joinChains[cStage[a], h, cStage[b]];
+cStage[c_Condition] /; combinatorQ[patternBase[c]] := conditioned[cStage, c, coverChain];
+cStage[q_] := chain[{cElem[q]}, {}, {}];
+
+joinChains[chain[s1_, l1_, c1_], link_, chain[s2_, l2_, c2_]] :=
+  chain[Join[s1, s2], Join[l1, {link}, l2],
+    Join[c1, Replace[c2, {span_, test_} :> {span + Length[s1], test}, {1}]]];
+
+coverChain[chain[s_, l_, c_], test_] := chain[s, l, Append[c, {{1, Length[s]}, test}]];
 
 (* ---- Element patterns ---- *)
 
@@ -331,19 +347,21 @@ cElem[alts_Alternatives] /; AnyTrue[List @@ alts, combinatorQ] := badpat[alts];
 cElem[alts_Alternatives] := Alternatives @@ (cElem /@ List @@ alts);
 cElem[Verbatim[Pattern][s_Symbol, p_]] :=
   If[combinatorQ[p], badpat[namedPattern[s, p]], bindAs[s, cElem[p], strip]];
-cElem[c_Condition] := (
-  If[combinatorQ[patternBase[c]], refuseAtHead["condcombinator", c[[1]]]];
-  conditioned[cElem, c]);
+cElem[c_Condition] := conditioned[cElem, c, conditionWith];
 (* A plain XMLElement pattern is already what the consumers run. *)
 cElem[x_XMLElement] := x;
 cElem[q_] := badpat[q];
 
-(* A Condition's test sees the names bound in its left-hand side, compiled by comp. *)
-conditioned[comp_, c_] :=
+(* A Condition's test sees the names bound in its left-hand side, compiled by
+   comp; attach puts the held test on the compiled left-hand side. *)
+conditioned[comp_, c_, attach_] :=
   Module[{lhs, binds},
     {lhs, binds} = reapBinds[comp[c[[1]]]];
     Scan[Sow[#, $bindTag] &, binds];
-    With[{l = lhs}, Condition @@ Join[Hold[l], wrapBinds[binds, Extract[c, {2}, Hold]]]]];
+    attach[lhs, wrapBinds[binds, Extract[c, {2}, Hold]]]];
+
+(* p /; test, from a held test. *)
+conditionWith[p_, test_Hold] := Condition @@ Join[Hold[p], test];
 
 cXMLPattern[{tag_}] := XMLElement[cTag[tag], _, _];
 cXMLPattern[{tag_, attrs_}] := With[{t = cTag[tag]}, XMLElement[t, cAttrs[attrs], _]];
@@ -572,10 +590,17 @@ sowElementNames[_] := Null;
 (* =========================================================== *)
 
 (* Materialise once per query, over the union of the list keys all its stages
-   name; strip once, at the output. *)
-runCompiled[run_, tree_, {pattern_, {}}, rest___] := run[tree, pattern, rest];
-runCompiled[run_, tree_, {pattern_, readings_}, rest___] :=
-  strip @ run[materialise[tree, readings], pattern, rest];
+   name; strip once, at the output. A chain runner is given the normal form, a
+   plain runner the pattern or rule it runs. *)
+runCompiled[run_, tree_, q_, rest___] :=
+  With[{p = If[chainQ[q], q, plainQuery[q]]},
+    If[q["Readings"] === {}, run[tree, p, rest],
+      strip @ run[materialise[tree, q["Readings"]], p, rest]]];
+
+(* The pattern a plain query runs, or its rule. *)
+plainQuery[q_] :=
+  solvable @ Replace[q["Body"], {None -> First[q["Stages"]],
+    body_Hold :> RuleDelayed @@ Join[Hold @@ {First[q["Stages"]]}, body]}];
 
 (* =========================================================== *)
 (* Chains: every combinator query                               *)
@@ -594,28 +619,30 @@ runCompiled[run_, tree_, {pattern_, readings_}, rest___] :=
 (* =========================================================== *)
 
 (* Every combinator query runs as a chain, nested or not, tested or not. *)
-chainQ[Verbatim[RuleDelayed][lhs_, _]] := chainQ[lhs];
-chainQ[q_] := combinatorQ[patternBase[q]];
+chainQ[q_] := q["Links"] =!= {};
 
-chainOf[(h : Child | Descendant | Adjacent | Sibling)[a_, b_]] := Join[chainOf[a], {h}, chainOf[b]];
-chainOf[Verbatim[Condition][c_, _]] := chainOf[c];
-chainOf[s_] := {s};
+(* The stages and links, alternating, as the chain runner reads them. *)
+chainOf[q_] := Riffle[solvable /@ q["Stages"], q["Links"]];
 
 (* The pattern a tuple of elements matches: the list of the chain's stages. A
    Condition on the whole combinator wraps the list; one on a combinator that is
-   a stage wraps the sequence of its stages, so it sees only theirs. *)
-tuplePattern[c_Condition] /; chainQ[c] := conditionOn[tuplePattern[c[[1]]], c];
-tuplePattern[q_] := stagesOf[q];
+   a stage wraps the sequence of its stages, so it sees only theirs. Each
+   Condition covers the stages i to j, and an inner one is applied first. *)
+tuplePattern[q_] :=
+  With[{n = Length[q["Stages"]]},
+    Fold[conditionWith[#1, Last[#2]] &,
+      Last /@ Fold[coverStages, Transpose[{Transpose[{Range[n], Range[n]}], q["Stages"]}],
+        Select[q["Conditions"], First[#] =!= {1, n} &]],
+      Select[q["Conditions"], First[#] === {1, n} &]]];
 
-stagesOf[(Child | Descendant | Adjacent | Sibling)[a_, b_]] := Join[stagesOf[a], stagesOf[b]];
-stagesOf[c_Condition] /; chainQ[c] := {conditionOn[PatternSequence @@ stagesOf[c[[1]]], c]};
-stagesOf[s_] := {s};
+(* The items {{i, j}, pattern} inside a Condition's span become one. *)
+coverStages[items_, {{i_, j_}, test_}] :=
+  With[{in = Flatten @ Position[items, {{a_, b_}, _} /; i <= a && b <= j, {1}, Heads -> False]},
+    Join[Take[items, First[in] - 1],
+      {{{i, j}, conditionWith[PatternSequence @@ items[[in, 2]], test]}},
+      Drop[items, Last[in]]]];
 
-(* p /; test, the test held as it is in the Condition c. *)
-conditionOn[p_, c_] := Condition @@ Join[Hold[p], Extract[c, {2}, Hold]];
-
-tupleRule[r : Verbatim[RuleDelayed][lhs_, _]] :=
-  solvable[RuleDelayed @@ Join[Hold @@ {tuplePattern[lhs]}, Extract[r, {2}, Hold]]];
+tupleRule[q_] := solvable[RuleDelayed @@ Join[Hold @@ {tuplePattern[q]}, q["Body"]]];
 
 (* Extract reads {} as no positions, not as the whole tree. *)
 at[{}] := $chainTree;
@@ -783,12 +810,13 @@ elementsAt[tuples_] := Partition[atAll[Join @@ tuples], Length[First[tuples]]];
    matches, which selected the sites, decide it unless a Condition wraps a
    combinator or a name is bound at two stages. *)
 matchedSites[q_] :=
-  siteTuples[MapAt[solvable, chainOf[q], {1 ;; ;; 2}],
-    If[stagesDecideQ[q], None, MatchQ[solvable[tuplePattern[q]]] @* atAll]];
+  siteTuples[chainOf[q], If[stagesDecideQ[q], None, MatchQ[solvable[tuplePattern[q]]] @* atAll]];
 
 stagesDecideQ[q_] :=
-  With[{stages = chainOf[q][[1 ;; ;; 2]]},
-    tuplePattern[q] === stages && DuplicateFreeQ[Join @@ (namesIn /@ stages)]];
+  q["Conditions"] === {} && DuplicateFreeQ[Join @@ (namesIn /@ q["Stages"])];
+
+(* A Condition in the body can reject a tuple. *)
+bodyRejectsQ[q_] := bodyConditionQ[q["Body"]];
 
 namesIn[s_] :=
   DeleteDuplicates @ Cases[s, Verbatim[Pattern][n_Symbol, _] :> Hold[n], {0, Infinity}, Heads -> True];
@@ -796,18 +824,17 @@ namesIn[s_] :=
 (* The plain form picks the last element of a matching tuple rather than binding
    the tuple: a rule's right-hand side re-evaluates what it is given, and a
    tuple may hold a large element. *)
-chainCases[tree_, r : Verbatim[RuleDelayed][lhs_, _]] /; bodyConditionQ[Extract[r, {2}, Hold]] :=
-  Block[{$chainTree = tree}, ruleValues[r]];
-chainCases[tree_, r : Verbatim[RuleDelayed][lhs_, _]] :=
-  Block[{$chainTree = tree}, Cases[elementsAt @ matchedSites[lhs], tupleRule[r], {1}]];
+chainCases[tree_, q_] /; bodyRejectsQ[q] := Block[{$chainTree = tree}, ruleValues[q]];
+chainCases[tree_, q_] /; q["Body"] =!= None :=
+  Block[{$chainTree = tree}, Cases[elementsAt @ matchedSites[q], tupleRule[q], {1}]];
 chainCases[tree_, q_] :=
   Block[{$chainTree = tree}, atAll[Last /@ matchedSites[q]]];
 
-chainFirst[tree_, r : Verbatim[RuleDelayed][lhs_, _], default_] /; bodyConditionQ[Extract[r, {2}, Hold]] :=
-  Block[{$chainTree = tree}, Replace[ruleValues[r], {{v_, ___} :> v, {} -> default}]];
-chainFirst[tree_, r : Verbatim[RuleDelayed][lhs_, _], default_] :=
+chainFirst[tree_, q_, default_] /; bodyRejectsQ[q] :=
+  Block[{$chainTree = tree}, Replace[ruleValues[q], {{v_, ___} :> v, {} -> default}]];
+chainFirst[tree_, q_, default_] /; q["Body"] =!= None :=
   Block[{$chainTree = tree},
-    FirstCase[elementsAt @ matchedSites[lhs], tupleRule[r], default, {1}]];
+    FirstCase[elementsAt @ matchedSites[q], tupleRule[q], default, {1}]];
 chainFirst[tree_, q_, default_] :=
   Block[{$chainTree = tree},
     Replace[matchedSites[q], {{t_, ___} :> at[Last[t]], {} -> default}]];
@@ -817,9 +844,9 @@ chainFirst[tree_, q_, default_] :=
    places where a rule gives a value, a tuple is accepted when the rule gives
    it one. The value is kept, so the body is not evaluated again once the tuple
    is chosen. *)
-ruleValues[r : Verbatim[RuleDelayed][lhs_, _]] :=
-  Module[{rule = tupleRule[r], values = <||>, tuples},
-    tuples = siteTuples[MapAt[solvable, chainOf[lhs], {1 ;; ;; 2}],
+ruleValues[q_] :=
+  Module[{rule = tupleRule[q], values = <||>, tuples},
+    tuples = siteTuples[chainOf[q],
       Function[t, With[{v = Replace[atAll[t], {rule, _ :> $unmatched}]},
         v =!= $unmatched && (values[t] = v; True)]]];
     Lookup[values, Key /@ tuples]];
@@ -844,7 +871,7 @@ XMLCases[tree_, q_, opts : OptionsPattern[]] :=
     Which[
       c === $Failed, $Failed,
       !validTreeQ[tree], Message[XMLCases::badtree, Head[tree]]; $Failed,
-      True, runCompiled[If[chainQ[First[c]], chainCases, casesC], tree, c]]];
+      True, runCompiled[If[chainQ[c], chainCases, casesC], tree, c]]];
 
 (* Base: a pattern, a Condition, or a rule over either, in document order. Cases
    and Position visit an element after the elements nested in it, so the
@@ -908,7 +935,7 @@ XMLFirstCase[tree_, q_, default : Except[_?(optionRuleQ[XMLFirstCase])] : Missin
     Which[
       c === $Failed, $Failed,
       !validTreeQ[tree], Message[XMLFirstCase::badtree, Head[tree]]; $Failed,
-      True, runCompiled[If[chainQ[First[c]], chainFirst, firstC], tree, c, default]]];
+      True, runCompiled[If[chainQ[c], chainFirst, firstC], tree, c, default]]];
 
 (* Base: the first match in document order, the search stopping early. A rule's
    body is evaluated for that match only, unless a Condition on the body
@@ -940,22 +967,14 @@ firstMatchPosition[tree_, pat_] :=
    Sibling) is a niche operation, documented as unsupported here. *)
 Options[XMLDeleteCases] = {"AttributeReadings" -> <||>};
 
-XMLDeleteCases[tree_, q_RuleDelayed, OptionsPattern[]] :=
-  (Message[XMLDeleteCases::badpat, q]; $Failed);
-
 XMLDeleteCases[tree_, q_, opts : OptionsPattern[]] :=
   With[{c = compileQuery[q, XMLDeleteCases, readingsWith[OptionValue["AttributeReadings"]]]},
     Which[
       c === $Failed, $Failed,
+      c["Body"] =!= None, Message[XMLDeleteCases::badpat, q]; $Failed,
+      MemberQ[c["Links"], Adjacent | Sibling], Message[XMLDeleteCases::unsupported]; $Failed,
       !validTreeQ[tree], Message[XMLDeleteCases::badtree, Head[tree]]; $Failed,
-      siblingRelationQ[q], Message[XMLDeleteCases::unsupported]; $Failed,
-      True, runCompiled[If[chainQ[First[c]], chainDelete, deleteC], tree, c]]];
-
-(* Whether Adjacent or Sibling relates any two stages, at any depth. *)
-siblingRelationQ[_Adjacent | _Sibling] := True;
-siblingRelationQ[(Child | Descendant)[a_, b_]] := siblingRelationQ[a] || siblingRelationQ[b];
-siblingRelationQ[Verbatim[Condition][c_, _]] := siblingRelationQ[c];
-siblingRelationQ[_] := False;
+      True, runCompiled[If[chainQ[c], chainDelete, deleteC], tree, c]]];
 
 (* Base: a pattern or a Condition *)
 deleteC[tree_, pat_] := DeleteCases[tree, pat, Infinity];
@@ -971,16 +990,24 @@ Options[XMLMatchQ] = {"AttributeReadings" -> <||>};
 XMLMatchQ[q_, opts : Longest[__?(optionRuleQ[XMLMatchQ])]][el_] := XMLMatchQ[el, q, opts];
 XMLMatchQ[q_][el_] := XMLMatchQ[el, q];
 
-XMLMatchQ[_, q_?combinatorQ, OptionsPattern[]] :=
-  (Message[XMLMatchQ::combinator, q]; $Failed);
-XMLMatchQ[_, q_RuleDelayed, OptionsPattern[]] := (Message[XMLMatchQ::badpat, q]; $Failed);
-
 (* Only the element itself is materialised: its children cannot be reached. *)
 XMLMatchQ[el_, q : Except[_?(optionRuleQ[XMLMatchQ])], opts : OptionsPattern[]] :=
-  Replace[compileQuery[q, XMLMatchQ, readingsWith[OptionValue["AttributeReadings"]]], {
-    $Failed -> $Failed,
-    {pattern_, {}} :> MatchQ[el, pattern],
-    {pattern_, readings_} :> MatchQ[materialise[el, readings, {0}], pattern]}];
+  Replace[
+    elementQuery[compileQuery[q, XMLMatchQ, readingsWith[OptionValue["AttributeReadings"]]], q, XMLMatchQ, "combinator"], {
+    c_Association /; c["Body"] =!= None :> (Message[XMLMatchQ::badpat, q]; $Failed),
+    c_Association :> MatchQ[
+      If[c["Readings"] === {}, el, materialise[el, c["Readings"], {0}]], plainQuery[c]]}];
+
+(* A consumer that tests one element at a time takes a query with no links: a
+   combinator is refused under tag, and a combinator with a Condition under
+   condcombinator. q is the query as written. *)
+elementQuery[$Failed, _, _, _] := $Failed;
+elementQuery[c_, q_, head_, tag_] :=
+  With[{h = head},
+    Which[
+      c["Links"] === {}, c,
+      c["Conditions"] === {}, Message[MessageName[h, tag], q]; $Failed,
+      True, Message[MessageName[h, "condcombinator"], patternBase[q]]; $Failed]];
 
 (* =========================================================== *)
 (* HTMLTextContent                                             *)
@@ -1058,16 +1085,15 @@ sugarRoleLHS[lhs_] := lhs;
    {rules, readings}, the readings being those of every list key any rule
    names, so the caller materialises the tree once, at entry. *)
 compileRule[Verbatim[Rule][lhs_, r_], head_, readings_] :=
-  If[combinatorQ[lhs], refuseRule[head, lhs],
-    Replace[compileQuery[sugarRoleLHS[lhs], head, readings], {p_, rd_} :> {p -> r, rd}]];
+  Replace[elementQuery[compileQuery[sugarRoleLHS[lhs], head, readings], lhs, head, "badpat"],
+    c_Association :> {plainQuery[c] -> r, c["Readings"]}];
 compileRule[rule_RuleDelayed, head_, readings_] :=
-  If[combinatorQ[rule[[1]]], refuseRule[head, rule[[1]]],
-    compileQuery[
-      RuleDelayed @@ Join[Hold @@ {sugarRoleLHS[rule[[1]]]}, Extract[rule, {2}, Hold]],
-      head, readings]];
+  Replace[
+    elementQuery[
+      compileQuery[RuleDelayed @@ Join[Hold @@ {sugarRoleLHS[rule[[1]]]}, Extract[rule, {2}, Hold]], head, readings],
+      rule[[1]], head, "badpat"],
+    c_Association :> {plainQuery[c], c["Readings"]}];
 compileRule[x_, _, _] := {x, {}};
-
-refuseRule[head_, lhs_] := (Message[MessageName[head, "badpat"], lhs]; $Failed);
 
 compileRules[_, _, $Failed] := $Failed;
 compileRules[rules_, head_, readings_] :=
