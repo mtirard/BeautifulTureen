@@ -7,6 +7,8 @@ status: accepted (amended after implementation)
 A [[reading]] — a microsyntax fixed to an attribute key — makes a **new, synthesised attribute** available to an [[XML pattern]]: the element's `class` stays the raw string it always was, and `classList` is its [[token list]]. The query says which one it means by naming the key, so a reading never changes what an existing key's value is. This ADR settles the reading table, the synthesised names, what an absent attribute reads as, and the emission that materialises a token list as a real, bindable subexpression without losing the original element.
 
 > **Amended after implementation** (commits bc5ae39, ca3c763, a86bfa5). Corrected in place: the trim field is the string `"TrimWhitespace"`; the option is the string `"AttributeReadings"`, and an entry in it replaces the global's entry for that key whole; trimming strips HTML whitespace only; a `Roles`/`Constructs` function now receives the stripped element, so that Possible Issues residual is gone; the shipped cost is about 2.5×, not 1.7×. Added: the validation of reading tables, including the two list-key collisions it refuses. The design-time measurements are kept as history beside the shipped ones.
+>
+> **Amended again after implementation**: `Roles` and `Constructs` rules no longer run on a materialised tree. Written into "The emission is additive, not in-place" and "Materialisation is query-driven".
 
 Supersedes ADR 0007 (`AttributeTest` and its `Condition` emission do not survive) and ADR 0008 (`TokenTest`/`ClassTest` do not survive; the options table does, renamed and rehomed below). Amends ADR 0009 on absence.
 
@@ -59,11 +61,15 @@ The compiler wraps every binding that can see the element's attributes in the in
 (* compiler emits *)  pat[e$]                                  :> With[{e = strip[e$]}, body]
 ```
 
-`e` is identical to the original while `cls` binds the materialised list, from one match. A `PatternTest` on the attribute argument is applied to the stripped map. `HTMLInnerText` and `HTMLToNotebook` need no special-casing: output is byte-identical on a materialised tree, verified including hyperlinks and tables. A `Roles`/`Constructs` **function** right-hand side is applied to the stripped element too.
+`e` is identical to the original while `cls` binds the materialised list, from one match. A `PatternTest` on the attribute argument is applied to the stripped map.
+
+`HTMLInnerText` and `HTMLToNotebook` never see a materialised tree. A `Roles` or `Constructs` rule is tried on one element at a time, so the rule set splits the distinct raw values on the tree once, up front, and attaches an element's token lists to a copy of it only when a rule is tried on it; the emitters walk the tree as it is, and a **function** right-hand side receives the element as it is in the tree with nothing to strip. They first ran on a tree materialised at entry, and relied on the emitters' output being byte-identical on it, which held but left `strip` calls in the emitters (and a bug where one was missing, a86bfa5).
 
 ### Materialisation is query-driven, and there is no cache
 
 Only the list keys a query names are materialised, and only the **distinct** raw values on the tree are split. Measured at design time: 6.6 ms for one named key, 8.2 ms for two, against 7 ms for the `Condition` emission this replaces and 26 ms for eager tree-wide materialisation — 1.7× for one query on a tree, break-even at two. Measured on the shipped implementation at 5 000 elements: about 17 ms for one `classList` query against 6.8 ms for the superseded emission, about 2.5×. A query naming only raw keys materialises nothing and runs on the tree as it is.
+
+For `Roles` and `Constructs` rules, measured with two list-key rules in each on 5 000 elements and on a real 2 000-element page: splitting each element's value whenever a rule is tried on it cost 18–45% more than materialising at entry, since `HTMLToNotebook` asks for an element's role up to three times; splitting the distinct values up front and attaching per element costs 4–7% more than materialising at entry, and is what ships. With a thousand-token `class` on 2 000 elements the per-element split was 3–4× slower.
 
 No `Once` cache: whole-tree caching is ≈120× faster warm but retains up to 1.5 MB per tree with no cap, and per-string caching is measured 54× *slower* than a plain split and never warms. Splitting only the distinct values beats both — a real page has on the order of a dozen distinct `class` strings across thousands of elements.
 
