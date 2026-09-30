@@ -1123,7 +1123,8 @@ sugarRoleLHS[lhs_] := lhs;
 
 (* Each rule's left-hand side is compiled like a query, and must be an element
    pattern: a rule is tried against one element at a time. compileRule gives
-   {rule, readings}, the readings being those of the list keys it names. *)
+   {rule, readings}, the readings being those of the list keys it names, or
+   $Failed for an entry that is refused, a non-rule among them. *)
 compileRule[Verbatim[Rule][lhs_, r_], head_, readings_] :=
   Replace[elementQuery[compileWith[sugarRoleLHS[lhs], head, readings], lhs, head, "badpat"],
     c_Association :> {plainQuery[c] -> r, c["Readings"]}];
