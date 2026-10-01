@@ -8,6 +8,8 @@
 
 The no-silent-loss rule also covers the `<caption>`. A GFM table has no caption, so dropping it would lose its text without a trace. Instead, in both forms, a caption becomes a `"Text"` cell immediately before the table's cell. Its content is converted as a paragraph's is, keeping formatting and links, and it exports as a line of its own above the table. A table without a caption is still a single cell.
 
+Both forms sit in an `"Output"` cell. A `Dataset` brings its own look; the `Grid` is given one that reads as a document table rather than as an evaluation result: framed (`Frame -> All`), left-aligned, in the `"Text"` base style, with its strings shown as written (no quotes, operator glyphs or syntax colouring). A `<th>` cell in the `Grid` form is bold, so it exports as `**…**`; in the `Dataset` form the `<th>` row is the header and stays plain.
+
 ## Considered options
 
 - **Always honor `<th>` as the header (named construct)** — rejected: silently drops a column when two header labels coincide. Losing data is a worse cost than a blank header row.
