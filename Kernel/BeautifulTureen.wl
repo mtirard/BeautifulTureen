@@ -1369,7 +1369,16 @@ styleBox["Underline", inner_] :=
   StyleBox[boxRow[inner], FontVariations -> {"Underline" -> True}];
 styleBox["StrikeThrough", inner_] :=
   StyleBox[boxRow[inner], FontVariations -> {"StrikeThrough" -> True}];
-styleBox["Code", inner_] := FrameBox[StyleBox[boxRow[inner], "Code"]];
+styleBox["Code", inner_] := inlineCell@FrameBox[StyleBox[boxRow[inner], "Code"]];
+
+(* An inline atom that is boxes, not text, goes into TextData as an inline
+   Cell[BoxData[...]]; placed bare, the front end shows it as its box text. A
+   string, a Cell, a ButtonBox or a StyleBox of text is text already. *)
+textAtomQ[_String | _Cell | _ButtonBox] := True;
+textAtomQ[StyleBox[x_, ___]] := textAtomQ[x];
+textAtomQ[RowBox[xs_List]] := AllTrue[xs, textAtomQ];
+textAtomQ[_] := False;
+inlineCell[b_] := If[textAtomQ[b], b, Cell[BoxData[b]]];
 
 (* Hyperlink reads href, falling back to src (img); the label is the inner
    boxes, or the alt text / URL when there are none. No usable href -> Plain. *)
@@ -1388,7 +1397,7 @@ hyperResult[el_, inner_] :=
 
 inlineForm[c_, el_, inner_] :=
   Which[
-    functionConstructQ[c], {c[el]},
+    functionConstructQ[c], inlineCell /@ Flatten[{c[el]}],
     c === "Hyperlink",     hyperResult[el, inner],
     inner === {},          {},
     MemberQ[$styleTokens, c], {styleBox[c, inner]},
