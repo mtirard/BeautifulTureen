@@ -367,3 +367,74 @@ TestCreate[
   "same",
   TestID -> "htn-delayed-rule-body-sees-original-element"
 ];
+
+(* === Inline construct results that are boxes become inline cells === *)
+
+(* An inline construct that gives boxes, not text, is wrapped in an inline
+   Cell[BoxData[...]]: a bare box in TextData displays as its box text. *)
+nbcells[h_String, opts___] :=
+  First @ HTMLToNotebook[ImportString[h, {"HTML", "XMLObject"}], opts];
+$codeCell[x_] := Cell[BoxData[FrameBox[StyleBox[x, "Code"]]]];
+
+TestCreate[
+  nbcells["<p>a <code>x</code> b</p>"],
+  {Cell[TextData[{"a ", $codeCell["x"], " b"}], "Text"]},
+  TestID -> "htn-code-inline-cell"
+];
+
+TestCreate[
+  nbmd["<p>a <code>x</code> b</p>"],
+  "a `x` b",
+  TestID -> "htn-code-inline-cell-markdown"
+];
+
+(* The same cell is the label of a link around the code *)
+TestCreate[
+  nbcells["<p><a href=\"/y\"><code>x</code></a></p>"],
+  {Cell[TextData[{ButtonBox[$codeCell["x"],
+    BaseStyle -> "Hyperlink", ButtonData -> {URL["/y"], None}]}], "Text"]},
+  TestID -> "htn-code-in-link-inline-cell"
+];
+
+TestCreate[
+  nbmd["<p><a href=\"/y\"><code>dumps()</code></a></p>"],
+  "[`dumps()`](/y)",
+  TestID -> "htn-code-in-link-inline-cell-markdown"
+];
+
+(* A constructor function's boxes are wrapped the same way *)
+TestCreate[
+  nbcells["<p>a <foo>z</foo> b</p>",
+    "Constructs" -> {"foo" -> Function[el, GraphicsBox[DiskBox[{0, 0}]]]}],
+  {Cell[TextData[{"a ", Cell[BoxData[GraphicsBox[DiskBox[{0, 0}]]]], " b"}], "Text"]},
+  TestID -> "htn-constructs-function-boxes-inline-cell"
+];
+
+TestCreate[
+  StringMatchQ[
+    nbmd2["<p>a <foo>z</foo> b</p>",
+      "Constructs" -> {"foo" -> Function[el, GraphicsBox[DiskBox[{0, 0}]]]}],
+    "a ![" ~~ __ ~~ "](img/" ~~ __ ~~ ".png) b"],
+  True,
+  TestID -> "htn-constructs-function-boxes-inline-cell-markdown"
+];
+
+(* A string, a Cell, or a StyleBox of text from a constructor function is
+   placed as it is *)
+TestCreate[
+  Map[
+    nbcells["<p>a <foo>z</foo> b</p>", "Constructs" -> {"foo" -> Function[el, #]}] &,
+    {"str", Cell["c"], StyleBox["sb", FontWeight -> Bold]}],
+  {{Cell[TextData[{"a ", "str", " b"}], "Text"]},
+   {Cell[TextData[{"a ", Cell["c"], " b"}], "Text"]},
+   {Cell[TextData[{"a ", StyleBox["sb", FontWeight -> Bold], " b"}], "Text"]}},
+  TestID -> "htn-constructs-function-text-unchanged"
+];
+
+TestCreate[
+  Map[
+    nbmd2["<p>a <foo>z</foo> b</p>", "Constructs" -> {"foo" -> Function[el, #]}] &,
+    {"str", Cell["c"], StyleBox["sb", FontWeight -> Bold]}],
+  {"a str b", "a c b", "a **sb** b"},
+  TestID -> "htn-constructs-function-text-unchanged-markdown"
+];
