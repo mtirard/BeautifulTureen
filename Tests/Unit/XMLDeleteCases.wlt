@@ -122,6 +122,14 @@ TestCreate[
   TestID -> "delete-bad-pattern"
 ];
 
+(* A rule has nothing to delete with, whether -> or :> *)
+TestCreate[
+  {XMLDeleteCases[$treeNoise, XMLPattern["p"] -> 1], XMLDeleteCases[$treeNoise, XMLPattern["p"] :> 1]},
+  {$Failed, $Failed},
+  {XMLDeleteCases::badpat, XMLDeleteCases::badpat},
+  TestID -> "delete-rule-refused"
+];
+
 (* === The classList key === *)
 
 (* Deletion runs on the materialised tree and the whole result is stripped, so
