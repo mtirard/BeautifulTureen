@@ -652,3 +652,114 @@ TestCreate[
   {{}, {"2"}},
   TestID -> "pattern-test-sees-no-names"
 ];
+
+(* === A combinator with more than two stages === *)
+
+(* L[s1, s2, ..., sn] is the right-nested chain L[s1, L[s2, ..., L[s(n-1), sn]]].
+   On this tree each three-stage form selects something no two-stage form of its
+   stages does. *)
+$treeChains = ImportString[
+  "<body><article id=\"art\"><section id=\"s1\"><p>1</p></section><p>2</p></article>" <>
+  "<section id=\"s2\"><p>3</p></section>" <>
+  "<div><h2>h</h2><p>4</p><span>a</span><p>5</p><span>b</span></div>" <>
+  "<div><span>w</span><p>6</p><span>x</span><h2>h</h2><span>y</span><p>7</p><span>z</span></div></body>",
+  {"HTML", "XMLObject"}];
+
+TestCreate[
+  Map[HTMLTextContent, #, {2}] & @ {
+    XMLCases[$treeChains, Child[XMLPattern["body"], XMLPattern["section"], XMLPattern["p"]]],
+    XMLCases[$treeChains, Child[XMLPattern["body"], Child[XMLPattern["section"], XMLPattern["p"]]]],
+    XMLCases[$treeChains, Descendant[XMLPattern["article"], XMLPattern["section"], XMLPattern["p"]]],
+    XMLCases[$treeChains, Descendant[XMLPattern["article"], Descendant[XMLPattern["section"], XMLPattern["p"]]]],
+    XMLCases[$treeChains, Adjacent[XMLPattern["h2"], XMLPattern["p"], XMLPattern["span"]]],
+    XMLCases[$treeChains, Adjacent[XMLPattern["h2"], Adjacent[XMLPattern["p"], XMLPattern["span"]]]],
+    XMLCases[$treeChains, Sibling[XMLPattern["h2"], XMLPattern["p"], XMLPattern["span"]]],
+    XMLCases[$treeChains, Sibling[XMLPattern["h2"], Sibling[XMLPattern["p"], XMLPattern["span"]]]]},
+  {{"3"}, {"3"}, {"1"}, {"1"}, {"a"}, {"a"}, {"a", "b", "z"}, {"a", "b", "z"}},
+  TestID -> "many-stage-combinator-is-right-nested-chain"
+];
+
+(* Four stages, and a stage that is a combinator of another head. *)
+TestCreate[
+  Map[HTMLTextContent, #, {2}] & @ {
+    XMLCases[$treeChains, Child[XMLPattern["html"], XMLPattern["body"], XMLPattern["section"], XMLPattern["p"]]],
+    XMLCases[$treeChains, Descendant[XMLPattern["body"], XMLPattern["article"], XMLPattern["section"], XMLPattern["p"]]],
+    XMLCases[$treeChains, Sibling[XMLPattern["span"], XMLPattern["p"], XMLPattern["h2"], XMLPattern["span"]]],
+    XMLCases[$treeChains,
+      Descendant[XMLPattern["body"], Child[XMLPattern["article"], XMLPattern["section"]], XMLPattern["p"]]],
+    XMLCases[$treeChains,
+      Descendant[XMLPattern["body"], Descendant[Child[XMLPattern["article"], XMLPattern["section"]], XMLPattern["p"]]]],
+    XMLCases[$treeChains, Descendant[XMLPattern["body"], XMLPattern["div"], Adjacent[XMLPattern["p"], XMLPattern["span"]]]]},
+  {{"3"}, {"1"}, {"y", "z"}, {"1"}, {"1"}, {"a", "b", "x", "z"}},
+  TestID -> "many-stage-four-stages-and-mixed-heads"
+];
+
+(* Names scope as in the nested form: a rule body sees every stage's names, a
+   stage's test only its own, a combinator's test all of its stages', and a name
+   at two stages is one value. *)
+TestCreate[
+  {XMLCases[$treeChains,
+     Descendant[XMLPattern["article", "id" -> a_], XMLPattern["section", "id" -> s_], p : XMLPattern["p"]] :>
+       {a, s, HTMLTextContent[p]}],
+   XMLCases[$treeChains,
+     Descendant[XMLPattern["article", "id" -> a_], Descendant[XMLPattern["section", "id" -> s_], p : XMLPattern["p"]]] :>
+       {a, s, HTMLTextContent[p]}],
+   HTMLTextContent /@ XMLCases[$treeChains,
+     Descendant[XMLPattern["body"], XMLPattern["section", "id" -> s_], XMLPattern["p"]] /; s === "s2"],
+   XMLCases[$treeChains,
+     (Descendant[XMLPattern[_, "id" -> a_], XMLPattern["section", "id" -> s_], XMLPattern["p"]] /; a =!= s) :> {a, s}],
+   HTMLTextContent /@ XMLCases[$treeChains,
+     Descendant[XMLPattern["article", "id" -> a_], XMLPattern["section"] /; Head[a] === Symbol, XMLPattern["p"]]],
+   HTMLTextContent /@ XMLCases[$treeChains,
+     Sibling[XMLPattern[t_], XMLPattern["h2"], XMLPattern[t_]]]},
+  {{{"art", "s1", "1"}}, {{"art", "s1", "1"}}, {"3"}, {{"art", "s1"}}, {"1"}, {"y", "7", "z"}},
+  TestID -> "many-stage-names-scope-as-nested"
+];
+
+(* Every consumer reads a combinator of many stages as the nested one. XMLMatchQ and the
+   "Roles" and "Constructs" rules test one element, so they refuse it as they
+   refuse any combinator. *)
+TestCreate[
+  {HTMLTextContent @ XMLFirstCase[$treeChains, Sibling[XMLPattern["h2"], XMLPattern["p"], XMLPattern["span"]]],
+   XMLFirstCase[$treeChains, Descendant[XMLPattern["article", "id" -> a_], XMLPattern["section"], XMLPattern["p"]] :> a],
+   HTMLTextContent @ XMLDeleteCases[$treeChains, Child[XMLPattern["body"], XMLPattern["section"], XMLPattern["p"]]],
+   HTMLTextContent @ XMLDeleteCases[$treeChains, Descendant[XMLPattern["body"], XMLPattern["div"], XMLPattern["p"]]]},
+  {"a", "art", "12h4a5bw6xhy7z", "123habwxhyz"},
+  TestID -> "many-stage-in-firstcase-and-deletecases"
+];
+
+TestCreate[
+  XMLDeleteCases[$treeChains, Descendant[XMLPattern["body"], XMLPattern["div"], Sibling[XMLPattern["p"], XMLPattern["span"]]]],
+  $Failed,
+  {XMLDeleteCases::unsupported},
+  TestID -> "many-stage-deletecases-sibling-unsupported"
+];
+
+TestCreate[
+  With[{el = XMLElement["p", {}, {"x"}]},
+    {XMLMatchQ[el, Descendant[XMLPattern["div"], XMLPattern["section"], XMLPattern["p"]]],
+     XMLMatchQ[Descendant[XMLPattern["div"], XMLPattern["section"], XMLPattern["p"]]][el],
+     XMLMatchQ[el, Descendant[XMLPattern["div"], XMLPattern["section"], XMLPattern["p"]] /; True],
+     HTMLInnerText[el, "Roles" -> {Child[XMLPattern["div"], XMLPattern["div"], XMLPattern["p"]] -> "Skip"}],
+     HTMLToNotebook[el, "Constructs" -> {Child[XMLPattern["div"], XMLPattern["div"], XMLPattern["p"]] -> "Bold"}]}],
+  {$Failed, $Failed, $Failed, $Failed, $Failed},
+  {XMLMatchQ::combinator, XMLMatchQ::combinator, XMLMatchQ::condcombinator, HTMLInnerText::badpat, HTMLToNotebook::badpat},
+  TestID -> "many-stage-refused-where-one-element-is-tested"
+];
+
+(* A combinator relates at least two stages; with one or none it is refused,
+   wherever it is written. *)
+TestCreate[
+  With[{el = XMLElement["p", {}, {"x"}]},
+    {XMLCases[$treeChains, Descendant[XMLPattern["p"]]],
+     XMLFirstCase[$treeChains, Child[]],
+     XMLDeleteCases[$treeChains, Descendant[XMLPattern["body"], Child[XMLPattern["p"]]]],
+     XMLCases[$treeChains, Sibling[XMLPattern["p"]] :> 1],
+     XMLMatchQ[el, Adjacent[XMLPattern["p"]]],
+     HTMLInnerText[el, "Roles" -> {Descendant[XMLPattern["p"]] -> "Skip"}],
+     HTMLToNotebook[el, "Constructs" -> {Child[XMLPattern["p"]] -> "Bold"}]}],
+  ConstantArray[$Failed, 7],
+  {XMLCases::stages, XMLFirstCase::stages, XMLDeleteCases::stages, XMLCases::stages, XMLMatchQ::stages,
+   HTMLInnerText::stages, HTMLToNotebook::stages},
+  TestID -> "one-stage-combinator-refused"
+];
