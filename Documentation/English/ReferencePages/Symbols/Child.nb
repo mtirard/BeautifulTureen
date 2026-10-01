@@ -289,7 +289,7 @@ Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBo
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Alternatives cannot contain a combinator:", "ExampleText"], Cell[BoxData["tree=ImportString[\"<article><p>Top.</p><section><p>Nested.</p></section></article>\",{\"HTML\",\"XMLObject\"}];
 XMLCases[tree,Child[XMLPattern[\"article\"],XMLPattern[\"p\"]]|Child[XMLPattern[\"section\"],XMLPattern[\"p\"]]]"], "Input"],
 
-Cell["XMLCases::badpat: The second argument should be an XMLPattern, alternatives of them, a Child, Descendant, Adjacent or Sibling combinator, or a rule pattern :> body with one of these. Each can have a condition (/;), and an XMLPattern or alternatives of them can be named. Got Child[XMLPattern[\"article\"], XMLPattern[\"p\"]] | Child[XMLPattern[\"section\"], XMLPattern[\"p\"]].", "Message", "MSG"],
+Cell["XMLCases::badpat: The second argument should be an XMLPattern, alternatives of them, a Child, Descendant, Adjacent or Sibling combinator, or a rule pattern -> rhs or pattern :> body with one of these. Each can have a condition (/;), and an XMLPattern or alternatives of them can be named. Got Child[XMLPattern[\"article\"], XMLPattern[\"p\"]] | Child[XMLPattern[\"section\"], XMLPattern[\"p\"]].", "Message", "MSG"],
 
 Cell[BoxData["$Failed"], "Output"],
 

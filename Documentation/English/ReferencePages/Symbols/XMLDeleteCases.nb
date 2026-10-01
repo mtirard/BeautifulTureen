@@ -293,7 +293,7 @@ Cell[BoxData["$Failed"], "Output"]}, Open]],
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A rule cannot be used:", "ExampleText"], Cell[BoxData["tree=ImportString[\"<p>a</p>\",{\"HTML\",\"XMLObject\"}];
 XMLDeleteCases[tree,XMLPattern[\"p\"]:>\"x\"]"], "Input"],
 
-Cell["XMLDeleteCases::badpat: The second argument should be an XMLPattern, alternatives of them, or a Child or Descendant combinator. Each can have a condition (/;), and an XMLPattern or alternatives of them can be named. A rule pattern :> body cannot be used. Got XMLPattern[\"p\"] :> \"x\".", "Message", "MSG"],
+Cell["XMLDeleteCases::badpat: The second argument should be an XMLPattern, alternatives of them, or a Child or Descendant combinator. Each can have a condition (/;), and an XMLPattern or alternatives of them can be named. A rule, whether pattern -> rhs or pattern :> body, cannot be used. Got XMLPattern[\"p\"] :> \"x\".", "Message", "MSG"],
 
 Cell[BoxData["$Failed"], "Output"]}, Open]],
 
