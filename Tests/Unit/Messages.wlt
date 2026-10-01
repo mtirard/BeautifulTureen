@@ -37,3 +37,17 @@ TestCreate[
   {"Got Child[XMLPattern[\"article\"], XMLPattern[\"p\"]] | Child[XMLPattern[\"section\"], XMLPattern[\"p\"]]."},
   TestID -> "message-names-whole-alternatives-with-combinator"
 ];
+
+(* A combinator with one stage is refused with a message that says it needs two. *)
+TestCreate[
+  capturedMessages[XMLCases[$msgTree, Descendant[XMLPattern["p"]]]],
+  {"A combinator such as Child or Descendant needs at least two stages, as in Descendant[a, b] or Descendant[a, b, c]. Got Descendant[XMLPattern[\"p\"]]."},
+  TestID -> "message-one-stage-combinator-names-two-stage-minimum"
+];
+
+(* Where no combinator can be used, the message does not suggest one. *)
+TestCreate[
+  capturedMessages[XMLMatchQ[XMLElement["p", {}, {"x"}], Descendant[XMLPattern["p"]]]],
+  {"Descendant[XMLPattern[\"p\"]] is a combinator with fewer than two stages. A combinator needs at least two, but XMLMatchQ tests a lone element and cannot use one; use XMLCases or XMLFirstCase to search a tree with it."},
+  TestID -> "message-one-stage-combinator-in-xmlmatchq"
+];
