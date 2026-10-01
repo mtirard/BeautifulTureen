@@ -20,7 +20,7 @@ Sibling::usage = "Sibling[beforePat, afterPat] is a combinator for XMLCases and 
 Descendant::usage = "Descendant[ancestorPat, descPat] is a combinator for XMLCases, XMLFirstCase and XMLDeleteCases that matches elements that match descPat and are nested at any depth inside an element that matches ancestorPat. Each such element is given once, however many of its ancestors match. A name bound in ancestorPat, as used in a rule body, gives the outermost matching ancestor. Each argument is a stage: an XMLPattern, alternatives of them, or another combinator. Stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements. A condition on a stage can use the names bound in that stage. A condition on the whole combinator can use the names bound in all its stages.";
 HTMLTextContent::usage = "HTMLTextContent[tree] gives the text of an XML tree: all the strings it contains, joined in document order. No whitespace is added or removed, so source indentation and the whitespace in <pre> are kept. tree can be an XMLElement, an XMLObject document, a list, or a string.";
 HTMLInnerText::usage = "HTMLInnerText[tree] gives the readable text of an XML tree. Runs of whitespace are collapsed, block-level elements go on their own lines, <br> becomes a newline, <pre> content is kept as written, tags such as script and style are dropped, and the result is trimmed. How each element is treated depends only on its tag, as given by the built-in user-agent stylesheet. HTMLInnerText[tree, \"Roles\" -> rules] changes this, with rules of the form pattern -> role, where pattern is an XMLPattern or a tag string and role is \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\" or \"Skip\". \"BlockSeparator\" -> sep sets the string inserted between blocks (default \"\\n\"). \"AttributeReadings\" -> readings adds readings to $AttributeReadings for the patterns in the rules. tree can be an XMLElement, an XMLObject document, a list, or a string.";
-HTMLToNotebook::usage = "HTMLToNotebook[tree] converts an HTML or XML tree to a Notebook expression, which can be displayed or exported with Export to Markdown, PDF, RTF, etc. Block-level tags become cells, such as headings -> Title, Chapter, Section, etc., p -> Text, li -> Item, Subitem, etc., blockquote -> a framed quote, pre -> a Program cell, and table -> a Dataset or Grid. Inline tags become boxes in the surrounding cell, such as b -> bold, i -> italic, code -> inline code, a -> a hyperlink and img -> its alt text. How each element is treated depends only on its tag, as given by the built-in user-agent stylesheet. HTMLToNotebook[tree, \"Roles\" -> rules] changes the role of elements, such as block or inline. \"Constructs\" -> rules changes what an element becomes: an inline style such as \"Bold\", a cell style, or a function that is applied to the element and gives a Cell or boxes. The left-hand side of each rule is an XMLPattern or a tag string. \"AttributeReadings\" -> readings adds readings to $AttributeReadings for the patterns in the rules. tree can be an XMLElement, an XMLObject document, a list, or a string.";
+HTMLToNotebook::usage = "HTMLToNotebook[tree] converts an HTML or XML tree to a Notebook expression, which can be displayed or exported with Export to Markdown, PDF, RTF, etc. Block-level tags become cells, such as headings -> Title, Chapter, Section, etc., p -> Text, li -> Item, Subitem, etc., blockquote -> a framed quote, pre -> a Program cell, and table -> a Dataset or Grid, with its caption as a Text cell before it. Inline tags become boxes in the surrounding cell, such as b -> bold, i -> italic, code -> inline code, a -> a hyperlink and img -> its alt text. How each element is treated depends only on its tag, as given by the built-in user-agent stylesheet. HTMLToNotebook[tree, \"Roles\" -> rules] changes the role of elements, such as block or inline. \"Constructs\" -> rules changes what an element becomes: an inline style such as \"Bold\", a cell style, or a function that is applied to the element and gives a Cell or boxes. The left-hand side of each rule is an XMLPattern or a tag string. \"AttributeReadings\" -> readings adds readings to $AttributeReadings for the patterns in the rules. tree can be an XMLElement, an XMLObject document, a list, or a string.";
 
 (* === Messages === *)
 
@@ -1310,7 +1310,8 @@ blockStyleQ[_] := False;
 (* Default construct map: the frozen UA stylesheet read for font rendering
    (inline) plus the structural block styles. Tried after the user rules,
    first match wins; an unmatched element gets no construct (None). table/hr
-   are themselves built-in constructor-function rules. *)
+   are themselves built-in constructor-function rules; table's also takes the
+   context, for its caption. *)
 (* Plain XMLElement patterns: an XMLPattern is inert, and these name no list
    key, so they are what compiling XMLPattern[tag] would give. *)
 $defaultConstructRules = {
@@ -1332,7 +1333,7 @@ $defaultConstructRules = {
   XMLElement["span" | "mark" | "small" | "q" | "abbr" | "sub" | "sup" |
     "time" | "label" | "bdi" | "bdo" | "data" | "ruby" | "rt" | "rp" |
     "wbr", _, _] -> "Plain",
-  XMLElement["table", _, _] :> tableConstruct,
+  XMLElement["table", _, _] :> contextConstruct[tableConstruct],
   XMLElement["hr", _, _] :> hrConstruct
 };
 
@@ -1450,7 +1451,7 @@ imageResult[XMLElement[_, attrs_, _], ctx_] :=
 
 inlineForm[c_, el_, inner_, ctx_] :=
   Which[
-    functionConstructQ[c], inlineCell /@ Flatten[{c[el]}],
+    functionConstructQ[c], inlineCell /@ Flatten[{applyConstruct[c, el, ctx]}],
     c === "Hyperlink",     hyperResult[el, inner],
     c === "Image",         imageResult[el, ctx],
     inner === {},          {},
@@ -1514,6 +1515,11 @@ listStyleName[ctx_] :=
 preText[el_] :=
   StringReplace[textContentWalk[el], StartOfString ~~ "\n" -> ""];
 
+(* A constructor function is applied to the element alone; a built-in one
+   wrapped in contextConstruct also takes the context. *)
+applyConstruct[contextConstruct[f_], el_, ctx_] := f[el, ctx];
+applyConstruct[f_, el_, _] := f[el];
+
 (* Normalize a constructor-function result to a list of cells. *)
 wrapCells[c_Cell] := {c};
 wrapCells[l_List] := l;
@@ -1523,7 +1529,7 @@ emitBlock[el : XMLElement[tag_, _, ch_], ctx_] :=
   With[{role = roleOf[el, ctx["roles"], HTMLToNotebook],
         c = constructOf[el, ctx]},
     Which[
-      functionConstructQ[c],         wrapCells[c[el]],
+      functionConstructQ[c],         wrapCells[applyConstruct[c, el, ctx]],
       blockStyleQ[c],                blockStyleEmit[el, c, ctx],
       role === "Preformatted",       {Cell[preText[el], "Program"]},
       tag === "blockquote",          quoteCells[el, ctx],
@@ -1610,7 +1616,14 @@ datasetCell[headers_, bodyRows_] :=
     "Output"];
 gridCell[rows_] := Cell[BoxData[ToBoxes[Grid[rectangular[rows]]]], "Output"];
 
-tableConstruct[el_XMLElement] :=
+(* A <caption> is a Text cell before the table's cell, converted as a paragraph
+   is, so that it is not lost (ADR 0003). *)
+tableConstruct[el_XMLElement, ctx_] := Join[captionCells[el, ctx], {tableCell[el]}];
+
+captionCells[XMLElement[_, _, ch_], ctx_] :=
+  blockEmit[Cases[ch, XMLElement["caption", _, _]], <|ctx, "blk" -> "Text"|>];
+
+tableCell[el_XMLElement] :=
   Module[{trs = Cases[el, _XMLElement?(MatchQ[#, XMLElement["tr", _, _]] &), Infinity],
           rows, hasHeader, headers},
     rows = tableCellsOf /@ trs;
