@@ -758,3 +758,97 @@ TestCreate[
   "[F](f.png)",
   TestID -> "htn-img-image-token"
 ];
+
+(* === HTMLToNotebook: table captions === *)
+
+(* A <caption> is a Text cell just before the table's cell, so it is not lost *)
+TestCreate[
+  With[{cells = nbcells["<table><caption>Rule 30</caption><tr><td>111</td><td>0</td></tr></table>"]},
+    {Length[cells], First[cells], MatchQ[Last[cells], Cell[BoxData[_], "Output"]]}],
+  {2, Cell[TextData[{"Rule 30"}], "Text"], True},
+  TestID -> "htn-table-caption"
+];
+
+TestCreate[
+  nbmd["<table><caption>Rule 30</caption><tr><td>111</td><td>0</td></tr></table>"],
+  "Rule 30\n\n|  |  |\n| - | - |\n| 111 | 0 |",
+  TestID -> "htn-table-caption-markdown"
+];
+
+(* The caption's content is built as a paragraph's: formatting is kept *)
+TestCreate[
+  First @ nbcells["<table><caption>Rule <b>30</b></caption><tr><td>111</td><td>0</td></tr></table>"],
+  Cell[TextData[{"Rule ", StyleBox["30", FontWeight -> Bold]}], "Text"],
+  TestID -> "htn-table-caption-bold"
+];
+
+TestCreate[
+  nbmd["<table><caption>Rule <b>30</b></caption><tr><td>111</td><td>0</td></tr></table>"],
+  "Rule **30**\n\n|  |  |\n| - | - |\n| 111 | 0 |",
+  TestID -> "htn-table-caption-bold-markdown"
+];
+
+(* ... links, inline code and image alt text too, with edge spaces trimmed *)
+TestCreate[
+  First @ nbcells["<table><caption> <a href=\"http://x\">l</a> and <code>c</code> <img src=\"i.png\" alt=\"pic\"> </caption><tr><td>1</td></tr></table>"],
+  Cell[TextData[{$link["l", "http://x"], " and ",
+    Cell[BoxData[FrameBox[StyleBox["c", "Code", ShowAutoStyles -> False, AutoOperatorRenderings -> {},
+      PrivateFontOptions -> {"OperatorSubstitution" -> False}]]]], " ", $link["pic", "i.png"]}], "Text"],
+  TestID -> "htn-table-caption-inline"
+];
+
+TestCreate[
+  nbmd["<table><caption> <a href=\"http://x\">l</a> and <code>c</code> <img src=\"i.png\" alt=\"pic\"> </caption><tr><td>1</td></tr></table>"],
+  "[l](http://x) and `c` [pic](i.png)\n\n|  |\n| - |\n| 1 |",
+  TestID -> "htn-table-caption-inline-markdown"
+];
+
+(* A table with a header row (the Dataset form) gets its caption too *)
+TestCreate[
+  nbmd["<table><caption>People</caption><thead><tr><th>Name</th><th>Age</th></tr></thead><tbody><tr><td>Ann</td><td>30</td></tr></tbody></table>"],
+  "People\n\n| Name | Age |\n| - | - |\n| Ann | 30 |",
+  TestID -> "htn-table-caption-dataset-markdown"
+];
+
+TestCreate[
+  First @ nbcells["<table><caption>People</caption><thead><tr><th>Name</th><th>Age</th></tr></thead><tbody><tr><td>Ann</td><td>30</td></tr></tbody></table>"],
+  Cell[TextData[{"People"}], "Text"],
+  TestID -> "htn-table-caption-dataset"
+];
+
+(* A table without a caption is one cell, as before *)
+TestCreate[
+  nbcells["<table><tr><td>111</td><td>0</td></tr></table>"],
+  {Cell[BoxData[TagBox[GridBox[{{"\"111\"", "\"0\""}}, AutoDelete -> False,
+    GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], "Grid"]], "Output"]},
+  TestID -> "htn-table-no-caption-one-cell"
+];
+
+TestCreate[
+  Length @ nbcells["<table><tr><th>Name</th><th>Age</th></tr><tr><td>Ann</td><td>30</td></tr></table>"],
+  1,
+  TestID -> "htn-table-no-caption-dataset-one-cell"
+];
+
+(* An empty caption gives no cell *)
+TestCreate[
+  Length @ nbcells["<table><caption> </caption><tr><td>1</td></tr></table>"],
+  1,
+  TestID -> "htn-table-caption-empty"
+];
+
+(* ... and a "Constructs" rule can give it another style *)
+TestCreate[
+  First @ nbcells["<table><caption>Rule 30</caption><tr><td>1</td></tr></table>",
+    "Constructs" -> {"caption" -> "Section"}],
+  Cell[TextData[{"Rule 30"}], "Section"],
+  TestID -> "htn-table-caption-constructs"
+];
+
+(* A "Roles" rule can still skip the caption *)
+TestCreate[
+  nbmd2["<table><caption>Rule 30</caption><tr><td>1</td></tr></table>",
+    "Roles" -> {"caption" -> "Skip"}],
+  "|  |\n| - |\n| 1 |",
+  TestID -> "htn-table-caption-roles-skip"
+];

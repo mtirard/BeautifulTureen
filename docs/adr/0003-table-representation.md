@@ -6,6 +6,8 @@
 
 **Why the no-silent-loss header rule:** the exporter derives the GFM header row solely from the table's _column names_, and column names come from association keys, which are necessarily unique. So named-column constructs give a header but silently **collapse duplicate header labels into one column** — real data loss. Positional constructs (matrix → `Grid`) never lose data but have a blank header. There is no construct that does both. We default to the lossless representation and promote to a real header only when it is faithful (unique labels), rather than dropping a column for prettiness.
 
+The no-silent-loss rule also covers the `<caption>`. A GFM table has no caption, so dropping it would lose its text without a trace. Instead, in both forms, a caption becomes a `"Text"` cell immediately before the table's cell. Its content is converted as a paragraph's is, keeping formatting and links, and it exports as a line of its own above the table. A table without a caption is still a single cell.
+
 ## Considered options
 
 - **Always honor `<th>` as the header (named construct)** — rejected: silently drops a column when two header labels coincide. Losing data is a worse cost than a blank header row.
