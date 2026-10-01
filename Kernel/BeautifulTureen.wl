@@ -1507,21 +1507,26 @@ blockStyleEmit[XMLElement[_, _, ch_], style_, ctx_] :=
     <|ctx, "blk" -> If[style === "Item", listStyleName[ctx], style]|>];
 
 (* ---- Blockquote (leaf-collapsing, nesting-aware) ----
-   A <blockquote> becomes one Cell[BoxData[FrameBox[...]], "Text"]; the Markdown
-   exporter prefixes every line of the frame with "> ". The interior is rendered
-   to boxes (inline formatting preserved), one paragraph per block descendant,
-   paragraphs joined by "\n". A nested <blockquote> cannot carry its own frame
-   (frames do not nest), so each of its paragraphs is prefixed with a literal
-   "> " box \[LongDash] which composes with the outer frame's "> " to "> > ", threading
-   quote depth through the text itself. Lists inside a quote flatten to one
-   paragraph (line) per item. *)
+   A <blockquote> becomes one Cell[BoxData[FrameBox[Cell[TextData[...], "Text"]]],
+   "Text"]; the Markdown exporter prefixes every line of the frame with "> ".
+   The frame holds a Text cell so that the front end typesets the quote as text,
+   not as input (operator spacing, monospace); operator substitution is off in
+   it, as inside a box the front end otherwise draws "-" as a minus sign. Its
+   TextData is the interior's inline atoms (formatting preserved), one paragraph
+   per block descendant, paragraphs separated by "\n" atoms. A <br> is a "\n"
+   atom too: inside a quote the exporter has no line break distinct from a
+   paragraph break. A nested <blockquote> cannot carry its own frame (frames do
+   not nest), so each of its lines starts with a "> " atom \[LongDash] which
+   composes with the outer frame's "> " to "> > ", threading quote depth through
+   the text itself. Lists inside a quote flatten to one paragraph (line) per
+   item. *)
 
 flushPara[paras_, buf_] :=
   With[{run = trimAtoms[buf]},
-    If[realQ[run], Append[paras, boxRow[run]], paras]];
+    If[realQ[run], Append[paras, run], paras]];
 
-(* Walk a child list, buffering inline runs into paragraph boxes and recursing
-   on block descendants \[LongDash] the cell-free analogue of blockEmit. *)
+(* Walk a child list, buffering inline runs into paragraphs (atom lists) and
+   recursing on block descendants \[LongDash] the cell-free analogue of blockEmit. *)
 quoteCollect[children_List, ctx_] :=
   Module[{res},
     res = Fold[
@@ -1536,16 +1541,17 @@ quoteCollect[children_List, ctx_] :=
     flushPara[res[[1]], res[[2]]]];
 
 quoteBlockParas[XMLElement["blockquote", _, ch_], ctx_] :=
-  (RowBox[{"> ", #}] &) /@ quoteCollect[ch, ctx];
+  nestedQuoteLines /@ quoteCollect[ch, ctx];
 quoteBlockParas[XMLElement[_, _, ch_], ctx_] := quoteCollect[ch, ctx];
 quoteBlockParas[_, _] := {};
 
-joinParas[{}] := "";
-joinParas[{p_}] := p;
-joinParas[ps_List] := RowBox[Riffle[ps, "\n"]];
+(* A nested quote's paragraph: "> " at its start and after each line break *)
+nestedQuoteLines[para_List] :=
+  Prepend[Flatten[Replace[para, "\n" -> {"\n", "> "}, {1}], 1], "> "];
 
 quoteCells[XMLElement[_, _, ch_], ctx_] :=
-  {Cell[BoxData[FrameBox[joinParas[quoteCollect[ch, ctx]]]], "Text"]};
+  {Cell[BoxData[FrameBox[Cell[TextData[Flatten[Riffle[quoteCollect[ch, ctx], "\n"], 1]],
+    "Text", PrivateFontOptions -> {"OperatorSubstitution" -> False}]]], "Text"]};
 
 (* ---- Built-in constructor-function constructs ---- *)
 
