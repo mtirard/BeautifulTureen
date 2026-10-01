@@ -773,6 +773,15 @@ TestCreate[
   TestID -> "htn-img-image-token"
 ];
 
+(* An img made a "Hyperlink" reads its alt text as "Image" does: whitespace
+   collapsed and trimmed *)
+TestCreate[
+  Cases[HTMLToNotebook[XMLElement["p", {}, {XMLElement["img", {"src" -> "s.png", "alt" -> " a \n b "}, {}]}],
+    "Constructs" -> {"img" -> "Hyperlink"}], ButtonBox[label_, ___] :> label, Infinity],
+  {"a b"},
+  TestID -> "htn-img-hyperlink-alt-text"
+];
+
 (* === HTMLToNotebook: table captions === *)
 
 (* A <caption> is a Text cell just before the table's cell, so it is not lost *)

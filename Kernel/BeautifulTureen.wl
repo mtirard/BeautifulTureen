@@ -20,7 +20,7 @@ Sibling::usage = "Sibling[beforePat, afterPat] is a combinator for XMLCases and 
 Descendant::usage = "Descendant[ancestorPat, descPat] is a combinator for XMLCases, XMLFirstCase and XMLDeleteCases that matches elements that match descPat and are nested at any depth inside an element that matches ancestorPat. Each such element is given once, however many of its ancestors match. A name bound in ancestorPat, as used in a rule body, gives the outermost matching ancestor. Descendant[pat1, pat2, pat3, ...] is Descendant[pat1, Descendant[pat2, pat3, ...]], so Descendant[a, b, c] matches each c inside a b inside an a. Each argument is a stage: an XMLPattern, alternatives of them, or another combinator. Stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements. A condition on a stage can use the names bound in that stage. A condition on the whole combinator can use the names bound in all its stages.";
 HTMLTextContent::usage = "HTMLTextContent[tree] gives the text of an XML tree: all the strings it contains, joined in document order. No whitespace is added or removed, so source indentation and the whitespace in <pre> are kept. tree can be an XMLElement, an XMLObject document, a list, or a string.";
 HTMLInnerText::usage = "HTMLInnerText[tree] gives the readable text of an XML tree. Runs of whitespace are collapsed, block-level elements go on their own lines, <br> becomes a newline, <pre> content is kept as written, tags such as script and style are dropped, and the result is trimmed. How each element is treated depends only on its tag, as given by the built-in user-agent stylesheet. HTMLInnerText[tree, \"Roles\" -> rules] changes this, with rules of the form pattern -> role, where pattern is an XMLPattern or a tag string and role is \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\" or \"Skip\". \"BlockSeparator\" -> sep sets the string inserted between blocks (default \"\\n\"). \"AttributeReadings\" -> readings adds readings to $AttributeReadings for the patterns in the rules. tree can be an XMLElement, an XMLObject document, a list, or a string.";
-HTMLToNotebook::usage = "HTMLToNotebook[tree] converts an HTML or XML tree to a Notebook expression, which can be displayed or exported with Export to Markdown, PDF, RTF, etc. Block-level tags become cells, such as headings -> Title, Chapter, Section, etc., p -> Text, li -> Item, Subitem, etc., blockquote -> a framed quote, pre -> a Program cell, and table -> a Dataset or Grid, with its caption as a Text cell before it. Inline tags become boxes in the surrounding cell, such as b -> bold, i -> italic, code -> inline code, a -> a hyperlink and img -> its alt text. How each element is treated depends only on its tag, as given by the built-in user-agent stylesheet. HTMLToNotebook[tree, \"Roles\" -> rules] changes the role of elements, such as block or inline. \"Constructs\" -> rules changes what an element becomes: an inline style such as \"Bold\", a cell style, or a function that is applied to the element and gives a Cell or boxes. The left-hand side of each rule is an XMLPattern or a tag string. \"AttributeReadings\" -> readings adds readings to $AttributeReadings for the patterns in the rules. tree can be an XMLElement, an XMLObject document, a list, or a string.";
+HTMLToNotebook::usage = "HTMLToNotebook[tree] converts an HTML or XML tree to a Notebook expression, which can be displayed or exported with Export to Markdown, PDF, RTF, etc. Block-level tags become cells, such as headings -> Title, Chapter, Section, etc., p -> Text, li -> Item, Subitem, etc., blockquote -> a framed quote, pre -> a Program cell, and table -> a Dataset or Grid, with its caption as a Text cell before it. Inline tags become boxes in the surrounding cell, such as b -> bold, i -> italic, code -> inline code, a -> a hyperlink and img -> its alt text, linked to its src. How each element is treated depends only on its tag, as given by the built-in user-agent stylesheet. HTMLToNotebook[tree, \"Roles\" -> rules] changes the role of elements, such as block or inline. \"Constructs\" -> rules changes what an element becomes: an inline style such as \"Bold\", a cell style, or a function that is applied to the element and gives a Cell or boxes. The left-hand side of each rule is an XMLPattern or a tag string. \"AttributeReadings\" -> readings adds readings to $AttributeReadings for the patterns in the rules. tree can be an XMLElement, an XMLObject document, a list, or a string.";
 
 (* === Messages === *)
 
@@ -1414,16 +1414,23 @@ boxRow[{}] := "";
 boxRow[{x_}] := x;
 boxRow[xs_List] := RowBox[xs];
 
+(* The spaces at the start and at the end of a string *)
+$leadingSpaces = StartOfString ~~ " " ..;
+$trailingSpaces = " " .. ~~ EndOfString;
+
 (* Collapse whitespace across atom boundaries, as HTMLInnerText does: a string's
    leading spaces go when the atom before it ends in a space or is a line break
-   ("\n"), and the spaces before a line break go. Empty strings are dropped. *)
+   ("\n"), and the spaces before a line break go. Empty strings are dropped.
+   This does not reuse HTMLInnerText's atomize/itSerialize (ADR 0002): those
+   reduce a token stream to one string, while these atoms include boxes that
+   must stay in place, with each element's edge spaces kept outside its form. *)
 joinSpaces[a_List] := Fold[joinAtom, {}, a];
 joinAtom[acc_, ""] := acc;
 joinAtom[{}, x_] := {x};
 joinAtom[acc_, "\n"] :=
-  Append[DeleteCases[MapAt[stripSpaces[#, " " .. ~~ EndOfString] &, acc, -1], "", {1}], "\n"];
+  Append[DeleteCases[MapAt[stripSpaces[#, $trailingSpaces] &, acc, -1], "", {1}], "\n"];
 joinAtom[acc_, s_String] /; spaceEndQ[Last[acc]] :=
-  DeleteCases[Append[acc, stripSpaces[s, StartOfString ~~ " " ..]], "", {1}];
+  DeleteCases[Append[acc, stripSpaces[s, $leadingSpaces]], "", {1}];
 joinAtom[acc_, x_] := Append[acc, x];
 
 spaceEndQ[s_String] := StringEndsQ[s, " " | "\n"];
@@ -1434,7 +1441,7 @@ stripSpaces[x_, _] := x;
 (* Split a joined atom list into its leading edge, core and trailing edge. An
    edge is the whitespace-only strings (spaces, line breaks) at that end, plus
    the spaces at that end of the outermost string of the core. *)
-blankQ[s_String] := StringMatchQ[s, Whitespace ..];
+blankQ[s_String] := StringMatchQ[s, Whitespace ...];
 blankQ[_] := False;
 splitEdges[a_List] :=
   With[{i = LengthWhile[a, blankQ]},
@@ -1442,12 +1449,12 @@ splitEdges[a_List] :=
       With[{j = LengthWhile[Reverse[a], blankQ]},
         peelSpaces[Take[a, i], a[[i + 1 ;; -j - 1]], Take[a, -j]]]]];
 peelSpaces[lead_, core_, trail_] :=
-  With[{l = edgeSpace[First[core], StartOfString ~~ " " ..],
-        t = edgeSpace[Last[core], " " .. ~~ EndOfString]},
-    {Join[lead, l],
-     MapAt[stripSpaces[#, " " .. ~~ EndOfString] &,
-       MapAt[stripSpaces[#, StartOfString ~~ " " ..] &, core, 1], -1],
-     Join[t, trail]}];
+  With[{leadSpace = edgeSpace[First[core], $leadingSpaces],
+        trailSpace = edgeSpace[Last[core], $trailingSpaces]},
+    {Join[lead, leadSpace],
+     MapAt[stripSpaces[#, $trailingSpaces] &,
+       MapAt[stripSpaces[#, $leadingSpaces] &, core, 1], -1],
+     Join[trailSpace, trail]}];
 (* {" "} when a string has spaces where p looks for them, else {} *)
 edgeSpace[s_String, p_] := If[StringContainsQ[s, p], {" "}, {}];
 edgeSpace[_, _] := {};
@@ -1456,17 +1463,17 @@ edgeSpace[_, _] := {};
 trimAtoms[a_List] := splitEdges[joinSpaces[a]][[2]];
 
 (* Does an atom list carry real content (a box, or non-blank text)? *)
-realQ[a_List] := AnyTrue[a, (! StringQ[#] || StringTrim[#] =!= "") &];
+realQ[a_List] := !AllTrue[a, blankQ];
 
 (* Inside boxes the front end draws "-" as a minus sign; with operator
-   substitution off it is drawn as typed. A blockquote's text cell and inline
-   code both need this. *)
+   substitution off it is drawn as typed. A blockquote's text cell, inline code
+   and a table's Grid all need this. *)
 $noOperatorSubstitution = PrivateFontOptions -> {"OperatorSubstitution" -> False};
 
 (* Inline code and a table's Grid are typeset as input; these options show
    their text verbatim: no syntax coloring, no "->" drawn as an arrow, "-" drawn
    as a hyphen. *)
-$verbatimCodeOptions = {ShowAutoStyles -> False, AutoOperatorRenderings -> {},
+$verbatimTextOptions = {ShowAutoStyles -> False, AutoOperatorRenderings -> {},
   $noOperatorSubstitution};
 
 styleBox["Bold", inner_] := StyleBox[boxRow[inner], FontWeight -> Bold];
@@ -1476,7 +1483,7 @@ styleBox["Underline", inner_] :=
 styleBox["StrikeThrough", inner_] :=
   StyleBox[boxRow[inner], FontVariations -> {"StrikeThrough" -> True}];
 styleBox["Code", inner_] :=
-  inlineCell@FrameBox[StyleBox[boxRow[inner], "Code", Sequence @@ $verbatimCodeOptions]];
+  FrameBox[StyleBox[boxRow[inner], "Code", Sequence @@ $verbatimTextOptions]];
 
 (* An inline atom that is boxes, not text, goes into TextData as an inline
    Cell[BoxData[...]]; placed bare, the front end shows it as its box text. A
@@ -1493,8 +1500,10 @@ inlineCell[b_] := If[textAtomQ[b], b, Cell[BoxData[b]]];
    Hyperlink.) *)
 linkHref[XMLElement[_, attrs_, _]] :=
   With[{a = Association[attrs]}, Lookup[a, "href", Lookup[a, "src", None]]];
-linkLabel[XMLElement[_, attrs_, _], href_] :=
-  With[{a = Association[attrs]}, Lookup[a, "alt", href]];
+(* The alt attribute as text: whitespace collapsed and trimmed; default when
+   there is no alt. *)
+altText[a_Association, default_] :=
+  If[KeyExistsQ[a, "alt"], StringTrim[normWS[a["alt"]]], default];
 
 usableURLQ[url_] := url =!= None && url =!= "";
 linkBox[label_, url_] := ButtonBox[label, BaseStyle -> "Hyperlink", ButtonData -> {URL[url], None}];
@@ -1503,22 +1512,24 @@ hyperResult[el_, inner_] :=
   With[{href = linkHref[el]},
     If[!usableURLQ[href],
       inner,
-      {linkBox[If[inner === {}, linkLabel[el, href], boxRow[inner]], href]}]];
+      {linkBox[If[inner === {}, altText[Association[el[[2]]], href], boxRow[inner]], href]}]];
 
 (* Image gives its text, never its URL: the alt text, or "image" when there is
    no alt. alt="" marks a decorative image, which gives nothing. The text links
    to src, except inside a link, where it is part of that link's label. *)
 imageResult[XMLElement[_, attrs_, _], ctx_] :=
-  With[{label = StringTrim@normWS@Lookup[Association[attrs], "alt", "image"],
-        src = Lookup[Association[attrs], "src", None]},
+  With[{a = Association[attrs]}, {label = altText[a, "image"], src = Lookup[a, "src", None]},
     Which[
       label === "",                               {},
       TrueQ[ctx["inLink"]] || !usableURLQ[src],   {label},
       True,                                       {linkBox[label, src]}]];
 
+(* Every atom of the form goes through inlineCell, so that a constructor
+   function's boxes and inline code's frame (styleBox gives a FrameBox for
+   "Code", as a StyleBox draws no frame) become inline cells. *)
 inlineForm[c_, el_, inner_, ctx_] :=
-  Which[
-    functionConstructQ[c], inlineCell /@ Flatten[{applyConstruct[c, el, ctx]}],
+  inlineCell /@ Which[
+    functionConstructQ[c], Flatten[{applyConstruct[c, el, ctx]}],
     c === "Hyperlink",     hyperResult[el, inner],
     c === "Image",         imageResult[el, ctx],
     inner === {},          {},
@@ -1531,9 +1542,9 @@ inlineBoxes[el : XMLElement[_, _, ch_], ctx_] :=
   Switch[roleOf[el, ctx["roles"], HTMLToNotebook],
     "Skip",      {},
     "LineBreak", {"\n"},
-    _,           With[{c = constructOf[el, ctx]}, {cctx = childCtx[c, el, ctx]},
+    _,           With[{c = constructOf[el, ctx]}, {innerCtx = childCtx[c, el, ctx]},
                    edgedForm[c, el, ctx,
-                     splitEdges[joinSpaces@Flatten[inlineBoxes[#, cctx] & /@ ch]]]]];
+                     splitEdges[joinSpaces@Flatten[inlineBoxes[#, innerCtx] & /@ ch]]]]];
 inlineBoxes[_, _] := {};
 
 (* An element's edge whitespace goes outside its form, so that formatting does
@@ -1688,7 +1699,7 @@ datasetCell[headers_, bodyRows_] :=
    (no quotes, operator glyphs or coloring). *)
 gridCell[rows_] := Cell[BoxData[ToBoxes[Grid[rectangular[rows],
     Frame -> All, Alignment -> Left,
-    BaseStyle -> {"Text", ShowStringCharacters -> False, Sequence @@ $verbatimCodeOptions}]]],
+    BaseStyle -> {"Text", ShowStringCharacters -> False, Sequence @@ $verbatimTextOptions}]]],
     "Output"];
 
 (* A <caption> is a Text cell before the table's cell, converted as a paragraph
@@ -1742,19 +1753,21 @@ HTMLToNotebook[args___] /; (countMessage[HTMLToNotebook, {args}, {1, 1}]; False)
 (* The front end colours a call with a wrong argument count.   *)
 (* XMLPattern and the combinators are inert, but their counts   *)
 (* are fixed too: a tag and at most one attribute argument, and *)
-(* at least two stages.                                         *)
+(* at least two stages. A one-argument XMLCases, XMLFirstCase  *)
+(* or XMLDeleteCases is not coloured, as countMessage gives it  *)
+(* no message (the shape of an operator form).                 *)
 (* =========================================================== *)
 
-KeyValueMap[
-  Function[{f, args},
+Scan[
+  Apply[Function[{f, args},
     SyntaxInformation[f] = Join[{"ArgumentsPattern" -> args},
-      If[Options[f] === {}, {}, {"OptionNames" -> Keys[Options[f]]}]]],
-  <|XMLCases -> {_, _, OptionsPattern[]}, XMLFirstCase -> {_, _, _., OptionsPattern[]},
-    XMLDeleteCases -> {_, _, OptionsPattern[]}, XMLMatchQ -> {_, _., OptionsPattern[]},
+      If[Options[f] === {}, {}, {"OptionNames" -> Keys[Options[f]]}]]]],
+  {XMLCases -> {_, _., OptionsPattern[]}, XMLFirstCase -> {_, _., _., OptionsPattern[]},
+    XMLDeleteCases -> {_, _., OptionsPattern[]}, XMLMatchQ -> {_, _., OptionsPattern[]},
     HTMLInnerText -> {_, OptionsPattern[]}, HTMLTextContent -> {_},
     HTMLToNotebook -> {_, OptionsPattern[]}, HTMLClassList -> {_},
     XMLPattern -> {_, _.},
-    Child -> {_, _, ___}, Descendant -> {_, _, ___}, Adjacent -> {_, _, ___}, Sibling -> {_, _, ___}|>];
+    Child -> {_, _, ___}, Descendant -> {_, _, ___}, Adjacent -> {_, _, ___}, Sibling -> {_, _, ___}}];
 
 End[];
 EndPackage[];
