@@ -375,7 +375,10 @@ TestCreate[
    Cell[BoxData[...]]: a bare box in TextData displays as its box text. *)
 nbcells[h_String, opts___] :=
   First @ HTMLToNotebook[ImportString[h, {"HTML", "XMLObject"}], opts];
-$codeCell[x_] := Cell[BoxData[FrameBox[StyleBox[x, "Code"]]]];
+(* The code is shown verbatim, by the options that switch off how the front end
+   typesets input *)
+$codeCell[x_] := Cell[BoxData[FrameBox[StyleBox[x, "Code", ShowAutoStyles -> False,
+  AutoOperatorRenderings -> {}, PrivateFontOptions -> {"OperatorSubstitution" -> False}]]]];
 
 TestCreate[
   nbcells["<p>a <code>x</code> b</p>"],
@@ -387,6 +390,25 @@ TestCreate[
   nbmd["<p>a <code>x</code> b</p>"],
   "a `x` b",
   TestID -> "htn-code-inline-cell-markdown"
+];
+
+(* Code that the front end would typeset as input is shown verbatim *)
+TestCreate[
+  nbcells["<p>a <code>x-y</code> b</p>"],
+  {Cell[TextData[{"a ", $codeCell["x-y"], " b"}], "Text"]},
+  TestID -> "htn-code-verbatim"
+];
+
+TestCreate[
+  nbcells["<ul><li>a <code>f[x_] -> x^2</code></li></ul>"],
+  {Cell[TextData[{"a ", $codeCell["f[x_] -> x^2"]}], "Item"]},
+  TestID -> "htn-code-verbatim-item"
+];
+
+TestCreate[
+  nbmd["<p><code>x-y</code>, <code>a://b</code> and <code>f[x_] := x^2</code></p>"],
+  "`x-y`, `a://b` and `f[x_] := x^2`",
+  TestID -> "htn-code-verbatim-markdown"
 ];
 
 (* The same cell is the label of a link around the code *)
