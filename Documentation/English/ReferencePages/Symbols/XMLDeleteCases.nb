@@ -13,15 +13,27 @@ Cell["XMLDeleteCases", "ObjectName"],
 
 Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["XMLDeleteCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDeleteCases"], "[", RowBox[{StyleBox["tree", "TI"], ",", " ", StyleBox["pattern", "TI"]}], "]"}]], "InlineFormula"], " \[LineSeparator]gives ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " with every element matching ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " removed."}], "Usage"],
 
-Cell[TextData[{Cell[BoxData[RowBox[{ButtonBox["XMLDeleteCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDeleteCases"], "[", RowBox[{StyleBox["tree", "TI"], ",", " ", StyleBox["pattern", "TI"]}], "]"}]], "InlineFormula"], " returns ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " with every element matching ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " removed at any depth, preserving the surrounding ", Cell[BoxData[ButtonBox["XMLObject", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLObject"]], "InlineFormula"], " document envelope and all non-element content."}], "Notes"],
+Cell[TextData[{Cell[BoxData[ButtonBox["XMLDeleteCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDeleteCases"]], "InlineFormula"], " removes each element of ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " that matches ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], ", at any depth, together with its contents. Everything else is kept as it is, including text and whitespace between the remaining elements."}], "Notes"],
 
-Cell[TextData[{"For an ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], " pattern or an ", Cell[BoxData[ButtonBox["Alternatives", BaseStyle -> "Link", ButtonData -> "paclet:ref/Alternatives"]], "InlineFormula"], " of them the base case is equivalent to ", Cell[BoxData[RowBox[{ButtonBox["DeleteCases", BaseStyle -> "Link", ButtonData -> "paclet:ref/DeleteCases"], "[", RowBox[{StyleBox["tree", "TI"], ",", " ", StyleBox["pattern", "TI"], ",", " ", ButtonBox["Infinity", BaseStyle -> "Link", ButtonData -> "paclet:ref/Infinity"]}], "]"}]], "InlineFormula"], ". Use an ", Cell[BoxData[ButtonBox["Alternatives", BaseStyle -> "Link", ButtonData -> "paclet:ref/Alternatives"]], "InlineFormula"], " to strip several tag categories in one pass."}], "Notes"],
+Cell[TextData[{Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " can be an ", Cell[BoxData[ButtonBox["XMLObject", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLObject"]], "InlineFormula"], ", an ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], ", or a list of ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], " objects."}], "Notes"],
 
-Cell[TextData[{Cell[BoxData[RowBox[{ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"], "[", RowBox[{StyleBox["parent", "TI"], ",", " ", StyleBox["child", "TI"]}], "]"}]], "InlineFormula"], " removes matching direct children only within matching parents, and ", Cell[BoxData[RowBox[{ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"], "[", RowBox[{StyleBox["ancestor", "TI"], ",", " ", StyleBox["desc", "TI"]}], "]"}]], "InlineFormula"], " removes matching elements anywhere inside matching ancestors. The tree is walked bottom-up so nested matching parents are handled correctly."}], "Notes"],
+Cell[TextData[{Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " can be an ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"]], "InlineFormula"], ", alternatives of them, or a ", Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"]], "InlineFormula"], " or ", Cell[BoxData[ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"]], "InlineFormula"], " combinator, each with or without a condition. Each argument of a combinator is a ", StyleBox["stage", FontWeight->"Bold"], ", which can be another combinator. Names are bound as in ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"]], "InlineFormula"], "."}], "Notes"],
 
-Cell[TextData[{"The ", Cell[BoxData[ButtonBox["Adjacent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Adjacent"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"]], "InlineFormula"], " combinators are not supported, since deletion by relative position is ambiguous; ", Cell[BoxData[ButtonBox["XMLDeleteCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDeleteCases"]], "InlineFormula"], " then returns ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], " with ", Cell[BoxData["XMLDeleteCases::unsupported"], "InlineFormula"], ". Use ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"]], "InlineFormula"], " for position-based filtering instead."}], "Notes"],
+Cell[TextData[{Cell[BoxData[ButtonBox["Adjacent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Adjacent"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"]], "InlineFormula"], " cannot be used, even as a stage of another combinator. A rule ", Cell[BoxData[RowBox[{StyleBox["pattern", "TI"], "\[RuleDelayed]", StyleBox["rhs", "TI"]}]], "InlineFormula"], " cannot be used either."}], "Notes"],
 
-Cell[TextData[{"An invalid tree or pattern yields ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], " with ", Cell[BoxData["XMLDeleteCases::badtree"], "InlineFormula"], " or ", Cell[BoxData["XMLDeleteCases::badpat"], "InlineFormula"], "."}], "Notes"]
+Cell["A combinator removes the elements that its last stage matches.", "Notes"],
+
+Cell[TextData[{"The earlier stages are matched against the original ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], ", so removing an element does not change whether its parent or ancestor matches."}], "Notes"],
+
+Cell[TextData[{"When ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " is an ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], ", it can match any stage of a combinator except the last, and it is never itself removed."}], "Notes"],
+
+Cell[TextData[{Cell[BoxData[ButtonBox["XMLDeleteCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDeleteCases"]], "InlineFormula"], " issues a message and returns ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], " when ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " or ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " has none of the forms above, or when an ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"]], "InlineFormula"], " in ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " is malformed."}], "Notes"],
+
+Cell[TextData[{"The following option can be given:
+
+| option | default | description |
+| --- | --- | --- |
+| ", Cell[BoxData[StyleBox["\"AttributeReadings\"", "TR"]], "InlineFormula"], " | ", Cell[BoxData[StyleBox["<||>", "TR"]], "InlineFormula"], " | entries to add to ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"]], "InlineFormula"], " for this call, as in ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"]], "InlineFormula"], " |"}], "Notes"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -39,7 +51,7 @@ Cell[TextData[{
    "MoreInfoOpenerButtonTemplate"]]]
 }], "SeeAlsoSection"],
 
-Cell[TextData[{Cell[BoxData[TemplateBox[{Cell[TextData["XMLCases"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLFirstCase"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLPattern"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["DeleteCases"]], "paclet:ref/DeleteCases"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}]}], "SeeAlso"]
+Cell[TextData[{Cell[BoxData[TemplateBox[{Cell[TextData["XMLCases"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLFirstCase"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLMatchQ"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLMatchQ"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLPattern"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["Child"]], "paclet:MaximilienTirard/BeautifulTureen/ref/Child"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["Descendant"]], "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["HTMLInnerText"]], "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLInnerText"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["DeleteCases"]], "paclet:ref/DeleteCases"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}]}], "SeeAlso"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -56,7 +68,9 @@ Cell[TextData[{
    "MoreInfoOpenerButtonTemplate"]]]
 }], "TechNotesSection"],
 
-Cell["XXXX", "Tutorials"]
+Cell["XXXX", "Tutorials"],
+
+Cell[TextData[ButtonBox["Scraping HTML with BeautifulTureen", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/tutorial/ScrapingHTMLWithBeautifulTureen"]], "TechNotes"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -116,11 +130,11 @@ Cell[CellGroupData[{Cell[BoxData[
    }],
   $Line = 0; Null]], "PrimaryExamplesSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Remove all script subtrees from a tree:", "ExampleText"], Cell[BoxData["XMLDeleteCases[ImportString[\"<html><body><p>Visible</p><script>alert(1)</script></body></html>\",{\"HTML\",\"XMLObject\"}],XMLPattern[\"script\"]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Remove every script element and its contents:", "ExampleText"], Cell[BoxData["XMLDeleteCases[ImportString[\"<html><body><p>Visible</p><script>alert(1)</script></body></html>\",{\"HTML\",\"XMLObject\"}],XMLPattern[\"script\"]]"], "Input"],
 
 Cell[BoxData[RowBox[{RowBox[{"XMLObject", "[", "\"Document\"", "]"}], "[", RowBox[{RowBox[{"{", RowBox[{RowBox[{"XMLObject", "[", "\"Declaration\"", "]"}], "[", RowBox[{RowBox[{"\"Version\"", "\[Rule]", "\"1.0\""}], ",", RowBox[{"\"Standalone\"", "\[Rule]", "\"yes\""}]}], "]"}], "}"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"html\"", ",", RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"\"http://www.w3.org/2000/xmlns/\"", ",", "\"xmlns\""}], "}"}], "\[Rule]", "\"http://www.w3.org/1999/xhtml\""}], "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"body\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Visible\"", "}"}]}], "]"}], "}"}]}], "]"}], "}"}]}], "]"}], ",", RowBox[{"{", "}"}]}], "]"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Strip multiple chrome categories in one pass:", "ExampleText"], Cell[BoxData["XMLDeleteCases[ImportString[\"<html><body><nav>Menu</nav><main><p>Body</p></main><footer>End</footer></body></html>\",{\"HTML\",\"XMLObject\"}],XMLPattern[\"nav\"|\"footer\"]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Remove several kinds of element at once:", "ExampleText"], Cell[BoxData["XMLDeleteCases[ImportString[\"<html><body><nav>Menu</nav><main><p>Body</p></main><footer>End</footer></body></html>\",{\"HTML\",\"XMLObject\"}],XMLPattern[\"nav\"|\"footer\"]]"], "Input"],
 
 Cell[BoxData[RowBox[{RowBox[{"XMLObject", "[", "\"Document\"", "]"}], "[", RowBox[{RowBox[{"{", RowBox[{RowBox[{"XMLObject", "[", "\"Declaration\"", "]"}], "[", RowBox[{RowBox[{"\"Version\"", "\[Rule]", "\"1.0\""}], ",", RowBox[{"\"Standalone\"", "\[Rule]", "\"yes\""}]}], "]"}], "}"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"html\"", ",", RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"\"http://www.w3.org/2000/xmlns/\"", ",", "\"xmlns\""}], "}"}], "\[Rule]", "\"http://www.w3.org/1999/xhtml\""}], "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"body\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"main\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Body\"", "}"}]}], "]"}], "}"}]}], "]"}], "}"}]}], "]"}], "}"}]}], "]"}], ",", RowBox[{"{", "}"}]}], "]"}]], "Output"]}, Open]]}, Open]],
 
@@ -144,21 +158,50 @@ Cell[CellGroupData[{Cell[BoxData[
   "Scope", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Remove the direct-child matches of a matching parent with ", Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["page=ImportString[\"<div class=\\\"main\\\"><p>direct</p><section><p>nested</p></section></div>\",{\"HTML\",\"XMLObject\"}];
-XMLDeleteCases[page,Child[XMLPattern[\"div\",CSSClass[\"main\"]],XMLPattern[\"p\"]]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Remove the elements that have the class ad:", "ExampleText"], Cell[BoxData["body=XMLElement[\"body\",{},{XMLElement[\"p\",{\"class\"->\"ad wide\"},{\"Buy now\"}],XMLElement[\"p\",{},{\"Story\"}]}];
+XMLDeleteCases[body,XMLPattern[\"p\",\"classList\"->\"ad\"]]"], "Input"],
+
+Cell[BoxData[RowBox[{"XMLElement", "[", RowBox[{"\"body\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Story\"", "}"}]}], "]"}], "}"}]}], "]"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Remove the paragraphs that are direct children of the main div:", "ExampleText"], Cell[BoxData["page=ImportString[\"<div class=\\\"main\\\"><p>direct</p><section><p>nested</p></section></div>\",{\"HTML\",\"XMLObject\"}];
+XMLDeleteCases[page,Child[XMLPattern[\"div\",\"classList\"->\"main\"],XMLPattern[\"p\"]]]"], "Input"],
 
 Cell[BoxData[RowBox[{RowBox[{"XMLObject", "[", "\"Document\"", "]"}], "[", RowBox[{RowBox[{"{", RowBox[{RowBox[{"XMLObject", "[", "\"Declaration\"", "]"}], "[", RowBox[{RowBox[{"\"Version\"", "\[Rule]", "\"1.0\""}], ",", RowBox[{"\"Standalone\"", "\[Rule]", "\"yes\""}]}], "]"}], "}"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"html\"", ",", RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"\"http://www.w3.org/2000/xmlns/\"", ",", "\"xmlns\""}], "}"}], "\[Rule]", "\"http://www.w3.org/1999/xhtml\""}], "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"body\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", RowBox[{"\"class\"", "\[Rule]", "\"main\""}], "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"section\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"nested\"", "}"}]}], "]"}], "}"}]}], "]"}], "}"}]}], "]"}], "}"}]}], "]"}], "}"}]}], "]"}], ",", RowBox[{"{", "}"}]}], "]"}]], "Output"],
 
-Cell[TextData[{"Remove matches anywhere inside a matching ancestor with ", Cell[BoxData[ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"]], "InlineFormula"], ":"}], "ExampleText"],
+Cell["Remove the paragraphs at any depth inside a div:", "ExampleText"],
 
 Cell[BoxData["XMLDeleteCases[page,Descendant[XMLPattern[\"div\"],XMLPattern[\"p\"]]]"], "Input"],
 
 Cell[BoxData[RowBox[{RowBox[{"XMLObject", "[", "\"Document\"", "]"}], "[", RowBox[{RowBox[{"{", RowBox[{RowBox[{"XMLObject", "[", "\"Declaration\"", "]"}], "[", RowBox[{RowBox[{"\"Version\"", "\[Rule]", "\"1.0\""}], ",", RowBox[{"\"Standalone\"", "\[Rule]", "\"yes\""}]}], "]"}], "}"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"html\"", ",", RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"\"http://www.w3.org/2000/xmlns/\"", ",", "\"xmlns\""}], "}"}], "\[Rule]", "\"http://www.w3.org/1999/xhtml\""}], "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"body\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", RowBox[{"\"class\"", "\[Rule]", "\"main\""}], "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"section\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "}"}]}], "]"}], "}"}]}], "]"}], "}"}]}], "]"}], ",", RowBox[{"{", "}"}]}], "]"}]], "Output"],
 
-Cell["Non-element content such as inter-element whitespace is preserved:", "ExampleText"],
+Cell["Nest combinators to chain stages, as in the CSS selector div > section p:", "ExampleText"],
 
-Cell[BoxData["spaced=ImportString[\"<div><p>a</p>\\n<p>b</p></div>\",{\"HTML\",\"XMLObject\"}];
-First[XMLCases[XMLDeleteCases[spaced,XMLPattern[\"p\"]],XMLPattern[\"div\"]]][[3]]"], "Input"],
+Cell[BoxData["XMLDeleteCases[page,Child[XMLPattern[\"div\"],Descendant[XMLPattern[\"section\"],XMLPattern[\"p\"]]]]"], "Input"],
+
+Cell[BoxData[RowBox[{RowBox[{"XMLObject", "[", "\"Document\"", "]"}], "[", RowBox[{RowBox[{"{", RowBox[{RowBox[{"XMLObject", "[", "\"Declaration\"", "]"}], "[", RowBox[{RowBox[{"\"Version\"", "\[Rule]", "\"1.0\""}], ",", RowBox[{"\"Standalone\"", "\[Rule]", "\"yes\""}]}], "]"}], "}"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"html\"", ",", RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"\"http://www.w3.org/2000/xmlns/\"", ",", "\"xmlns\""}], "}"}], "\[Rule]", "\"http://www.w3.org/1999/xhtml\""}], "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"body\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", RowBox[{"\"class\"", "\[Rule]", "\"main\""}], "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"direct\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"section\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "]"}]}], "}"}]}], "]"}], "}"}]}], "]"}], "}"}]}], "]"}], ",", RowBox[{"{", "}"}]}], "]"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Name the whole element to test its text in a condition:", "ExampleText"], Cell[BoxData["menu=ImportString[\"<ul><li>Miso</li><li>Pho (sold out)</li><li>Ramen</li></ul>\",{\"HTML\",\"XMLObject\"}];
+HTMLTextContent/@XMLCases[XMLDeleteCases[menu,(li:XMLPattern[\"li\"])/;StringContainsQ[HTMLTextContent[li],\"sold out\"]],XMLPattern[\"li\"]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"\"Miso\"", ",", "\"Ramen\""}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Put a condition on a whole combinator to use names from both stages:", "ExampleText"], Cell[BoxData["body=XMLElement[\"body\",{},{XMLElement[\"div\",{\"id\"->\"a\"},{XMLElement[\"p\",{\"id\"->\"a-1\"},{\"keep\"}],XMLElement[\"p\",{\"id\"->\"b-1\"},{\"drop\"}]}]}];
+XMLDeleteCases[body,Descendant[XMLPattern[\"div\",\"id\"->d_],XMLPattern[\"p\",\"id\"->p_]]/;!StringStartsQ[p,d]]"], "Input"],
+
+Cell[BoxData[RowBox[{"XMLElement", "[", RowBox[{"\"body\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", RowBox[{"\"id\"", "\[Rule]", "\"a\""}], "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"id\"", "\[Rule]", "\"a-1\""}], "}"}], ",", RowBox[{"{", "\"keep\"", "}"}]}], "]"}], "}"}]}], "]"}], "}"}]}], "]"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["The first stage is tested on the original tree, so both items are removed:", "ExampleText"], Cell[BoxData["body=XMLElement[\"body\",{},{XMLElement[\"ul\",{},{XMLElement[\"li\",{},{\"a\"}],XMLElement[\"li\",{},{\"b\"}]}],XMLElement[\"ul\",{},{XMLElement[\"li\",{},{\"c\"}]}]}];
+XMLDeleteCases[body,Child[(list:XMLPattern[\"ul\"])/;Length[list〚3〛]>=2,XMLPattern[\"li\"]]]"], "Input"],
+
+Cell[BoxData[RowBox[{"XMLElement", "[", RowBox[{"\"body\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"ul\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"ul\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"c\"", "}"}]}], "]"}], "}"}]}], "]"}]}], "}"}]}], "]"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["When the tree is an XMLElement, it can match the first stage:", "ExampleText"], Cell[BoxData["body=XMLElement[\"body\",{},{XMLElement[\"div\",{},{\"one\"}],XMLElement[\"p\",{},{XMLElement[\"div\",{},{\"two\"}]}]}];
+XMLDeleteCases[body,Child[XMLPattern[\"body\"],XMLPattern[\"div\"]]]"], "Input"],
+
+Cell[BoxData[RowBox[{"XMLElement", "[", RowBox[{"\"body\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"two\"", "}"}]}], "]"}], "}"}]}], "]"}], "}"}]}], "]"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Text and whitespace between elements are kept:", "ExampleText"], Cell[BoxData["spaced=ImportString[\"<div><p>a</p>\\n<p>b</p></div>\",{\"HTML\",\"XMLObject\"}];
+First[XMLCases[XMLDeleteCases[spaced,XMLPattern[\"p\"]],XMLPattern[\"div\"]]]〚3〛"], "Input"],
 
 Cell[BoxData[RowBox[{"{", "\"\\n\"", "}"}]], "Output"]}, Open]]}, Open]],
 
@@ -166,6 +209,11 @@ Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
   "Generalizations & Extensions", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["Options", "ExampleSection"], $Line = 0; Null]], "ExampleSection"], Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["AttributeReadings", "ExampleSubsection"], $Line = 0; Null]], "ExampleSubsection"], Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Split rel into tokens, and remove links by one of them:", "ExampleText"], Cell[BoxData["body=XMLElement[\"body\",{},{XMLElement[\"a\",{\"rel\"->\"nofollow sponsored\",\"href\"->\"/ad\"},{\"Ad\"}],XMLElement[\"a\",{\"href\"->\"/story\"},{\"Story\"}]}];
+XMLDeleteCases[body,XMLPattern[\"a\",\"relList\"->\"sponsored\"],\"AttributeReadings\"-> <|\"rel\"-> <||>|>]"], "Input"],
+
+Cell[BoxData[RowBox[{"XMLElement", "[", RowBox[{"\"body\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"href\"", "\[Rule]", "\"/story\""}], "}"}], ",", RowBox[{"{", "\"Story\"", "}"}]}], "]"}], "}"}]}], "]"}]], "Output"]}, Open]]}, Open]]}, Open]],
 
 Cell[CellGroupData[{
 
@@ -190,46 +238,77 @@ Cell[CellGroupData[{Cell[BoxData[
   "Applications", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Strip non-content chrome, then read the page as text with ", Cell[BoxData[ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLInnerText"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["page=ImportString[\"<html><body><nav>Menu</nav><main><p>Keep <script>x()</script>me</p></main><footer>End</footer><style>.a{}</style></body></html>\",{\"HTML\",\"XMLObject\"}];
-HTMLInnerText[XMLDeleteCases[page,XMLPattern[\"script\"]|XMLPattern[\"style\"]|XMLPattern[\"nav\"]|XMLPattern[\"footer\"]]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Remove page chrome, then read the page as text with HTMLInnerText:", "ExampleText"], Cell[BoxData["page=ImportString[\"<html><body><nav>Menu</nav><main><p>Keep <script>x()</script>me</p></main><footer>End</footer><style>.a{}</style></body></html>\",{\"HTML\",\"XMLObject\"}];
+HTMLInnerText[XMLDeleteCases[page,XMLPattern[\"script\"|\"style\"|\"nav\"|\"footer\"]]]"], "Input"],
 
-Cell[BoxData["\"Keep me\""], "Output"]}, Open]]}, Open]],
+Cell[BoxData["\"Keep me\""], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Remove advertisement blocks by class before extracting the text:", "ExampleText"], Cell[BoxData["page=ImportString[\"<main><p>First paragraph.</p><div class=\\\"ad banner\\\"><p>Buy now!</p></div><p>Second paragraph.</p></main>\",{\"HTML\",\"XMLObject\"}];
+HTMLInnerText[XMLDeleteCases[page,XMLPattern[_,\"classList\"->\"ad\"]]]"], "Input"],
+
+Cell[BoxData["\"First paragraph.\\nSecond paragraph.\""], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
   "Properties & Relations", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The base case matches ", Cell[BoxData[ButtonBox["DeleteCases", BaseStyle -> "Link", ButtonData -> "paclet:ref/DeleteCases"]], "InlineFormula"], " at all depths:"}], "ExampleText"], Cell[BoxData["tree=ImportString[\"<div><p>a</p><p>b</p></div>\",{\"HTML\",\"XMLObject\"}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["For an element pattern, XMLDeleteCases gives the same result as DeleteCases at all depths:", "ExampleText"], Cell[BoxData["tree=ImportString[\"<div><p>a</p><p>b</p></div>\",{\"HTML\",\"XMLObject\"}];
 XMLDeleteCases[tree,XMLPattern[\"p\"]]===DeleteCases[tree,XMLElement[\"p\",_,_],Infinity]"], "Input"],
 
 Cell[BoxData["True"], "Output"],
 
-Cell["Selecting the deleted pattern afterwards finds nothing:", "ExampleText"],
+Cell["XMLCases then finds no match:", "ExampleText"],
 
 Cell[BoxData["XMLCases[XMLDeleteCases[tree,XMLPattern[\"p\"]],XMLPattern[\"p\"]]"], "Input"],
 
-Cell[BoxData[RowBox[{"{", "}"}]], "Output"]}, Open]]}, Open]],
+Cell[BoxData[RowBox[{"{", "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["XMLDeleteCases removes the elements that XMLCases selects:", "ExampleText"], Cell[BoxData["page=ImportString[\"<div><p>a</p><section><p>b</p></section></div>\",{\"HTML\",\"XMLObject\"}];
+pattern=Child[XMLPattern[\"div\"],XMLPattern[\"p\"]];
+{XMLCases[page,pattern],XMLCases[XMLDeleteCases[page,pattern],XMLPattern[\"p\"]]}"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"a\"", "}"}]}], "]"}], "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"b\"", "}"}]}], "]"}], "}"}]}], "}"}]], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
   "Possible Issues", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The ", Cell[BoxData[ButtonBox["Adjacent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Adjacent"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"]], "InlineFormula"], " combinators are not supported:"}], "ExampleText"], Cell[BoxData["tree=ImportString[\"<div><p>a</p><p>b</p></div>\",{\"HTML\",\"XMLObject\"}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Adjacent and Sibling cannot be used:", "ExampleText"], Cell[BoxData["tree=ImportString[\"<div><p>a</p><p>b</p></div>\",{\"HTML\",\"XMLObject\"}];
 XMLDeleteCases[tree,Adjacent[XMLPattern[\"p\"],XMLPattern[\"p\"]]]"], "Input"],
 
-Cell[BoxData["XMLDeleteCases::unsupported: Adjacent and Sibling combinators are not supported by XMLDeleteCases. Use XMLCases for filtering semantics instead."], "Message", "MSG"],
+Cell["XMLDeleteCases::unsupported: XMLDeleteCases cannot use Adjacent or Sibling, either as the pattern or as a stage of another combinator.", "Message", "MSG"],
+
+Cell[BoxData["$Failed"], "Output"],
+
+Cell["They cannot be used as a stage of another combinator either:", "ExampleText"],
+
+Cell[BoxData["XMLDeleteCases[tree,Child[XMLPattern[\"div\"],Sibling[XMLPattern[\"p\"],XMLPattern[\"p\"]]]]"], "Input"],
+
+Cell["XMLDeleteCases::unsupported: XMLDeleteCases cannot use Adjacent or Sibling, either as the pattern or as a stage of another combinator.", "Message", "MSG"],
 
 Cell[BoxData["$Failed"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Deleting a container removes its whole subtree, not just the tag:", "ExampleText"], Cell[BoxData["XMLDeleteCases[ImportString[\"<div><p>inside</p></div>\",{\"HTML\",\"XMLObject\"}],XMLPattern[\"div\"]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A rule cannot be used:", "ExampleText"], Cell[BoxData["tree=ImportString[\"<p>a</p>\",{\"HTML\",\"XMLObject\"}];
+XMLDeleteCases[tree,XMLPattern[\"p\"]:>\"x\"]"], "Input"],
+
+Cell["XMLDeleteCases::badpat: The second argument should be an XMLPattern, alternatives of them, or a Child or Descendant combinator. Each can have a condition (/;), and an XMLPattern or alternatives of them can be named. A rule pattern :> body cannot be used. Got XMLPattern[\"p\"] :> \"x\".", "Message", "MSG"],
+
+Cell[BoxData["$Failed"], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Removing an element also removes its contents:", "ExampleText"], Cell[BoxData["XMLDeleteCases[ImportString[\"<div><p>inside</p></div>\",{\"HTML\",\"XMLObject\"}],XMLPattern[\"div\"]]"], "Input"],
 
 Cell[BoxData[RowBox[{RowBox[{"XMLObject", "[", "\"Document\"", "]"}], "[", RowBox[{RowBox[{"{", RowBox[{RowBox[{"XMLObject", "[", "\"Declaration\"", "]"}], "[", RowBox[{RowBox[{"\"Version\"", "\[Rule]", "\"1.0\""}], ",", RowBox[{"\"Standalone\"", "\[Rule]", "\"yes\""}]}], "]"}], "}"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"html\"", ",", RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"\"http://www.w3.org/2000/xmlns/\"", ",", "\"xmlns\""}], "}"}], "\[Rule]", "\"http://www.w3.org/1999/xhtml\""}], "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"body\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "}"}]}], "]"}], ",", RowBox[{"{", "}"}]}], "]"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"An invalid tree gives ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], " after a message:"}], "ExampleText"], Cell[BoxData["XMLDeleteCases[42,XMLPattern[\"p\"]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["DeleteCases treats an XMLPattern as a literal expression:", "ExampleText"], Cell[BoxData["tree=ImportString[\"<div><p>a</p></div>\",{\"HTML\",\"XMLObject\"}];
+DeleteCases[tree,XMLPattern[\"p\"],Infinity]===tree"], "Input"],
 
-Cell[BoxData["XMLDeleteCases::badtree: First argument should be an XMLObject, XMLElement, or list thereof. Got head Integer."], "Message", "MSG"],
+Cell[BoxData["True"], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["An invalid tree gives a message and $Failed:", "ExampleText"], Cell[BoxData["XMLDeleteCases[42,XMLPattern[\"p\"]]"], "Input"],
+
+Cell["XMLDeleteCases::badtree: The first argument should be an XMLObject, an XMLElement, or a list of these. Got head Integer.", "Message", "MSG"],
 
 Cell[BoxData["$Failed"], "Output"]}, Open]]}, Open]],
 

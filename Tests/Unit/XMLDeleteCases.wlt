@@ -63,9 +63,9 @@ $treeScoped = ImportString["<html><body>
 TestCreate[
   Length @ XMLCases[
     XMLDeleteCases[$treeScoped,
-      Child[XMLPattern["div", CSSClass["article"]], XMLPattern[_, CSSClass["ad"]]]
+      Child[XMLPattern["div", "classList" -> "article"], XMLPattern[_, "classList" -> "ad"]]
     ],
-    XMLPattern[_, CSSClass["ad"]]
+    XMLPattern[_, "classList" -> "ad"]
   ],
   1,
   TestID -> "delete-child-scoped"
@@ -85,9 +85,9 @@ $treeNested = ImportString["<html><body>
 TestCreate[
   HTMLTextContent /@ XMLCases[
     XMLDeleteCases[$treeNested,
-      Descendant[XMLPattern["article"], XMLPattern[_, CSSClass["ad"]]]
+      Descendant[XMLPattern["article"], XMLPattern[_, "classList" -> "ad"]]
     ],
-    XMLPattern[_, CSSClass["ad"]]
+    XMLPattern[_, "classList" -> "ad"]
   ],
   {"outside \[LongDash] keep"},
   TestID -> "delete-descendant-scoped"
@@ -120,4 +120,96 @@ TestCreate[
   $Failed,
   {XMLDeleteCases::badpat},
   TestID -> "delete-bad-pattern"
+];
+
+(* === The classList key === *)
+
+(* Deletion runs on the materialised tree and the whole result is stripped, so
+   what survives is exactly the original. *)
+$treeAds = ImportString[
+  "<div class=\"main\"><p class=\"ad promo\">ad</p><p>keep</p><p class=\"note\">note</p></div>",
+  {"HTML", "XMLObject"}];
+
+TestCreate[
+  XMLDeleteCases[$treeAds, XMLPattern["p", "classList" -> "ad"]],
+  ImportString["<div class=\"main\"><p>keep</p><p class=\"note\">note</p></div>", {"HTML", "XMLObject"}],
+  TestID -> "delete-classlist-result-is-original"
+];
+
+(* Nothing to delete gives the tree back unchanged: strip inverts materialisation
+   exactly, including on elements with no class. *)
+TestCreate[
+  XMLDeleteCases[$treeAds, XMLPattern["p", "classList" -> "zzz"]] === $treeAds,
+  True,
+  TestID -> "delete-classlist-no-match-is-identity"
+];
+
+TestCreate[
+  XMLDeleteCases[$treeAds,
+    Child[XMLPattern["div", "classList" -> "main"], XMLPattern["p", "classList" -> _?(FreeQ["note"])]]],
+  ImportString["<div class=\"main\"><p class=\"note\">note</p></div>", {"HTML", "XMLObject"}],
+  TestID -> "delete-child-classlist-both-stages"
+];
+
+(* A rule has nothing to delete with. *)
+TestCreate[
+  XMLDeleteCases[$treeAds, XMLPattern["p"] :> 1],
+  $Failed,
+  {XMLDeleteCases::badpat},
+  TestID -> "delete-rule-refused"
+];
+
+(* === Nested Child and Descendant === *)
+
+(* A chain of Child and Descendant stages deletes the elements its last stage
+   selects, as XMLCases would give them. *)
+$treeNestDel = XMLElement["div", {"class" -> "outer"}, {
+  XMLElement["section", {}, {XMLElement["p", {}, {"1"}], XMLElement["div", {}, {XMLElement["p", {}, {"2"}]}]}],
+  XMLElement["p", {}, {"3"}]}];
+
+TestCreate[
+  {XMLDeleteCases[{$treeNestDel}, Descendant[XMLPattern["div", "classList" -> "outer"], Child[XMLPattern["section"], XMLPattern["p"]]]],
+   XMLDeleteCases[{$treeNestDel}, Child[Descendant[XMLPattern["div"], XMLPattern["section"]], XMLPattern["div"]]]},
+  {{XMLElement["div", {"class" -> "outer"}, {
+     XMLElement["section", {}, {XMLElement["div", {}, {XMLElement["p", {}, {"2"}]}]}],
+     XMLElement["p", {}, {"3"}]}]},
+   {XMLElement["div", {"class" -> "outer"}, {
+     XMLElement["section", {}, {XMLElement["p", {}, {"1"}]}],
+     XMLElement["p", {}, {"3"}]}]}},
+  TestID -> "delete-nested-child-descendant"
+];
+
+(* As unnested, the root may be the first stage. *)
+TestCreate[
+  XMLDeleteCases[$treeNestDel, Descendant[XMLPattern["div", "classList" -> "outer"], Child[XMLPattern["section"], XMLPattern["p"]]]],
+  XMLElement["div", {"class" -> "outer"}, {
+    XMLElement["section", {}, {XMLElement["div", {}, {XMLElement["p", {}, {"2"}]}]}],
+    XMLElement["p", {}, {"3"}]}],
+  TestID -> "delete-nested-root-first-stage"
+];
+
+(* Descendant selects an element under any matching ancestor, the pairing
+   satisfying a name at two stages or a test on the combinator: the inner div
+   for the p "1", the outer for "2" and "3". *)
+$treeDeepDel = XMLElement["div", {"id" -> "a"}, {
+  XMLElement["div", {"id" -> "b"}, {XMLElement["p", {"data-for" -> "b"}, {"1"}], XMLElement["p", {"data-for" -> "a"}, {"2"}]}],
+  XMLElement["p", {"data-for" -> "a"}, {"3"}], XMLElement["p", {"data-for" -> "c"}, {"4"}]}];
+
+TestCreate[
+  {HTMLTextContent @ XMLDeleteCases[$treeDeepDel,
+     Descendant[XMLPattern["div", "id" -> i_], XMLPattern["p", "data-for" -> i_]]],
+   HTMLTextContent @ XMLDeleteCases[$treeDeepDel,
+     Descendant[XMLPattern["div", "id" -> i_], XMLPattern["p", "data-for" -> f_]] /; f === i],
+   HTMLTextContent @ XMLDeleteCases[$treeDeepDel, Descendant[XMLPattern["div"], XMLPattern["p"]]]},
+  {"4", "4", ""},
+  TestID -> "delete-descendant-any-matching-ancestor"
+];
+
+(* Adjacent and Sibling stay unsupported at any depth. *)
+TestCreate[
+  {XMLDeleteCases[$treeNestDel, Descendant[XMLPattern["section"], Adjacent[XMLPattern["p"], XMLPattern["div"]]]],
+   XMLDeleteCases[$treeNestDel, Child[Sibling[XMLPattern["p"], XMLPattern["div"]], XMLPattern["p"]]]},
+  {$Failed, $Failed},
+  {XMLDeleteCases::unsupported, XMLDeleteCases::unsupported},
+  TestID -> "delete-nested-adjacent-sibling-unsupported"
 ];

@@ -33,7 +33,7 @@ TestCreate[
 (* Alternatives mixing tag-only and attribute-constrained patterns *)
 TestCreate[
   Length @ XMLCases[$treeAlts,
-    XMLPattern["iframe"] | XMLPattern["div", CSSClass["sponsored"]]
+    XMLPattern["iframe"] | XMLPattern["div", "classList" -> "sponsored"]
   ],
   2,
   TestID -> "alts-cases-tag-and-attr"
@@ -42,7 +42,7 @@ TestCreate[
 (* XMLFirstCase with Alternatives *)
 TestCreate[
   First @ XMLFirstCase[$treeAlts,
-    XMLPattern["iframe"] | XMLPattern["div", CSSClass["sponsored"]]
+    XMLPattern["iframe"] | XMLPattern["div", "classList" -> "sponsored"]
   ],
   "iframe",
   TestID -> "alts-firstcase-heterogeneous"
@@ -82,9 +82,9 @@ TestCreate[
 TestCreate[
   Module[{chrome, extras, flat},
     chrome = XMLPattern["a"] | XMLPattern["img"];
-    extras = XMLPattern["iframe"] | XMLPattern["div", CSSClass["sponsored"]];
+    extras = XMLPattern["iframe"] | XMLPattern["div", "classList" -> "sponsored"];
     flat = XMLPattern["a"] | XMLPattern["img"] | XMLPattern["iframe"] |
-      XMLPattern["div", CSSClass["sponsored"]];
+      XMLPattern["div", "classList" -> "sponsored"];
     XMLDeleteCases[$treeAlts, chrome | extras] === XMLDeleteCases[$treeAlts, flat]
   ],
   True,
