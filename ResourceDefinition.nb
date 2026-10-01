@@ -4111,7 +4111,7 @@ Cell[TextData[{
   "CompatibilityWolframLanguageVersionRequired", "TemplateCellGroup", 
    "Wolfram Language Version"}],
 
-Cell["12+", "Text"]
+Cell["12.3+", "Text"]
 }, Open  ]],
 
 Cell[CellGroupData[{

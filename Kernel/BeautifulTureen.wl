@@ -1677,7 +1677,7 @@ hrConstruct[_] := Cell["", "Text", CellFrame -> {{0, 0}, {0, 1}}];
 
 (* <table> -> Dataset when a leading all-<th> row gives unique column labels (an
    idiomatic GFM header), else Grid (positional, blank header, every row kept).
-   Dataset/Grid over Tabular because the paclet floor is WL 12+. Cells degrade
+   Dataset/Grid over Tabular because the paclet floor is WL 12.3. Cells degrade
    to plain text; in the Grid form a <th> cell is bold. See ADR 0003. *)
 cellText[XMLElement[_, _, c_]] := StringTrim[normWS[StringJoin[textContentWalk /@ c]]];
 
