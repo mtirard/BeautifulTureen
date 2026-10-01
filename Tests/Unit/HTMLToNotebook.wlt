@@ -557,3 +557,73 @@ TestCreate[
   {Cell[TextData[{"a", " ", "str", " ", "b"}], "Text"]},
   TestID -> "htn-ws-constructs-function-edges"
 ];
+
+(* === A blockquote's content is text === *)
+
+(* The frame holds a Text cell, so the front end typesets the quote as prose,
+   not as input: no RowBox, no operator spacing around "-" or ":", and "-" is
+   drawn as a hyphen, not a minus sign *)
+$quoteCell[x_List] := Cell[BoxData[FrameBox[Cell[TextData[x], "Text",
+  PrivateFontOptions -> {"OperatorSubstitution" -> False}]]], "Text"];
+
+TestCreate[
+  nbcells["<blockquote>An encoder-decoder model: https://x.org</blockquote>"],
+  {$quoteCell[{"An encoder-decoder model: https://x.org"}]},
+  TestID -> "htn-blockquote-text-cell"
+];
+
+(* Paragraphs in a quote are separated by "\n" atoms *)
+TestCreate[
+  nbcells["<blockquote><p>one</p><p>two</p></blockquote>"],
+  {$quoteCell[{"one", "\n", "two"}]},
+  TestID -> "htn-blockquote-text-multipara"
+];
+
+(* Inline formatting goes through the same path as in a paragraph *)
+TestCreate[
+  nbcells["<blockquote><p>a <b>bold</b> c</p></blockquote>"],
+  {$quoteCell[{"a ", StyleBox["bold", FontWeight -> Bold], " c"}]},
+  TestID -> "htn-blockquote-text-inline"
+];
+
+(* ... and so do links and inline code *)
+TestCreate[
+  nbcells["<blockquote><a href=\"/y\">l</a> and <code>x</code></blockquote>"],
+  {$quoteCell[{ButtonBox["l", BaseStyle -> "Hyperlink", ButtonData -> {URL["/y"], None}],
+    " and ", $codeCell["x"]}]},
+  TestID -> "htn-blockquote-text-link-code"
+];
+
+(* A nested quote's paragraph starts with a "> " atom *)
+TestCreate[
+  nbcells["<blockquote><p>outer</p><blockquote><p>inner</p></blockquote></blockquote>"],
+  {$quoteCell[{"outer", "\n", "> ", "inner"}]},
+  TestID -> "htn-blockquote-text-nested"
+];
+
+(* A <br> in a quote is a "\n" atom; the Markdown exporter has no line break
+   inside a quote distinct from a paragraph break *)
+TestCreate[
+  nbcells["<blockquote>q <b>w</b> e<br>r</blockquote>"],
+  {$quoteCell[{"q ", StyleBox["w", FontWeight -> Bold], " e", "\n", "r"}]},
+  TestID -> "htn-blockquote-text-linebreak"
+];
+
+TestCreate[
+  nbmd["<blockquote>q <b>w</b> e<br>r</blockquote>"],
+  "> q **w** e\n>\n> r",
+  TestID -> "htn-blockquote-text-linebreak-markdown"
+];
+
+(* Every line of a nested quote keeps its "> ", also after a <br> *)
+TestCreate[
+  nbcells["<blockquote><p>outer</p><blockquote>a<br>b</blockquote></blockquote>"],
+  {$quoteCell[{"outer", "\n", "> ", "a", "\n", "> ", "b"}]},
+  TestID -> "htn-blockquote-text-nested-linebreak"
+];
+
+TestCreate[
+  nbmd["<blockquote><p>outer</p><blockquote>a<br>b</blockquote></blockquote>"],
+  "> outer\n>\n> > a\n>\n> > b",
+  TestID -> "htn-blockquote-text-nested-linebreak-markdown"
+];
