@@ -65,7 +65,6 @@ Cell[TextData[{"The value of a \"Constructs\" rule may have the following forms:
 | --- | --- |
 | \"Bold\", \"Italic\", \"Underline\", \"StrikeThrough\", \"Code\" | formatted text |
 | \"Hyperlink\" | a link to the ", Cell[BoxData[StyleBox["href", "TR"]], "InlineFormula"], " or ", Cell[BoxData[StyleBox["src", "TR"]], "InlineFormula"], " attribute, or plain text if there is none |
-| \"Image\" | the ", Cell[BoxData[StyleBox["alt", "TR"]], "InlineFormula"], " text, or \"image\" if there is no ", Cell[BoxData[StyleBox["alt", "TR"]], "InlineFormula"], ", linked to the ", Cell[BoxData[StyleBox["src", "TR"]], "InlineFormula"], " attribute; nothing if ", Cell[BoxData[StyleBox["alt", "TR"]], "InlineFormula"], " is empty, and no link inside a link |
 | \"Plain\" | plain text |
 | any other string, such as \"Section\" | a cell with that style |
 | ", Cell[BoxData[StyleBox["f", "TI"]], "InlineFormula"], " | ", Cell[BoxData[RowBox[{StyleBox["f", "TI"], "[", StyleBox["elem", "TI"], "]"}]], "InlineFormula"], ", which should give a ", Cell[BoxData[ButtonBox["Cell", BaseStyle -> "Link", ButtonData -> "paclet:ref/Cell"]], "InlineFormula"], " or boxes |"}], "Notes"],

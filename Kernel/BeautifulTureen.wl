@@ -1361,8 +1361,8 @@ HTMLInnerText[args___] /; (countMessage[HTMLInnerText, {args}, {1, 1}]; False) :
 (* The closed set of inline construct tokens. A construct RHS that is a string
    is an inline token when it is in this set, otherwise a block cell-style. *)
 $inlineConstructs = {"Bold", "Italic", "Underline", "StrikeThrough", "Code",
-  "Hyperlink", "Image", "Plain"};
-(* Tokens that wrap their inner boxes in a StyleBox (Hyperlink/Image/Plain differ). *)
+  "Hyperlink", "Plain"};
+(* Tokens that wrap their inner boxes in a StyleBox (Hyperlink/Plain differ). *)
 $styleTokens = {"Bold", "Italic", "Underline", "StrikeThrough", "Code"};
 
 (* A construct value that is neither a string nor None is a constructor
@@ -1375,9 +1375,9 @@ blockStyleQ[_] := False;
 
 (* Default construct map: the frozen UA stylesheet read for font rendering
    (inline) plus the structural block styles. Tried after the user rules,
-   first match wins; an unmatched element gets no construct (None). table/hr
-   are themselves built-in constructor-function rules; table's also takes the
-   context, for its caption. *)
+   first match wins; an unmatched element gets no construct (None). img/table/hr
+   are themselves built-in constructor-function rules; img's and table's also
+   take the context. *)
 (* Plain XMLElement patterns: an XMLPattern is inert, and these name no list
    key, so they are what compiling XMLPattern[tag] would give. *)
 $defaultConstructRules = {
@@ -1395,7 +1395,7 @@ $defaultConstructRules = {
   XMLElement["s" | "del" | "strike", _, _] -> "StrikeThrough",
   XMLElement["code" | "kbd" | "samp" | "tt", _, _] -> "Code",
   XMLElement["a", _, _] -> "Hyperlink",
-  XMLElement["img", _, _] -> "Image",
+  XMLElement["img", _, _] :> contextConstruct[imageConstruct],
   XMLElement["span" | "mark" | "small" | "q" | "abbr" | "sub" | "sup" |
     "time" | "label" | "bdi" | "bdo" | "data" | "ruby" | "rt" | "rp" |
     "wbr", _, _] -> "Plain",
@@ -1496,7 +1496,7 @@ inlineCell[b_] := If[textAtomQ[b], b, Cell[BoxData[b]]];
 
 (* Hyperlink reads href, falling back to src; the label is the inner boxes, or
    the alt text / URL when there are none. No usable href -> Plain. (img has its
-   own Image construct; src and alt matter here when a rule maps img to
+   own built-in construct; src and alt matter here when a rule maps img to
    Hyperlink.) *)
 linkHref[XMLElement[_, attrs_, _]] :=
   With[{a = Association[attrs]}, Lookup[a, "href", Lookup[a, "src", None]]];
@@ -1514,12 +1514,14 @@ hyperResult[el_, inner_] :=
       inner,
       {linkBox[If[inner === {}, altText[Association[el[[2]]], href], boxRow[inner]], href]}]];
 
-(* Image gives its text, never its URL: the alt text, or "image" when there is
-   no alt. alt="" marks a decorative image, which gives nothing. The text links
-   to src, except inside a link, where it is part of that link's label. *)
-imageResult[XMLElement[_, attrs_, _], ctx_] :=
+(* The img default gives its text, never its URL: the alt text, or "image" when
+   there is no alt. alt="" marks a decorative image, which gives nothing. The
+   text links to src, except inside a link, where it is part of that link's
+   label. An img given a block role gives nothing, as it has no content. *)
+imageConstruct[el : XMLElement[_, attrs_, _], ctx_] :=
   With[{a = Association[attrs]}, {label = altText[a, "image"], src = Lookup[a, "src", None]},
     Which[
+      roleOf[el, ctx["roles"], HTMLToNotebook] =!= "Inline", {},
       label === "",                               {},
       TrueQ[ctx["inLink"]] || !usableURLQ[src],   {label},
       True,                                       {linkBox[label, src]}]];
@@ -1531,7 +1533,6 @@ inlineForm[c_, el_, inner_, ctx_] :=
   inlineCell /@ Which[
     functionConstructQ[c], Flatten[{applyConstruct[c, el, ctx]}],
     c === "Hyperlink",     hyperResult[el, inner],
-    c === "Image",         imageResult[el, ctx],
     inner === {},          {},
     MemberQ[$styleTokens, c], {styleBox[c, inner]},
     True,                  inner   (* "Plain", None, or a block style placed inline *)

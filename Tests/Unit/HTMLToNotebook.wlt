@@ -766,15 +766,38 @@ TestCreate[
   TestID -> "htn-img-constructs-override-in-link"
 ];
 
-(* "Image" is a construct any element can take *)
+(* "Image" is not an inline construct: like any string that is not one, it is
+   a cell style, so an inline element given it shows its content as plain
+   text ... *)
 TestCreate[
-  nbmd2["<p><foo src=\"f.png\" alt=\"F\"></foo></p>", "Constructs" -> {"foo" -> "Image"}],
-  "[F](f.png)",
-  TestID -> "htn-img-image-token"
+  nbmd2["<p>a <foo src=\"f.png\" alt=\"F\">kid</foo> c</p>", "Constructs" -> {"foo" -> "Image"}],
+  "a kid c",
+  TestID -> "htn-image-not-an-inline-construct"
 ];
 
-(* An img made a "Hyperlink" reads its alt text as "Image" does: whitespace
-   collapsed and trimmed *)
+(* ... an img given it, which has no content, shows nothing ... *)
+TestCreate[
+  nbmd2["<p>a <img src=\"f.png\" alt=\"F\"> c</p>", "Constructs" -> {"img" -> "Image"}],
+  "a c",
+  TestID -> "htn-image-not-an-inline-construct-img"
+];
+
+(* ... and a block element given it becomes a cell of that style *)
+TestCreate[
+  nbcells["<p>hi</p>", "Constructs" -> {"p" -> "Image"}],
+  {Cell[TextData[{"hi"}], "Image"]},
+  TestID -> "htn-image-is-a-cell-style"
+];
+
+(* An img given a block role makes no cell of its own *)
+TestCreate[
+  nbcells["<p>a <img src=\"f.png\" alt=\"F\"> c</p>", "Roles" -> {"img" -> "Block"}],
+  {Cell[TextData[{"a"}], "Text"], Cell[TextData[{"c"}], "Text"]},
+  TestID -> "htn-img-block-role"
+];
+
+(* An img made a "Hyperlink" reads its alt text as an img does by default:
+   whitespace collapsed and trimmed *)
 TestCreate[
   Cases[HTMLToNotebook[XMLElement["p", {}, {XMLElement["img", {"src" -> "s.png", "alt" -> " a \n b "}, {}]}],
     "Constructs" -> {"img" -> "Hyperlink"}], ButtonBox[label_, ___] :> label, Infinity],
