@@ -51,6 +51,41 @@ TestCreate[
   TestID -> "xmlmatchq-operator-form"
 ];
 
+(* The operator form keeps its compiled query between calls (issue #2), and
+   follows a change to $AttributeReadings between them. *)
+TestCreate[
+  With[{op = XMLMatchQ[XMLPattern["a", "relList" -> "next"]], a = XMLElement["a", {"rel" -> "next"}, {}]},
+    {op[a], Block[{$AttributeReadings = Append[$AttributeReadings, "rel" -> <||>]}, op[a]], op[a]}],
+  {False, True, False},
+  TestID -> "xmlmatchq-operator-form-follows-readings"
+];
+
+(* The "AttributeReadings" option is read by value on each call, so a delayed
+   option follows a change to what it names. *)
+TestCreate[
+  Module[{r = <|"rel" -> <||>|>, op, a = XMLElement["a", {"rel" -> "next"}, {}]},
+    op = XMLMatchQ[XMLPattern["a", "relList" -> "next"], "AttributeReadings" :> r];
+    {op[a], r = <||>; op[a]}],
+  {True, False},
+  TestID -> "xmlmatchq-operator-form-reads-delayed-option"
+];
+
+(* A refused pattern gives its message on each element, and the operator form
+   stays unevaluated, as MatchQ[pattern] does. *)
+TestCreate[
+  Quiet[
+    {Select[{$lead, $lead}, XMLMatchQ[_String]], Length[$MessageList]},
+    {XMLMatchQ::badpat}],
+  {{}, 2},
+  TestID -> "xmlmatchq-operator-form-messages-on-each-call"
+];
+
+TestCreate[
+  XMLMatchQ[_String],
+  XMLMatchQ[_String],
+  TestID -> "xmlmatchq-operator-form-is-inert"
+];
+
 (* A combinator relates an element to a parent or siblings a lone element lacks. *)
 TestCreate[
   XMLMatchQ[$lead, Child[XMLPattern["p"], XMLPattern["b"]]],

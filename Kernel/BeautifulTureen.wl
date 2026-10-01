@@ -619,7 +619,8 @@ sowElementNames[_] := Null;
 (* The operations the XML* functions are: each takes a compiled *)
 (* query (or $Failed, having messaged) and a tree, refuses what *)
 (* it cannot run under the query's head, and gives the elements *)
-(* as they are in the tree.                                     *)
+(* as they are in the tree. elementMatcher instead gives a      *)
+(* function that tests one element.                            *)
 (* =========================================================== *)
 
 queryCases[$Failed, _] := $Failed;
@@ -641,14 +642,16 @@ queryDelete[c_, tree_] :=
       treeRefusedQ[c, tree], $Failed,
       True, runCompiled[If[chainQ[c], chainDelete, deleteC], tree, c]]];
 
-(* Only the element itself is materialised: its children cannot be reached. *)
-queryMatchQ[$Failed, _] := $Failed;
-queryMatchQ[c_, el_] :=
+(* A function that tests one element, or $Failed if the query is refused. Only
+   the element itself is materialised: its children cannot be reached. *)
+elementMatcher[$Failed] := $Failed;
+elementMatcher[c_] :=
   With[{h = c["Head"]},
     Which[
       elementQuery[c, c["Query"], h, "combinator"] === $Failed, $Failed,
       c["Body"] =!= None, Message[MessageName[h, "badpat"], c["Query"]]; $Failed,
-      True, MatchQ[If[c["Readings"] === {}, el, materialise[el, c["Readings"], {0}]], plainQuery[c]]]];
+      True, With[{p = plainQuery[c], r = c["Readings"]},
+        If[r === {}, MatchQ[p], Function[el, MatchQ[materialise[el, r, {0}], p]]]]]];
 
 treeRefusedQ[c_, tree_] :=
   !validTreeQ[tree] && With[{h = c["Head"]}, Message[MessageName[h, "badtree"], Head[tree]]; True];
@@ -1046,11 +1049,35 @@ deleteC[tree_, pat_] := DeleteCases[tree, pat, Infinity];
 Options[XMLMatchQ] = {"AttributeReadings" -> <||>};
 
 (* An option rule is never a pattern, so XMLMatchQ[pattern, opts] is the operator form. *)
-XMLMatchQ[q_, opts : Longest[__?(optionRuleQ[XMLMatchQ])]][el_] := XMLMatchQ[el, q, opts];
-XMLMatchQ[q_][el_] := XMLMatchQ[el, q];
+XMLMatchQ[q_, opts : Longest[__?(optionRuleQ[XMLMatchQ])]][el_] :=
+  matchWith[cachedMatcher[q, OptionValue[XMLMatchQ, {opts}, "AttributeReadings"]], el];
+XMLMatchQ[q_][el_] := matchWith[cachedMatcher[q, <||>], el];
 
 XMLMatchQ[el_, q : Except[_?(optionRuleQ[XMLMatchQ])], opts : OptionsPattern[]] :=
-  queryMatchQ[compileQuery[q, XMLMatchQ, OptionValue["AttributeReadings"]], el];
+  matchWith[matcherOf[q, OptionValue["AttributeReadings"]], el];
+
+matchWith[$Failed, _] := $Failed;
+matchWith[m_, el_] := m[el];
+
+matcherOf[q_, opt_] := elementMatcher[compileQuery[q, XMLMatchQ, opt]];
+
+(* The operator form stays unevaluated, as MatchQ[pattern] does, and is applied
+   to each element in turn, so its matcher is kept, keyed on everything the
+   compiled query depends on: the pattern, the value of the "AttributeReadings"
+   option, and $AttributeReadings (issue #2). A refused pattern is not kept: it
+   gives its message on each call, as the two-argument form does. The cache is
+   emptied when it is full. *)
+$matcherCache = <||>;
+$matcherCacheSize = 256;
+
+cachedMatcher[q_, opt_] :=
+  With[{key = {q, opt, $AttributeReadings}},
+    Lookup[$matcherCache, Key[key],
+      With[{m = matcherOf[q, opt]},
+        If[m =!= $Failed,
+          If[Length[$matcherCache] >= $matcherCacheSize, $matcherCache = <||>];
+          $matcherCache[key] = m];
+        m]]];
 
 (* =========================================================== *)
 (* HTMLTextContent                                             *)

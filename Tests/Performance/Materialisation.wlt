@@ -133,3 +133,15 @@ TestCreate[
   TimeConstraint -> 0.6,
   TestID -> "perf-tonotebook-classlist-rules"
 ];
+
+(* XMLMatchQ[pattern] compiles its query once, not once for each element it
+   is applied to (issue #2). Measured at about 60 ms on a 2026 laptop, against
+   about 0.6 s compiling once per element. *)
+$ps = XMLCases[$big, XMLPattern["div"]];
+
+TestCreate[
+  Length @ Select[$ps, XMLMatchQ[XMLPattern["div", "classList" -> "c3"]]],
+  714,
+  TimeConstraint -> 0.2,
+  TestID -> "perf-xmlmatchq-operator-5000-elements"
+];
