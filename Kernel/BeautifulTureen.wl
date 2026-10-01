@@ -1390,13 +1390,24 @@ trimAtoms[a_List] := splitEdges[joinSpaces[a]][[2]];
 (* Does an atom list carry real content (a box, or non-blank text)? *)
 realQ[a_List] := AnyTrue[a, (! StringQ[#] || StringTrim[#] =!= "") &];
 
+(* Inside boxes the front end draws "-" as a minus sign; with operator
+   substitution off it is drawn as typed. A blockquote's text cell and inline
+   code both need this. *)
+$noOperatorSubstitution = PrivateFontOptions -> {"OperatorSubstitution" -> False};
+
+(* Inline code is typeset as input; these options show its text verbatim: no
+   syntax coloring, no "->" drawn as an arrow, "-" drawn as a hyphen. *)
+$verbatimCodeOptions = {ShowAutoStyles -> False, AutoOperatorRenderings -> {},
+  $noOperatorSubstitution};
+
 styleBox["Bold", inner_] := StyleBox[boxRow[inner], FontWeight -> Bold];
 styleBox["Italic", inner_] := StyleBox[boxRow[inner], FontSlant -> Italic];
 styleBox["Underline", inner_] :=
   StyleBox[boxRow[inner], FontVariations -> {"Underline" -> True}];
 styleBox["StrikeThrough", inner_] :=
   StyleBox[boxRow[inner], FontVariations -> {"StrikeThrough" -> True}];
-styleBox["Code", inner_] := inlineCell@FrameBox[StyleBox[boxRow[inner], "Code"]];
+styleBox["Code", inner_] :=
+  inlineCell@FrameBox[StyleBox[boxRow[inner], "Code", Sequence @@ $verbatimCodeOptions]];
 
 (* An inline atom that is boxes, not text, goes into TextData as an inline
    Cell[BoxData[...]]; placed bare, the front end shows it as its box text. A
@@ -1551,7 +1562,7 @@ nestedQuoteLines[para_List] :=
 
 quoteCells[XMLElement[_, _, ch_], ctx_] :=
   {Cell[BoxData[FrameBox[Cell[TextData[Flatten[Riffle[quoteCollect[ch, ctx], "\n"], 1]],
-    "Text", PrivateFontOptions -> {"OperatorSubstitution" -> False}]]], "Text"]};
+    "Text", $noOperatorSubstitution]]], "Text"]};
 
 (* ---- Built-in constructor-function constructs ---- *)
 
