@@ -7,6 +7,8 @@ status: accepted (amended after implementation)
 A structural combinator — `Child`, `Descendant`, `Adjacent`, `Sibling` — relates the elements matched by its **stages**, and a stage may itself be a combinator. The paclet reads the whole thing as one plain WL pattern over the list of its stages' elements, `{s1, …, sn}`, and gives every name in it exactly the scope that list pattern would give: a `Condition` on a stage sees that stage's names, a `Condition` on the combinator sees all of them, a name at two stages is one value, and a `PatternTest` sees none. This is ADR 0011's "everything inside is a plain WL pattern" carried from the element up to the combinator.
 
 > **Amended after implementation.** A `Condition` in a rule's body (`comb :> body /; test`) now takes part in choosing an ancestor or earlier sibling, as a `Condition` on the combinator does; before, the first candidate was chosen without it, and a body that rejected that candidate lost the match. Written into "What a query returns, and in what order".
+>
+> **Amended for issue #11.** A combinator takes two or more stages; `L[s1, s2, …, sn]` reads as the right-nested chain. Written into "A combinator of combinators is a chain, read left to right".
 
 ## Context
 
@@ -29,6 +31,8 @@ The refusals are the shapes that have no tuple-pattern reading: an `Alternatives
 ### A combinator of combinators is a chain, read left to right
 
 A combinator whose stage is a combinator reads as a chain, as a CSS selector does: `Descendant[a, Child[b, c]]` and `Child[Descendant[a, b], c]` are both the chain *a* Descendant *b* Child *c*, and select the same elements. Every combinator query, nested or not, runs through one code path on positions in one tree: the tree is materialised once per query over the union of the list keys all stages name, and stripped once, at the output.
+
+A combinator with more than two stages is the right-nested chain of its one link: `L[s1, s2, …, sn]`, for any of the four heads `L`, is exactly `L[s1, L[s2, …, L[s(n-1), sn]]]`, the chain *s1* L *s2* L … L *sn*. It is expanded where the query is compiled, before its normal form is built, so it has the same stages, links and conditions as the nested form and every consumer treats it as that form: the same matches, document order, name scoping and rule-body bindings, and the same refusals (`XMLMatchQ` and the `Roles`/`Constructs` rules still refuse it, as any combinator; `XMLDeleteCases` refuses `Adjacent` and `Sibling`). A `Condition` on such a combinator covers all its stages, as one on the outermost combinator of the nested form does. One call has one head, so a chain that mixes links nests a combinator as a stage: `Descendant[a, Child[b, c], d]` is `Descendant[a, Descendant[Child[b, c], d]]`. A combinator with one stage or none relates nothing and is refused with `::stages`, whose message says a combinator needs at least two.
 
 ### What a query returns, and in what order
 
