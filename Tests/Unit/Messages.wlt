@@ -1,7 +1,8 @@
 (* Message text as a reader sees it when a message is captured as text (a doc
    page's Message cell, a log): each argument is written in InputForm, the way
    wltext and other capture tools write it. An argument must read as the
-   expression itself, not as a formatting wrapper around it. *)
+   expression itself, not as a formatting wrapper around it. A message with no
+   text of its own, such as f::argx, has General's text, as Message gives it. *)
 
 SetAttributes[capturedMessages, HoldFirst];
 capturedMessages[expr_] := Module[{texts = {}},
@@ -9,12 +10,16 @@ capturedMessages[expr_] := Module[{texts = {}},
     {"Message", Function[m,
       Replace[m, Hold[Message[mn : MessageName[_, _], args___], _] :>
         AppendTo[texts, ToString[
-          StringForm[mn, Sequence @@ (List @@ Map[
+          StringForm[messageText[mn], Sequence @@ (List @@ Map[
             Function[a, ToString[Unevaluated[a], InputForm], HoldAllComplete],
             Hold[args]])],
           OutputForm, PageWidth -> Infinity]]]]},
     Quiet[expr]];
   texts];
+
+SetAttributes[messageText, HoldFirst];
+messageText[MessageName[s_, tag_]] :=
+  Replace[MessageName[s, tag], _MessageName :> MessageName[General, tag]];
 
 $msgTree = ImportString[
   "<article><p>Top.</p><section><p>Nested.</p></section></article>",
@@ -50,4 +55,148 @@ TestCreate[
   capturedMessages[XMLMatchQ[XMLElement["p", {}, {"x"}], Descendant[XMLPattern["p"]]]],
   {"Descendant[XMLPattern[\"p\"]] is a combinator with fewer than two stages. A combinator needs at least two, but XMLMatchQ tests a lone element and cannot use one; use XMLCases or XMLFirstCase to search a tree with it."},
   TestID -> "message-one-stage-combinator-in-xmlmatchq"
+];
+
+(* ---- Argument counts ----
+   A call with a number of positional arguments outside a function's range gives
+   the standard argument-count message and stays unevaluated, as a built-in
+   does. Options are not counted. *)
+
+(* An unevaluated call is compared as its head and its arguments: the expected
+   value cannot be written as the call itself, which would evaluate. *)
+callParts[call_] := {Head[call], List @@ call};
+
+TestCreate[
+  callParts /@ {XMLCases[$msgTree, XMLPattern["p"], 2], XMLCases[$msgTree, XMLPattern["p"], Infinity, 2]},
+  {{XMLCases, {$msgTree, XMLPattern["p"], 2}}, {XMLCases, {$msgTree, XMLPattern["p"], Infinity, 2}}},
+  {XMLCases::argrx, XMLCases::argrx},
+  TestID -> "count-xmlcases-extra-arguments-unevaluated"
+];
+
+TestCreate[
+  capturedMessages[XMLCases[$msgTree, XMLPattern["p"], 2]],
+  {"XMLCases called with 3 arguments; 2 arguments are expected."},
+  TestID -> "count-message-is-the-standard-text"
+];
+
+TestCreate[
+  {callParts[XMLFirstCase[$msgTree, XMLPattern["p"], "none", 4]],
+    callParts[XMLDeleteCases[$msgTree, XMLPattern["p"], 3]]},
+  {{XMLFirstCase, {$msgTree, XMLPattern["p"], "none", 4}},
+    {XMLDeleteCases, {$msgTree, XMLPattern["p"], 3}}},
+  {XMLFirstCase::argt, XMLDeleteCases::argrx},
+  TestID -> "count-xmlfirstcase-xmldeletecases-extra-arguments"
+];
+
+TestCreate[
+  capturedMessages[{XMLFirstCase[$msgTree, XMLPattern["p"], "none", 4], XMLMatchQ[]}],
+  {"XMLFirstCase called with 4 arguments; 2 or 3 arguments are expected.",
+    "XMLMatchQ called with 0 arguments; 1 or 2 arguments are expected."},
+  TestID -> "count-message-gives-the-range"
+];
+
+TestCreate[
+  {callParts[XMLMatchQ[]],
+    callParts[XMLMatchQ[XMLElement["p", {}, {}], XMLPattern["p"], 3]]},
+  {{XMLMatchQ, {}}, {XMLMatchQ, {XMLElement["p", {}, {}], XMLPattern["p"], 3}}},
+  {XMLMatchQ::argt, XMLMatchQ::argt},
+  TestID -> "count-xmlmatchq-none-or-three"
+];
+
+(* An option is not counted: a third argument that is not one is. *)
+TestCreate[
+  callParts[XMLCases[$msgTree, XMLPattern["p"], 2, "AttributeReadings" -> <||>]],
+  {XMLCases, {$msgTree, XMLPattern["p"], 2, "AttributeReadings" -> <||>}},
+  {XMLCases::argrx},
+  TestID -> "count-options-are-not-counted"
+];
+
+TestCreate[
+  capturedMessages[XMLCases[$msgTree, XMLPattern["p"], 2, "AttributeReadings" -> <||>]],
+  {"XMLCases called with 3 arguments; 2 arguments are expected."},
+  TestID -> "count-message-leaves-options-out"
+];
+
+TestCreate[
+  Map[callParts, {HTMLInnerText[], HTMLInnerText[$msgTree, 2], HTMLTextContent[],
+    HTMLTextContent[$msgTree, 2], HTMLToNotebook[], HTMLToNotebook[$msgTree, 2],
+    HTMLClassList[], HTMLClassList[XMLElement["p", {}, {}], 2]}],
+  {{HTMLInnerText, {}}, {HTMLInnerText, {$msgTree, 2}}, {HTMLTextContent, {}},
+    {HTMLTextContent, {$msgTree, 2}}, {HTMLToNotebook, {}}, {HTMLToNotebook, {$msgTree, 2}},
+    {HTMLClassList, {}}, {HTMLClassList, {XMLElement["p", {}, {}], 2}}},
+  {HTMLInnerText::argx, HTMLInnerText::argx, HTMLTextContent::argx, HTMLTextContent::argx,
+    HTMLToNotebook::argx, HTMLToNotebook::argx, HTMLClassList::argx, HTMLClassList::argx},
+  TestID -> "count-text-functions-none-or-two"
+];
+
+TestCreate[
+  capturedMessages[HTMLInnerText[$msgTree, 2]],
+  {"HTMLInnerText called with 2 arguments; 1 argument is expected."},
+  TestID -> "count-message-for-one-argument-function"
+];
+
+(* One argument is the shape of an operator form, as Cases[pattern] is: it stays
+   unevaluated with no message. *)
+TestCreate[
+  callParts /@ {XMLCases[XMLPattern["p"]], XMLFirstCase[XMLPattern["p"]], XMLDeleteCases[XMLPattern["p"]]},
+  {{XMLCases, {XMLPattern["p"]}}, {XMLFirstCase, {XMLPattern["p"]}}, {XMLDeleteCases, {XMLPattern["p"]}}},
+  TestID -> "count-one-argument-stays-unevaluated-without-message"
+];
+
+(* The operator form, with or without an option, is not a count error. *)
+TestCreate[
+  {callParts[XMLMatchQ[XMLPattern["p"]]],
+    callParts[XMLMatchQ[XMLPattern["p"], "AttributeReadings" -> <||>]],
+    XMLMatchQ[XMLPattern["p"], "AttributeReadings" -> <||>][XMLElement["p", {}, {}]]},
+  {{XMLMatchQ, {XMLPattern["p"]}}, {XMLMatchQ, {XMLPattern["p"], "AttributeReadings" -> <||>}}, True},
+  TestID -> "count-xmlmatchq-operator-form-unchanged"
+];
+
+(* A second-argument rule is the query, and a third that names no option is the
+   default, so neither is read as an option or counted wrongly. *)
+TestCreate[
+  {XMLCases[$msgTree, XMLPattern["p"] -> 1],
+    XMLFirstCase[$msgTree, XMLPattern["p"] -> 1, "none"],
+    XMLFirstCase[$msgTree, XMLPattern["div"], "none"],
+    XMLFirstCase[$msgTree, XMLPattern["div"], "a" -> "b"],
+    XMLFirstCase[$msgTree, XMLPattern["div"], "none", "AttributeReadings" -> <||>]},
+  {{1, 1}, 1, "none", "a" -> "b", "none"},
+  TestID -> "count-rules-as-query-and-default-unchanged"
+];
+
+TestCreate[
+  {HTMLInnerText[$msgTree, "Roles" -> {"section" -> "Skip"}, "BlockSeparator" -> " "],
+    Length[First[HTMLToNotebook[$msgTree, "Constructs" -> {"p" -> "Section"}]]]},
+  {"Top.", 2},
+  TestID -> "count-text-function-options-unchanged"
+];
+
+(* The front end colours a wrong argument count from SyntaxInformation. *)
+TestCreate[
+  Lookup[SyntaxInformation /@ {XMLCases, XMLFirstCase, XMLDeleteCases, XMLMatchQ,
+    HTMLInnerText, HTMLTextContent, HTMLToNotebook, HTMLClassList,
+    XMLPattern, Child, Descendant, Adjacent, Sibling}, "ArgumentsPattern"],
+  {{_, _, OptionsPattern[]}, {_, _, _., OptionsPattern[]}, {_, _, OptionsPattern[]},
+    {_, _., OptionsPattern[]}, {_, OptionsPattern[]}, {_}, {_, OptionsPattern[]}, {_},
+    {_, _.}, {_, _, ___}, {_, _, ___}, {_, _, ___}, {_, _, ___}},
+  TestID -> "syntax-information-arguments-pattern"
+];
+
+TestCreate[
+  Lookup[SyntaxInformation /@ {XMLCases, XMLFirstCase, XMLDeleteCases, XMLMatchQ,
+    HTMLInnerText, HTMLToNotebook}, "OptionNames"],
+  {{"AttributeReadings"}, {"AttributeReadings"}, {"AttributeReadings"}, {"AttributeReadings"},
+    {"Roles", "BlockSeparator", "AttributeReadings"}, {"Roles", "Constructs", "AttributeReadings"}},
+  TestID -> "syntax-information-option-names"
+];
+
+(* No arguments is a count error too; an option before the extra argument is
+   not at the end, so it is counted. *)
+TestCreate[
+  {callParts[XMLCases[]], callParts[XMLDeleteCases[]],
+    callParts[XMLFirstCase[$msgTree, XMLPattern["p"], "AttributeReadings" -> <||>, 4]]},
+  {{XMLCases, {}}, {XMLDeleteCases, {}},
+    {XMLFirstCase, {$msgTree, XMLPattern["p"], "AttributeReadings" -> <||>, 4}}},
+  {XMLCases::argrx, XMLDeleteCases::argrx, XMLFirstCase::argt},
+  TestID -> "count-no-arguments-and-option-before-extra"
 ];
