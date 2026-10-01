@@ -16,6 +16,8 @@ An earlier decision (`.scratch/xmlreplace/map.md`, "No `XMLMatchQ`") held that i
 
 `XMLMatchQ` accepts an element pattern: an `XMLPattern`, an `Alternatives` of them, or a `Condition` on one, and takes the `"AttributeReadings"` option like the other consumers (ADR 0012). A structural combinator (`Child`, `Descendant`, `Adjacent`, `Sibling`) is refused with a message, and so is a `Condition` on one: each describes an element in relation to its parent or siblings, and a lone element has neither.
 
+The operator form `XMLMatchQ[pattern]` stays unevaluated, as `MatchQ[pattern]` does, and keeps the compiled query between calls, keyed on the pattern, the value of the `"AttributeReadings"` option and `$AttributeReadings` ([issue #2](https://github.com/mtirard/BeautifulTureen/issues/2)). Compiling once per element cost about 115 µs per element. A refused pattern is not kept, so it gives its message on each call, as the two-argument form does. Giving the message once, when the operator is made, was rejected: `XMLMatchQ[bad]` would then evaluate to `$Failed` instead of an operator. The cache holds at most 256 entries and is emptied when full. It holds compiled queries, not split token lists, so ADR 0012's rejection of a `Once` cache, which is about trees and strings, does not apply.
+
 ## Consequences
 
 `Cases`, `Position`, `ReplaceAll` and `MatchQ` no longer accept an `XMLPattern`. This is a Possible Issues entry on the `XMLPattern` page — the same trap as `MatchQ["abc", "a" ~~ __]` being `False` — with `XMLMatchQ` and the XML* functions as the answer.
