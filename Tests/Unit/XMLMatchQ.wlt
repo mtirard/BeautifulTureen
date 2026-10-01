@@ -107,3 +107,11 @@ TestCreate[
   {XMLMatchQ::badpat},
   TestID -> "xmlmatchq-refuses-non-xml-pattern"
 ];
+
+(* A rule gives a value, not a test, whether -> or :> *)
+TestCreate[
+  {XMLMatchQ[$lead, XMLPattern["p"] -> 1], XMLMatchQ[$lead, XMLPattern["p"] :> 1]},
+  {$Failed, $Failed},
+  {XMLMatchQ::badpat, XMLMatchQ::badpat},
+  TestID -> "xmlmatchq-refuses-rule"
+];

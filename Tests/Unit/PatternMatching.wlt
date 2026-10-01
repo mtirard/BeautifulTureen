@@ -343,3 +343,116 @@ TestCreate[
   Notebook[{Cell[TextData[{StyleBox["x", FontWeight -> Bold], "y"}], "Text"]}],
   TestID -> "cond-cross-field-constructs"
 ];
+
+(* === Rule queries (pattern -> rhs) === *)
+
+(* A query pattern -> rhs is read as Cases reads a Rule: rhs is evaluated once,
+   when the query is given, and the names the pattern binds are put into the
+   value. *)
+
+$ruleTree = ImportString[
+  "<div><p id=\"a\" class=\"x y\">1</p><a href=\"/one\">o</a><p id=\"b\">2</p><a href=\"/two\">t</a></div>",
+  {"HTML", "XMLObject"}];
+
+TestCreate[
+  XMLCases[$ruleTree, XMLPattern["p"] -> 1],
+  {1, 1},
+  TestID -> "rule-constant-rhs"
+];
+
+(* With no value on h, the rule substitutes the binding. *)
+TestCreate[
+  XMLCases[$ruleTree, XMLPattern["a", "href" -> h_] -> h],
+  {"/one", "/two"},
+  TestID -> "rule-binding-rhs"
+];
+
+TestCreate[
+  XMLCases[$ruleTree, e : XMLPattern["a"] -> e][[All, 3]],
+  {{"o"}, {"t"}},
+  TestID -> "rule-element-name-rhs"
+];
+
+(* The right-hand side is evaluated before any match, so a function of a name
+   sees the symbol, as in Cases; :> evaluates it for each match. *)
+TestCreate[
+  {XMLCases[$ruleTree, e : XMLPattern["a"] -> Length[e]],
+   Cases[{{1, 2}, {3, 4}}, e_ -> Length[e]],
+   XMLCases[$ruleTree, e : XMLPattern["a"] :> Length[e]]},
+  {{0, 0}, {0, 0}, {3, 3}},
+  TestID -> "rule-rhs-evaluated-before-matching"
+];
+
+(* With a value on the right-hand side's symbol, the value is used, as Cases
+   uses it: the plain rule ("id" -> x_) -> x on the id rules gives the same. *)
+TestCreate[
+  Block[{x = 5},
+    {XMLCases[$ruleTree, XMLPattern["p", "id" -> x_] -> x],
+     Cases[{"id" -> "a", "id" -> "b"}, ("id" -> x_) -> x]}],
+  {{5, 5}, {5, 5}},
+  TestID -> "rule-global-value-as-cases"
+];
+
+TestCreate[
+  Block[{x},
+    {XMLCases[$ruleTree, XMLPattern["p", "id" -> x_] -> x],
+     Cases[{"id" -> "a", "id" -> "b"}, ("id" -> x_) -> x]}],
+  {{"a", "b"}, {"a", "b"}},
+  TestID -> "rule-no-global-value-as-cases"
+];
+
+(* The right-hand side is evaluated once, when the query is given. *)
+TestCreate[
+  Module[{n = 0}, {XMLCases[$ruleTree, XMLPattern["p"] -> ++n], n}],
+  {{1, 1}, 1},
+  TestID -> "rule-rhs-evaluated-once"
+];
+
+(* A Condition in the value is part of it, not a test, as in Cases. *)
+TestCreate[
+  {XMLCases[$ruleTree, XMLPattern["p", "id" -> i_] -> (i /; i == "a")],
+   Cases[{"id" -> "a", "id" -> "b"}, ("id" -> i_) -> (i /; i == "a")]},
+  {{"a" /; "a" == "a", "b" /; "b" == "a"}, {"a" /; "a" == "a", "b" /; "b" == "a"}},
+  TestID -> "rule-condition-in-value-as-cases"
+];
+
+(* A name at a list key gives the token list, with -> as with :>. *)
+TestCreate[
+  {XMLCases[$ruleTree, XMLPattern["p", "classList" -> c_] -> c],
+   XMLCases[$ruleTree, XMLPattern["p", "classList" -> c_] :> c]},
+  {{{"x", "y"}, {}}, {{"x", "y"}, {}}},
+  TestID -> "rule-list-key-name-as-delayed"
+];
+
+(* An element name beside a list key is the element as it is in the tree. *)
+TestCreate[
+  XMLCases[$ruleTree, e : XMLPattern["p", "classList" -> "x"] -> e],
+  {XMLElement["p", {"class" -> "x y", "id" -> "a"}, {"1"}]},
+  TestID -> "rule-list-key-element-name"
+];
+
+TestCreate[
+  XMLCases[$ruleTree, (XMLPattern["p", "id" -> i_] /; i == "b") -> i],
+  {"b"},
+  TestID -> "rule-conditioned-pattern"
+];
+
+(* A combinator rule, with a Condition on the combinator. *)
+TestCreate[
+  XMLCases[$ruleTree,
+    (Child[XMLPattern["div"], XMLPattern["a", "href" -> h_]] /; StringEndsQ[h, "two"]) -> h],
+  {"/two"},
+  TestID -> "rule-combinator-condition"
+];
+
+TestCreate[
+  XMLCases[$ruleTree, Adjacent[XMLPattern["p", "id" -> i_], XMLPattern["a", "href" -> h_]] -> {i, h}],
+  {{"a", "/one"}, {"b", "/two"}},
+  TestID -> "rule-combinator-bindings"
+];
+
+TestCreate[
+  XMLCases[$ruleTree, Child[XMLPattern["div"], XMLPattern["p"]] -> 1],
+  {1, 1},
+  TestID -> "rule-combinator-constant-rhs"
+];

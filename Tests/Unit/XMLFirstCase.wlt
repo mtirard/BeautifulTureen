@@ -121,3 +121,36 @@ TestCreate[
   "Wolfram Language: Programming Language + Built-In Knowledge",
   TestID -> "firstcase-real-og-title"
 ];
+
+(* A rule pattern -> rhs, its rhs evaluated when the query is given *)
+TestCreate[
+  XMLFirstCase[$tree, XMLPattern["p"] -> 1],
+  1,
+  TestID -> "firstcase-rule"
+];
+
+TestCreate[
+  HTMLTextContent @ XMLFirstCase[$treeSiblings, Adjacent[XMLPattern["h2"], p : XMLPattern["p"]] -> p],
+  "First",
+  TestID -> "firstcase-rule-combinator"
+];
+
+TestCreate[
+  XMLFirstCase[$tree, XMLPattern["table"] -> 1, "fallback"],
+  "fallback",
+  TestID -> "firstcase-rule-default"
+];
+
+TestCreate[
+  XMLFirstCase[$tree, XMLPattern["p"] -> 1, "fallback"],
+  1,
+  TestID -> "firstcase-rule-default-unused"
+];
+
+TestCreate[
+  Block[{x = 5},
+    {XMLFirstCase[$realTree, XMLPattern["meta", "property" -> x_] -> x],
+     FirstCase[{"property" -> "og:title"}, ("property" -> x_) -> x]}],
+  {5, 5},
+  TestID -> "firstcase-rule-global-value-as-firstcase"
+];
