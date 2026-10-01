@@ -229,7 +229,7 @@ TestCreate[
   ExportString[
     HTMLToNotebook[
       ImportString["<div><p>keep</p><p class=\"ad\">drop</p></div>", {"HTML", "XMLObject"}],
-      "Roles" -> {XMLPattern["p", CSSClass["ad"]] -> "Skip"}],
+      "Roles" -> {XMLPattern["p", "classList" -> "ad"] -> "Skip"}],
     "Markdown"],
   "keep",
   TestID -> "htn-roles-skip"
@@ -286,4 +286,84 @@ TestCreate[
     "Constructs" -> {"table" :> Function[el, Cell["TABLE", "Text"]]}],
   "TABLE",
   TestID -> "htn-constructs-table-override"
+];
+
+(* === Rules naming the classList key === *)
+
+(* A rule naming a list key materialises the tree once, at entry; the output is
+   the same as on the tree as it is. The fixture carries a link, an image, a table
+   and classes, the parts that read attributes. *)
+$rich = ImportString[
+  "<div class=\"main\"><h2 class=\"t\">T</h2><p class=\"lead\">see <a href=\"/x\" class=\"ext\">x</a> \
+<img src=\"i.png\" alt=\"pic\"></p><table><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table>\
+<ul class=\"menu\"><li>one</li></ul></div>",
+  {"HTML", "XMLObject"}];
+
+TestCreate[
+  HTMLToNotebook[$rich,
+    "Roles" -> {XMLPattern["p", "classList" -> "nomatch"] -> "Skip"},
+    "Constructs" -> {XMLPattern["b", "classList" -> "nomatch"] -> "Italic"}] === HTMLToNotebook[$rich],
+  True,
+  TestID -> "htn-materialised-output-identical"
+];
+
+TestCreate[
+  nbmd2["<p>a <span class=\"kw hot\">b</span></p>",
+    "Constructs" -> {XMLPattern["span", "classList" -> "kw"] -> "Bold"}],
+  "a **b**",
+  TestID -> "htn-constructs-classlist"
+];
+
+TestCreate[
+  nbmd2["<p class=\"x\">keep</p><p>drop</p>",
+    "Roles" -> {XMLPattern["p", "classList" -> {}] -> "Skip"}],
+  "keep",
+  TestID -> "htn-roles-classlist-absent"
+];
+
+(* A rule is tried against one element, so a combinator is refused. *)
+TestCreate[
+  HTMLToNotebook[XMLElement["p", {}, {"x"}],
+    "Roles" -> {Child[XMLPattern["div"], XMLPattern["p"]] -> "Skip"}],
+  $Failed,
+  {HTMLToNotebook::badpat},
+  TestID -> "htn-rule-combinator-refused"
+];
+
+(* An entry that is not a rule is refused once, when the option is read. *)
+TestCreate[
+  HTMLToNotebook[XMLElement["div", {}, {XMLElement["p", {}, {"a"}], XMLElement["p", {}, {"b"}]}],
+    "Constructs" -> {42}],
+  $Failed,
+  {HTMLToNotebook::notrule},
+  TestID -> "htn-constructs-non-rule-refused"
+];
+
+TestCreate[
+  HTMLToNotebook[XMLElement["div", {}, {XMLElement["p", {}, {"a"}], XMLElement["p", {}, {"b"}]}],
+    "Roles" -> {"p" -> "Block", "p"}],
+  $Failed,
+  {HTMLToNotebook::notrule},
+  TestID -> "htn-roles-non-rule-refused"
+];
+
+(* A constructor function sees the element as it is in the tree, attributes and
+   descendants alike, even when its rule names a list key. *)
+TestCreate[
+  HTMLToNotebook[XMLElement["div", {}, {XMLElement["p", {"class" -> "x y"}, {XMLElement["b", {"class" -> "z"}, {"t"}]}]}],
+    "Constructs" -> {XMLPattern["p", "classList" -> "x"] -> Function[el, Cell[BoxData[ToBoxes[el]], "Text"]]}],
+  Notebook[{Cell[BoxData[ToBoxes[
+    XMLElement["p", {"class" -> "x y"}, {XMLElement["b", {"class" -> "z"}, {"t"}]}]]], "Text"]}],
+  TestID -> "htn-constructs-function-sees-original-element"
+];
+
+(* So does an element bound in a delayed rule's body, for Roles and Constructs. *)
+TestCreate[
+  nbmd2["<p class=\"x y\">skip</p><p class=\"x\">keep</p>",
+    "Roles" -> {e : XMLPattern["p", "classList" -> "x"] :>
+      If[e[[2]] === {"class" -> "x y"}, "Skip", "Block"]},
+    "Constructs" -> {e : XMLPattern["p", "classList" -> "x"] :>
+      Function[el, Cell[If[e === el && e[[2]] === {"class" -> "x"}, "same", "differs"], "Text"]]}],
+  "same",
+  TestID -> "htn-delayed-rule-body-sees-original-element"
 ];
