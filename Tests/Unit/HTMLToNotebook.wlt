@@ -1,6 +1,7 @@
 (* HTMLToNotebook: HTML -> Notebook[...] -> Markdown (via Export). Covers block
    and inline constructs, lists, quotes, tables, and the Roles/Constructs
-   override layers. The nbmd/nbmd2 helpers are local to this file. *)
+   override layers. The nbmd/nbmd2/nbcells/plainText helpers are local to this
+   file. *)
 
 (* The contract is judged by I/O: HTML in, Markdown (via Export) out. *)
 nbmd[h_String] := ExportString[
@@ -437,4 +438,122 @@ TestCreate[
     {"str", Cell["c"], StyleBox["sb", FontWeight -> Bold]}],
   {"a str b", "a c b", "a **sb** b"},
   TestID -> "htn-constructs-function-text-unchanged-markdown"
+];
+
+(* === Whitespace at inline edges and around line breaks === *)
+
+(* Whitespace at the edge of an inline element sits outside its box, as one
+   space between it and its neighbour; formatting does not cover it. *)
+TestCreate[
+  nbcells["<p>a <b>bold </b>next</p>"],
+  {Cell[TextData[{"a ", StyleBox["bold", FontWeight -> Bold], " ", "next"}], "Text"]},
+  TestID -> "htn-ws-inline-trailing-edge"
+];
+
+TestCreate[
+  nbmd["<p>a <b>bold </b>next</p>"],
+  "a **bold** next",
+  TestID -> "htn-ws-inline-trailing-edge-markdown"
+];
+
+TestCreate[
+  nbmd["<p>like <a href=\"/x\">word </a>(more)</p>"],
+  "like [word](/x) (more)",
+  TestID -> "htn-ws-link-trailing-edge-markdown"
+];
+
+TestCreate[
+  nbcells["<p>x<b> y</b></p>"],
+  {Cell[TextData[{"x", " ", StyleBox["y", FontWeight -> Bold]}], "Text"]},
+  TestID -> "htn-ws-inline-leading-edge"
+];
+
+TestCreate[
+  nbmd["<p>x<b> y</b></p>"],
+  "x **y**",
+  TestID -> "htn-ws-inline-leading-edge-markdown"
+];
+
+(* Whitespace on both sides of an element boundary collapses to one space *)
+TestCreate[
+  nbcells["<p>a <b> b </b> c</p>"],
+  {Cell[TextData[{"a ", StyleBox["b", FontWeight -> Bold], " ", "c"}], "Text"]},
+  TestID -> "htn-ws-boundary-collapse"
+];
+
+TestCreate[
+  nbmd["<p>a <b> b </b> c</p>"],
+  "a **b** c",
+  TestID -> "htn-ws-boundary-collapse-markdown"
+];
+
+(* An edge space carried out of a nested element collapses at each level *)
+TestCreate[
+  nbcells["<p>x <i>a <b> b</b> </i>y</p>"],
+  {Cell[TextData[{"x ", StyleBox[RowBox[{"a ", StyleBox["b", FontWeight -> Bold]}],
+    FontSlant -> Italic], " ", "y"}], "Text"]},
+  TestID -> "htn-ws-nested-edges"
+];
+
+(* Whitespace next to a line break is dropped *)
+TestCreate[
+  nbcells["<p>romance,<br> sarcasm</p>"],
+  {Cell[TextData[{"romance,", "\n", "sarcasm"}], "Text"]},
+  TestID -> "htn-ws-after-linebreak"
+];
+
+TestCreate[
+  nbcells["<p>a <br>b</p>"],
+  {Cell[TextData[{"a", "\n", "b"}], "Text"]},
+  TestID -> "htn-ws-before-linebreak"
+];
+
+(* ... also when the whitespace comes out of an inline element's edge *)
+TestCreate[
+  nbcells["<p><b>a </b><br><i> b</i></p>"],
+  {Cell[TextData[{StyleBox["a", FontWeight -> Bold], "\n",
+    StyleBox["b", FontSlant -> Italic]}], "Text"]},
+  TestID -> "htn-ws-linebreak-inline-edges"
+];
+
+(* A line break at the edge of an inline element is kept, outside it *)
+TestCreate[
+  nbcells["<p><b>x<br></b>y</p>"],
+  {Cell[TextData[{StyleBox["x", FontWeight -> Bold], "\n", "y"}], "Text"]},
+  TestID -> "htn-ws-linebreak-at-inline-edge"
+];
+
+(* Preformatted text keeps its whitespace *)
+TestCreate[
+  nbcells["<pre>  a  <b> b </b>\n c </pre>"],
+  {Cell["  a   b \n c ", "Program"]},
+  TestID -> "htn-ws-pre-unchanged"
+];
+
+(* The notebook's text, ignoring formatting, is HTMLInnerText of the same tree *)
+plainText[s_String] := s;
+plainText[l_List] := StringJoin[plainText /@ l];
+plainText[(StyleBox | ButtonBox | RowBox)[x_, ___]] := plainText[x];
+plainText[Cell[TextData[x_], ___]] := plainText[x];
+plainText[Cell[s_String, ___]] := s;
+plainText[Notebook[cells_, ___]] := StringRiffle[plainText /@ cells, "\n"];
+
+$wsTrees = ImportString[#, {"HTML", "XMLObject"}] & /@
+  {"<p>a <b>bold </b>next</p>", "<p>like <a href=\"/x\">word </a>(more)</p>",
+   "<p>x<b> y</b></p>", "<p>a <b> b </b> c</p>", "<p>x <i>a <b> b</b> </i>y</p>",
+   "<p>romance,<br> sarcasm</p>", "<p>a <br>b</p>", "<p><b>a </b><br><i> b</i></p>",
+   "<p><b>x<br></b>y</p>", "<pre>  a  <b> b </b>\n c </pre>",
+   "<p>a<span> </span>b</p>", "<ul><li>one <i>two </i>three</li></ul>"};
+
+TestCreate[
+  plainText[HTMLToNotebook[#]] & /@ $wsTrees,
+  HTMLInnerText /@ $wsTrees,
+  TestID -> "htn-ws-text-matches-innertext"
+];
+
+(* A constructor function's result also sits between the element's edge spaces *)
+TestCreate[
+  nbcells["<p>a<foo> z </foo>b</p>", "Constructs" -> {"foo" -> Function[el, "str"]}],
+  {Cell[TextData[{"a", " ", "str", " ", "b"}], "Text"]},
+  TestID -> "htn-ws-constructs-function-edges"
 ];

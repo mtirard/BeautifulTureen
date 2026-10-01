@@ -1346,19 +1346,46 @@ boxRow[{}] := "";
 boxRow[{x_}] := x;
 boxRow[xs_List] := RowBox[xs];
 
-(* Trim whitespace-only string atoms at both ends, then trim the inner edges of
-   the surviving boundary strings; meaningful internal spacing is kept. *)
-trimAtoms[a0_List] :=
-  Module[{a = DeleteCases[a0, ""]},
-    While[a =!= {} && StringQ[First[a]] && StringMatchQ[First[a], Whitespace ..],
-      a = Rest[a]];
-    While[a =!= {} && StringQ[Last[a]] && StringMatchQ[Last[a], Whitespace ..],
-      a = Most[a]];
-    If[a =!= {} && StringQ[First[a]],
-      a = MapAt[StringReplace[#, StartOfString ~~ Whitespace .. -> ""] &, a, 1]];
-    If[a =!= {} && StringQ[Last[a]],
-      a = MapAt[StringReplace[#, Whitespace .. ~~ EndOfString -> ""] &, a, -1]];
-    a];
+(* Collapse whitespace across atom boundaries, as HTMLInnerText does: a string's
+   leading spaces go when the atom before it ends in a space or is a line break
+   ("\n"), and the spaces before a line break go. Empty strings are dropped. *)
+joinSpaces[a_List] := Fold[joinAtom, {}, a];
+joinAtom[acc_, ""] := acc;
+joinAtom[{}, x_] := {x};
+joinAtom[acc_, "\n"] :=
+  Append[DeleteCases[MapAt[stripSpaces[#, " " .. ~~ EndOfString] &, acc, -1], "", {1}], "\n"];
+joinAtom[acc_, s_String] /; spaceEndQ[Last[acc]] :=
+  DeleteCases[Append[acc, stripSpaces[s, StartOfString ~~ " " ..]], "", {1}];
+joinAtom[acc_, x_] := Append[acc, x];
+
+spaceEndQ[s_String] := StringEndsQ[s, " " | "\n"];
+spaceEndQ[_] := False;
+stripSpaces[s_String, p_] := StringDelete[s, p];
+stripSpaces[x_, _] := x;
+
+(* Split a joined atom list into its leading edge, core and trailing edge. An
+   edge is the whitespace-only strings (spaces, line breaks) at that end, plus
+   the spaces at that end of the outermost string of the core. *)
+blankQ[s_String] := StringMatchQ[s, Whitespace ..];
+blankQ[_] := False;
+splitEdges[a_List] :=
+  With[{i = LengthWhile[a, blankQ]},
+    If[i === Length[a], {a, {}, {}},
+      With[{j = LengthWhile[Reverse[a], blankQ]},
+        peelSpaces[Take[a, i], a[[i + 1 ;; -j - 1]], Take[a, -j]]]]];
+peelSpaces[lead_, core_, trail_] :=
+  With[{l = edgeSpace[First[core], StartOfString ~~ " " ..],
+        t = edgeSpace[Last[core], " " .. ~~ EndOfString]},
+    {Join[lead, l],
+     MapAt[stripSpaces[#, " " .. ~~ EndOfString] &,
+       MapAt[stripSpaces[#, StartOfString ~~ " " ..] &, core, 1], -1],
+     Join[t, trail]}];
+(* {" "} when a string has spaces where p looks for them, else {} *)
+edgeSpace[s_String, p_] := If[StringContainsQ[s, p], {" "}, {}];
+edgeSpace[_, _] := {};
+
+(* The core of an inline run: boundary whitespace collapsed, edges trimmed. *)
+trimAtoms[a_List] := splitEdges[joinSpaces[a]][[2]];
 
 (* Does an atom list carry real content (a box, or non-blank text)? *)
 realQ[a_List] := AnyTrue[a, (! StringQ[#] || StringTrim[#] =!= "") &];
@@ -1409,9 +1436,13 @@ inlineBoxes[el : XMLElement[_, _, ch_], ctx_] :=
   Switch[roleOf[el, ctx["roles"], HTMLToNotebook],
     "Skip",      {},
     "LineBreak", {"\n"},
-    _,           inlineForm[constructOf[el, ctx], el,
-                   trimAtoms@Flatten[inlineBoxes[#, ctx] & /@ ch]]];
+    _,           edgedForm[constructOf[el, ctx], el,
+                   splitEdges[joinSpaces@Flatten[inlineBoxes[#, ctx] & /@ ch]]]];
 inlineBoxes[_, _] := {};
+
+(* An element's edge whitespace goes outside its form, so that formatting does
+   not cover it and it can collapse with its neighbours'. *)
+edgedForm[c_, el_, {lead_, core_, trail_}] := Join[lead, inlineForm[c, el, core], trail];
 
 (* ---- Block emission: walk children, buffering inline runs into cells of the
    ambient block style and recursing on block children. ---- *)
