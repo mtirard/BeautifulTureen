@@ -219,8 +219,22 @@ TestCreate[
    lossless Grid, keeping the header row as data (no silent column loss) *)
 TestCreate[
   nbmd["<table><tr><th>X</th><th>X</th></tr><tr><td>1</td><td>2</td></tr></table>"],
-  "|  |  |\n| - | - |\n| X | X |\n| 1 | 2 |",
+  "|  |  |\n| - | - |\n| **X** | **X** |\n| 1 | 2 |",
   TestID -> "htn-table-dup-header-lossless"
+];
+
+(* In the Grid form a <th> cell (here a row header) is bold, and **...** in Markdown *)
+TestCreate[
+  nbmd["<table><tr><th>a</th><td>1</td></tr><tr><th>b-c</th><td>x->y</td></tr></table>"],
+  "|  |  |\n| - | - |\n| **a** | 1 |\n| **b-c** | x->y |",
+  TestID -> "htn-table-th-bold-markdown"
+];
+
+(* An empty <th> stays empty rather than becoming an empty bold run *)
+TestCreate[
+  nbmd["<table><tr><th></th><td>1</td></tr></table>"],
+  "|  |  |\n| - | - |\n|  | 1 |",
+  TestID -> "htn-table-th-empty"
 ];
 
 (* === HTMLToNotebook: Roles + Constructs overrides === *)
@@ -819,9 +833,21 @@ TestCreate[
 (* A table without a caption is one cell, as before *)
 TestCreate[
   nbcells["<table><tr><td>111</td><td>0</td></tr></table>"],
-  {Cell[BoxData[TagBox[GridBox[{{"\"111\"", "\"0\""}}, AutoDelete -> False,
-    GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], "Grid"]], "Output"]},
+  {Cell[BoxData[TagBox[GridBox[{{"\"111\"", "\"0\""}},
+    GridBoxAlignment -> {"Columns" -> {{Left}}}, AutoDelete -> False,
+    GridBoxFrame -> {"Columns" -> {{True}}, "Rows" -> {{True}}},
+    GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+    BaseStyle -> {"Text", ShowStringCharacters -> False, ShowAutoStyles -> False,
+      AutoOperatorRenderings -> {}, PrivateFontOptions -> {"OperatorSubstitution" -> False}}],
+    "Grid"]], "Output"]},
   TestID -> "htn-table-no-caption-one-cell"
+];
+
+(* The Grid form is a framed, left-aligned text table; a <th> cell is bold *)
+TestCreate[
+  Cases[nbcells["<table><tr><th>a</th><td>1</td></tr></table>"], GridBox[{{th_, td_}}, ___] :> {th, td}, Infinity],
+  {{StyleBox["\"a\"", Bold, StripOnInput -> False], "\"1\""}},
+  TestID -> "htn-table-th-bold"
 ];
 
 TestCreate[

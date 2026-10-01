@@ -1397,8 +1397,9 @@ realQ[a_List] := AnyTrue[a, (! StringQ[#] || StringTrim[#] =!= "") &];
    code both need this. *)
 $noOperatorSubstitution = PrivateFontOptions -> {"OperatorSubstitution" -> False};
 
-(* Inline code is typeset as input; these options show its text verbatim: no
-   syntax coloring, no "->" drawn as an arrow, "-" drawn as a hyphen. *)
+(* Inline code and a table's Grid are typeset as input; these options show
+   their text verbatim: no syntax coloring, no "->" drawn as an arrow, "-" drawn
+   as a hyphen. *)
 $verbatimCodeOptions = {ShowAutoStyles -> False, AutoOperatorRenderings -> {},
   $noOperatorSubstitution};
 
@@ -1599,12 +1600,15 @@ hrConstruct[_] := Cell["", "Text", CellFrame -> {{0, 0}, {0, 1}}];
 (* <table> -> Dataset when a leading all-<th> row gives unique column labels (an
    idiomatic GFM header), else Grid (positional, blank header, every row kept).
    Dataset/Grid over Tabular because the paclet floor is WL 12+. Cells degrade
-   to plain text. See ADR 0003. *)
+   to plain text; in the Grid form a <th> cell is bold. See ADR 0003. *)
 cellText[XMLElement[_, _, c_]] := StringTrim[normWS[StringJoin[textContentWalk /@ c]]];
 
-tableCellsOf[tr_] := Cases[tr[[3]], e : XMLElement["th" | "td", _, _] :> cellText[e]];
+gridItem[e : XMLElement["th", _, _]] := With[{t = cellText[e]}, If[t === "", t, Style[t, Bold]]];
+gridItem[e_] := cellText[e];
+
+tableCellsOf[tr_] := Cases[tr[[3]], XMLElement["th" | "td", _, _]];
 tableHeaderRowQ[tr_] :=
-  With[{cs = Cases[tr[[3]], XMLElement["th" | "td", _, _]]},
+  With[{cs = tableCellsOf[tr]},
     cs =!= {} && AllTrue[cs, MatchQ[#, XMLElement["th", _, _]] &]];
 
 padRow[row_, n_] := PadRight[row, n, ""];
@@ -1614,7 +1618,12 @@ datasetCell[headers_, bodyRows_] :=
   Cell[BoxData[ToBoxes[
     Dataset[AssociationThread[headers, padRow[#, Length[headers]]] & /@ bodyRows]]],
     "Output"];
-gridCell[rows_] := Cell[BoxData[ToBoxes[Grid[rectangular[rows]]]], "Output"];
+(* A framed, left-aligned table in the text font, its strings shown as written
+   (no quotes, operator glyphs or coloring). *)
+gridCell[rows_] := Cell[BoxData[ToBoxes[Grid[rectangular[rows],
+    Frame -> All, Alignment -> Left,
+    BaseStyle -> {"Text", ShowStringCharacters -> False, Sequence @@ $verbatimCodeOptions}]]],
+    "Output"];
 
 (* A <caption> is a Text cell before the table's cell, converted as a paragraph
    is, so that it is not lost (ADR 0003). *)
@@ -1630,12 +1639,10 @@ tableCell[el_XMLElement] :=
     rows = DeleteCases[rows, {}];
     If[rows === {}, Return[gridCell[{{""}}]]];
     hasHeader = trs =!= {} && tableHeaderRowQ[First[trs]];
-    If[hasHeader,
-      headers = First[rows];
-      If[DuplicateFreeQ[headers] && headers =!= {},
-        datasetCell[headers, Rest[rows]],
-        gridCell[rows]],
-      gridCell[rows]]];
+    headers = cellText /@ First[rows];
+    If[hasHeader && DuplicateFreeQ[headers],
+      datasetCell[headers, Map[cellText, Rest[rows], {2}]],
+      gridCell[Map[gridItem, rows, {2}]]]];
 
 (* ---- Public interface ---- *)
 

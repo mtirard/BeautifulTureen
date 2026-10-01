@@ -315,9 +315,9 @@ Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"
 
 Cell[BoxData["\"still shown\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A table with repeated header labels becomes a ", Cell[BoxData[ButtonBox["Grid", BaseStyle -> "Link", ButtonData -> "paclet:ref/Grid"]], "InlineFormula"], " instead of a ", Cell[BoxData[ButtonBox["Dataset", BaseStyle -> "Link", ButtonData -> "paclet:ref/Dataset"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["ExportString[HTMLToNotebook[ImportString[\"<table><thead><tr><th>X</th><th>X</th></tr></thead><tbody><tr><td>1</td><td>2</td></tr></tbody></table>\",{\"HTML\",\"XMLObject\"}]],\"Markdown\"]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A table with repeated header labels becomes a ", Cell[BoxData[ButtonBox["Grid", BaseStyle -> "Link", ButtonData -> "paclet:ref/Grid"]], "InlineFormula"], " instead of a ", Cell[BoxData[ButtonBox["Dataset", BaseStyle -> "Link", ButtonData -> "paclet:ref/Dataset"]], "InlineFormula"], ", with the labels as bold cells in its first row:"}], "ExampleText"], Cell[BoxData["ExportString[HTMLToNotebook[ImportString[\"<table><thead><tr><th>X</th><th>X</th></tr></thead><tbody><tr><td>1</td><td>2</td></tr></tbody></table>\",{\"HTML\",\"XMLObject\"}]],\"Markdown\"]"], "Input"],
 
-Cell[BoxData["\"|  |  |\\n| - | - |\\n| X | X |\\n| 1 | 2 |\""], "Output"]}, Open]],
+Cell[BoxData["\"|  |  |\\n| - | - |\\n| **X** | **X** |\\n| 1 | 2 |\""], "Output"]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"An ", Cell[BoxData[StyleBox["a", "TR"]], "InlineFormula"], " element without an ", Cell[BoxData[StyleBox["href", "TR"]], "InlineFormula"], " gives plain text:"}], "ExampleText"], Cell[BoxData["ExportString[HTMLToNotebook[ImportString[\"<p><a>bare</a> link</p>\",{\"HTML\",\"XMLObject\"}]],\"Markdown\"]"], "Input"],
 
