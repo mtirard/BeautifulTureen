@@ -20,7 +20,7 @@ Sibling::usage = "Sibling[beforePat, afterPat] is a combinator for XMLCases and 
 Descendant::usage = "Descendant[ancestorPat, descPat] is a combinator for XMLCases, XMLFirstCase and XMLDeleteCases that matches elements that match descPat and are nested at any depth inside an element that matches ancestorPat. Each such element is given once, however many of its ancestors match. A name bound in ancestorPat, as used in a rule body, gives the outermost matching ancestor. Each argument is a stage: an XMLPattern, alternatives of them, or another combinator. Stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements. A condition on a stage can use the names bound in that stage. A condition on the whole combinator can use the names bound in all its stages.";
 HTMLTextContent::usage = "HTMLTextContent[tree] gives the text of an XML tree: all the strings it contains, joined in document order. No whitespace is added or removed, so source indentation and the whitespace in <pre> are kept. tree can be an XMLElement, an XMLObject document, a list, or a string.";
 HTMLInnerText::usage = "HTMLInnerText[tree] gives the readable text of an XML tree. Runs of whitespace are collapsed, block-level elements go on their own lines, <br> becomes a newline, <pre> content is kept as written, tags such as script and style are dropped, and the result is trimmed. How each element is treated depends only on its tag, as given by the built-in user-agent stylesheet. HTMLInnerText[tree, \"Roles\" -> rules] changes this, with rules of the form pattern -> role, where pattern is an XMLPattern or a tag string and role is \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\" or \"Skip\". \"BlockSeparator\" -> sep sets the string inserted between blocks (default \"\\n\"). \"AttributeReadings\" -> readings adds readings to $AttributeReadings for the patterns in the rules. tree can be an XMLElement, an XMLObject document, a list, or a string.";
-HTMLToNotebook::usage = "HTMLToNotebook[tree] converts an HTML or XML tree to a Notebook expression, which can be displayed or exported with Export to Markdown, PDF, RTF, etc. Block-level tags become cells, such as headings -> Title, Chapter, Section, etc., p -> Text, li -> Item, Subitem, etc., blockquote -> a framed quote, pre -> a Program cell, and table -> a Dataset or Grid. Inline tags become boxes in the surrounding cell, such as b -> bold, i -> italic, code -> inline code and a -> a hyperlink. How each element is treated depends only on its tag, as given by the built-in user-agent stylesheet. HTMLToNotebook[tree, \"Roles\" -> rules] changes the role of elements, such as block or inline. \"Constructs\" -> rules changes what an element becomes: an inline style such as \"Bold\", a cell style, or a function that is applied to the element and gives a Cell or boxes. The left-hand side of each rule is an XMLPattern or a tag string. \"AttributeReadings\" -> readings adds readings to $AttributeReadings for the patterns in the rules. tree can be an XMLElement, an XMLObject document, a list, or a string.";
+HTMLToNotebook::usage = "HTMLToNotebook[tree] converts an HTML or XML tree to a Notebook expression, which can be displayed or exported with Export to Markdown, PDF, RTF, etc. Block-level tags become cells, such as headings -> Title, Chapter, Section, etc., p -> Text, li -> Item, Subitem, etc., blockquote -> a framed quote, pre -> a Program cell, and table -> a Dataset or Grid. Inline tags become boxes in the surrounding cell, such as b -> bold, i -> italic, code -> inline code, a -> a hyperlink and img -> its alt text. How each element is treated depends only on its tag, as given by the built-in user-agent stylesheet. HTMLToNotebook[tree, \"Roles\" -> rules] changes the role of elements, such as block or inline. \"Constructs\" -> rules changes what an element becomes: an inline style such as \"Bold\", a cell style, or a function that is applied to the element and gives a Cell or boxes. The left-hand side of each rule is an XMLPattern or a tag string. \"AttributeReadings\" -> readings adds readings to $AttributeReadings for the patterns in the rules. tree can be an XMLElement, an XMLObject document, a list, or a string.";
 
 (* === Messages === *)
 
@@ -1286,7 +1286,8 @@ HTMLInnerText[tree_, OptionsPattern[]] :=
 (* Threaded context (ctx) carries: the ambient block cell-style *)
 (* ("blk", default "Text") that buffered inline runs land in;   *)
 (* the list "depth"/"ord"ered flags; the blockquote "qd" depth; *)
-(* and the normalized "roles"/"constructs" override rules.      *)
+(* "inLink", set inside a link; and the normalized              *)
+(* "roles"/"constructs" override rules.                         *)
 (* =========================================================== *)
 
 (* ---- Construct map (Layer 2) ---- *)
@@ -1294,8 +1295,8 @@ HTMLInnerText[tree_, OptionsPattern[]] :=
 (* The closed set of inline construct tokens. A construct RHS that is a string
    is an inline token when it is in this set, otherwise a block cell-style. *)
 $inlineConstructs = {"Bold", "Italic", "Underline", "StrikeThrough", "Code",
-  "Hyperlink", "Plain"};
-(* Tokens that wrap their inner boxes in a StyleBox (Hyperlink/Plain differ). *)
+  "Hyperlink", "Image", "Plain"};
+(* Tokens that wrap their inner boxes in a StyleBox (Hyperlink/Image/Plain differ). *)
 $styleTokens = {"Bold", "Italic", "Underline", "StrikeThrough", "Code"};
 
 (* A construct value that is neither a string nor None is a constructor
@@ -1327,7 +1328,7 @@ $defaultConstructRules = {
   XMLElement["s" | "del" | "strike", _, _] -> "StrikeThrough",
   XMLElement["code" | "kbd" | "samp" | "tt", _, _] -> "Code",
   XMLElement["a", _, _] -> "Hyperlink",
-  XMLElement["img", _, _] -> "Hyperlink",
+  XMLElement["img", _, _] -> "Image",
   XMLElement["span" | "mark" | "small" | "q" | "abbr" | "sub" | "sup" |
     "time" | "label" | "bdi" | "bdo" | "data" | "ruby" | "rt" | "rp" |
     "wbr", _, _] -> "Plain",
@@ -1418,25 +1419,40 @@ textAtomQ[RowBox[xs_List]] := AllTrue[xs, textAtomQ];
 textAtomQ[_] := False;
 inlineCell[b_] := If[textAtomQ[b], b, Cell[BoxData[b]]];
 
-(* Hyperlink reads href, falling back to src (img); the label is the inner
-   boxes, or the alt text / URL when there are none. No usable href -> Plain. *)
+(* Hyperlink reads href, falling back to src; the label is the inner boxes, or
+   the alt text / URL when there are none. No usable href -> Plain. (img has its
+   own Image construct; src and alt matter here when a rule maps img to
+   Hyperlink.) *)
 linkHref[XMLElement[_, attrs_, _]] :=
   With[{a = Association[attrs]}, Lookup[a, "href", Lookup[a, "src", None]]];
 linkLabel[XMLElement[_, attrs_, _], href_] :=
   With[{a = Association[attrs]}, Lookup[a, "alt", href]];
 
+usableURLQ[url_] := url =!= None && url =!= "";
+linkBox[label_, url_] := ButtonBox[label, BaseStyle -> "Hyperlink", ButtonData -> {URL[url], None}];
+
 hyperResult[el_, inner_] :=
   With[{href = linkHref[el]},
-    If[href === None || href === "",
+    If[!usableURLQ[href],
       inner,
-      {ButtonBox[
-        If[inner === {}, linkLabel[el, href], boxRow[inner]],
-        BaseStyle -> "Hyperlink", ButtonData -> {URL[href], None}]}]];
+      {linkBox[If[inner === {}, linkLabel[el, href], boxRow[inner]], href]}]];
 
-inlineForm[c_, el_, inner_] :=
+(* Image gives its text, never its URL: the alt text, or "image" when there is
+   no alt. alt="" marks a decorative image, which gives nothing. The text links
+   to src, except inside a link, where it is part of that link's label. *)
+imageResult[XMLElement[_, attrs_, _], ctx_] :=
+  With[{label = StringTrim@normWS@Lookup[Association[attrs], "alt", "image"],
+        src = Lookup[Association[attrs], "src", None]},
+    Which[
+      label === "",                               {},
+      TrueQ[ctx["inLink"]] || !usableURLQ[src],   {label},
+      True,                                       {linkBox[label, src]}]];
+
+inlineForm[c_, el_, inner_, ctx_] :=
   Which[
     functionConstructQ[c], inlineCell /@ Flatten[{c[el]}],
     c === "Hyperlink",     hyperResult[el, inner],
+    c === "Image",         imageResult[el, ctx],
     inner === {},          {},
     MemberQ[$styleTokens, c], {styleBox[c, inner]},
     True,                  inner   (* "Plain", None, or a block style placed inline *)
@@ -1447,13 +1463,19 @@ inlineBoxes[el : XMLElement[_, _, ch_], ctx_] :=
   Switch[roleOf[el, ctx["roles"], HTMLToNotebook],
     "Skip",      {},
     "LineBreak", {"\n"},
-    _,           edgedForm[constructOf[el, ctx], el,
-                   splitEdges[joinSpaces@Flatten[inlineBoxes[#, ctx] & /@ ch]]]];
+    _,           With[{c = constructOf[el, ctx]}, {cctx = childCtx[c, el, ctx]},
+                   edgedForm[c, el, ctx,
+                     splitEdges[joinSpaces@Flatten[inlineBoxes[#, cctx] & /@ ch]]]]];
 inlineBoxes[_, _] := {};
 
 (* An element's edge whitespace goes outside its form, so that formatting does
    not cover it and it can collapse with its neighbours'. *)
-edgedForm[c_, el_, {lead_, core_, trail_}] := Join[lead, inlineForm[c, el, core], trail];
+edgedForm[c_, el_, ctx_, {lead_, core_, trail_}] :=
+  Join[lead, inlineForm[c, el, core, ctx], trail];
+
+(* The children of an element that becomes a link are inside a link. *)
+childCtx["Hyperlink", el_, ctx_] /; usableURLQ[linkHref[el]] := <|ctx, "inLink" -> True|>;
+childCtx[_, _, ctx_] := ctx;
 
 (* ---- Block emission: walk children, buffering inline runs into cells of the
    ambient block style and recursing on block children. ---- *)
@@ -1605,7 +1627,7 @@ tableConstruct[el_XMLElement] :=
 (* ---- Public interface ---- *)
 
 initCtx[roleRules_, conRules_] :=
-  <|"blk" -> "Text", "depth" -> 0, "ord" -> False, "qd" -> 0,
+  <|"blk" -> "Text", "depth" -> 0, "ord" -> False, "qd" -> 0, "inLink" -> False,
     "roles" -> roleRules, "constructs" -> conRules|>;
 
 toChildList[s_String] := {s};

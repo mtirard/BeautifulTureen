@@ -62,7 +62,7 @@ This file is a glossary, not a spec. It defines the language we use to talk abou
 
 **HTMLToNotebook**: A directed, lossy projection of an HTML/XML tree into a `Notebook[…]` expression: each Block [[Display role]] element becomes a `Cell`, each Inline element becomes a box inside the surrounding `TextData`. Markdown, PDF, RTF, and display fall out downstream via `Export`. _Avoid_: notebook export, HTML rendering
 
-**Construct**: What an element becomes in the notebook, chosen after its [[Display role]] places it as block-or-inline. A **block construct** is an open-ended cell-style string (`"Text"`, `"Section"`, `"Item"`, …); an **inline construct** is one of a closed set of box-transform tokens (`"Bold"`, `"Italic"`, `"Underline"`, `"StrikeThrough"`, `"Code"`, `"Hyperlink"`, `"Plain"`). _Avoid_: cell style, render form
+**Construct**: What an element becomes in the notebook, chosen after its [[Display role]] places it as block-or-inline. A **block construct** is an open-ended cell-style string (`"Text"`, `"Section"`, `"Item"`, …); an **inline construct** is one of a closed set of box-transform tokens (`"Bold"`, `"Italic"`, `"Underline"`, `"StrikeThrough"`, `"Code"`, `"Hyperlink"`, `"Image"`, `"Plain"`). _Avoid_: cell style, render form
 
 **Leaf-collapsing construct**: A construct (`<blockquote>`, `<pre>`, `<table>`) that collapses its whole subtree into a single cell's content rather than recursing into separate child cells. Contrasts with the default recurse-and-flatten behavior of most Block constructs. _Avoid_: table construct (too narrow — also covers blockquote/pre)
 
