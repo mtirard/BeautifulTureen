@@ -15,3 +15,5 @@ The conversion is built as **two layers over a substrate shared with `HTMLInnerT
 ## Consequences
 
 The first implementation step is to extract the classification / walk / buffer substrate out of `HTMLInnerText` (still inline in its section as of this writing) into a reusable private piece, then build both functions as emitters over it. Block nesting is represented only through cell-style names (list depth via `Subitem`/`Subsubitem`), since a `Notebook` is a flat cell sequence; `<blockquote>`/`<pre>`/`<table>` are leaf-collapsing exceptions that do not recurse into separate cells.
+
+The inline whitespace collapse is not shared either. `HTMLToNotebook` collapses spaces across inline atoms as `HTMLInnerText` does, but in its own code (`joinSpaces`, `splitEdges`): `HTMLInnerText`'s `atomize`/`itSerialize` reduce a token stream to one string, while a notebook's inline atoms include boxes that must stay in place, with each element's edge spaces kept outside its formatting. Sharing it would mean generalising that pass over boxes, which belongs with the substrate extraction above.
