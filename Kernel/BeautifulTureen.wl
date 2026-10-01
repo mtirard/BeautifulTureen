@@ -165,6 +165,8 @@ HTMLClassList[XMLElement[_, attrs_List, _]] := classList[classValue[attrs]];
 HTMLClassList[other_] :=
   (Message[HTMLClassList::notelement, Head[other]]; $Failed);
 
+HTMLClassList[args___] /; (countMessage[HTMLClassList, {args}, {1, 1}]; False) := Null;
+
 (* =========================================================== *)
 (* CSSClass                                                     *)
 (* Obsolete (ADR 0011): the class list is the "classList" key.  *)
@@ -962,6 +964,41 @@ deleteAt[tree_, {}] := tree;
 deleteAt[tree_, ps_] := Delete[tree, ps];
 
 (* =========================================================== *)
+(* Argument counts and options                                  *)
+(* =========================================================== *)
+
+(* Only a rule naming an option of f is read as one: any other rule, such as
+   XMLFirstCase's default, is an argument. *)
+optionRuleQ[f_][(Rule | RuleDelayed)[name_, _]] :=
+  MemberQ[Keys[Options[f]], ToString[name]];
+optionRuleQ[_][_] := False;
+
+optionQ[f_][a_] := MatchQ[a, _?(optionRuleQ[f]) | {__?(optionRuleQ[f])}];
+
+(* Each public function ends with
+   f[args___] /; (countMessage[f, {args}, {min, max}]; False) := Null,
+   for a call that no other definition takes. countMessage gives the message a
+   built-in gives when the number of positional arguments is outside
+   {min, max} (argx, argrx or argt), and the condition fails either way, so the
+   call stays unevaluated, as a built-in's does. The options of f at the end of
+   args are not counted, but the first min arguments are always positional, so
+   a query pattern -> rhs is never read as an option.
+   A one-argument call gives no message: for XMLMatchQ it is the operator form,
+   and for XMLCases, XMLFirstCase and XMLDeleteCases it has the shape of an
+   operator form, as Cases[pattern] has, which they may get. *)
+countMessage[_, {_}, _] := Null;
+countMessage[f_, args_List, spec : {min_, max_}] :=
+  With[{
+      optionCount = LengthWhile[Reverse[args], optionQ[f]],
+      alwaysPositional = Min[min, Length[args]]},
+    With[{n = Max[alwaysPositional, Length[args] - optionCount]},
+      If[n < min || n > max, argumentCountMessage[f, n, spec]]]];
+
+argumentCountMessage[f_, n_, {1, 1}] := Message[MessageName[f, "argx"], f, n];
+argumentCountMessage[f_, n_, {m_, m_}] := Message[MessageName[f, "argrx"], f, n, m];
+argumentCountMessage[f_, n_, {min_, max_}] := Message[MessageName[f, "argt"], f, n, min, max];
+
+(* =========================================================== *)
 (* XMLCases                                                     *)
 (* =========================================================== *)
 
@@ -969,6 +1006,8 @@ Options[XMLCases] = {"AttributeReadings" -> <||>};
 
 XMLCases[tree_, q_, opts : OptionsPattern[]] :=
   queryCases[compileQuery[q, XMLCases, OptionValue["AttributeReadings"]], tree];
+
+XMLCases[args___] /; (countMessage[XMLCases, {args}, {2, 2}]; False) := Null;
 
 (* Base: a pattern, a Condition, or a rule over either, in document order. Cases
    and Position visit an element after the elements nested in it, so the
@@ -1020,15 +1059,11 @@ blockStart[ps_, i_] :=
 
 Options[XMLFirstCase] = {"AttributeReadings" -> <||>};
 
-(* Only a rule naming an option is read as one: any other default, a rule
-   included, stays the default. *)
-optionRuleQ[f_][(Rule | RuleDelayed)[name_, _]] :=
-  MemberQ[Keys[Options[f]], ToString[name]];
-optionRuleQ[_][_] := False;
-
 XMLFirstCase[tree_, q_, default : Except[_?(optionRuleQ[XMLFirstCase])] : Missing["NotFound"],
     opts : OptionsPattern[]] :=
   queryFirst[compileQuery[q, XMLFirstCase, OptionValue["AttributeReadings"]], tree, default];
+
+XMLFirstCase[args___] /; (countMessage[XMLFirstCase, {args}, {2, 3}]; False) := Null;
 
 (* Base: the first match in document order, the search stopping early. A rule's
    body is evaluated for that match only, unless a Condition on the body
@@ -1061,6 +1096,8 @@ Options[XMLDeleteCases] = {"AttributeReadings" -> <||>};
 XMLDeleteCases[tree_, q_, opts : OptionsPattern[]] :=
   queryDelete[compileQuery[q, XMLDeleteCases, OptionValue["AttributeReadings"]], tree];
 
+XMLDeleteCases[args___] /; (countMessage[XMLDeleteCases, {args}, {2, 2}]; False) := Null;
+
 (* Base: a pattern or a Condition *)
 deleteC[tree_, pat_] := DeleteCases[tree, pat, Infinity];
 
@@ -1078,6 +1115,8 @@ XMLMatchQ[q_][el_] := matchWith[cachedMatcher[q, <||>], el];
 
 XMLMatchQ[el_, q : Except[_?(optionRuleQ[XMLMatchQ])], opts : OptionsPattern[]] :=
   matchWith[matcherOf[q, OptionValue["AttributeReadings"]], el];
+
+XMLMatchQ[args___] /; (countMessage[XMLMatchQ, {args}, {1, 2}]; False) := Null;
 
 matchWith[$Failed, _] := $Failed;
 matchWith[m_, el_] := m[el];
@@ -1117,6 +1156,8 @@ HTMLTextContent[tree_] := textContentWalk[tree] /; validTextInputQ[tree];
 
 HTMLTextContent[tree_] :=
   (Message[HTMLTextContent::badtree, Head[tree]]; $Failed) /; !validTextInputQ[tree];
+
+HTMLTextContent[args___] /; (countMessage[HTMLTextContent, {args}, {1, 1}]; False) := Null;
 
 (* Internal total recursion \[LongDash] every node contributes a string *)
 textContentWalk[XMLObject["Document"][_, root_, _]] := textContentWalk[root];
@@ -1293,6 +1334,8 @@ HTMLInnerText[tree_, opts : OptionsPattern[]] :=
 
 HTMLInnerText[tree_, OptionsPattern[]] :=
   (Message[HTMLInnerText::badtree, Head[tree]]; $Failed) /; !validTextInputQ[tree];
+
+HTMLInnerText[args___] /; (countMessage[HTMLInnerText, {args}, {1, 1}]; False) := Null;
 
 (* =========================================================== *)
 (* HTMLToNotebook                                              *)
@@ -1691,6 +1734,27 @@ HTMLToNotebook[tree_, opts : OptionsPattern[]] :=
 
 HTMLToNotebook[tree_, OptionsPattern[]] :=
   (Message[HTMLToNotebook::badtree, Head[tree]]; $Failed) /; !validTextInputQ[tree];
+
+HTMLToNotebook[args___] /; (countMessage[HTMLToNotebook, {args}, {1, 1}]; False) := Null;
+
+(* =========================================================== *)
+(* Syntax information                                           *)
+(* The front end colours a call with a wrong argument count.   *)
+(* XMLPattern and the combinators are inert, but their counts   *)
+(* are fixed too: a tag and at most one attribute argument, and *)
+(* at least two stages.                                         *)
+(* =========================================================== *)
+
+KeyValueMap[
+  Function[{f, args},
+    SyntaxInformation[f] = Join[{"ArgumentsPattern" -> args},
+      If[Options[f] === {}, {}, {"OptionNames" -> Keys[Options[f]]}]]],
+  <|XMLCases -> {_, _, OptionsPattern[]}, XMLFirstCase -> {_, _, _., OptionsPattern[]},
+    XMLDeleteCases -> {_, _, OptionsPattern[]}, XMLMatchQ -> {_, _., OptionsPattern[]},
+    HTMLInnerText -> {_, OptionsPattern[]}, HTMLTextContent -> {_},
+    HTMLToNotebook -> {_, OptionsPattern[]}, HTMLClassList -> {_},
+    XMLPattern -> {_, _.},
+    Child -> {_, _, ___}, Descendant -> {_, _, ___}, Adjacent -> {_, _, ___}, Sibling -> {_, _, ___}|>];
 
 End[];
 EndPackage[];
