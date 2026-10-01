@@ -649,3 +649,112 @@ TestCreate[
   "> outer\n>\n> > a\n>\n> > b",
   TestID -> "htn-blockquote-text-nested-linebreak-markdown"
 ];
+
+(* === Images === *)
+
+$link[label_, url_] := ButtonBox[label, BaseStyle -> "Hyperlink", ButtonData -> {URL[url], None}];
+
+(* An image with alt="" is decorative and contributes nothing: no atom, no
+   empty link, and no doubled or lost space *)
+TestCreate[
+  nbcells["<p>a <img src=\"a.png\" alt=\"\"> b</p>"],
+  {Cell[TextData[{"a ", "b"}], "Text"]},
+  TestID -> "htn-img-decorative"
+];
+
+TestCreate[
+  {nbmd["<p>a <img src=\"a.png\" alt=\"\"> b</p>"], nbmd["<p>a<img src=\"a.png\" alt=\"\">b</p>"]},
+  {"a b", "ab"},
+  TestID -> "htn-img-decorative-markdown"
+];
+
+(* An image's alt text links to its src *)
+TestCreate[
+  nbcells["<p>a <img src=\"b.png\" alt=\"B\"> c</p>"],
+  {Cell[TextData[{"a ", $link["B", "b.png"], " c"}], "Text"]},
+  TestID -> "htn-img-alt"
+];
+
+TestCreate[
+  nbmd["<p>a <img src=\"b.png\" alt=\"B\"> c</p>"],
+  "a [B](b.png) c",
+  TestID -> "htn-img-alt-markdown"
+];
+
+(* With no alt, the label is a placeholder, not the URL *)
+TestCreate[
+  nbcells["<p><img src=\"c.png\"></p>"],
+  {Cell[TextData[{$link["image", "c.png"]}], "Text"]},
+  TestID -> "htn-img-no-alt"
+];
+
+TestCreate[
+  nbmd["<p><img src=\"c.png\"></p>"],
+  "[image](c.png)",
+  TestID -> "htn-img-no-alt-markdown"
+];
+
+(* Without a src there is nothing to link to, so the image gives its text *)
+TestCreate[
+  nbcells["<p><img alt=\"D\"></p>"],
+  {Cell[TextData[{"D"}], "Text"]},
+  TestID -> "htn-img-no-src"
+];
+
+(* Inside a link, the image gives only its text to the link's label: one link *)
+TestCreate[
+  nbcells["<p><a href=\"/p\"><img src=\"x.png\" alt=\"X\"></a></p>"],
+  {Cell[TextData[{$link["X", "/p"]}], "Text"]},
+  TestID -> "htn-img-in-link"
+];
+
+TestCreate[
+  {nbmd["<p><a href=\"/p\"><img src=\"x.png\" alt=\"X\"></a></p>"],
+   Count[nbcells["<p><a href=\"/p\"><img src=\"x.png\" alt=\"X\"></a></p>"], _ButtonBox, Infinity]},
+  {"[X](/p)", 1},
+  TestID -> "htn-img-in-link-markdown-one-link"
+];
+
+TestCreate[
+  {nbcells["<p><a href=\"/p\"><img src=\"x.png\"></a></p>"],
+   nbmd["<p><a href=\"/p\"><img src=\"x.png\"></a></p>"]},
+  {{Cell[TextData[{$link["image", "/p"]}], "Text"]}, "[image](/p)"},
+  TestID -> "htn-img-no-alt-in-link"
+];
+
+(* ... also beside text in the label *)
+TestCreate[
+  nbmd["<p><a href=\"/p\">see <img src=\"x.png\" alt=\"X\"></a></p>"],
+  "[see X](/p)",
+  TestID -> "htn-img-in-link-with-text"
+];
+
+(* A decorative image in a link leaves the link's other text as its label *)
+TestCreate[
+  nbmd["<p><a href=\"/p\"><img src=\"x.png\" alt=\"\"> home</a></p>"],
+  "[home](/p)",
+  TestID -> "htn-img-decorative-in-link"
+];
+
+(* A "Constructs" rule for img still applies *)
+TestCreate[
+  nbmd2["<p>a <img src=\"b.png\" alt=\"B\"></p>",
+    "Constructs" -> {"img" -> Function[el, "[" <> Lookup[el[[2]], "src"] <> "]"]}],
+  "a [b.png]",
+  TestID -> "htn-img-constructs-override"
+];
+
+(* ... inside a link too *)
+TestCreate[
+  nbmd2["<p><a href=\"/p\"><img src=\"b.png\" alt=\"B\"></a></p>",
+    "Constructs" -> {"img" -> Function[el, "pic"]}],
+  "[pic](/p)",
+  TestID -> "htn-img-constructs-override-in-link"
+];
+
+(* "Image" is a construct any element can take *)
+TestCreate[
+  nbmd2["<p><foo src=\"f.png\" alt=\"F\"></foo></p>", "Constructs" -> {"foo" -> "Image"}],
+  "[F](f.png)",
+  TestID -> "htn-img-image-token"
+];
