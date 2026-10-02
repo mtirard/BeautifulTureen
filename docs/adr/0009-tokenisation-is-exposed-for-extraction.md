@@ -65,4 +65,4 @@ This is what earns `HTMLWhitespace` its place: exposing the delimiter is not a c
 
 **Correctness costs exactly one symbol.** `HTMLClassList` is justified on its own — it is useful with no reference to the pattern language at all — and ADR 0006's delimiter table already existed. `HTMLWhitespace` is the entire price of refusing to degrade the matcher.
 
-`FromCSSSelector`, noted as future work by ADR 0006, is unaffected: it would emit patterns, not extract, and would use the same delimiter.
+`FromCSSSelector` (ADR 0017), noted as future work by ADR 0006, is unaffected: it emits patterns rather than extracting, and `[foo~=x]` goes through the same reading and delimiter.

@@ -1,5 +1,5 @@
 ---
-status: accepted (amended after implementation)
+status: accepted (amended after implementation; amended by ADR-0017)
 ---
 
 # A reading synthesises a `‹key›List` attribute, by an additive, query-driven materialisation
@@ -9,6 +9,8 @@ A [[reading]] — a microsyntax fixed to an attribute key — makes a **new, syn
 > **Amended after implementation** (commits bc5ae39, ca3c763, a86bfa5). Corrected in place: the trim field is the string `"TrimWhitespace"`; the option is the string `"AttributeReadings"`, and an entry in it replaces the global's entry for that key whole; trimming strips HTML whitespace only; a `Roles`/`Constructs` function now receives the stripped element, so that Possible Issues residual is gone; the shipped cost is about 2.5×, not 1.7×. Added: the validation of reading tables, including the two list-key collisions it refuses. The design-time measurements are kept as history beside the shipped ones.
 >
 > **Amended again after implementation**: `Roles` and `Constructs` rules no longer run on a materialised tree. Written into "The emission is additive, not in-place" and "Materialisation is query-driven".
+>
+> **Amended for [ADR 0017](./0017-fromcssselector.md)** (2026-10-02, not yet implemented). The `"AttributeReadings"` option is a `Block` of `$AttributeReadings` for the whole call, so a nested `XMLMatchQ` or `XMLFirstCase` in a condition or a rule body sees it. Before, only the query's own patterns saw it, so `:not([rel~=x])` and `:has([rel~=x])` were wrong with a per-call reading (#34). Written into "The reading table".
 
 Supersedes ADR 0007 (`AttributeTest` and its `Condition` emission do not survive) and ADR 0008 (`TokenTest`/`ClassTest` do not survive; the options table does, renamed and rehomed below). Amends ADR 0009 on absence.
 
@@ -38,7 +40,7 @@ A global, `$AttributeReadings`, maps a literal attribute key to its reading. It 
 
 Trimming strips HTML whitespace (`HTMLWhitespace`, ADR 0009) from each token and nothing else, so a no-break space stays part of a comma-separated token, as the delimiter keeps it part of a space-separated one. A leading comma gives no leading empty token, since `StringSplit` drops it; the WHATWG comma parser keeps it. The divergence is kept.
 
-An `"AttributeReadings"` option on the **consuming** functions (`XMLCases`, `XMLFirstCase`, `XMLDeleteCases`, `XMLMatchQ`, `HTMLInnerText`, `HTMLToNotebook`; a bare symbol `AttributeReadings` is accepted too) **adds to** the global rather than replacing it — the table used is `Join[$AttributeReadings, option]`, so an entry for a key the global already has replaces that entry whole, with no merging of fields — and is not on `XMLPattern` (ADR 0011: it takes no options, and stays inert so `XMLPattern[…] | XMLPattern[…]` composes and a reading resolves once per query). A global rather than an internal constant is chosen for inspectability: a user can print it. Accepted footgun, routed to documentation: `Block[{$AttributeReadings = …}]` drops the built-ins.
+An `"AttributeReadings"` option on the **consuming** functions (`XMLCases`, `XMLFirstCase`, `XMLDeleteCases`, `XMLMatchQ`, `HTMLInnerText`, `HTMLToNotebook`; a bare symbol `AttributeReadings` is accepted too) **adds to** the global rather than replacing it — the table used is `Join[$AttributeReadings, option]`, so an entry for a key the global already has replaces that entry whole, with no merging of fields — and is not on `XMLPattern` (ADR 0011: it takes no options, and stays inert so `XMLPattern[…] | XMLPattern[…]` composes and a reading resolves once per query). A global rather than an internal constant is chosen for inspectability: a user can print it. The global is the one source of readings, and the option is shorthand for `Block[{$AttributeReadings = Join[$AttributeReadings, option]}, call]`: it holds for the whole call, including every nested XML* call in a condition or a rule body, and a function called from a body sees it too. Removing the option, leaving only the global, was considered; the option is kept as the short spelling of that `Block`. Accepted footgun, routed to documentation: `Block[{$AttributeReadings = …}]` drops the built-ins.
 
 Reading keys are **literal strings**. The synthesised name must be computable from the entry, and a string-pattern reading key (`"data-" ~~ __`) would make a query's literal `"data-tagsList"` resolvable only by reversing a pattern.
 

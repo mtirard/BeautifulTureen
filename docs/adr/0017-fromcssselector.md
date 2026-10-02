@@ -1,0 +1,109 @@
+---
+status: accepted (not yet implemented)
+---
+
+# `FromCSSSelector` translates a static CSS selector into XML patterns, and a bare string where an XML pattern goes is CSS
+
+A bs4 user writes `soup.select("div.note > p")`. The same query here is `XMLCases[tree, Child[XMLPattern["div", "classList" -> "note"], XMLPattern["p"]]]`, about 2.5 times the characters. The CSS-Rosetta demo measured this on every row of Wikipedia's selector table (`.scratch/wtc-presentation/demos/css-rosetta/README.md`). Every clean row is longer than its CSS, and a CSS-fluent user has to learn the symbolic form before writing their first query. This ADR adds a translator from CSS to the paclet's existing patterns, and lets a CSS string stand wherever an XML pattern is accepted. The symbolic form stays the language. CSS is a way to write it, and `FromCSSSelector` shows the user what they wrote.
+
+The design was settled in `.scratch/css-selectors/issues/01-decide-the-shape-of-the-css-selector-front-end.md`. The grammar is in `.scratch/css-selectors/research/css-grammar-v1.md`, and the implementation spec is `.scratch/css-selectors/specs/fromcssselector-v1.md`.
+
+## Decision
+
+### `FromCSSSelector[s]` evaluates to an XML pattern
+
+`FromCSSSelector["div.note > p"]` evaluates at once to `Child[XMLPattern["div", "classList" -> "note"], XMLPattern["p"]]`. It is not a new kind of pattern, and it is not inert. An inert head would gain no speed (measured on main), and the symbolic form is the part worth showing. The name follows ADR 0006 and ADR 0009, which named it as future work.
+
+The translation is **literal**, against the tree the importer gives. `td[rowspan]` becomes `XMLPattern["td", "rowspan"]`, which matches every cell, because the importer adds `rowspan="1"` (FRICTION; the importer defects are tracked upstream). The translator does not try to undo the importer's work.
+
+The output contains only public symbols and pattern names that `FromCSSSelector` makes for itself. Those names cannot collide with the user's, so a translation can be spliced into a larger pattern.
+
+### The dialect
+
+- **Static Selectors Level 4**, tokenised by CSS Syntax 3: escapes, strings, comments, and unclosed blocks closed at the end of the input.
+- **Case is literal** for element names, attribute names and values. Lowercasing would break SVG inside HTML and every XML document. Keywords (pseudo-class names, the `i`/`s` flags, An+B) are ASCII case-insensitive, as Selectors 4 requires.
+- **No namespaces** in v1.
+- **No soupsieve extensions**, such as `:contains()`. Tests on text are left to the symbolic form, which can do more.
+
+### What v1 translates
+
+- Type selectors, `*`, `.class`, `#id`, every attribute operator, and the `i` and `s` flags. `i` folds A–Z only, as the spec requires. WL's `IgnoreCase` also folds `é` and `É`, so it cannot be used.
+- Compounds and the four combinators: descendant, `>`, `+` and `~` become `Descendant`, `Child`, `Adjacent` and `Sibling`.
+- Through conditions: `:not()` and `:is()`/`:where()` over compound selectors, `:has()` with relative selectors that start with a descendant or `>` combinator, `:empty`, `:checked`, `:link` and `:any-link`.
+- `:only-child` and `:only-of-type`, by counting the parent's element children, in the first compound of a chain or after `>`.
+- Selector lists whose selectors differ in at most one compound, as alternatives in that stage: `a > b, a > c` becomes `Child[a, b | c]`.
+
+`[foo~="x"]` always becomes `"fooList" -> "x"`. `FromCSSSelector` takes no readings option. The reading is supplied where the query runs, through the consumer's `"AttributeReadings"` option or `$AttributeReadings`, and a consumer warns when a list key has no reading (#24).
+
+`:checked` matches `type` ASCII case-insensitively, as HTML matches enumerated attributes. Literal case applies to what the user writes. A fixed definition can fold an attribute that HTML defines as case-insensitive.
+
+`:is()` and `:where()` are forgiving, as Selectors 4 says. An argument that is not valid CSS is dropped, so `:is(p, ::before)` means `:is(p)`. An argument that is valid but outside the subset, or impossible, is still refused, because dropping it would change the meaning without saying so.
+
+### What v1 refuses
+
+Each refusal is a message and `$Failed`. There is one message per kind, and the message names the symbolic workaround where one exists.
+
+- **`FromCSSSelector::invalid`**: the string is not a valid selector, including unknown pseudo-classes, Level 5 names, `:matches()` and soupsieve extensions.
+- **`FromCSSSelector::unsupported`**: valid Selectors 4 that v1 does not translate:
+  - namespaces and the `||` combinator
+  - selector lists that differ in more than one compound (these need ADR 0015)
+  - complex arguments to `:not()`, `:is()` and `:where()`
+  - `:has(+ …)` and `:has(~ …)`
+  - the child-indexed pseudo-classes other than `:only-*`, and `:only-*` after a descendant, `+` or `~` combinator (these need ADR 0016)
+  - `:root` and `:scope`, which no condition can express (the workaround is `XMLFirstCase[tree, XMLPattern[_]]`)
+  - `:lang()`, `:dir()` and the form-state pseudo-classes
+- **`FromCSSSelector::impossible`**: the selector depends on a browser session, layout, the URL or shadow trees. This covers pseudo-elements, the user-action, media and display-state pseudo-classes, `:visited`, `:target` and `:host`.
+
+### A bare string is CSS
+
+A string anywhere an XML pattern is accepted means `FromCSSSelector[string]`:
+
+- the pattern argument of `XMLCases`, `XMLFirstCase`, `XMLDeleteCases` and `XMLMatchQ`
+- the left-hand side of a rule given to them
+- a stage of a combinator
+- the left-hand side of a `Roles` or `Constructs` rule
+
+So `XMLCases[tree, "div.note > p"]` and `XMLCases[tree, "a[href]" :> …]` work. Where the consumer takes only an element pattern (`XMLMatchQ`, `Roles`, `Constructs`), a string that translates to a combinator is refused with the message the consumer gives for a combinator. A string that fails to translate gives `FromCSSSelector`'s message, and the consumer gives `$Failed`.
+
+A string stage that translates to a combinator is **spliced** into the chain, as any combinator stage is (ADR 0014). `Child["div p", x : XMLPattern["span"]]` is the chain div Descendant p Child x.
+
+`XMLPattern`'s tag slot is unchanged. `.` is legal in an XML tag name (`<a.b>`, Maven's `<project.build.sourceEncoding>`), and `:` already means a namespace there, so `XMLPattern["a.b"]` stays the tag `a.b`.
+
+In a `Roles` or `Constructs` rule, a string used to be a tag name. A tag that is a CSS identifier means the same element pattern either way, and every tag in HTML is one. Tags such as `a.b` or `svg:rect` now need `XMLPattern["a.b"]`. This is a breaking change, recorded in the release notes and as a Possible Issue. Before this ADR, a string anywhere else was `::badpat`, so nothing else changes meaning.
+
+### Later phases
+
+Two features widen the translator as they land, each as a phase of the spec:
+
+- **ADR 0015 (alternatives of combinators):** selector lists of any shapes, and `:is()`/`:where()` with complex arguments in the last compound, become `Alternatives` of their selectors' translations, in written order.
+- **ADR 0016 (list stages):** `:first-child`, `:last-child`, `:nth-child()`, `:nth-last-child()` (with `of S`) and the `-of-type` forms become list stages. `:only-*` moves to list stages, and the restriction to the start of a chain or after `>` goes.
+
+Until a feature lands, v1 refuses the selectors that need it, with `::unsupported`.
+
+## Considered options
+
+- **An inert `CSSSelector["…"]` head, compiled by the consumers.** It hides the translation, which the user should see as a bridge to the symbolic form, and was measured to gain no speed.
+- **A CSS reading of `XMLPattern`'s tag slot** (`XMLPattern["div.note"]`). `.` and `:` already mean something there, in XML.
+- **Lowercasing, as HTML browsers do.** This breaks SVG inside HTML (`foreignObject`, `viewBox`) and every XML document.
+- **Working around the importer** (ignoring the `rowspan="1"` defaults). The translator would then disagree with the symbolic form it prints.
+- **A readings option on `FromCSSSelector`.** The reading would be split between where the pattern is made and where it runs. One place, the consumer or the global, is simpler.
+- **Translating `:root` as `XMLPattern["html"]`.** The importer can nest `html` inside `html`, and XML documents have other roots. How a query reaches the root is decided separately (`.scratch/css-selectors/issues/07-decide-how-a-query-reaches-the-root-and-the-input.md`).
+- **Comparing elements by value for the child-indexed pseudo-classes**, as the Rosetta demo did. Identical siblings collapse into one, so Hacker News `tr:nth-child(2n+1)` gave 65 rows instead of 50. List stages (ADR 0016) replace it.
+- **Running each selector of a list as its own query and joining the results.** Elements that both select are lost (17 on the CSS page). ADR 0015 replaces it.
+- **Keeping tag strings in `Roles` and `Constructs` rules beside CSS strings.** That means two readings of one string, depending on where it is. CSS agrees with the tag reading for every HTML tag.
+
+## Consequences
+
+A CSS string is the shortest way to write a query that CSS can express, and `FromCSSSelector` turns it into the symbolic form for anything further: names, rule bodies, value tests.
+
+`:not` and `:has` become a nested `XMLMatchQ` or `XMLFirstCase` in a condition. They inherit the per-call cost of those (40–100 µs per candidate in the Rosetta). They also inherit their readings, which is why ADR 0012 now makes the `"AttributeReadings"` option a `Block` of `$AttributeReadings` around the whole call.
+
+Possible Issues, for documentation:
+
+- Matching is against the imported tree, so `[rowspan]`, `[colspan]`, `[shape]` and `[type]` match the importer's defaults.
+- Case is literal: `DIV` does not match the importer's `div`.
+- `[foo~=x]` needs a reading for `foo`, given where the query runs.
+- `[a="é" i]` does not match `É`, as the spec says. soupsieve matches it.
+- `:checked` tests the `selected` attribute only. HTML's rule that the first `option` is selected by default is not applied, and soupsieve does not apply it either.
+- `:root`, `:scope` and the child-indexed pseudo-classes are refused, with their workarounds named.
+- In a `Roles` or `Constructs` rule, a string is CSS: a tag such as `a.b` needs `XMLPattern["a.b"]`.
