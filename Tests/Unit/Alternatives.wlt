@@ -1,6 +1,7 @@
 (* Alternatives of XMLElement patterns: heterogeneous tag/attribute constraints,
-   rules over alternatives, nested composition, and the bad-pattern fallback.
-   Fixture $treeAlts is local to this file. *)
+   rules over alternatives, nested composition, the bad-pattern fallback, and
+   names bound only in the branch that did not match. Fixtures $treeAlts,
+   $treeUnbound and $treeUnboundTwoStep are local to this file. *)
 
 $treeAlts = ImportString["<html><body>
   <a href=\"/foo\">link</a>
@@ -89,4 +90,82 @@ TestCreate[
   ],
   True,
   TestID -> "alts-nested-delete-composition"
+];
+
+(* A name bound only in the branch that did not match is empty, as in WL:
+   Cases[{p[1], q[2]}, p[_] | s : q[_] :> {s}] is {{}, {q[2]}}. Issue #18. *)
+$treeUnbound = ImportString["<p class='x'>a</p><section>b</section>", {"HTML", "XMLObject"}];
+$treeUnboundTwoStep = ImportString[
+  "<a href='ab' id='b' class='x'>a</a><section>b</section>", {"HTML", "XMLObject"}];
+
+(* An element name, with a list key named in the other branch *)
+TestCreate[
+  XMLCases[$treeUnbound,
+    (XMLPattern["p", "classList" -> "x"] | s : XMLPattern["section"]) :> {s}],
+  {{}, {XMLElement["section", {}, {"b"}]}},
+  TestID -> "alts-unbound-element-name"
+];
+
+(* A name on the attribute argument *)
+TestCreate[
+  XMLCases[$treeUnbound,
+    (XMLPattern["p", "classList" -> "x"] | XMLPattern["section", a_]) :> {a}],
+  {{}, {{}}},
+  TestID -> "alts-unbound-attribute-name"
+];
+
+(* An element name, the other branch matched in two steps *)
+TestCreate[
+  XMLCases[$treeUnboundTwoStep,
+    ((XMLPattern["a", {"href" -> h_, "id" -> i_}] /; StringContainsQ[h, i]) |
+      s : XMLPattern["section"]) :> {s}],
+  {{}, {XMLElement["section", {}, {"b"}]}},
+  TestID -> "alts-unbound-two-step"
+];
+
+(* Both renamings: a list key and a two-step match *)
+TestCreate[
+  XMLCases[$treeUnboundTwoStep,
+    ((XMLPattern["a", {"classList" -> "x", "href" -> h_, "id" -> i_}] /; StringContainsQ[h, i]) |
+      s : XMLPattern["section"]) :> {s}],
+  {{}, {XMLElement["section", {}, {"b"}]}},
+  TestID -> "alts-unbound-stacked"
+];
+
+(* In a Condition, as Cases[{p[1], q[2]}, (p[_] | s : q[_]) /; Length[{s}] == 0]
+   gives {p[1]} *)
+TestCreate[
+  XMLCases[$treeUnbound,
+    (XMLPattern["p", "classList" -> "x"] | s : XMLPattern["section"]) /; Length[{s}] == 0],
+  {XMLElement["p", {"class" -> "x"}, {"a"}]},
+  TestID -> "alts-unbound-condition"
+];
+
+TestCreate[
+  XMLCases[$treeUnbound,
+    (XMLPattern["p", "classList" -> "x"] | XMLPattern["section", a_]) /; Length[{a}] == 0],
+  {XMLElement["p", {"class" -> "x"}, {"a"}]},
+  TestID -> "alts-unbound-attribute-condition"
+];
+
+TestCreate[
+  XMLCases[$treeUnbound,
+    (XMLPattern["p", "classList" -> "x"] | s : XMLPattern["section"]) :> {s} /; Length[{s}] == 0],
+  {{}},
+  TestID -> "alts-unbound-body-condition"
+];
+
+TestCreate[
+  XMLFirstCase[$treeUnbound,
+    (XMLPattern["p", "classList" -> "x"] | s : XMLPattern["section"]) :> {s}],
+  {},
+  TestID -> "alts-unbound-firstcase"
+];
+
+(* An Alternatives as a combinator stage *)
+TestCreate[
+  XMLCases[$treeUnbound,
+    Child[XMLPattern["body"], XMLPattern["p", "classList" -> "x"] | s : XMLPattern["section"]] :> {s}],
+  {{}, {XMLElement["section", {}, {"b"}]}},
+  TestID -> "alts-unbound-combinator-stage"
 ];
