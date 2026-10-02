@@ -223,6 +223,20 @@ TestCreate[
   TestID -> "htn-table-dup-header-lossless"
 ];
 
+(* A header row with no body rows would give an empty Dataset, which loses the
+   header and fails to export -> Grid, keeping the header row as data *)
+TestCreate[
+  nbmd["<table><tr><th>x</th><th>y</th></tr></table>"],
+  "|  |  |\n| - | - |\n| **x** | **y** |",
+  TestID -> "htn-table-header-only"
+];
+
+TestCreate[
+  nbmd["<table><thead><tr><th>x</th></tr></thead><tbody></tbody></table>"],
+  "|  |\n| - |\n| **x** |",
+  TestID -> "htn-table-header-only-thead"
+];
+
 (* In the Grid form a <th> cell (here a row header) is bold, and **...** in Markdown *)
 TestCreate[
   nbmd["<table><tr><th>a</th><td>1</td></tr><tr><th>b-c</th><td>x->y</td></tr></table>"],

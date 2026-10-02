@@ -1676,7 +1676,8 @@ quoteCells[XMLElement[_, _, ch_], ctx_] :=
 hrConstruct[_] := Cell["", "Text", CellFrame -> {{0, 0}, {0, 1}}];
 
 (* <table> -> Dataset when a leading all-<th> row gives unique column labels (an
-   idiomatic GFM header), else Grid (positional, blank header, every row kept).
+   idiomatic GFM header) and at least one body row follows it, else Grid
+   (positional, blank header, every row kept).
    Dataset/Grid over Tabular because the paclet floor is WL 12.3. Cells degrade
    to plain text; in the Grid form a <th> cell is bold. See ADR 0003. *)
 cellText[XMLElement[_, _, c_]] := StringTrim[normWS[StringJoin[textContentWalk /@ c]]];
@@ -1718,7 +1719,8 @@ tableCell[el_XMLElement] :=
     If[rows === {}, Return[gridCell[{{""}}]]];
     hasHeader = trs =!= {} && tableHeaderRowQ[First[trs]];
     headers = cellText /@ First[rows];
-    If[hasHeader && DuplicateFreeQ[headers],
+    (* A Dataset with no body rows shows no header and fails to export *)
+    If[hasHeader && Length[rows] > 1 && DuplicateFreeQ[headers],
       datasetCell[headers, Map[cellText, Rest[rows], {2}]],
       gridCell[Map[gridItem, rows, {2}]]]];
 
