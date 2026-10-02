@@ -11,7 +11,7 @@ Notebook[{
 Cell[CellGroupData[{
 Cell["XMLCases", "ObjectName"],
 
-Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"], "[", RowBox[{StyleBox["tree", "TI"], ",", " ", StyleBox["pattern", "TI"]}], "]"}]], "InlineFormula"], " \[LineSeparator]gives a list of the elements of ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " that match ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], ", in document order.", "\n", Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"], "[", RowBox[{StyleBox["tree", "TI"], ",", " ", RowBox[{StyleBox["pattern", "TI"], "\[RuleDelayed]", StyleBox["rhs", "TI"]}]}], "]"}]], "InlineFormula"], " \[LineSeparator]gives the value of ", Cell[BoxData[StyleBox["rhs", "TI"]], "InlineFormula"], " for each element of ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " that matches ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], "."}], "Usage"],
+Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"], "[", RowBox[{StyleBox["tree", "TI"], ",", " ", StyleBox["pattern", "TI"]}], "]"}]], "InlineFormula"], " \[LineSeparator]gives a list of the elements of ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " that match ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], ", in document order.", "\n", Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"], "[", RowBox[{StyleBox["tree", "TI"], ",", " ", RowBox[{StyleBox["pattern", "TI"], "\[RuleDelayed]", StyleBox["rhs", "TI"]}]}], "]"}]], "InlineFormula"], " \[LineSeparator]gives the value of ", Cell[BoxData[StyleBox["rhs", "TI"]], "InlineFormula"], " for each element of ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " that matches ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], ".", "\n", Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"], "[", RowBox[{StyleBox["tree", "TI"], ",", " ", StyleBox["pattern", "TI"], ",", " ", StyleBox["n", "TI"]}], "]"}]], "InlineFormula"], " \[LineSeparator]gives the first ", Cell[BoxData[StyleBox["n", "TI"]], "InlineFormula"], " of the results of ", Cell[BoxData[RowBox[{ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"], "[", RowBox[{StyleBox["tree", "TI"], ",", " ", StyleBox["pattern", "TI"]}], "]"}]], "InlineFormula"], ", in document order."}], "Usage"],
 
 Cell[TextData[{Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"]], "InlineFormula"], " searches ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " at all depths and gives the matches in ", StyleBox["document order", FontWeight->"Bold"], ": an element comes before the elements nested in it, and an earlier sibling and its contents come before a later sibling."}], "Notes"],
 
@@ -42,6 +42,8 @@ Cell[TextData[{"In a combinator, a name used at two stages must have the same va
 | a condition on the whole combinator | the names bound in all its stages |
 | the function of a ", Cell[BoxData[ButtonBox["PatternTest", BaseStyle -> "Link", ButtonData -> "paclet:ref/PatternTest"]], "InlineFormula"], ", as in ", Cell[BoxData["_?f$"], "InlineFormula"], " | none |
 | ", Cell[BoxData[StyleBox["rhs", "TI"]], "InlineFormula"], " in ", Cell[BoxData[RowBox[{StyleBox["pattern", "TI"], "\[RuleDelayed]", StyleBox["rhs", "TI"]}]], "InlineFormula"], " | the names bound in all stages |"}], "Notes"],
+
+Cell[TextData[{"In ", Cell[BoxData[RowBox[{ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"], "[", RowBox[{StyleBox["tree", "TI"], ",", " ", StyleBox["pattern", "TI"], ",", " ", StyleBox["n", "TI"]}], "]"}]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["n", "TI"]], "InlineFormula"], " is a non-negative integer or ", Cell[BoxData[ButtonBox["Infinity", BaseStyle -> "Link", ButtonData -> "paclet:ref/Infinity"]], "InlineFormula"], ". It is a ceiling: if there are fewer than ", Cell[BoxData[StyleBox["n", "TI"]], "InlineFormula"], " matches, all of them are given. With ", Cell[BoxData[RowBox[{StyleBox["pattern", "TI"], "\[RuleDelayed]", StyleBox["rhs", "TI"]}]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["rhs", "TI"]], "InlineFormula"], " is evaluated only for the matches given."}], "Notes"],
 
 Cell[TextData[{Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"]], "InlineFormula"], " issues a message and returns ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], " when ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " or ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " has none of the forms above, or when an ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"]], "InlineFormula"], " in ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " is malformed."}], "Notes"],
 
@@ -268,7 +270,24 @@ Cell["The tree itself is never returned:", "ExampleText"],
 
 Cell[BoxData["XMLCases[body,XMLPattern[\"body\"]]"], "Input"],
 
-Cell[BoxData[RowBox[{"{", "}"}]], "Output"]}, Open]]}, Open]],
+Cell[BoxData[RowBox[{"{", "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give only the first two matches, in document order:", "ExampleText"], Cell[BoxData["tree=ImportString[\"<ol><li>Miso</li><li>Pho</li><li>Ramen</li><li>Udon</li></ol>\",{\"HTML\",\"XMLObject\"}];
+XMLCases[tree,XMLPattern[\"li\"],2]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Miso\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Pho\"", "}"}]}], "]"}]}], "}"}]], "Output"],
+
+Cell["If there are fewer matches than the count, all of them are given:", "ExampleText"],
+
+Cell[BoxData["XMLCases[tree,XMLPattern[\"li\"],10]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Miso\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Pho\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Ramen\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Udon\"", "}"}]}], "]"}]}], "}"}]], "Output"],
+
+Cell[TextData[{"With a rule, the right-hand side is evaluated only for the matches given, as ", Cell[BoxData[ButtonBox["Sow", BaseStyle -> "Link", ButtonData -> "paclet:ref/Sow"]], "InlineFormula"], " shows:"}], "ExampleText"],
+
+Cell[BoxData["Reap[XMLCases[tree,item:XMLPattern[\"li\"]:>Sow[HTMLTextContent[item]],2]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"\"Miso\"", ",", "\"Pho\""}], "}"}], ",", RowBox[{"{", RowBox[{"{", RowBox[{"\"Miso\"", ",", "\"Pho\""}], "}"}], "}"}]}], "}"}]], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
@@ -356,7 +375,12 @@ Cell["After XMLDeleteCases removes the matches, XMLCases finds none:", "ExampleT
 
 Cell[BoxData["XMLCases[XMLDeleteCases[tree,XMLPattern[\"p\"]],XMLPattern[\"p\"]]"], "Input"],
 
-Cell[BoxData[RowBox[{"{", "}"}]], "Output"]}, Open]]}, Open]],
+Cell[BoxData[RowBox[{"{", "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[RowBox[{ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"], "[", RowBox[{StyleBox["tree", "TI"], ",", " ", StyleBox["pattern", "TI"], ",", " ", StyleBox["1", "TR"]}], "]"}]], "InlineFormula"], " gives in a list what ", Cell[BoxData[ButtonBox["XMLFirstCase", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"]], "InlineFormula"], " gives:"}], "ExampleText"], Cell[BoxData["tree=ImportString[\"<section><div id=\\\"outer\\\"><div id=\\\"inner\\\"></div></div><div id=\\\"last\\\"></div></section>\",{\"HTML\",\"XMLObject\"}];
+{XMLCases[tree,XMLPattern[\"div\",\"id\"->id_]:>id,1],XMLFirstCase[tree,XMLPattern[\"div\",\"id\"->id_]:>id]}"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", "\"outer\"", "}"}], ",", "\"outer\""}], "}"}]], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
@@ -427,7 +451,20 @@ Cell["Write a string test as a PatternTest:", "ExampleText"],
 
 Cell[BoxData["XMLCases[tree,XMLPattern[\"p\",\"classList\"->_?(AnyTrue[StringStartsQ[\"col-\"]])]]"], "Input"],
 
-Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "\[Rule]", "\"col-6\""}], "}"}], ",", RowBox[{"{", "\"x\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]]}, Open]],
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "\[Rule]", "\"col-6\""}], "}"}], ",", RowBox[{"{", "\"x\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The count is a ceiling, so ", Cell[BoxData[ButtonBox["UpTo", BaseStyle -> "Link", ButtonData -> "paclet:ref/UpTo"]], "InlineFormula"], " is not accepted, as in ", Cell[BoxData[ButtonBox["StringCases", BaseStyle -> "Link", ButtonData -> "paclet:ref/StringCases"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["tree=XMLElement[\"ol\",{},{XMLElement[\"li\",{},{\"Miso\"}],XMLElement[\"li\",{},{\"Pho\"}]}];
+XMLCases[tree,XMLPattern[\"li\"],UpTo[2]]"], "Input"],
+
+Cell["XMLCases::innf: Non-negative integer or Infinity expected at position 3 in XMLCases[XMLElement[\"ol\", {}, {XMLElement[\"li\", {}, {\"Miso\"}], XMLElement[\"li\", {}, {\"Pho\"}]}], XMLPattern[\"li\"], UpTo[2]].", "Message", "MSG"],
+
+Cell[BoxData[RowBox[{"XMLCases", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"ol\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Miso\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Pho\"", "}"}]}], "]"}]}], "}"}]}], "]"}], ",", RowBox[{"XMLPattern", "[", "\"li\"", "]"}], ",", RowBox[{"UpTo", "[", "2", "]"}]}], "]"}]], "Output"],
+
+Cell["Give the count as an integer:", "ExampleText"],
+
+Cell[BoxData["XMLCases[tree,XMLPattern[\"li\"],2]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Miso\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Pho\"", "}"}]}], "]"}]}], "}"}]], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[

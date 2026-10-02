@@ -10,7 +10,7 @@ CSSClass::usage = "CSSClass is obsolete. Match an element's class list with the 
 $AttributeReadings::usage = "$AttributeReadings is an Association that gives, for each attribute it names, how the attribute value is split into a list of tokens and the list key that gives that list in an XMLPattern. Each entry is an Association with the fields Method, Delimiters, \"TrimWhitespace\" and \"ListKey\", any of which can be omitted. Method \"SpaceSeparated\" (the default) splits on HTMLWhitespace and does not trim tokens. Method \"CommaSeparated\" splits on \",\" and trims HTML whitespace from each token. Delimiters (a string pattern) and \"TrimWhitespace\" (True or False) override the setting that Method gives. \"ListKey\" -> Automatic gives the attribute name followed by \"List\". Keys are attribute names given as strings; a {namespace, name} attribute cannot have an entry. By default, $AttributeReadings has one entry, for \"class\", with the list key \"classList\". The \"AttributeReadings\" option of functions such as XMLCases adds entries for one call, and an entry for an attribute already present replaces it. Block[{$AttributeReadings = ...}, ...] replaces the whole Association, including the \"class\" entry.";
 HTMLWhitespace::usage = "HTMLWhitespace is a string pattern that matches a run of one or more HTML whitespace characters: space, tab, line feed, form feed and carriage return. Use StringSplit[value, HTMLWhitespace] to split a class attribute as a browser does. HTMLWhitespace does not match no-break space or other Unicode whitespace, which StringSplit splits on by default.";
 HTMLClassList::usage = "HTMLClassList[element] gives the classes of an XMLElement as a list of strings: its class attribute split on HTMLWhitespace, in the order written and with duplicates kept. An element with no class attribute, or with a class attribute that is empty or only whitespace, gives {}. HTMLClassList takes a single element; for many elements, use HTMLClassList /@ XMLCases[tree, pattern].";
-XMLCases::usage = "XMLCases[tree, pattern] gives a list of the elements of tree, at any depth, that match pattern. The elements are in document order: an element comes before the elements nested in it, and an earlier sibling before a later one. tree itself is never included. pattern can be an XMLPattern, alternatives of them, a Child, Descendant, Adjacent or Sibling combinator, or any of these with a condition pat /; test. An XMLPattern or alternatives of them can also have a test pat?f, which applies f to the element. XMLCases[tree, pattern :> body] gives the value of body for each match, evaluated in document order. XMLCases[tree, pattern -> rhs] evaluates rhs once, before any matching, as Cases does, and gives its value for each match, with the names in pattern replaced by what they matched. A combinator gives each element that its last stage matches once. If tree is an XMLElement, tree can match any stage of a combinator except the last. A name for a whole element, as in e : XMLPattern[...], gives the element as it appears in tree, without list keys such as \"classList\". XMLCases[tree, pattern, \"AttributeReadings\" -> readings] adds readings to $AttributeReadings for this call.";
+XMLCases::usage = "XMLCases[tree, pattern] gives a list of the elements of tree, at any depth, that match pattern. The elements are in document order: an element comes before the elements nested in it, and an earlier sibling before a later one. tree itself is never included. pattern can be an XMLPattern, alternatives of them, a Child, Descendant, Adjacent or Sibling combinator, or any of these with a condition pat /; test. An XMLPattern or alternatives of them can also have a test pat?f, which applies f to the element. XMLCases[tree, pattern :> body] gives the value of body for each match, evaluated in document order. XMLCases[tree, pattern -> rhs] evaluates rhs once, before any matching, as Cases does, and gives its value for each match, with the names in pattern replaced by what they matched. XMLCases[tree, pattern, n] gives the first n of these, in document order, or all of them if there are fewer; n is a non-negative integer or Infinity. With pattern :> body, body is evaluated only for the matches it gives. A combinator gives each element that its last stage matches once. If tree is an XMLElement, tree can match any stage of a combinator except the last. A name for a whole element, as in e : XMLPattern[...], gives the element as it appears in tree, without list keys such as \"classList\". XMLCases[tree, pattern, \"AttributeReadings\" -> readings] adds readings to $AttributeReadings for this call.";
 XMLFirstCase::usage = "XMLFirstCase[tree, pattern] gives the first element of tree that matches pattern, in document order, or Missing[\"NotFound\"] if there is none. Of nested matches, it gives the outermost. XMLFirstCase[tree, pattern, default] gives default if there is no match. XMLFirstCase accepts the same patterns as XMLCases and gives the first element of the list that XMLCases gives. With pattern :> body, body is evaluated only for the match that XMLFirstCase returns. With pattern -> rhs, rhs is evaluated once, before any matching, as in FirstCase, and the names in pattern are replaced in its value by what they matched. The \"AttributeReadings\" option adds readings to $AttributeReadings, as in XMLCases.";
 XMLDeleteCases::usage = "XMLDeleteCases[tree, pattern] gives tree with every element that matches pattern removed, at any depth. pattern can be an XMLPattern, alternatives of them, a Child or Descendant combinator, or any of these with a condition pat /; test. An XMLPattern or alternatives of them can also have a test pat?f, which applies f to the element. Combinators can be nested, and each stage can have a condition. A combinator removes the elements that its last stage matches. As in XMLCases, if tree is an XMLElement, tree can match any stage of a combinator except the last. Adjacent and Sibling cannot be used, even as a stage of another combinator. The \"AttributeReadings\" option adds readings to $AttributeReadings, as in XMLCases.";
 XMLMatchQ::usage = "XMLMatchQ[element, pattern] gives True if element matches pattern, and False otherwise. XMLMatchQ[pattern] is an operator form. pattern can be an XMLPattern, alternatives of them, or either with a condition pat /; test or a test pat?f. XMLMatchQ tests the element itself, not the elements nested in it; use XMLCases to search a tree. The \"AttributeReadings\" option adds readings to $AttributeReadings, in both XMLMatchQ[element, pattern, opts] and XMLMatchQ[pattern, opts].";
@@ -672,9 +672,10 @@ sowElementNames[_] := Null;
 (* function that tests one element.                            *)
 (* =========================================================== *)
 
-queryCases[$Failed, _] := $Failed;
-queryCases[c_, tree_] :=
-  If[treeRefusedQ[c, tree], $Failed, runCompiled[If[chainQ[c], chainCases, casesC], tree, c]];
+(* At most the first n of the elements, in document order. *)
+queryCases[$Failed, _, _] := $Failed;
+queryCases[c_, tree_, n_] :=
+  If[treeRefusedQ[c, tree], $Failed, runCompiled[If[chainQ[c], chainCases, casesC], tree, c, n]];
 
 queryFirst[$Failed, _, _] := $Failed;
 queryFirst[c_, tree_, default_] :=
@@ -951,11 +952,11 @@ namesIn[s_] :=
 (* The plain form picks the last element of a matching tuple rather than binding
    the tuple: a rule's right-hand side re-evaluates what it is given, and a
    tuple may hold a large element. *)
-chainCases[tree_, q_] /; bodyRejectsQ[q] := Block[{$chainTree = tree}, ruleValues[q]];
-chainCases[tree_, q_] /; q["Body"] =!= None :=
-  Block[{$chainTree = tree}, Cases[elementsAt @ matchedSites[q], tupleRule[q], {1}]];
-chainCases[tree_, q_] :=
-  Block[{$chainTree = tree}, atAll[Last /@ matchedSites[q]]];
+chainCases[tree_, q_, n_] /; bodyRejectsQ[q] := Block[{$chainTree = tree}, Take[ruleValues[q], UpTo[n]]];
+chainCases[tree_, q_, n_] /; q["Body"] =!= None :=
+  Block[{$chainTree = tree}, Cases[elementsAt @ matchedSites[q], tupleRule[q], {1}, n]];
+chainCases[tree_, q_, n_] :=
+  Block[{$chainTree = tree}, atAll[Last /@ Take[matchedSites[q], UpTo[n]]]];
 
 chainFirst[tree_, q_, default_] /; bodyRejectsQ[q] :=
   Block[{$chainTree = tree}, Replace[ruleValues[q], {{v_, ___} :> v, {} -> default}]];
@@ -1028,17 +1029,44 @@ argumentCountMessage[f_, n_, {min_, max_}] := Message[MessageName[f, "argt"], f,
 
 Options[XMLCases] = {"AttributeReadings" -> <||>};
 
-XMLCases[tree_, q_, opts : OptionsPattern[]] :=
-  queryCases[compileQuery[q, XMLCases, OptionValue["AttributeReadings"]], tree];
+(* The count n is a ceiling, as in StringCases (ADR 0019). A third argument
+   that is not an option is a count, and one that is not valid gives innf. *)
+XMLCases[tree_, q_, n : Except[_?(optionQ[XMLCases])] : Infinity, opts : OptionsPattern[]] /; countQ[n] :=
+  queryCases[compileQuery[q, XMLCases, OptionValue["AttributeReadings"]], tree, n];
 
-XMLCases[args___] /; (countMessage[XMLCases, {args}, {2, 2}]; False) := Null;
+XMLCases[tree_, q_, n : Except[_?(optionQ[XMLCases])], opts : OptionsPattern[]] /;
+    (Message[XMLCases::innf, Unevaluated[XMLCases[tree, q, n, opts]], 3]; False) := Null;
+
+XMLCases[args___] /; (countMessage[XMLCases, {args}, {2, 3}]; False) := Null;
+
+countQ[n_] := MatchQ[n, Infinity | _Integer?NonNegative];
 
 (* Base: a pattern, a Condition, or a rule over either, in document order. Cases
    and Position visit an element after the elements nested in it, so the
    positions of the matches are put in document order; a rule is then applied
-   to the matched elements in that order, its body evaluated once for each. *)
-casesC[tree_, r : Verbatim[RuleDelayed][lhs_, _]] := Cases[matchesInOrder[tree, lhs], r, {1}];
-casesC[tree_, pat_] := matchesInOrder[tree, pat];
+   to the matched elements in that order, its body evaluated once for each it
+   gives a value for, up to n. A Condition in the body can reject a match, so
+   then every match is a candidate. *)
+casesC[tree_, r : Verbatim[RuleDelayed][lhs_, _], n_] :=
+  Cases[If[bodyConditionQ[Extract[r, {2}, Hold]], matchesInOrder[tree, lhs], firstMatches[tree, lhs, n]],
+    r, {1}, n];
+casesC[tree_, pat_, n_] := firstMatches[tree, pat, n];
+
+(* The first n elements of tree, below its root, that match pat, in document
+   order, the search stopping early. *)
+firstMatches[tree_, pat_, Infinity] := matchesInOrder[tree, pat];
+firstMatches[tree_, pat_, n_] := Extract[tree, firstMatchPositions[tree, pat, n]];
+
+(* Position stops at the nth match in Cases order, which visits an element
+   after the elements nested in it. A match earlier in document order that it
+   has not visited is visited after one it has, so it is an element that one is
+   nested in: the first n in document order are among the matches found and the
+   matches on the way down to them. Each of these is tested once. *)
+firstMatchPositions[tree_, pat_, n_] :=
+  With[{ps = Position[tree, pat, Infinity, n, Heads -> False]},
+    Take[#[[documentOrdering[#]]], UpTo[n]] & @ Join[ps, Select[
+      Complement[Join @@ (Table[Take[#, k], {k, Length[#] - 1}] &) /@ ps, ps],
+      MatchQ[Extract[tree, #], pat] &]]];
 
 (* The elements of tree, below its root, that match pat, in document order.
    Extract reads {} as the whole tree, not as no positions. *)
@@ -1100,14 +1128,9 @@ firstC[tree_, r : Verbatim[RuleDelayed][lhs_, _], default_] :=
 firstC[tree_, pat_, default_] :=
   Replace[firstMatchPosition[tree, pat], {None -> default, p_ :> Extract[tree, p]}];
 
-(* FirstPosition stops at the first match Cases would visit, which is visited
-   after the elements nested in it. The first match in document order is that
-   one or an element it is nested in: any other earlier in document order would
-   have been visited earlier. So it is the outermost match on the way down to
-   the one FirstPosition finds. *)
+(* The first match in document order, or None. *)
 firstMatchPosition[tree_, pat_] :=
-  Replace[FirstPosition[tree, pat, None, Infinity, Heads -> False],
-    p_List :> SelectFirst[Take[p, #] & /@ Range[Length[p]], MatchQ[Extract[tree, #], pat] &]];
+  Replace[firstMatchPositions[tree, pat, 1], {{p_} :> p, {} -> None}];
 
 (* =========================================================== *)
 (* XMLDeleteCases                                               *)
@@ -1789,7 +1812,7 @@ Scan[
   Apply[Function[{f, args},
     SyntaxInformation[f] = Join[{"ArgumentsPattern" -> args},
       If[Options[f] === {}, {}, {"OptionNames" -> Keys[Options[f]]}]]]],
-  {XMLCases -> {_, _., OptionsPattern[]}, XMLFirstCase -> {_, _., _., OptionsPattern[]},
+  {XMLCases -> {_, _., _., OptionsPattern[]}, XMLFirstCase -> {_, _., _., OptionsPattern[]},
     XMLDeleteCases -> {_, _., OptionsPattern[]}, XMLMatchQ -> {_, _., OptionsPattern[]},
     HTMLInnerText -> {_, OptionsPattern[]}, HTMLTextContent -> {_},
     HTMLToNotebook -> {_, OptionsPattern[]}, HTMLClassList -> {_},
