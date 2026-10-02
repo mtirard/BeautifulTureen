@@ -67,15 +67,15 @@ TestCreate[
 callParts[call_] := {Head[call], List @@ call};
 
 TestCreate[
-  callParts /@ {XMLCases[$msgTree, XMLPattern["p"], 2], XMLCases[$msgTree, XMLPattern["p"], Infinity, 2]},
-  {{XMLCases, {$msgTree, XMLPattern["p"], 2}}, {XMLCases, {$msgTree, XMLPattern["p"], Infinity, 2}}},
-  {XMLCases::argrx, XMLCases::argrx},
+  callParts /@ {XMLCases[$msgTree, XMLPattern["p"], 2, 3], XMLCases[$msgTree, XMLPattern["p"], Infinity, 2, 3]},
+  {{XMLCases, {$msgTree, XMLPattern["p"], 2, 3}}, {XMLCases, {$msgTree, XMLPattern["p"], Infinity, 2, 3}}},
+  {XMLCases::argt, XMLCases::argt},
   TestID -> "count-xmlcases-extra-arguments-unevaluated"
 ];
 
 TestCreate[
-  capturedMessages[XMLCases[$msgTree, XMLPattern["p"], 2]],
-  {"XMLCases called with 3 arguments; 2 arguments are expected."},
+  capturedMessages[XMLDeleteCases[$msgTree, XMLPattern["p"], 2]],
+  {"XMLDeleteCases called with 3 arguments; 2 arguments are expected."},
   TestID -> "count-message-is-the-standard-text"
 ];
 
@@ -103,17 +103,17 @@ TestCreate[
   TestID -> "count-xmlmatchq-none-or-three"
 ];
 
-(* An option is not counted: a third argument that is not one is. *)
+(* An option is not counted: a fourth argument that is not one is. *)
 TestCreate[
-  callParts[XMLCases[$msgTree, XMLPattern["p"], 2, "AttributeReadings" -> <||>]],
-  {XMLCases, {$msgTree, XMLPattern["p"], 2, "AttributeReadings" -> <||>}},
-  {XMLCases::argrx},
+  callParts[XMLCases[$msgTree, XMLPattern["p"], 2, 3, "AttributeReadings" -> <||>]],
+  {XMLCases, {$msgTree, XMLPattern["p"], 2, 3, "AttributeReadings" -> <||>}},
+  {XMLCases::argt},
   TestID -> "count-options-are-not-counted"
 ];
 
 TestCreate[
-  capturedMessages[XMLCases[$msgTree, XMLPattern["p"], 2, "AttributeReadings" -> <||>]],
-  {"XMLCases called with 3 arguments; 2 arguments are expected."},
+  capturedMessages[XMLCases[$msgTree, XMLPattern["p"], 2, 3, "AttributeReadings" -> <||>]],
+  {"XMLCases called with 4 arguments; 2 or 3 arguments are expected."},
   TestID -> "count-message-leaves-options-out"
 ];
 
@@ -178,7 +178,7 @@ TestCreate[
   Lookup[SyntaxInformation /@ {XMLCases, XMLFirstCase, XMLDeleteCases, XMLMatchQ,
     HTMLInnerText, HTMLTextContent, HTMLToNotebook, HTMLClassList,
     XMLPattern, Child, Descendant, Adjacent, Sibling}, "ArgumentsPattern"],
-  {{_, _., OptionsPattern[]}, {_, _., _., OptionsPattern[]}, {_, _., OptionsPattern[]},
+  {{_, _., _., OptionsPattern[]}, {_, _., _., OptionsPattern[]}, {_, _., OptionsPattern[]},
     {_, _., OptionsPattern[]}, {_, OptionsPattern[]}, {_}, {_, OptionsPattern[]}, {_},
     {_, _.}, {_, _, ___}, {_, _, ___}, {_, _, ___}, {_, _, ___}},
   TestID -> "syntax-information-arguments-pattern"
@@ -192,6 +192,14 @@ TestCreate[
   TestID -> "syntax-information-option-names"
 ];
 
+(* A count that is not a non-negative integer or Infinity gives the built-in
+   innf text, naming the call and position 3, as Cases names position 4. *)
+TestCreate[
+  capturedMessages[XMLCases[XMLElement["p", {}, {}], XMLPattern["p"], UpTo[2]]],
+  {"Non-negative integer or Infinity expected at position 3 in XMLCases[XMLElement[\"p\", {}, {}], XMLPattern[\"p\"], UpTo[2]]."},
+  TestID -> "count-innf-message-text"
+];
+
 (* No arguments is a count error too; an option before the extra argument is
    not at the end, so it is counted. *)
 TestCreate[
@@ -199,6 +207,6 @@ TestCreate[
     callParts[XMLFirstCase[$msgTree, XMLPattern["p"], "AttributeReadings" -> <||>, 4]]},
   {{XMLCases, {}}, {XMLDeleteCases, {}},
     {XMLFirstCase, {$msgTree, XMLPattern["p"], "AttributeReadings" -> <||>, 4}}},
-  {XMLCases::argrx, XMLDeleteCases::argrx, XMLFirstCase::argt},
+  {XMLCases::argt, XMLDeleteCases::argrx, XMLFirstCase::argt},
   TestID -> "count-no-arguments-and-option-before-extra"
 ];
