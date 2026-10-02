@@ -8,6 +8,8 @@ An [[XML pattern]] is the paclet's third kind of pattern, beside WL's patterns a
 
 > **Amended after implementation** (commit bc5ae39), where the code settled what this ADR left open: a list attribute argument is always the rule list, so a bare namespaced key is written `{{ns, name}}`; two rules on the same literal key are refused as duplicates, and an `Alternatives` key that shares a literal with another key is accepted (first refused too, until a satisfiable case turned up); at an `Alternatives` key the desugaring applies only if every alternative is a list key; a `Condition` on the attribute argument is refused; a `Condition` over several attribute names works, which WL alone does not give; and every refusal fires when a consumer compiles the query, since `XMLPattern` has no definitions. Each is written into the section it belongs to. Combinator scoping is [ADR 0014](./0014-combinators-scope-names-as-wl-does.md).
 
+> **Amended 2026-10-02** (with [ADR 0015](./0015-alternatives-of-combinators.md)). "XML pattern" now names the whole kind: `XMLPattern[…]`, the combinators, and alternatives and conditions over them. This ADR is about one form of it, `XMLPattern[tag, attrs]`, and "everything written inside one" means inside that form. A combinator reads as a list pattern over its stages (ADR 0014) and alternatives as WL's (ADR 0015), so the kind is an ordinary WL pattern at every level. The raw `XMLElement` pattern accepted below is to be dropped (GitHub issue #31).
+
 Supersedes ADR 0006, ADR 0007 and ADR 0008 in part — each of those ADRs states what specifically survives. Read together with [ADR 0012](./0012-readings-and-materialising-emission.md), which covers how a token list is produced and exposed.
 
 ## Context
