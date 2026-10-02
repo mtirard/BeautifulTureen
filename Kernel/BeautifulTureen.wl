@@ -504,9 +504,15 @@ reapBinds[expr_] :=
 wrapBinds[{}, held_Hold] := held;
 wrapBinds[binds_, held_Hold] :=
   With[{spec = Replace[
-      Join @@ (Replace[#, {Hold[s_], fresh_, inverse_} :> Hold[s = inverse[fresh]]] & /@ binds),
+      Join @@ (Replace[#, {Hold[s_], fresh_, inverse_} :> Hold[s = restore[inverse, fresh]]] & /@ binds),
       Hold[sets___] :> Hold[{sets}]]},
     Replace[Join[spec, held], Hold[vars_, body_] :> Hold[With[vars, body]]]];
+
+(* A name bound only in an Alternatives branch that did not match is Sequence[],
+   as in WL, and stays so when restored: inverse[] would leak a private head
+   (issue #18). *)
+restore[_] := Sequence[];
+restore[inverse_, x_] := inverse[x];
 
 (* ---- Conditions over a KeyValuePattern ---- *)
 
