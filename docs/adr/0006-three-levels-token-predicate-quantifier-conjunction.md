@@ -93,7 +93,7 @@ Its reasoning was correct in its own world and is obsolete in this one. Toleranc
 
 What survives of ADR 0004 is its _other_ holding, and it now applies uniformly instead of as a carve-out: **never silently reinterpret the user's own pattern.** That is precisely the rule that keeps `"class" -> Except["a"]` presence-requiring alongside everything else.
 
-The cost of dropping tolerance is real and worth naming: `ClassTest[NoneTrue["ad"]]` **under-matches versus CSS `:not(.ad)`**, because it skips classless elements. The disjunction above is the fix. The intended long-term answer is a translator (`FromCSSSelector`) that emits the disjunction automatically, so a CSS-fluent user never meets the mismatch; that is a separate effort, mentioned here only so the mitigation is on the record.
+The cost of dropping tolerance is real and worth naming: `ClassTest[NoneTrue["ad"]]` **under-matches versus CSS `:not(.ad)`**, because it skips classless elements. The disjunction above is the fix. The long-term answer is a translator, `FromCSSSelector` (ADR 0017), that emits a pattern a CSS-fluent user never has to think about. It translates `:not(.ad)` to `"classList" -> _?(FreeQ["ad"])`, which classless elements satisfy, so the mismatch never arises.
 
 ## Consequences
 
