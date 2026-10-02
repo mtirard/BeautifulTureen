@@ -10,10 +10,10 @@ CSSClass::usage = "CSSClass is obsolete. Match an element's class list with the 
 $AttributeReadings::usage = "$AttributeReadings is an Association that gives, for each attribute it names, how the attribute value is split into a list of tokens and the list key that gives that list in an XMLPattern. Each entry is an Association with the fields Method, Delimiters, \"TrimWhitespace\" and \"ListKey\", any of which can be omitted. Method \"SpaceSeparated\" (the default) splits on HTMLWhitespace and does not trim tokens. Method \"CommaSeparated\" splits on \",\" and trims HTML whitespace from each token. Delimiters (a string pattern) and \"TrimWhitespace\" (True or False) override the setting that Method gives. \"ListKey\" -> Automatic gives the attribute name followed by \"List\". Keys are attribute names given as strings; a {namespace, name} attribute cannot have an entry. By default, $AttributeReadings has one entry, for \"class\", with the list key \"classList\". The \"AttributeReadings\" option of functions such as XMLCases adds entries for one call, and an entry for an attribute already present replaces it. Block[{$AttributeReadings = ...}, ...] replaces the whole Association, including the \"class\" entry.";
 HTMLWhitespace::usage = "HTMLWhitespace is a string pattern that matches a run of one or more HTML whitespace characters: space, tab, line feed, form feed and carriage return. Use StringSplit[value, HTMLWhitespace] to split a class attribute as a browser does. HTMLWhitespace does not match no-break space or other Unicode whitespace, which StringSplit splits on by default.";
 HTMLClassList::usage = "HTMLClassList[element] gives the classes of an XMLElement as a list of strings: its class attribute split on HTMLWhitespace, in the order written and with duplicates kept. An element with no class attribute, or with a class attribute that is empty or only whitespace, gives {}. HTMLClassList takes a single element; for many elements, use HTMLClassList /@ XMLCases[tree, pattern].";
-XMLCases::usage = "XMLCases[tree, pattern] gives a list of the elements of tree, at any depth, that match pattern. The elements are in document order: an element comes before the elements nested in it, and an earlier sibling before a later one. tree itself is never included. pattern can be an XMLPattern, alternatives of them, a Child, Descendant, Adjacent or Sibling combinator, or any of these with a condition pat /; test. XMLCases[tree, pattern :> body] gives the value of body for each match, evaluated in document order. XMLCases[tree, pattern -> rhs] evaluates rhs once, before any matching, as Cases does, and gives its value for each match, with the names in pattern replaced by what they matched. A combinator gives each element that its last stage matches once. If tree is an XMLElement, tree can match any stage of a combinator except the last. A name for a whole element, as in e : XMLPattern[...], gives the element as it appears in tree, without list keys such as \"classList\". XMLCases[tree, pattern, \"AttributeReadings\" -> readings] adds readings to $AttributeReadings for this call.";
+XMLCases::usage = "XMLCases[tree, pattern] gives a list of the elements of tree, at any depth, that match pattern. The elements are in document order: an element comes before the elements nested in it, and an earlier sibling before a later one. tree itself is never included. pattern can be an XMLPattern, alternatives of them, a Child, Descendant, Adjacent or Sibling combinator, or any of these with a condition pat /; test. An XMLPattern or alternatives of them can also have a test pat?f, which applies f to the element. XMLCases[tree, pattern :> body] gives the value of body for each match, evaluated in document order. XMLCases[tree, pattern -> rhs] evaluates rhs once, before any matching, as Cases does, and gives its value for each match, with the names in pattern replaced by what they matched. A combinator gives each element that its last stage matches once. If tree is an XMLElement, tree can match any stage of a combinator except the last. A name for a whole element, as in e : XMLPattern[...], gives the element as it appears in tree, without list keys such as \"classList\". XMLCases[tree, pattern, \"AttributeReadings\" -> readings] adds readings to $AttributeReadings for this call.";
 XMLFirstCase::usage = "XMLFirstCase[tree, pattern] gives the first element of tree that matches pattern, in document order, or Missing[\"NotFound\"] if there is none. Of nested matches, it gives the outermost. XMLFirstCase[tree, pattern, default] gives default if there is no match. XMLFirstCase accepts the same patterns as XMLCases and gives the first element of the list that XMLCases gives. With pattern :> body, body is evaluated only for the match that XMLFirstCase returns. With pattern -> rhs, rhs is evaluated once, before any matching, as in FirstCase, and the names in pattern are replaced in its value by what they matched. The \"AttributeReadings\" option adds readings to $AttributeReadings, as in XMLCases.";
-XMLDeleteCases::usage = "XMLDeleteCases[tree, pattern] gives tree with every element that matches pattern removed, at any depth. pattern can be an XMLPattern, alternatives of them, a Child or Descendant combinator, or any of these with a condition pat /; test. Combinators can be nested, and each stage can have a condition. A combinator removes the elements that its last stage matches. As in XMLCases, if tree is an XMLElement, tree can match any stage of a combinator except the last. Adjacent and Sibling cannot be used, even as a stage of another combinator. The \"AttributeReadings\" option adds readings to $AttributeReadings, as in XMLCases.";
-XMLMatchQ::usage = "XMLMatchQ[element, pattern] gives True if element matches pattern, and False otherwise. XMLMatchQ[pattern] is an operator form. pattern can be an XMLPattern, alternatives of them, or either with a condition pat /; test. XMLMatchQ tests the element itself, not the elements nested in it; use XMLCases to search a tree. The \"AttributeReadings\" option adds readings to $AttributeReadings, in both XMLMatchQ[element, pattern, opts] and XMLMatchQ[pattern, opts].";
+XMLDeleteCases::usage = "XMLDeleteCases[tree, pattern] gives tree with every element that matches pattern removed, at any depth. pattern can be an XMLPattern, alternatives of them, a Child or Descendant combinator, or any of these with a condition pat /; test. An XMLPattern or alternatives of them can also have a test pat?f, which applies f to the element. Combinators can be nested, and each stage can have a condition. A combinator removes the elements that its last stage matches. As in XMLCases, if tree is an XMLElement, tree can match any stage of a combinator except the last. Adjacent and Sibling cannot be used, even as a stage of another combinator. The \"AttributeReadings\" option adds readings to $AttributeReadings, as in XMLCases.";
+XMLMatchQ::usage = "XMLMatchQ[element, pattern] gives True if element matches pattern, and False otherwise. XMLMatchQ[pattern] is an operator form. pattern can be an XMLPattern, alternatives of them, or either with a condition pat /; test or a test pat?f. XMLMatchQ tests the element itself, not the elements nested in it; use XMLCases to search a tree. The \"AttributeReadings\" option adds readings to $AttributeReadings, in both XMLMatchQ[element, pattern, opts] and XMLMatchQ[pattern, opts].";
 Child::usage = "Child[parentPat, childPat] is a combinator for XMLCases, XMLFirstCase and XMLDeleteCases that matches elements that match childPat and are direct children of an element that matches parentPat. Child[pat1, pat2, pat3, ...] is Child[pat1, Child[pat2, pat3, ...]], so Child[a, b, c] matches each c that is a child of a b that is a child of an a. Each argument is a stage: an XMLPattern, alternatives of them, or another combinator. Stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements. A condition on a stage can use the names bound in that stage. A condition on the whole combinator can use the names bound in all its stages.";
 Adjacent::usage = "Adjacent[beforePat, afterPat] is a combinator for XMLCases and XMLFirstCase that matches elements that match afterPat and immediately follow a sibling that matches beforePat. Adjacent[pat1, pat2, pat3, ...] is Adjacent[pat1, Adjacent[pat2, pat3, ...]], so Adjacent[a, b, c] matches each c that immediately follows a b that immediately follows an a. Each argument is a stage: an XMLPattern, alternatives of them, or another combinator. Stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements. A condition on a stage can use the names bound in that stage. A condition on the whole combinator can use the names bound in all its stages.";
 Sibling::usage = "Sibling[beforePat, afterPat] is a combinator for XMLCases and XMLFirstCase that matches elements that match afterPat and follow a sibling that matches beforePat, at any distance. Each such element is given once. A name bound in beforePat, as used in a rule body, gives the first matching earlier sibling in document order. Sibling[pat1, pat2, pat3, ...] is Sibling[pat1, Sibling[pat2, pat3, ...]], so Sibling[a, b, c] matches each c that follows a b that follows an a. Each argument is a stage: an XMLPattern, alternatives of them, or another combinator. Stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements. A condition on a stage can use the names bound in that stage. A condition on the whole combinator can use the names bound in all its stages.";
@@ -32,18 +32,22 @@ XMLPattern::badkey = "An attribute key should be a string, a {namespace, name} p
 XMLPattern::dupkey = "The attribute key `1` appears in more than one constraint, so the pattern can never match. Combine the constraints into one value pattern.";
 XMLPattern::strpat = "`1` is a string pattern, and in an XMLPattern it does not match any string. Write _?(StringMatchQ[`1`]) instead.";
 XMLCases::badtree = "The first argument should be an XMLObject, an XMLElement, or a list of these. Got head `1`.";
-XMLCases::badpat = "The second argument should be an XMLPattern, alternatives of them, a Child, Descendant, Adjacent or Sibling combinator, or a rule pattern -> rhs or pattern :> body with one of these. Each can have a condition (/;), and an XMLPattern or alternatives of them can be named. Got `1`.";
+XMLCases::badpat = "The second argument should be an XMLPattern, alternatives of them, a Child, Descendant, Adjacent or Sibling combinator, or a rule pattern -> rhs or pattern :> body with one of these. Each can have a condition (/;), and an XMLPattern or alternatives of them can be named or have a test (?). Got `1`.";
 XMLCases::stages = "A combinator such as Child or Descendant needs at least two stages, as in Descendant[a, b] or Descendant[a, b, c]. Got `1`.";
+XMLCases::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
 XMLFirstCase::badtree = "The first argument should be an XMLObject, an XMLElement, or a list of these. Got head `1`.";
-XMLFirstCase::badpat = "The second argument should be an XMLPattern, alternatives of them, a Child, Descendant, Adjacent or Sibling combinator, or a rule pattern -> rhs or pattern :> body with one of these. Each can have a condition (/;), and an XMLPattern or alternatives of them can be named. Got `1`.";
+XMLFirstCase::badpat = "The second argument should be an XMLPattern, alternatives of them, a Child, Descendant, Adjacent or Sibling combinator, or a rule pattern -> rhs or pattern :> body with one of these. Each can have a condition (/;), and an XMLPattern or alternatives of them can be named or have a test (?). Got `1`.";
 XMLFirstCase::stages = "A combinator such as Child or Descendant needs at least two stages, as in Descendant[a, b] or Descendant[a, b, c]. Got `1`.";
+XMLFirstCase::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
 XMLDeleteCases::badtree = "The first argument should be an XMLObject, an XMLElement, or a list of these. Got head `1`.";
-XMLDeleteCases::badpat = "The second argument should be an XMLPattern, alternatives of them, or a Child or Descendant combinator. Each can have a condition (/;), and an XMLPattern or alternatives of them can be named. A rule, whether pattern -> rhs or pattern :> body, cannot be used. Got `1`.";
+XMLDeleteCases::badpat = "The second argument should be an XMLPattern, alternatives of them, or a Child or Descendant combinator. Each can have a condition (/;), and an XMLPattern or alternatives of them can be named or have a test (?). A rule, whether pattern -> rhs or pattern :> body, cannot be used. Got `1`.";
 XMLDeleteCases::stages = "A combinator such as Child or Descendant needs at least two stages, as in Descendant[a, b] or Descendant[a, b, c]. Got `1`.";
+XMLDeleteCases::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
 XMLDeleteCases::unsupported = "XMLDeleteCases cannot use Adjacent or Sibling, either as the pattern or as a stage of another combinator.";
-XMLMatchQ::badpat = "The pattern should be an XMLPattern, alternatives of them, or either with a condition pat /; test. Got `1`.";
+XMLMatchQ::badpat = "The pattern should be an XMLPattern, alternatives of them, or either with a condition pat /; test or a test pat?f. Got `1`.";
 XMLMatchQ::stages = "`1` is a combinator with fewer than two stages. A combinator needs at least two, but XMLMatchQ tests a lone element and cannot use one; use XMLCases or XMLFirstCase to search a tree with it.";
 XMLMatchQ::condcombinator = "A condition (/;) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Got `1`.";
+XMLMatchQ::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
 $AttributeReadings::badkey = "Each key in the readings should be an attribute name given as a string. Got `1`.";
 $AttributeReadings::notassoc = "$AttributeReadings and the \"AttributeReadings\" option should be an Association from attribute names to readings. Got `1`.";
 $AttributeReadings::badentry = "The reading for `1` should be an Association with any of the fields Method, Delimiters, \"TrimWhitespace\" and \"ListKey\". Got `2`.";
@@ -57,16 +61,18 @@ HTMLTextContent::badtree = "The first argument should be an XMLObject, an XMLEle
 HTMLClassList::notelement = "The argument should be a single XMLElement. Got head `1`. For a list of elements, use HTMLClassList /@ elements.";
 HTMLInnerText::badtree = "The first argument should be an XMLObject, an XMLElement, a string, or a list of these. Got head `1`.";
 HTMLInnerText::badrole = "A \"Roles\" rule gave `1`, which is not \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\" or \"Skip\". The element gets its role from the built-in user-agent stylesheet instead.";
-HTMLInnerText::badpat = "The left-hand side of a rule should be a tag string, an XMLPattern, alternatives of them, or either with a condition pat /; test. Got `1`.";
+HTMLInnerText::badpat = "The left-hand side of a rule should be a tag string, an XMLPattern, alternatives of them, or either with a condition pat /; test or a test pat?f. Got `1`.";
 HTMLInnerText::stages = "`1` is a combinator with fewer than two stages. A combinator needs at least two, but a rule is tried on one element at a time and cannot use one; use an XMLPattern or alternatives of them.";
 HTMLInnerText::notrule = "Each \"Roles\" entry should be a rule pattern -> value or pattern :> value. Got `1`.";
 HTMLInnerText::condcombinator = "A condition (/;) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Got `1`.";
+HTMLInnerText::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
 HTMLToNotebook::badtree = "The first argument should be an XMLObject, an XMLElement, a string, or a list of these. Got head `1`.";
 HTMLToNotebook::badrole = "A \"Roles\" rule gave `1`, which is not \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\" or \"Skip\". The element gets its role from the built-in user-agent stylesheet instead.";
-HTMLToNotebook::badpat = "The left-hand side of a rule should be a tag string, an XMLPattern, alternatives of them, or either with a condition pat /; test. Got `1`.";
+HTMLToNotebook::badpat = "The left-hand side of a rule should be a tag string, an XMLPattern, alternatives of them, or either with a condition pat /; test or a test pat?f. Got `1`.";
 HTMLToNotebook::stages = "`1` is a combinator with fewer than two stages. A combinator needs at least two, but a rule is tried on one element at a time and cannot use one; use an XMLPattern or alternatives of them.";
 HTMLToNotebook::notrule = "Each \"Roles\" or \"Constructs\" entry should be a rule pattern -> value or pattern :> value. Got `1`.";
 HTMLToNotebook::condcombinator = "A condition (/;) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Got `1`.";
+HTMLToNotebook::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
 
 Begin["`Private`"];
 
@@ -104,9 +110,10 @@ $links = Child | Descendant | Adjacent | Sibling;
 combinatorQ[$links[___]] := True;
 combinatorQ[_] := False;
 
-(* A name or a Condition around a pattern never changes what it is. *)
+(* A name, a Condition or a test around a pattern never changes what it is. *)
 patternBase[Verbatim[Pattern][_, x_]] := patternBase[x];
 patternBase[Verbatim[Condition][x_, _]] := patternBase[x];
+patternBase[Verbatim[PatternTest][x_, _]] := patternBase[x];
 patternBase[x_] := x;
 
 (* Valid tree for XMLCases *)
@@ -375,6 +382,9 @@ cStage[(h : $links)[a_, b_]] := joinChains[cStage[a], h, cStage[b]];
 cStage[(h : $links)[a_, b_, rest__]] := cStage[h[a, h[b, rest]]];
 cStage[q : $links[RepeatedNull[_, 1]]] := refuseAtHead["stages", q];
 cStage[c_Condition] /; combinatorQ[patternBase[c]] := conditioned[cStage, c, coverChain];
+(* A test on a combinator would only restate a test on its last stage, so it is
+   refused until a CSS selector string can be a combinator (ADR 0014). *)
+cStage[t : Verbatim[PatternTest][x_, _]] /; combinatorQ[patternBase[x]] := refuseAtHead["testcombinator", t];
 cStage[q_] := chain[{cElem[q]}, {}, {}];
 
 joinChains[chain[s1_, l1_, c1_], link_, chain[s2_, l2_, c2_]] :=
@@ -392,6 +402,11 @@ cElem[alts_Alternatives] := Alternatives @@ (cElem /@ List @@ alts);
 cElem[Verbatim[Pattern][s_Symbol, p_]] :=
   If[combinatorQ[p], badpat[namedPattern[s, p]], bindAs[s, cElem[p], strip]];
 cElem[c_Condition] := conditioned[cElem, c, conditionWith];
+(* The same refusal, for a tested combinator inside Alternatives or a name. *)
+cElem[t : Verbatim[PatternTest][x_, _]] /; combinatorQ[patternBase[x]] := refuseAtHead["testcombinator", t];
+(* pat?f is n : pat /; f[n]: f sees the original element, as a name does. *)
+cElem[Verbatim[PatternTest][p_, test_]] :=
+  With[{c = cElem[p]}, If[$mat, PatternTest[c, Function[e, test[strip[e]]]], PatternTest[c, test]]];
 (* A plain XMLElement pattern is already what the consumers run. *)
 cElem[x_XMLElement] := x;
 cElem[q_] := badpat[q];
@@ -612,7 +627,10 @@ copiedIn[Verbatim[Pattern][s_, p_]] := namedPattern[s, copiedIn[p]];
 copiedIn[c : Verbatim[Condition][l_, _]] :=
   Condition @@ Join[Hold @@ {copiedIn[l]}, restored[l, Extract[c, {2}, Hold]]];
 copiedIn[XMLElement[t_, a_, c_]] := XMLElement[t, copiedAttributes[a], c];
-copiedIn[Verbatim[PatternTest][p_, f_]] := PatternTest[copiedIn[p], f];
+(* copiedIn reaches only tests on an element (copiedAttributes keeps the tests
+   on attributes). The first step ran them on the skeleton, but a branch of an
+   Alternatives must fail its test here too, on the uncopied element. *)
+copiedIn[Verbatim[PatternTest][p_, f_]] := PatternTest[copiedIn[p], Function[e, f[uncopied[e]]]];
 copiedIn[h_[args___]] := copiedIn[h] @@ (copiedIn /@ {args});
 copiedIn[x_] := x;
 

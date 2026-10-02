@@ -456,3 +456,124 @@ TestCreate[
   {1, 1},
   TestID -> "rule-combinator-constant-rhs"
 ];
+
+(* === PatternTest over an XML pattern (pat?f), issue #33 === *)
+
+(* pat?f means n : pat /; f[n]: f is given the element as it is in the tree. *)
+$testedSup1 = XMLElement["sup", {"class" -> "ref note"}, {XMLElement["a", {"href" -> "#n1"}, {"1"}]}];
+$testedSup2 = XMLElement["sup", {"class" -> "note"}, {"2"}];
+$testedTree = XMLElement["div", {}, {
+  XMLElement["p", {"id" -> "x"}, {"a", $testedSup1}],
+  XMLElement["p", {"id" -> "y"}, {"b", $testedSup2}]}];
+$testedHasLink = Function[e, !FreeQ[e, XMLElement["a", _, _]]];
+
+TestCreate[
+  {XMLMatchQ[$testedSup1, XMLPattern["sup"]?(True &)],
+   XMLMatchQ[$testedSup1, XMLPattern["sup"]?(False &)],
+   XMLMatchQ[$testedSup2, XMLPattern["sup"]?$testedHasLink],
+   XMLMatchQ[XMLPattern["sup"]?$testedHasLink][$testedSup1]},
+  {True, False, False, True},
+  TestID -> "patterntest-xmlmatchq"
+];
+
+TestCreate[
+  {XMLCases[$testedTree, XMLPattern["sup"]?$testedHasLink],
+   XMLFirstCase[$testedTree, XMLPattern["sup"]?(!$testedHasLink[#] &)],
+   XMLDeleteCases[$testedTree, XMLPattern["sup"]?$testedHasLink]},
+  {{$testedSup1}, $testedSup2,
+   XMLElement["div", {}, {XMLElement["p", {"id" -> "x"}, {"a"}], XMLElement["p", {"id" -> "y"}, {"b", $testedSup2}]}]},
+  TestID -> "patterntest-consumers"
+];
+
+(* The same result as the Condition form. *)
+TestCreate[
+  XMLCases[$testedTree, XMLPattern["sup"]?$testedHasLink -> "Plain"] ===
+    XMLCases[$testedTree, s : XMLPattern["sup"] /; $testedHasLink[s] -> "Plain"] === {"Plain"},
+  True,
+  TestID -> "patterntest-same-as-condition"
+];
+
+(* With a list key named, f sees the element as it is in the tree. *)
+TestCreate[
+  Reap[XMLCases[$testedTree, XMLPattern["sup", "classList" -> "note"]?((Sow[#]; True) &)]],
+  {{$testedSup1, $testedSup2}, {{$testedSup1, $testedSup2}}},
+  TestID -> "patterntest-sees-original-element"
+];
+
+TestCreate[
+  Reap[XMLCases[$testedTree, Child[XMLPattern["p"], XMLPattern["sup", "classList" -> "ref"]?((Sow[#]; True) &)]]],
+  {{$testedSup1}, {{$testedSup1}}},
+  TestID -> "patterntest-stage-sees-original-element"
+];
+
+(* As a stage, around alternatives, with names and Conditions. *)
+TestCreate[
+  {XMLCases[$testedTree, Child[XMLPattern["p", "id" -> i_], XMLPattern["sup"]?$testedHasLink] :> i],
+   XMLCases[$testedTree, (XMLPattern["sup"] | XMLPattern["p"])?$testedHasLink],
+   XMLCases[$testedTree, e : XMLPattern["sup"]?$testedHasLink :> e],
+   XMLCases[$testedTree, (e : XMLPattern["sup", "classList" -> "note"])?$testedHasLink :> e],
+   XMLCases[$testedTree, (XMLPattern["p", "id" -> i_] /; i === "y")?(True &) :> i],
+   XMLCases[$testedTree, (XMLPattern["p", "id" -> i_]?$testedHasLink) /; i === "y" :> i]},
+  {{"x"}, {XMLElement["p", {"id" -> "x"}, {"a", $testedSup1}], $testedSup1}, {$testedSup1}, {$testedSup1}, {"y"}, {}},
+  TestID -> "patterntest-shapes"
+];
+
+(* A Condition over a KeyValuePattern with later names is matched in two steps;
+   f is run in each step, on the element as it is in the tree. *)
+$testedLink = XMLElement["a", {"href" -> "/x/1", "data-id" -> "1"}, {}];
+TestCreate[
+  Reap[{XMLCases[{$testedLink}, (XMLPattern["a", {"href" -> h_, "data-id" -> i_}] /; StringContainsQ[h, i])?((Sow[#]; True) &)],
+    XMLCases[{$testedLink}, (XMLPattern["a", {"href" -> h_, "data-id" -> i_}] /; StringContainsQ[h, i])?(False &)]}],
+  {{{$testedLink}, {}}, {{$testedLink, $testedLink}}},
+  TestID -> "patterntest-two-step-match"
+];
+
+(* A branch whose test fails binds nothing in the second step either. *)
+$testedXY = XMLPattern["a", {"x" -> h_, "y" -> i_}];
+$testedX = XMLPattern["a", {"x" -> j_}];
+$testedA = XMLElement["div", {}, {XMLElement["a", {"x" -> "1", "y" -> "2"}, {}]}];
+TestCreate[
+  {XMLCases[$testedA, (($testedXY?(False &)) | $testedX) /; True :> {h, i, j}],
+   XMLCases[$testedA, ((n : $testedXY /; False) | $testedX) /; True :> {h, i, j}],
+   XMLCases[$testedA, Child[XMLPattern["div"], (($testedXY?(False &)) | $testedX) /; True] :> {h, i, j}],
+   XMLCases[$testedA, (($testedXY?(True &)) | $testedX) /; True :> {h, i, j}]},
+  {{{"1"}}, {{"1"}}, {{"1"}}, {{"1", "2"}}},
+  TestID -> "patterntest-two-step-failed-branch"
+];
+
+TestCreate[
+  {HTMLInnerText[$testedTree, "Roles" -> {XMLPattern["sup"]?$testedHasLink -> "Skip"}]},
+  {"a\nb2"},
+  TestID -> "patterntest-role-rule"
+];
+
+(* A test on a combinator is refused for now: put it on the stage it tests. *)
+$testedComb = Child[XMLPattern["p"], XMLPattern["sup"]];
+TestCreate[
+  {XMLCases[$testedTree, $testedComb?$testedHasLink],
+   XMLFirstCase[$testedTree, $testedComb?$testedHasLink],
+   XMLDeleteCases[$testedTree, $testedComb?$testedHasLink],
+   XMLMatchQ[$testedSup1, $testedComb?$testedHasLink],
+   HTMLInnerText[$testedTree, "Roles" -> {$testedComb?$testedHasLink -> "Skip"}],
+   HTMLToNotebook[$testedTree, "Constructs" -> {$testedComb?$testedHasLink -> "Bold"}]},
+  {$Failed, $Failed, $Failed, $Failed, $Failed, $Failed},
+  {XMLCases::testcombinator, XMLFirstCase::testcombinator, XMLDeleteCases::testcombinator,
+   XMLMatchQ::testcombinator, HTMLInnerText::testcombinator, HTMLToNotebook::testcombinator},
+  TestID -> "patterntest-on-combinator-refused"
+];
+
+TestCreate[
+  {XMLCases[$testedTree, Descendant[XMLPattern["div"], $testedComb?$testedHasLink]],
+   XMLCases[$testedTree, ($testedComb /; True)?$testedHasLink]},
+  {$Failed, $Failed},
+  {XMLCases::testcombinator, XMLCases::testcombinator},
+  TestID -> "patterntest-on-combinator-refused-anywhere"
+];
+
+TestCreate[
+  {XMLCases[$testedTree, ($testedComb?$testedHasLink) /; True],
+   XMLCases[$testedTree, $testedComb?$testedHasLink :> 1]},
+  {$Failed, $Failed},
+  {XMLCases::testcombinator, XMLCases::testcombinator},
+  TestID -> "patterntest-on-combinator-refused-in-rule"
+];

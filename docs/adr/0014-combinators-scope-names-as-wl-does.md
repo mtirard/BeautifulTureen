@@ -12,6 +12,8 @@ A structural combinator — `Child`, `Descendant`, `Adjacent`, `Sibling` — rel
 >
 > **Amended by [ADR 0016](./0016-list-stages.md)** (2026-10-02, not yet implemented). A stage after a `Child` or `Descendant` link may be a list stage, a WL list pattern over a parent's element children, and it reads as that list nested in the tuple pattern. `Adjacent` and `Sibling` are now shorthands for list stages. `XMLDeleteCases` accepts them: the last sentence of "`XMLDeleteCases`" and the refusal in "A combinator of combinators is a chain" are superseded.
 >
+> **Amended for issue #33.** A test `pat?f` is accepted on an element pattern and on a stage, but a test on a combinator, `Child[a, b]?f`, is refused with `::testcombinator`. It could only test the selected element, which `Child[a, b?f]` already says. To be reopened when a CSS selector string (ADR 0017) can be a combinator, as `"ul > li"?f` would then be the only way to test its selected element. Written into "Scoping follows the tuple pattern".
+>
 > **Amended for issue #11.** A combinator takes two or more stages; `L[s1, s2, …, sn]` reads as the right-nested chain. Written into "A combinator of combinators is a chain, read left to right".
 
 ## Context
@@ -30,7 +32,7 @@ The first fix (2f8587b) made that expectation true: a later stage's test was wra
 - A `PatternTest`'s function sees no pattern names, as in WL, whether or not the name is bound elsewhere.
 - A rule body sees every stage's names.
 
-The refusals are the shapes that have no tuple-pattern reading: an `Alternatives` holding a combinator (as the query or as a stage, conditioned or not) and a named combinator (as a stage or as the query) are `::badpat`. `XMLMatchQ` and the `Roles`/`Constructs` options take an element pattern, so they still refuse a combinator, conditioned or not (ADR 0013).
+The refusals are the shapes that have no tuple-pattern reading: an `Alternatives` holding a combinator (as the query or as a stage, conditioned or not) and a named combinator (as a stage or as the query) are `::badpat`. `XMLMatchQ` and the `Roles`/`Constructs` options take an element pattern, so they still refuse a combinator, conditioned or not (ADR 0013). A test on a combinator, `comb?f`, is refused with `::testcombinator` wherever it is written: it would restate a test on the last stage.
 
 ### A combinator of combinators is a chain, read left to right
 
