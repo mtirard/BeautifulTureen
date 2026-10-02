@@ -6,3 +6,7 @@ Tests/LocalConfig.*
 Tests/**/last_test_run.wxf
 
 .scratch/
+
+# Agent instructions: local only
+CLAUDE.md
+docs/agents/
