@@ -1,5 +1,5 @@
 ---
-status: accepted (amended after implementation)
+status: accepted (amended after implementation; amended by ADR-0015 and ADR-0016)
 ---
 
 # A combinator is one plain pattern over its stages, and its names scope as WL's do
@@ -7,6 +7,10 @@ status: accepted (amended after implementation)
 A structural combinator — `Child`, `Descendant`, `Adjacent`, `Sibling` — relates the elements matched by its **stages**, and a stage may itself be a combinator. The paclet reads the whole thing as one plain WL pattern over the list of its stages' elements, `{s1, …, sn}`, and gives every name in it exactly the scope that list pattern would give: a `Condition` on a stage sees that stage's names, a `Condition` on the combinator sees all of them, a name at two stages is one value, and a `PatternTest` sees none. This is ADR 0011's "everything inside is a plain WL pattern" carried from the element up to the combinator.
 
 > **Amended after implementation.** A `Condition` in a rule's body (`comb :> body /; test`) now takes part in choosing an ancestor or earlier sibling, as a `Condition` on the combinator does; before, the first candidate was chosen without it, and a body that rejected that candidate lost the match. Written into "What a query returns, and in what order".
+>
+> **Amended by [ADR 0015](./0015-alternatives-of-combinators.md)** (2026-10-02, not yet implemented). An `Alternatives` holding a combinator is no longer refused: it reads as WL's `Alternatives` over the combinators' list patterns, and the first alternative that accepts an element binds its names. A named combinator, and named alternatives holding one, stay `::badpat`. The refusal sentence in "Scoping follows the tuple pattern" is superseded.
+>
+> **Amended by [ADR 0016](./0016-list-stages.md)** (2026-10-02, not yet implemented). A stage after a `Child` or `Descendant` link may be a list stage, a WL list pattern over a parent's element children, and it reads as that list nested in the tuple pattern. `Adjacent` and `Sibling` are now shorthands for list stages. `XMLDeleteCases` accepts them: the last sentence of "`XMLDeleteCases`" and the refusal in "A combinator of combinators is a chain" are superseded.
 >
 > **Amended for issue #11.** A combinator takes two or more stages; `L[s1, s2, …, sn]` reads as the right-nested chain. Written into "A combinator of combinators is a chain, read left to right".
 
