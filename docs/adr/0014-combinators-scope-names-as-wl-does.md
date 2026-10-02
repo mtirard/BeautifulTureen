@@ -1,5 +1,5 @@
 ---
-status: accepted (amended after implementation; amended by ADR-0015 and ADR-0016)
+status: accepted (amended after implementation; amended by ADR-0015, ADR-0016 and ADR-0018)
 ---
 
 # A combinator is one plain pattern over its stages, and its names scope as WL's do
@@ -13,6 +13,8 @@ A structural combinator — `Child`, `Descendant`, `Adjacent`, `Sibling` — rel
 > **Amended by [ADR 0016](./0016-list-stages.md)** (2026-10-02, not yet implemented). A stage after a `Child` or `Descendant` link may be a list stage, a WL list pattern over a parent's element children, and it reads as that list nested in the tuple pattern. `Adjacent` and `Sibling` are now shorthands for list stages. `XMLDeleteCases` accepts them: the last sentence of "`XMLDeleteCases`" and the refusal in "A combinator of combinators is a chain" are superseded.
 >
 > **Amended for issue #33.** A test `pat?f` is accepted on an element pattern and on a stage, but a test on a combinator, `Child[a, b]?f`, is refused with `::testcombinator`. It could only test the selected element, which `Child[a, b?f]` already says. To be reopened when a CSS selector string (ADR 0017) can be a combinator, as `"ul > li"?f` would then be the only way to test its selected element. Written into "Scoping follows the tuple pattern".
+>
+> **Amended by [ADR 0018](./0018-the-document-above-the-top-elements.md)** (2026-10-02, not yet implemented). Every input has a document above its top elements, matched by `XMLDocument[]` as a first stage. The root is then a second stage under it, not only a first stage. A list input's top-level elements are siblings, so `Adjacent` and `Sibling` match across them. The rest of "The root may match any stage but the last" stands: the input is never a result. `XMLDeleteCases` does not delete a document's root element (`::root`).
 >
 > **Amended for issue #11.** A combinator takes two or more stages; `L[s1, s2, …, sn]` reads as the right-nested chain. Written into "A combinator of combinators is a chain, read left to right".
 

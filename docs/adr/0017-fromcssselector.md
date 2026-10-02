@@ -1,8 +1,10 @@
 ---
-status: accepted (not yet implemented)
+status: accepted (not yet implemented; amended by ADR-0018)
 ---
 
 # `FromCSSSelector` translates a static CSS selector into XML patterns, and a bare string where an XML pattern goes is CSS
+
+> **Amended by [ADR 0018](./0018-the-document-above-the-top-elements.md)** (2026-10-02, not yet implemented). Once `XMLDocument[]` exists, `:root` and `:scope` translate as `Child[XMLDocument[], {x : XMLPattern[_]}]` and are no longer refused, and a child-indexed pseudo-class at the start of a chain lists under `XMLDocument[] | XMLPattern[_]`, so it reaches the root. The refusal of `:root` and `:scope` under "What v1 refuses" holds until then.
 
 A bs4 user writes `soup.select("div.note > p")`. The same query here is `XMLCases[tree, Child[XMLPattern["div", "classList" -> "note"], XMLPattern["p"]]]`, about 2.5 times the characters. The CSS-Rosetta demo measured this on every row of Wikipedia's selector table (`.scratch/wtc-presentation/demos/css-rosetta/README.md`). Every clean row is longer than its CSS, and a CSS-fluent user has to learn the symbolic form before writing their first query. This ADR adds a translator from CSS to the paclet's existing patterns, and lets a CSS string stand wherever an XML pattern is accepted. The symbolic form stays the language. CSS is a way to write it, and `FromCSSSelector` shows the user what they wrote.
 
