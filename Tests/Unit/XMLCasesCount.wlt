@@ -90,6 +90,16 @@ TestCreate[
   TestID -> "count-combinator-body-condition"
 ];
 
+(* Known issue: a combinator collects every candidate before the first n are
+   taken, so a test on a stage still sees the elements past the nth result.
+   ADR 0019 records the gap; this passes once combinators stop early. *)
+TestCreate[
+  Reap[XMLCases[$countFlat,
+    Child[XMLPattern["ul"], XMLPattern["li"]?((Sow[First[Last[#]]]; True) &)], 2]][[2]],
+  {{"1", "2"}},
+  TestID -> "count-combinator-traversal-stops-at-nth-match"
+] // TagTest["KnownIssue"];
+
 (* Options come after n. *)
 TestCreate[
   XMLCases[
