@@ -300,11 +300,13 @@ TestCreate[
 
 TestCreate[
   {FromCSSSelector["a > b, a > c"], FromCSSSelector["div p, section p"], FromCSSSelector["h1, h2, .x"],
-    FromCSSSelector["h1, h1"], FromCSSSelector["a b, a b, a c"]},
+    FromCSSSelector["h1, h1"], FromCSSSelector["a b, a b, a c"], FromCSSSelector["[x='y'] > b, [x=\"y\"] > c"],
+    MatchQ[FromCSSSelector["p:Empty a, p:empty a"], Descendant[Verbatim[Condition][_, _], XMLPattern["a"]]], FromCSSSelector["a[x='y'], a[x=\"y\"]"]},
   {Child[XMLPattern["a"], XMLPattern["b"] | XMLPattern["c"]],
     Descendant[XMLPattern["div"] | XMLPattern["section"], XMLPattern["p"]],
     XMLPattern["h1"] | XMLPattern["h2"] | XMLPattern[_, "classList" -> "x"], XMLPattern["h1"],
-    Descendant[XMLPattern["a"], XMLPattern["b"] | XMLPattern["c"]]},
+    Descendant[XMLPattern["a"], XMLPattern["b"] | XMLPattern["c"]],
+    Child[XMLPattern[_, "x" -> "y"], XMLPattern["b"] | XMLPattern["c"]], True, XMLPattern["a", "x" -> "y"]},
   TestID -> "css-selector-list-exact"
 ];
 
