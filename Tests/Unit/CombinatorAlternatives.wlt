@@ -173,12 +173,18 @@ TestCreate[
   TestID -> "union-delete-cases"
 ];
 
+(* An alternative holding Adjacent or Sibling deletes what it selects (ADR 0016). *)
 TestCreate[
-  {XMLDeleteCases[$unionDoc, Child[XMLPattern["ul"], XMLPattern["li"]] | Sibling[XMLPattern["nav"], XMLPattern["a"]]],
-   XMLDeleteCases[$unionDoc, Child[XMLPattern["ul"], XMLPattern["li"] | Descendant[XMLPattern["b"], Adjacent[XMLPattern["a"], XMLPattern["i"]]]]],
-   XMLDeleteCases[$unionDoc, Child[XMLPattern["ul"], XMLPattern["li"]] | XMLPattern["a"] :> 1]},
-  {$Failed, $Failed, $Failed},
-  {XMLDeleteCases::unsupported, XMLDeleteCases::unsupported, XMLDeleteCases::badpat},
+  {unionIds @ XMLCases[XMLDeleteCases[$unionDoc, Child[XMLPattern["ul"], XMLPattern["li"]] | Sibling[XMLPattern["nav"], XMLPattern["a"]]], XMLPattern[_, "id" -> _]],
+   unionIds @ XMLCases[XMLDeleteCases[$unionDoc, Child[XMLPattern["ul"], XMLPattern["li"] | Descendant[XMLPattern["b"], Adjacent[XMLPattern["a"], XMLPattern["i"]]]]], XMLPattern[_, "id" -> _]]},
+  {{"n", "a1", "u", "u2"}, {"n", "a1", "u", "u2", "a3"}},
+  TestID -> "union-delete-cases-siblings"
+];
+
+TestCreate[
+  XMLDeleteCases[$unionDoc, Child[XMLPattern["ul"], XMLPattern["li"]] | XMLPattern["a"] :> 1],
+  $Failed,
+  {XMLDeleteCases::badpat},
   TestID -> "union-delete-cases-refusals"
 ];
 

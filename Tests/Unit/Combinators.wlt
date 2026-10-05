@@ -1,6 +1,8 @@
 (* Combinators for XMLCases: Child, Adjacent, Sibling, Descendant, the base
    rule form, and named-attribute extraction flowing through them.
-   Fixtures $tree, $treeSiblings, $treeProducts come from Tests/Support/Fixtures.wl. *)
+   Fixtures $tree, $treeSiblings, $treeProducts come from Tests/Support/Fixtures.wl.
+   A test whose TestID ends in -as-list repeats the one before it with Adjacent
+   and Sibling written as the list stages they are shorthands for (ADR 0016). *)
 
 (* === Child combinator === *)
 
@@ -45,9 +47,21 @@ TestCreate[
 ];
 
 TestCreate[
+  HTMLTextContent /@ XMLCases[$treeSiblings, Child[XMLPattern[_], {___, XMLPattern["h2"], XMLPattern["p"], ___}]],
+  {"First"},
+  TestID -> "adjacent-basic-as-list"
+];
+
+TestCreate[
   XMLCases[$treeSiblings, Adjacent[XMLPattern["h2"], x:XMLPattern["p"]] :> HTMLTextContent[x]],
   {"First"},
   TestID -> "adjacent-rule-named"
+];
+
+TestCreate[
+  XMLCases[$treeSiblings, Child[XMLPattern[_], {___, XMLPattern["h2"], x:XMLPattern["p"], ___}] :> HTMLTextContent[x]],
+  {"First"},
+  TestID -> "adjacent-rule-named-as-list"
 ];
 
 (* Adjacent: p immediately after p *)
@@ -57,11 +71,23 @@ TestCreate[
   TestID -> "adjacent-p-after-p"
 ];
 
+TestCreate[
+  XMLCases[$treeSiblings, Child[XMLPattern[_], {___, XMLPattern["p", "classList" -> "lead"], x:XMLPattern["p"], ___}] :> HTMLTextContent[x]],
+  {"Second"},
+  TestID -> "adjacent-p-after-p-as-list"
+];
+
 (* Adjacent: span is not immediately after h2 *)
 TestCreate[
   XMLCases[$treeSiblings, Adjacent[XMLPattern["h2"], XMLPattern["span"]]],
   {},
   TestID -> "adjacent-not-adjacent"
+];
+
+TestCreate[
+  XMLCases[$treeSiblings, Child[XMLPattern[_], {___, XMLPattern["h2"], XMLPattern["span"], ___}]],
+  {},
+  TestID -> "adjacent-not-adjacent-as-list"
 ];
 
 (* Adjacent rule can reference both before and after bindings *)
@@ -73,6 +99,12 @@ TestCreate[
   TestID -> "adjacent-rule-both-bindings"
 ];
 
+TestCreate[
+  XMLCases[$treeSiblings, Child[XMLPattern[_], {___, h:XMLPattern["h2"], p:XMLPattern["p"], ___}] :> {HTMLTextContent[h], HTMLTextContent[p]}],
+  {{"Title", "First"}},
+  TestID -> "adjacent-rule-both-bindings-as-list"
+];
+
 (* === General sibling combinator === *)
 
 TestCreate[
@@ -82,9 +114,21 @@ TestCreate[
 ];
 
 TestCreate[
+  HTMLTextContent /@ XMLCases[$treeSiblings, Child[XMLPattern[_], {___, XMLPattern["h2"], ___, XMLPattern["p"], ___}]],
+  {"First", "Second", "Fourth"},
+  TestID -> "sibling-all-after-as-list"
+];
+
+TestCreate[
   XMLCases[$treeSiblings, Sibling[XMLPattern["h2"], x:XMLPattern["p"]] :> HTMLTextContent[x]],
   {"First", "Second", "Fourth"},
   TestID -> "sibling-rule-named"
+];
+
+TestCreate[
+  XMLCases[$treeSiblings, Child[XMLPattern[_], {___, XMLPattern["h2"], ___, x:XMLPattern["p"], ___}] :> HTMLTextContent[x]],
+  {"First", "Second", "Fourth"},
+  TestID -> "sibling-rule-named-as-list"
 ];
 
 (* Sibling: span after h2 \[LongDash] not adjacent, but still a sibling *)
@@ -94,11 +138,23 @@ TestCreate[
   TestID -> "sibling-non-adjacent"
 ];
 
+TestCreate[
+  HTMLTextContent /@ XMLCases[$treeSiblings, Child[XMLPattern[_], {___, XMLPattern["h2"], ___, XMLPattern["span"], ___}]],
+  {"Third"},
+  TestID -> "sibling-non-adjacent-as-list"
+];
+
 (* Sibling: nothing before h2 *)
 TestCreate[
   XMLCases[$treeSiblings, Sibling[XMLPattern["p"], XMLPattern["h2"]]],
   {},
   TestID -> "sibling-wrong-order"
+];
+
+TestCreate[
+  XMLCases[$treeSiblings, Child[XMLPattern[_], {___, XMLPattern["p"], ___, XMLPattern["h2"], ___}]],
+  {},
+  TestID -> "sibling-wrong-order-as-list"
 ];
 
 (* === Descendant combinator === *)
@@ -193,10 +249,22 @@ TestCreate[
 ];
 
 TestCreate[
+  XMLCases[$treeCards, Child[XMLPattern[_], {___, XMLPattern["p", "classList" -> "ad"], a:XMLPattern["p", "classList" -> "lead"], ___}] :> a],
+  {XMLElement["p", {"class" -> "lead ad"}, {"3"}]},
+  TestID -> "adjacent-classlist-both-stages-as-list"
+];
+
+TestCreate[
   XMLCases[$treeCards,
     Sibling[XMLPattern["p", "classList" -> {"lead"}], XMLPattern["p", "classList" -> "ad"]]],
   {XMLElement["p", {"class" -> "ad"}, {"2"}], XMLElement["p", {"class" -> "lead ad"}, {"3"}]},
   TestID -> "sibling-classlist-both-stages"
+];
+
+TestCreate[
+  XMLCases[$treeCards, Child[XMLPattern[_], {___, XMLPattern["p", "classList" -> {"lead"}], ___, XMLPattern["p", "classList" -> "ad"], ___}]],
+  {XMLElement["p", {"class" -> "ad"}, {"2"}], XMLElement["p", {"class" -> "lead ad"}, {"3"}]},
+  TestID -> "sibling-classlist-both-stages-as-list"
 ];
 
 TestCreate[
@@ -258,11 +326,23 @@ TestCreate[
   TestID -> "nested-sibling-relations"
 ];
 
+TestCreate[
+  {HTMLTextContent /@ XMLCases[$treeSiblings, Descendant[XMLPattern["div"], {___, XMLPattern["h2"], XMLPattern["p"], ___}]], HTMLTextContent /@ XMLCases[$treeSiblings, Child[XMLPattern["div"], {___, XMLPattern["p"], ___, XMLPattern["p"], ___}]], HTMLTextContent /@ XMLCases[$treeSiblings, Child[XMLPattern[_], {___, XMLPattern["p", "classList" -> "lead"], ___, XMLPattern["p"], ___}]]},
+  {{"First"}, {"Second", "Fourth"}, {"Second", "Fourth"}},
+  TestID -> "nested-sibling-relations-as-list"
+];
+
 (* A sibling stage followed by a child stage. *)
 TestCreate[
   nestTexts @ Child[Adjacent[XMLPattern["p"], XMLPattern["div"]], XMLPattern["p"]],
   {"2"},
   TestID -> "nested-child-of-adjacent"
+];
+
+TestCreate[
+  nestTexts[Child[XMLPattern[_], {___, XMLPattern["p"], XMLPattern["div"], ___}, XMLPattern["p"]]],
+  {"2"},
+  TestID -> "nested-child-of-adjacent-as-list"
 ];
 
 (* XMLFirstCase gives the first of what XMLCases gives, plain and rule forms. *)
@@ -299,6 +379,12 @@ TestCreate[
      Child[d : XMLPattern["div"], XMLPattern["p"] /; Head[d] === Symbol]]},
   {{"1", "2"}, {"2"}, {"2"}, {"1", "2"}},
   TestID -> "stage-test-sees-not-earlier-element"
+];
+
+TestCreate[
+  {XMLCases[$treeCard, Descendant[d:XMLPattern["div", "classList" -> "card"], p:XMLPattern["p"] /; Head[d] === Symbol] :> HTMLTextContent[p]], XMLCases[$treeCard, Child[XMLPattern[_], {___, a:XMLPattern["p", "classList" -> "lead"], b:XMLPattern["p"] /; Head[a] === Symbol, ___}] :> HTMLTextContent[b]], HTMLTextContent /@ XMLCases[$treeCard, Child[XMLPattern[_], {___, a:XMLPattern["p"], ___, XMLPattern["p"] /; Head[a] === Symbol, ___}]], HTMLTextContent /@ XMLCases[$treeCard, Child[d:XMLPattern["div"], XMLPattern["p"] /; Head[d] === Symbol]]},
+  {{"1", "2"}, {"2"}, {"2"}, {"1", "2"}},
+  TestID -> "stage-test-sees-not-earlier-element-as-list"
 ];
 
 (* Nor an earlier stage's attribute map or value; its own names it sees, an
@@ -340,6 +426,12 @@ TestCreate[
   TestID -> "firstcase-and-deletecases-stage-test-sees-not-earlier-element"
 ];
 
+TestCreate[
+  {XMLFirstCase[$treeCard, Child[XMLPattern[_], {___, a:XMLPattern["p", "classList" -> "lead"], ___, p:XMLPattern["p"] /; Head[a] === Symbol, ___}] :> HTMLTextContent[p]], XMLFirstCase[$treeCard, Descendant[d:XMLPattern["div", "classList" -> "card"], XMLPattern["p"] /; Head[d] === Symbol]], XMLFirstCase[XMLDeleteCases[$treeCard, Child[d:XMLPattern["div", "classList" -> "card"], XMLPattern["p", "classList" -> "ad"] /; Head[d] === Symbol]], XMLPattern["div"]]},
+  {"2", XMLElement["p", {"class" -> "lead"}, {"1"}], XMLElement["div", {"class" -> "card", "id" -> "k"}, {XMLElement["p", {"class" -> "lead"}, {"1"}]}]},
+  TestID -> "firstcase-and-deletecases-stage-test-sees-not-earlier-element-as-list"
+];
+
 (* === A name at two stages is one value === *)
 
 (* As in WL, where MatchQ[{1, 2}, {a_, a_}] is False, a name bound at two stages
@@ -358,6 +450,12 @@ TestCreate[
 ];
 
 TestCreate[
+  {XMLCases[$treeTwice, Child[XMLPattern["div", "id" -> i_], p:XMLPattern["p", "data-for" -> i_]] :> {i, HTMLTextContent[p]}], HTMLTextContent /@ XMLCases[$treeTwice, Child[XMLPattern[_], {___, XMLPattern["p", "data-for" -> i_], ___, XMLPattern["p", "data-for" -> i_], ___}]]},
+  {{{"k", "3"}}, {}},
+  TestID -> "value-name-at-two-stages-is-one-value-as-list"
+];
+
+TestCreate[
   {XMLCases[$treeTwice, Sibling[e : XMLPattern["p", "classList" -> "a"], e : XMLPattern["p"]] :> e],
    HTMLTextContent /@ XMLCases[$treeTwice,
      Adjacent[XMLPattern["p", as : {"classList" -> _}], XMLPattern["p", as : {"class" -> _}]]],
@@ -365,6 +463,12 @@ TestCreate[
      Adjacent[XMLPattern["p", as : {"classList" -> _}], XMLPattern["p", as : {"class" -> _}]] :> as]},
   {{XMLElement["p", {"class" -> "a"}, {"1"}]}, {"2", "1"}, {"class" -> "a"}},
   TestID -> "element-and-attrs-name-at-two-stages-is-one-value"
+];
+
+TestCreate[
+  {XMLCases[$treeTwice, Child[XMLPattern[_], {___, e:XMLPattern["p", "classList" -> "a"], ___, e:XMLPattern["p"], ___}] :> e], HTMLTextContent /@ XMLCases[$treeTwice, Child[XMLPattern[_], {___, XMLPattern["p", as:{"classList" -> _}], XMLPattern["p", as:{"class" -> _}], ___}]], XMLFirstCase[$treeTwice, Child[XMLPattern[_], {___, XMLPattern["p", as:{"classList" -> _}], XMLPattern["p", as:{"class" -> _}], ___}] :> as]},
+  {{XMLElement["p", {"class" -> "a"}, {"1"}]}, {"2", "1"}, {"class" -> "a"}},
+  TestID -> "element-and-attrs-name-at-two-stages-is-one-value-as-list"
 ];
 
 (* Sibling[before, after] matches an element with some earlier sibling that
@@ -382,6 +486,12 @@ TestCreate[
   TestID -> "sibling-shared-name-reaches-later-before"
 ];
 
+TestCreate[
+  {XMLCases[$treeLaterBefore, Child[XMLPattern[_], {___, XMLPattern["h2", "id" -> i_], ___, p:XMLPattern["p", "data-for" -> i_], ___}] :> HTMLTextContent[p]], HTMLTextContent[XMLFirstCase[$treeLaterBefore, Child[XMLPattern[_], {___, XMLPattern["h2", "id" -> i_], ___, XMLPattern["p", "data-for" -> i_], ___}]]]},
+  {{"2"}, "2"},
+  TestID -> "sibling-shared-name-reaches-later-before-as-list"
+];
+
 (* So does a test on the whole combinator. *)
 TestCreate[
   {XMLCases[$treeLaterBefore,
@@ -390,6 +500,12 @@ TestCreate[
      Sibling[h : XMLPattern["h2"], p : XMLPattern["p"]] /; HTMLTextContent[h] === "H2" && HTMLTextContent[p] === "1"]},
   {{"2"}, "1"},
   TestID -> "sibling-combinator-test-reaches-later-before"
+];
+
+TestCreate[
+  {XMLCases[$treeLaterBefore, Child[XMLPattern[_], {___, XMLPattern["h2", "id" -> i_], ___, p:XMLPattern["p", "data-for" -> f_], ___}] /; f === i :> HTMLTextContent[p]], HTMLTextContent[XMLFirstCase[$treeLaterBefore, Child[XMLPattern[_], {___, h:XMLPattern["h2"], ___, p:XMLPattern["p"], ___}] /; HTMLTextContent[h] === "H2" && HTMLTextContent[p] === "1"]]},
+  {{"2"}, "1"},
+  TestID -> "sibling-combinator-test-reaches-later-before-as-list"
 ];
 
 (* Each matched element comes once, however many earlier siblings match with
@@ -407,6 +523,12 @@ TestCreate[
   TestID -> "sibling-shared-name-element-once-bound-to-first-before"
 ];
 
+TestCreate[
+  {XMLCases[$treeManyBefore, Child[XMLPattern[_], {___, h:XMLPattern["h2", "class" -> c_], ___, p:XMLPattern["p", "class" -> c_], ___}] :> {HTMLTextContent[h], HTMLTextContent[p]}], XMLFirstCase[$treeManyBefore, Child[XMLPattern[_], {___, h:XMLPattern["h2"], ___, p:XMLPattern["p"], ___}] /; h[[2]] === p[[2]] :> {HTMLTextContent[h], HTMLTextContent[p]}]},
+  {{{"1", "x"}, {"2", "y"}}, {"1", "x"}},
+  TestID -> "sibling-shared-name-element-once-bound-to-first-before-as-list"
+];
+
 (* Sibling as any link of a chain. An element that follows the p after some h2
    comes once, whichever h2 and p lead to it. *)
 TestCreate[
@@ -418,6 +540,12 @@ TestCreate[
      Sibling[Adjacent[XMLPattern["h2"], XMLPattern["h2"]], XMLPattern["p"]]]},
   {{"x", "y"}, {"x", "y"}, {"x", "y"}},
   TestID -> "sibling-in-chain-element-once"
+];
+
+TestCreate[
+  {XMLCases[$treeManyBefore, Child[XMLPattern["div"], {___, XMLPattern["h2", "class" -> c_], ___, p:XMLPattern["p", "class" -> c_], ___}] :> HTMLTextContent[p]], HTMLTextContent /@ XMLCases[$treeManyBefore, Child[XMLPattern[_], {___, XMLPattern["h2", "class" -> c_], ___, XMLPattern["h2", "class" -> c_], ___, XMLPattern["p"], ___}]], HTMLTextContent /@ XMLCases[$treeManyBefore, Child[XMLPattern[_], {___, XMLPattern["h2"], XMLPattern["h2"], ___, XMLPattern["p"], ___}]]},
+  {{"x", "y"}, {"x", "y"}, {"x", "y"}},
+  TestID -> "sibling-in-chain-element-once-as-list"
 ];
 
 (* === Descendant gives each element once === *)
@@ -455,6 +583,12 @@ TestCreate[
   TestID -> "descendant-in-chain-element-once"
 ];
 
+TestCreate[
+  {HTMLTextContent /@ XMLCases[$treeDeep, Descendant[XMLPattern["div"], Child[XMLPattern["div"], XMLPattern["p"]]]], HTMLTextContent /@ XMLCases[$treeDeep, Descendant[XMLPattern["html"], Descendant[XMLPattern["div"], XMLPattern["p"]]]], HTMLTextContent /@ XMLCases[$treeDeep, Child[Descendant[XMLPattern[_], XMLPattern["div"]], XMLPattern["p"]]], HTMLTextContent /@ XMLCases[$treeDeep, Descendant[XMLPattern["div"], {___, XMLPattern["p"], XMLPattern["p"], ___}]], HTMLTextContent /@ XMLCases[$treeDeep, Descendant[XMLPattern["div"], {___, XMLPattern[_], ___, XMLPattern["p"], ___}]]},
+  {{"1", "2"}, {"1", "2", "3"}, {"1", "2", "3"}, {"2"}, {"2", "3"}},
+  TestID -> "descendant-in-chain-element-once-as-list"
+];
+
 (* With a test on the combinator or a name at two stages, the ancestor is the
    outermost with which the whole pattern matches: here the inner div for the
    p "1". *)
@@ -472,6 +606,12 @@ TestCreate[
   TestID -> "descendant-tested-element-once"
 ];
 
+TestCreate[
+  {XMLCases[$treeDeep, Descendant[XMLPattern["div", "id" -> i_], p:XMLPattern["p"]] /; StringQ[i] :> {i, HTMLTextContent[p]}], XMLCases[$treeDeep, Descendant[XMLPattern["div", "id" -> i_], p:XMLPattern["p", "data-for" -> i_]] :> {i, HTMLTextContent[p]}], XMLCases[$treeDeep, Descendant[d:XMLPattern[_], Descendant[XMLPattern["div"], p:XMLPattern["p"]] /; True] /; True :> {First[d], HTMLTextContent[p]}], HTMLTextContent /@ XMLCases[$treeDeep, Descendant[XMLPattern["div", "id" -> i_], {___, XMLPattern["p"], ___, XMLPattern["p", "data-for" -> f_], ___}] /; f === i]},
+  {{{"a", "1"}, {"a", "2"}, {"a", "3"}}, {{"b", "1"}, {"a", "2"}, {"a", "3"}}, {{"html", "1"}, {"html", "2"}, {"html", "3"}}, {"2"}},
+  TestID -> "descendant-tested-element-once-as-list"
+];
+
 (* === One path for every combinator === *)
 
 (* A name on the earlier Sibling stage is bound in the body. *)
@@ -484,6 +624,12 @@ TestCreate[
   TestID -> "sibling-rule-binds-both-stages"
 ];
 
+TestCreate[
+  {XMLCases[$treeSiblings, Child[XMLPattern[_], {___, a:XMLPattern["h2"], ___, b:XMLPattern["p"], ___}] :> {HTMLTextContent[a], HTMLTextContent[b]}], XMLFirstCase[$treeSiblings, Child[XMLPattern[_], {___, a:XMLPattern["h2"], ___, b:XMLPattern["p"], ___}] :> {HTMLTextContent[a], HTMLTextContent[b]}]},
+  {{{"Title", "First"}, {"Title", "Second"}, {"Title", "Fourth"}}, {"Title", "First"}},
+  TestID -> "sibling-rule-binds-both-stages-as-list"
+];
+
 (* Siblings may be direct children of a root given as a bare XMLElement. *)
 $bareRoot = XMLElement["div", {},
   {XMLElement["h2", {}, {"T"}], XMLElement["p", {}, {"1"}], XMLElement["p", {}, {"2"}]}];
@@ -494,6 +640,12 @@ TestCreate[
    XMLFirstCase[$bareRoot, Adjacent[XMLPattern["h2"], x : XMLPattern["p"]] :> x[[3, 1]]]},
   {{"1"}, {"1", "2"}, "1"},
   TestID -> "sibling-relations-under-bare-root"
+];
+
+TestCreate[
+  {XMLCases[$bareRoot, Child[XMLPattern[_], {___, XMLPattern["h2"], XMLPattern["p"], ___}]][[All,3,1]], XMLCases[$bareRoot, Child[XMLPattern[_], {___, XMLPattern["h2"], ___, XMLPattern["p"], ___}]][[All,3,1]], XMLFirstCase[$bareRoot, Child[XMLPattern[_], {___, XMLPattern["h2"], x:XMLPattern["p"], ___}] :> x[[3,1]]]},
+  {{"1"}, {"1", "2"}, "1"},
+  TestID -> "sibling-relations-under-bare-root-as-list"
 ];
 
 (* === The root may be any stage but the last === *)
@@ -520,6 +672,12 @@ TestCreate[
    XMLCases[$root, Sibling[XMLPattern["body", "id" -> i_], XMLPattern[_, "id" -> i_]]]},
   {{}, {}, "none", {}, {}},
   TestID -> "root-has-no-siblings"
+];
+
+TestCreate[
+  {XMLCases[$root, Child[XMLPattern[_], {___, XMLPattern["body"], XMLPattern[_], ___}]], XMLCases[$root, Child[XMLPattern[_], {___, XMLPattern["body"], ___, XMLPattern[_], ___}]], XMLFirstCase[$root, Child[XMLPattern[_], {___, XMLPattern["body"], ___, XMLPattern[_], ___}] :> 1, "none"], XMLCases[$root, Child[XMLPattern[_], Child[{___, XMLPattern["body"], ___, XMLPattern[_], ___}, XMLPattern[_]]]], XMLCases[$root, Child[XMLPattern[_], {___, XMLPattern["body", "id" -> i_], ___, XMLPattern[_, "id" -> i_], ___}]]},
+  {{}, {}, "none", {}, {}},
+  TestID -> "root-has-no-siblings-as-list"
 ];
 
 (* As an ancestor, in a nested chain, and bound in a rule body or a combinator
@@ -550,6 +708,12 @@ TestCreate[
    XMLFirstCase[$treeOrder, Sibling[XMLPattern["h2"], x : XMLPattern[_]] :> HTMLTextContent[x]]},
   {{"B2", "2"}, {"B2", "2", "3"}, "B2", "B2"},
   TestID -> "combinator-results-in-document-order"
+];
+
+TestCreate[
+  {HTMLTextContent /@ XMLCases[$treeOrder, Child[XMLPattern[_], {___, XMLPattern["h2"], XMLPattern[_], ___}]], XMLCases[$treeOrder, Child[XMLPattern[_], {___, XMLPattern["h2"], ___, x:XMLPattern[_], ___}] :> HTMLTextContent[x]], HTMLTextContent[XMLFirstCase[$treeOrder, Child[XMLPattern[_], {___, XMLPattern["h2"], XMLPattern[_], ___}]]], XMLFirstCase[$treeOrder, Child[XMLPattern[_], {___, XMLPattern["h2"], ___, x:XMLPattern[_], ___}] :> HTMLTextContent[x]]},
+  {{"B2", "2"}, {"B2", "2", "3"}, "B2", "B2"},
+  TestID -> "combinator-results-in-document-order-as-list"
 ];
 
 (* === A test on a whole combinator sees every stage's names === *)
@@ -592,10 +756,15 @@ TestCreate[
    HTMLTextContent /@ XMLCases[
      XMLDeleteCases[$treeFor, Child[XMLPattern["div", "id" -> i_], XMLPattern["p", "data-for" -> f_]] /; f === i],
      XMLPattern["p"]],
-   XMLDeleteCases[$treeFor, Adjacent[XMLPattern["p"], XMLPattern["p"]] /; True]},
-  {"2", {"2"}, $Failed},
-  {XMLDeleteCases::unsupported},
+   HTMLTextContent @ XMLDeleteCases[$treeFor, Adjacent[XMLPattern["p"], XMLPattern["p"]] /; True]},
+  {"2", {"2"}, "1"},
   TestID -> "firstcase-and-deletecases-combinator-test"
+];
+
+TestCreate[
+  {XMLFirstCase[$treeFor, Child[XMLPattern["div", "id" -> i_], p:XMLPattern["p", "data-for" -> f_]] /; f =!= i :> HTMLTextContent[p]], HTMLTextContent /@ XMLCases[XMLDeleteCases[$treeFor, Child[XMLPattern["div", "id" -> i_], XMLPattern["p", "data-for" -> f_]] /; f === i], XMLPattern["p"]], HTMLTextContent[XMLDeleteCases[$treeFor, Child[XMLPattern[_], {___, XMLPattern["p"], XMLPattern["p"], ___}] /; True]]},
+  {"2", {"2"}, "1"},
+  TestID -> "firstcase-and-deletecases-combinator-test-as-list"
 ];
 
 (* === A Condition in a rule's body takes part in choosing === *)
@@ -628,6 +797,12 @@ TestCreate[
        {i, j} /; i === "b"]},
   {{"b"}, "b", {{"b", "2"}}},
   TestID -> "sibling-body-condition-chooses-sibling"
+];
+
+TestCreate[
+  {XMLCases[$treeHeads, Child[XMLPattern[_], {___, XMLPattern["h2", "id" -> i_], ___, XMLPattern["span"], ___}] :> i /; i === "b"], XMLFirstCase[$treeHeads, Child[XMLPattern[_], {___, XMLPattern["h2", "id" -> i_], ___, XMLPattern["span"], ___}] :> i /; i === "b"], XMLCases[$treeHeads, Child[XMLPattern[_], {___, XMLPattern["h2", "id" -> i_], XMLPattern["p", "id" -> j_], ___, XMLPattern["span"], ___}] :> {i, j} /; i === "b"]},
+  {{"b"}, "b", {{"b", "2"}}},
+  TestID -> "sibling-body-condition-chooses-sibling-as-list"
 ];
 
 (* The body is evaluated for each result once, as Cases evaluates it: not when
@@ -679,6 +854,12 @@ TestCreate[
   TestID -> "many-stage-combinator-is-right-nested-chain"
 ];
 
+TestCreate[
+  (Map[HTMLTextContent, #1, {2}] & )[{XMLCases[$treeChains, Child[XMLPattern["body"], XMLPattern["section"], XMLPattern["p"]]], XMLCases[$treeChains, Child[XMLPattern["body"], Child[XMLPattern["section"], XMLPattern["p"]]]], XMLCases[$treeChains, Descendant[XMLPattern["article"], XMLPattern["section"], XMLPattern["p"]]], XMLCases[$treeChains, Descendant[XMLPattern["article"], Descendant[XMLPattern["section"], XMLPattern["p"]]]], XMLCases[$treeChains, Child[XMLPattern[_], {___, XMLPattern["h2"], XMLPattern["p"], XMLPattern["span"], ___}]], XMLCases[$treeChains, Child[XMLPattern[_], {___, XMLPattern["h2"], XMLPattern["p"], XMLPattern["span"], ___}]], XMLCases[$treeChains, Child[XMLPattern[_], {___, XMLPattern["h2"], ___, XMLPattern["p"], ___, XMLPattern["span"], ___}]], XMLCases[$treeChains, Child[XMLPattern[_], {___, XMLPattern["h2"], ___, XMLPattern["p"], ___, XMLPattern["span"], ___}]]}],
+  {{"3"}, {"3"}, {"1"}, {"1"}, {"a"}, {"a"}, {"a", "b", "z"}, {"a", "b", "z"}},
+  TestID -> "many-stage-combinator-is-right-nested-chain-as-list"
+];
+
 (* Four stages, and a stage that is a combinator of another head. *)
 TestCreate[
   Map[HTMLTextContent, #, {2}] & @ {
@@ -692,6 +873,12 @@ TestCreate[
     XMLCases[$treeChains, Descendant[XMLPattern["body"], XMLPattern["div"], Adjacent[XMLPattern["p"], XMLPattern["span"]]]]},
   {{"3"}, {"1"}, {"y", "z"}, {"1"}, {"1"}, {"a", "b", "x", "z"}},
   TestID -> "many-stage-four-stages-and-mixed-heads"
+];
+
+TestCreate[
+  (Map[HTMLTextContent, #1, {2}] & )[{XMLCases[$treeChains, Child[XMLPattern["html"], XMLPattern["body"], XMLPattern["section"], XMLPattern["p"]]], XMLCases[$treeChains, Descendant[XMLPattern["body"], XMLPattern["article"], XMLPattern["section"], XMLPattern["p"]]], XMLCases[$treeChains, Child[XMLPattern[_], {___, XMLPattern["span"], ___, XMLPattern["p"], ___, XMLPattern["h2"], ___, XMLPattern["span"], ___}]], XMLCases[$treeChains, Descendant[XMLPattern["body"], Child[XMLPattern["article"], XMLPattern["section"]], XMLPattern["p"]]], XMLCases[$treeChains, Descendant[XMLPattern["body"], Descendant[Child[XMLPattern["article"], XMLPattern["section"]], XMLPattern["p"]]]], XMLCases[$treeChains, Descendant[XMLPattern["body"], Descendant[XMLPattern["div"], {___, XMLPattern["p"], XMLPattern["span"], ___}]]]}],
+  {{"3"}, {"1"}, {"y", "z"}, {"1"}, {"1"}, {"a", "b", "x", "z"}},
+  TestID -> "many-stage-four-stages-and-mixed-heads-as-list"
 ];
 
 (* Names scope as in the nested form: a rule body sees every stage's names, a
@@ -716,6 +903,12 @@ TestCreate[
   TestID -> "many-stage-names-scope-as-nested"
 ];
 
+TestCreate[
+  {XMLCases[$treeChains, Descendant[XMLPattern["article", "id" -> a_], XMLPattern["section", "id" -> s_], p:XMLPattern["p"]] :> {a, s, HTMLTextContent[p]}], XMLCases[$treeChains, Descendant[XMLPattern["article", "id" -> a_], Descendant[XMLPattern["section", "id" -> s_], p:XMLPattern["p"]]] :> {a, s, HTMLTextContent[p]}], HTMLTextContent /@ XMLCases[$treeChains, Descendant[XMLPattern["body"], XMLPattern["section", "id" -> s_], XMLPattern["p"]] /; s === "s2"], XMLCases[$treeChains, Descendant[XMLPattern[_, "id" -> a_], XMLPattern["section", "id" -> s_], XMLPattern["p"]] /; a =!= s :> {a, s}], HTMLTextContent /@ XMLCases[$treeChains, Descendant[XMLPattern["article", "id" -> a_], XMLPattern["section"] /; Head[a] === Symbol, XMLPattern["p"]]], HTMLTextContent /@ XMLCases[$treeChains, Child[XMLPattern[_], {___, XMLPattern[t_], ___, XMLPattern["h2"], ___, XMLPattern[t_], ___}]]},
+  {{{"art", "s1", "1"}}, {{"art", "s1", "1"}}, {"3"}, {{"art", "s1"}}, {"1"}, {"y", "7", "z"}},
+  TestID -> "many-stage-names-scope-as-nested-as-list"
+];
+
 (* Every consumer reads a combinator of many stages as the nested one. XMLMatchQ and the
    "Roles" and "Constructs" rules test one element, so they refuse it as they
    refuse any combinator. *)
@@ -729,10 +922,23 @@ TestCreate[
 ];
 
 TestCreate[
-  XMLDeleteCases[$treeChains, Descendant[XMLPattern["body"], XMLPattern["div"], Sibling[XMLPattern["p"], XMLPattern["span"]]]],
-  $Failed,
-  {XMLDeleteCases::unsupported},
-  TestID -> "many-stage-deletecases-sibling-unsupported"
+  {HTMLTextContent[XMLFirstCase[$treeChains, Child[XMLPattern[_], {___, XMLPattern["h2"], ___, XMLPattern["p"], ___, XMLPattern["span"], ___}]]], XMLFirstCase[$treeChains, Descendant[XMLPattern["article", "id" -> a_], XMLPattern["section"], XMLPattern["p"]] :> a], HTMLTextContent[XMLDeleteCases[$treeChains, Child[XMLPattern["body"], XMLPattern["section"], XMLPattern["p"]]]], HTMLTextContent[XMLDeleteCases[$treeChains, Descendant[XMLPattern["body"], XMLPattern["div"], XMLPattern["p"]]]]},
+  {"a", "art", "12h4a5bw6xhy7z", "123habwxhyz"},
+  TestID -> "many-stage-in-firstcase-and-deletecases-as-list"
+];
+
+(* Sibling is a list stage (ADR 0016), so XMLDeleteCases deletes what it
+   selects at any depth. *)
+TestCreate[
+  HTMLTextContent @ XMLDeleteCases[$treeChains, Descendant[XMLPattern["body"], XMLPattern["div"], Sibling[XMLPattern["p"], XMLPattern["span"]]]],
+  "123h45w6h7",
+  TestID -> "many-stage-deletecases-sibling"
+];
+
+TestCreate[
+  HTMLTextContent[XMLDeleteCases[$treeChains, Descendant[XMLPattern["body"], Descendant[XMLPattern["div"], {___, XMLPattern["p"], ___, XMLPattern["span"], ___}]]]],
+  "123h45w6h7",
+  TestID -> "many-stage-deletecases-sibling-as-list"
 ];
 
 TestCreate[
