@@ -10,14 +10,14 @@ CSSClass::usage = "CSSClass is obsolete. Match an element's class list with the 
 $AttributeReadings::usage = "$AttributeReadings is an Association that gives, for each attribute it names, how the attribute value is split into a list of tokens and the list key that gives that list in an XMLPattern. Each entry is an Association with the fields Method, Delimiters, \"TrimWhitespace\" and \"ListKey\", any of which can be omitted. Method \"SpaceSeparated\" (the default) splits on HTMLWhitespace and does not trim tokens. Method \"CommaSeparated\" splits on \",\" and trims HTML whitespace from each token. Delimiters (a string pattern) and \"TrimWhitespace\" (True or False) override the setting that Method gives. \"ListKey\" -> Automatic gives the attribute name followed by \"List\". Keys are attribute names given as strings; a {namespace, name} attribute cannot have an entry. By default, $AttributeReadings has one entry, for \"class\", with the list key \"classList\". The \"AttributeReadings\" option of functions such as XMLCases adds entries for one call, and an entry for an attribute already present replaces it. Block[{$AttributeReadings = ...}, ...] replaces the whole Association, including the \"class\" entry.";
 HTMLWhitespace::usage = "HTMLWhitespace is a string pattern that matches a run of one or more HTML whitespace characters: space, tab, line feed, form feed and carriage return. Use StringSplit[value, HTMLWhitespace] to split a class attribute as a browser does. HTMLWhitespace does not match no-break space or other Unicode whitespace, which StringSplit splits on by default.";
 HTMLClassList::usage = "HTMLClassList[element] gives the classes of an XMLElement as a list of strings: its class attribute split on HTMLWhitespace, in the order written and with duplicates kept. An element with no class attribute, or with a class attribute that is empty or only whitespace, gives {}. HTMLClassList takes a single element; for many elements, use HTMLClassList /@ XMLCases[tree, pattern].";
-XMLCases::usage = "XMLCases[tree, pattern] gives a list of the elements of tree, at any depth, that match pattern. The elements are in document order: an element comes before the elements nested in it, and an earlier sibling before a later one. tree itself is never included. pattern can be an XMLPattern, alternatives of them, a Child, Descendant, Adjacent or Sibling combinator, or any of these with a condition pat /; test. An XMLPattern or alternatives of them can also have a test pat?f, which applies f to the element. A CSS selector string, such as \"div.note > p\", can be given wherever a pattern goes, and means FromCSSSelector[string]. XMLCases[tree, pattern :> body] gives the value of body for each match, evaluated in document order. XMLCases[tree, pattern -> rhs] evaluates rhs once, before any matching, as Cases does, and gives its value for each match, with the names in pattern replaced by what they matched. XMLCases[tree, pattern, n] gives the first n of these, in document order, or all of them if there are fewer; n is a non-negative integer or Infinity. With pattern :> body, body is evaluated only for the matches it gives. A combinator gives each element that its last stage matches once. If tree is an XMLElement, tree can match any stage of a combinator except the last. A name for a whole element, as in e : XMLPattern[...], gives the element as it appears in tree, without list keys such as \"classList\". XMLCases[tree, pattern, \"AttributeReadings\" -> readings] adds readings to $AttributeReadings for this call.";
+XMLCases::usage = "XMLCases[tree, pattern] gives a list of the elements of tree, at any depth, that match pattern. The elements are in document order: an element comes before the elements nested in it, and an earlier sibling before a later one. tree itself is never included. pattern can be an XMLPattern, a Child, Descendant, Adjacent or Sibling combinator, alternatives of any of these, or any of these with a condition pat /; test. An XMLPattern or alternatives of them can also have a test pat?f, which applies f to the element. A CSS selector string, such as \"div.note > p\", can be given wherever a pattern goes, and means FromCSSSelector[string]. XMLCases[tree, pattern :> body] gives the value of body for each match, evaluated in document order. XMLCases[tree, pattern -> rhs] evaluates rhs once, before any matching, as Cases does, and gives its value for each match, with the names in pattern replaced by what they matched. XMLCases[tree, pattern, n] gives the first n of these, in document order, or all of them if there are fewer; n is a non-negative integer or Infinity. With pattern :> body, body is evaluated only for the matches it gives. A combinator gives each element that its last stage matches once. Alternatives that hold a combinator give each element that any of them matches once, and a name bound only in an alternative that did not match is Sequence[], as in Cases. If several alternatives match an element, the first of them that matches binds the names. If tree is an XMLElement, tree can match any stage of a combinator except the last. A name for a whole element, as in e : XMLPattern[...], gives the element as it appears in tree, without list keys such as \"classList\". XMLCases[tree, pattern, \"AttributeReadings\" -> readings] adds readings to $AttributeReadings for this call.";
 XMLFirstCase::usage = "XMLFirstCase[tree, pattern] gives the first element of tree that matches pattern, in document order, or Missing[\"NotFound\"] if there is none. Of nested matches, it gives the outermost. XMLFirstCase[tree, pattern, default] gives default if there is no match. XMLFirstCase accepts the same patterns as XMLCases, including a CSS selector string, and gives the first element of the list that XMLCases gives. With pattern :> body, body is evaluated only for the match that XMLFirstCase returns. With pattern -> rhs, rhs is evaluated once, before any matching, as in FirstCase, and the names in pattern are replaced in its value by what they matched. The \"AttributeReadings\" option adds readings to $AttributeReadings, as in XMLCases.";
-XMLDeleteCases::usage = "XMLDeleteCases[tree, pattern] gives tree with every element that matches pattern removed, at any depth. pattern can be an XMLPattern, alternatives of them, a Child or Descendant combinator, or any of these with a condition pat /; test. An XMLPattern or alternatives of them can also have a test pat?f, which applies f to the element. A CSS selector string can be given wherever a pattern goes, and means FromCSSSelector[string]. Combinators can be nested, and each stage can have a condition. A combinator removes the elements that its last stage matches. As in XMLCases, if tree is an XMLElement, tree can match any stage of a combinator except the last. Adjacent and Sibling cannot be used, even as a stage of another combinator. The \"AttributeReadings\" option adds readings to $AttributeReadings, as in XMLCases.";
+XMLDeleteCases::usage = "XMLDeleteCases[tree, pattern] gives tree with every element that matches pattern removed, at any depth. pattern can be an XMLPattern, a Child or Descendant combinator, alternatives of any of these, or any of these with a condition pat /; test. An XMLPattern or alternatives of them can also have a test pat?f, which applies f to the element. A CSS selector string can be given wherever a pattern goes, and means FromCSSSelector[string]. Combinators can be nested, and each stage can have a condition. A combinator removes the elements that its last stage matches. As in XMLCases, if tree is an XMLElement, tree can match any stage of a combinator except the last. Adjacent and Sibling cannot be used, even as a stage of another combinator or in one of several alternatives. The \"AttributeReadings\" option adds readings to $AttributeReadings, as in XMLCases.";
 XMLMatchQ::usage = "XMLMatchQ[element, pattern] gives True if element matches pattern, and False otherwise. XMLMatchQ[pattern] is an operator form. pattern can be an XMLPattern, alternatives of them, or either with a condition pat /; test or a test pat?f, or a CSS selector string that describes one element, such as \"a.external\". XMLMatchQ tests the element itself, not the elements nested in it; use XMLCases to search a tree. The \"AttributeReadings\" option adds readings to $AttributeReadings, in both XMLMatchQ[element, pattern, opts] and XMLMatchQ[pattern, opts].";
-Child::usage = "Child[parentPat, childPat] is a combinator for XMLCases, XMLFirstCase and XMLDeleteCases that matches elements that match childPat and are direct children of an element that matches parentPat. Child[pat1, pat2, pat3, ...] is Child[pat1, Child[pat2, pat3, ...]], so Child[a, b, c] matches each c that is a child of a b that is a child of an a. Each argument is a stage: an XMLPattern, alternatives of them, another combinator, or a CSS selector string. Stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements. A condition on a stage can use the names bound in that stage. A condition on the whole combinator can use the names bound in all its stages.";
-Adjacent::usage = "Adjacent[beforePat, afterPat] is a combinator for XMLCases and XMLFirstCase that matches elements that match afterPat and immediately follow a sibling that matches beforePat. Adjacent[pat1, pat2, pat3, ...] is Adjacent[pat1, Adjacent[pat2, pat3, ...]], so Adjacent[a, b, c] matches each c that immediately follows a b that immediately follows an a. Each argument is a stage: an XMLPattern, alternatives of them, another combinator, or a CSS selector string. Stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements. A condition on a stage can use the names bound in that stage. A condition on the whole combinator can use the names bound in all its stages.";
-Sibling::usage = "Sibling[beforePat, afterPat] is a combinator for XMLCases and XMLFirstCase that matches elements that match afterPat and follow a sibling that matches beforePat, at any distance. Each such element is given once. A name bound in beforePat, as used in a rule body, gives the first matching earlier sibling in document order. Sibling[pat1, pat2, pat3, ...] is Sibling[pat1, Sibling[pat2, pat3, ...]], so Sibling[a, b, c] matches each c that follows a b that follows an a. Each argument is a stage: an XMLPattern, alternatives of them, another combinator, or a CSS selector string. Stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements. A condition on a stage can use the names bound in that stage. A condition on the whole combinator can use the names bound in all its stages.";
-Descendant::usage = "Descendant[ancestorPat, descPat] is a combinator for XMLCases, XMLFirstCase and XMLDeleteCases that matches elements that match descPat and are nested at any depth inside an element that matches ancestorPat. Each such element is given once, however many of its ancestors match. A name bound in ancestorPat, as used in a rule body, gives the outermost matching ancestor. Descendant[pat1, pat2, pat3, ...] is Descendant[pat1, Descendant[pat2, pat3, ...]], so Descendant[a, b, c] matches each c inside a b inside an a. Each argument is a stage: an XMLPattern, alternatives of them, another combinator, or a CSS selector string. Stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements. A condition on a stage can use the names bound in that stage. A condition on the whole combinator can use the names bound in all its stages.";
+Child::usage = "Child[parentPat, childPat] is a combinator for XMLCases, XMLFirstCase and XMLDeleteCases that matches elements that match childPat and are direct children of an element that matches parentPat. Child[pat1, pat2, pat3, ...] is Child[pat1, Child[pat2, pat3, ...]], so Child[a, b, c] matches each c that is a child of a b that is a child of an a. Each argument is a stage: an XMLPattern, another combinator, a CSS selector string, or alternatives of these. A stage that is alternatives holding a combinator is each of them in turn, so Child[a, Descendant[b, c] | d] matches each c inside a b that is a child of an a, and each d that is a child of an a. Stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements. A condition on a stage can use the names bound in that stage. A condition on the whole combinator can use the names bound in all its stages.";
+Adjacent::usage = "Adjacent[beforePat, afterPat] is a combinator for XMLCases and XMLFirstCase that matches elements that match afterPat and immediately follow a sibling that matches beforePat. Adjacent[pat1, pat2, pat3, ...] is Adjacent[pat1, Adjacent[pat2, pat3, ...]], so Adjacent[a, b, c] matches each c that immediately follows a b that immediately follows an a. Each argument is a stage: an XMLPattern, another combinator, a CSS selector string, or alternatives of these. A stage that is alternatives holding a combinator is each of them in turn, so Child[a, Descendant[b, c] | d] matches each c inside a b that is a child of an a, and each d that is a child of an a. Stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements. A condition on a stage can use the names bound in that stage. A condition on the whole combinator can use the names bound in all its stages.";
+Sibling::usage = "Sibling[beforePat, afterPat] is a combinator for XMLCases and XMLFirstCase that matches elements that match afterPat and follow a sibling that matches beforePat, at any distance. Each such element is given once. A name bound in beforePat, as used in a rule body, gives the first matching earlier sibling in document order. Sibling[pat1, pat2, pat3, ...] is Sibling[pat1, Sibling[pat2, pat3, ...]], so Sibling[a, b, c] matches each c that follows a b that follows an a. Each argument is a stage: an XMLPattern, another combinator, a CSS selector string, or alternatives of these. A stage that is alternatives holding a combinator is each of them in turn, so Child[a, Descendant[b, c] | d] matches each c inside a b that is a child of an a, and each d that is a child of an a. Stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements. A condition on a stage can use the names bound in that stage. A condition on the whole combinator can use the names bound in all its stages.";
+Descendant::usage = "Descendant[ancestorPat, descPat] is a combinator for XMLCases, XMLFirstCase and XMLDeleteCases that matches elements that match descPat and are nested at any depth inside an element that matches ancestorPat. Each such element is given once, however many of its ancestors match. A name bound in ancestorPat, as used in a rule body, gives the outermost matching ancestor. Descendant[pat1, pat2, pat3, ...] is Descendant[pat1, Descendant[pat2, pat3, ...]], so Descendant[a, b, c] matches each c inside a b inside an a. Each argument is a stage: an XMLPattern, another combinator, a CSS selector string, or alternatives of these. A stage that is alternatives holding a combinator is each of them in turn, so Child[a, Descendant[b, c] | d] matches each c inside a b that is a child of an a, and each d that is a child of an a. Stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements. A condition on a stage can use the names bound in that stage. A condition on the whole combinator can use the names bound in all its stages.";
 FromCSSSelector::usage = "FromCSSSelector[\"selector\"] gives the XML pattern that a CSS selector describes, for use in XMLCases, XMLFirstCase, XMLDeleteCases and XMLMatchQ, or as a stage of Child, Descendant, Adjacent or Sibling. A CSS selector string can also be given directly wherever these take a pattern, and means its translation. The selector is matched as written: letter case matters in tag names, attribute names and values, and attributes that the HTML importer adds, such as rowspan=\"1\", count as present. [foo~=\"x\"] becomes \"fooList\" -> \"x\", which needs a reading for foo in $AttributeReadings or in the \"AttributeReadings\" option of the function that runs the query.";
 HTMLTextContent::usage ="HTMLTextContent[tree] gives the text of an XML tree: all the strings it contains, joined in document order. No whitespace is added or removed, so source indentation and the whitespace in <pre> are kept. tree can be an XMLElement, an XMLObject document, a list, or a string.";
 HTMLInnerText::usage = "HTMLInnerText[tree] gives the readable text of an XML tree. Runs of whitespace are collapsed, block-level elements go on their own lines, <br> becomes a newline, <pre> content is kept as written, tags such as script and style are dropped, and the result is trimmed. How each element is treated depends only on its tag, as given by the built-in user-agent stylesheet. HTMLInnerText[tree, \"Roles\" -> rules] changes this, with rules of the form pattern -> role, where pattern is an XMLPattern or a CSS selector string and role is \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\" or \"Skip\". \"BlockSeparator\" -> sep sets the string inserted between blocks (default \"\\n\"). \"AttributeReadings\" -> readings adds readings to $AttributeReadings for this call. tree can be an XMLElement, an XMLObject document, a list, or a string.";
@@ -33,18 +33,18 @@ XMLPattern::badkey = "An attribute key should be a string, a {namespace, name} p
 XMLPattern::dupkey = "The attribute key `1` appears in more than one constraint, so the pattern can never match. Combine the constraints into one value pattern.";
 XMLPattern::strpat = "`1` is a string pattern, and in an XMLPattern it does not match any string. Write _?(StringMatchQ[`1`]) instead.";
 XMLCases::badtree = "The first argument should be an XMLObject, an XMLElement, or a list of these. Got head `1`.";
-XMLCases::badpat = "The second argument should be an XMLPattern, alternatives of them, a Child, Descendant, Adjacent or Sibling combinator, a CSS selector string, or a rule pattern -> rhs or pattern :> body with one of these. Each can have a condition (/;), and an XMLPattern or alternatives of them can be named or have a test (?). Got `1`.";
+XMLCases::badpat = "The second argument should be an XMLPattern, a Child, Descendant, Adjacent or Sibling combinator, a CSS selector string, alternatives of any of these, or a rule pattern -> rhs or pattern :> body with one of these. Each can have a condition (/;). An XMLPattern or alternatives of them can also be named or have a test (?), but a combinator, or alternatives that hold one, cannot. Got `1`.";
 XMLCases::stages = "A combinator such as Child or Descendant needs at least two stages, as in Descendant[a, b] or Descendant[a, b, c]. Got `1`.";
 XMLCases::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
 XMLFirstCase::badtree = "The first argument should be an XMLObject, an XMLElement, or a list of these. Got head `1`.";
-XMLFirstCase::badpat = "The second argument should be an XMLPattern, alternatives of them, a Child, Descendant, Adjacent or Sibling combinator, a CSS selector string, or a rule pattern -> rhs or pattern :> body with one of these. Each can have a condition (/;), and an XMLPattern or alternatives of them can be named or have a test (?). Got `1`.";
+XMLFirstCase::badpat = "The second argument should be an XMLPattern, a Child, Descendant, Adjacent or Sibling combinator, a CSS selector string, alternatives of any of these, or a rule pattern -> rhs or pattern :> body with one of these. Each can have a condition (/;). An XMLPattern or alternatives of them can also be named or have a test (?), but a combinator, or alternatives that hold one, cannot. Got `1`.";
 XMLFirstCase::stages = "A combinator such as Child or Descendant needs at least two stages, as in Descendant[a, b] or Descendant[a, b, c]. Got `1`.";
 XMLFirstCase::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
 XMLDeleteCases::badtree = "The first argument should be an XMLObject, an XMLElement, or a list of these. Got head `1`.";
-XMLDeleteCases::badpat = "The second argument should be an XMLPattern, alternatives of them, a Child or Descendant combinator, or a CSS selector string. Each can have a condition (/;), and an XMLPattern or alternatives of them can be named or have a test (?). A rule, whether pattern -> rhs or pattern :> body, cannot be used. Got `1`.";
+XMLDeleteCases::badpat = "The second argument should be an XMLPattern, a Child or Descendant combinator, a CSS selector string, or alternatives of any of these. Each can have a condition (/;). An XMLPattern or alternatives of them can also be named or have a test (?), but a combinator, or alternatives that hold one, cannot. A rule, whether pattern -> rhs or pattern :> body, cannot be used. Got `1`.";
 XMLDeleteCases::stages = "A combinator such as Child or Descendant needs at least two stages, as in Descendant[a, b] or Descendant[a, b, c]. Got `1`.";
 XMLDeleteCases::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
-XMLDeleteCases::unsupported = "XMLDeleteCases cannot use Adjacent or Sibling, either as the pattern or as a stage of another combinator.";
+XMLDeleteCases::unsupported = "XMLDeleteCases cannot use Adjacent or Sibling, either as the pattern, as a stage of another combinator, or in any of the alternatives.";
 XMLMatchQ::badpat = "The pattern should be an XMLPattern, alternatives of them, or either with a condition pat /; test or a test pat?f, or a CSS selector string that describes one element. Got `1`.";
 XMLMatchQ::stages = "`1` is a combinator with fewer than two stages. A combinator needs at least two, but XMLMatchQ tests a lone element and cannot use one; use XMLCases or XMLFirstCase to search a tree with it.";
 XMLMatchQ::condcombinator = "A condition (/;) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Got `1`.";
@@ -399,6 +399,13 @@ literalBody[body_Hold] := body;
 
 normalForm[chain[stages_, links_, conditions_], body_] :=
   <|"Stages" -> stages, "Links" -> links, "Conditions" -> conditions, "Body" -> body|>;
+(* Alternatives holding a combinator are the list of their chains, each with
+   the body in which the names the query binds and it does not are Sequence[]
+   (ADR 0015). *)
+normalForm[union[cs_], body_] :=
+  With[{names = unionNames[cs]},
+    <|"Alternatives" -> (normalForm[#, unboundEmpty[body, Complement[names, chainNames[#]]]] & /@ cs),
+      "Body" -> body|>];
 
 (* A combinator's stages are element patterns or combinators, compiled to
    chain[stages, links, conditions]. A Condition on a combinator sees the names
@@ -411,32 +418,66 @@ cStage[c : Verbatim[Condition][_String, _]] := cStage[conditionWith[cssPattern[c
 cStage[(h : $links)[a_, b_]] := joinChains[cStage[a], h, cStage[b]];
 cStage[(h : $links)[a_, b_, rest__]] := cStage[h[a, h[b, rest]]];
 cStage[q : $links[RepeatedNull[_, 1]]] := refuseAtHead["stages", q];
-cStage[c_Condition] /; combinatorQ[patternBase[c]] := conditioned[cStage, c, coverChain];
+cStage[c_Condition] /; multiStageQ[patternBase[c]] := conditioned[cStage, c, coverChain];
 (* A test on a combinator would only restate a test on its last stage, so it is
    refused until a CSS selector string can be a combinator (ADR 0014). *)
-cStage[t : Verbatim[PatternTest][x_, _]] /; combinatorQ[patternBase[x]] := refuseAtHead["testcombinator", t];
+cStage[t : Verbatim[PatternTest][x_, _]] /; multiStageQ[patternBase[x]] := refuseAtHead["testcombinator", t];
+(* Alternatives holding a combinator are union[{chain, ...}], one chain per
+   alternative, in written order (ADR 0015). Alternatives of element patterns
+   stay one stage. *)
+cStage[alts_Alternatives] /; AnyTrue[List @@ alts, multiStageQ] := toUnion[Join @@ (chainsOf[cStage[#]] & /@ List @@ alts)];
 cStage[q_] := chain[{cElem[q]}, {}, {}];
+
+chainsOf[union[cs_]] := cs;
+chainsOf[c_chain] := {c};
+
+toUnion[{c_}] := c;
+toUnion[cs_] := union[cs];
 
 joinChains[chain[s1_, l1_, c1_], link_, chain[s2_, l2_, c2_]] :=
   chain[Join[s1, s2], Join[l1, {link}, l2],
     Join[c1, Replace[c2, {span_, test_} :> {span + Length[s1], test}, {1}]]];
+(* A stage that is alternatives distributes: the chains of the product, the
+   leftmost alternative most significant. *)
+joinChains[a_, link_, b_] :=
+  toUnion[Flatten[Outer[joinChains[#1, link, #2] &, chainsOf[a], chainsOf[b], 1]]];
 
 coverChain[chain[s_, l_, c_], test_] := chain[s, l, Append[c, {{1, Length[s]}, test}]];
+(* A Condition on alternatives covers each of their chains, and a name bound
+   only in another alternative is Sequence[] in it, as in WL. *)
+coverChain[union[cs_], test_] :=
+  With[{names = unionNames[cs]},
+    union[coverChain[#, unboundEmpty[test, Complement[names, chainNames[#]]]] & /@ cs]];
+
+(* The names a chain's stages bind, after any renaming, each Hold[name]. *)
+chainNames[chain[s_, _, _]] := Union @@ (namesIn /@ s);
+unionNames[cs_] := Union @@ (chainNames /@ cs);
+
+(* Held code with each of names replaced by Sequence[]. Code that is only
+   such a name stays one expression, which evaluates to Sequence[]. *)
+unboundEmpty[held_, {}] := held;
+unboundEmpty[None, _] := None;
+unboundEmpty[held_, names_] :=
+  Replace[held /. Replace[names, Hold[n_] :> (HoldPattern[n] :> Sequence[]), {1}], Hold[] -> Hold[Sequence @@ {}]];
 
 (* ---- Element patterns ---- *)
 
 cElem[XMLPattern[args___]] := cXMLPattern[{args}];
 (* A string that gives a combinator is not an element pattern, and is named as
    written. *)
-cElem[s_String] := With[{t = cssPattern[s]}, If[combinatorQ[patternBase[t]], badpat[s], cElem[t]]];
-(* A combinator, or a CSS selector string that gives one. *)
-stageCombinatorQ[s_String] := combinatorQ[patternBase[cssPattern[s]]];
-stageCombinatorQ[p_] := combinatorQ[p];
+cElem[s_String] := With[{t = cssPattern[s]}, If[multiStageQ[t], badpat[s], cElem[t]]];
+(* An XML pattern of several stages: a combinator or alternatives holding one,
+   with any name, Condition or test, or a CSS selector string that gives one. *)
+multiStageQ[s_String] := multiStageQ[cssPattern[s]];
+multiStageQ[p_] :=
+  With[{b = patternBase[p]}, combinatorQ[b] || MatchQ[b, _Alternatives] && AnyTrue[List @@ b, multiStageQ]];
 (* A combinator is not an element pattern; the whole Alternatives is named. *)
-cElem[alts_Alternatives] /; AnyTrue[List @@ alts, stageCombinatorQ] := badpat[alts];
+cElem[alts_Alternatives] /; AnyTrue[List @@ alts, multiStageQ] := badpat[alts];
 cElem[alts_Alternatives] := Alternatives @@ (cElem /@ List @@ alts);
+(* A named combinator, or named alternatives holding one, would bind a Sequence
+   of elements, which says nothing of how they relate (ADR 0015). *)
 cElem[Verbatim[Pattern][s_Symbol, p_]] :=
-  If[stageCombinatorQ[p], badpat[namedPattern[s, p]], bindAs[s, cElem[p], strip]];
+  If[multiStageQ[p], badpat[namedPattern[s, p]], bindAs[s, cElem[p], strip]];
 cElem[c_Condition] := conditioned[cElem, c, conditionWith];
 (* The same refusal, for a tested combinator inside Alternatives or a name. *)
 cElem[t : Verbatim[PatternTest][x_, _]] /; combinatorQ[patternBase[x]] := refuseAtHead["testcombinator", t];
@@ -714,11 +755,11 @@ sowElementNames[_] := Null;
 (* At most the first n of the elements, in document order. *)
 queryCases[$Failed, _, _] := $Failed;
 queryCases[c_, tree_, n_] :=
-  If[treeRefusedQ[c, tree], $Failed, runCompiled[If[chainQ[c], chainCases, casesC], tree, c, n]];
+  If[treeRefusedQ[c, tree], $Failed, runCompiled[runnerOf[c, unionCases, chainCases, casesC], tree, c, n]];
 
 queryFirst[$Failed, _, _] := $Failed;
 queryFirst[c_, tree_, default_] :=
-  If[treeRefusedQ[c, tree], $Failed, runCompiled[If[chainQ[c], chainFirst, firstC], tree, c, default]];
+  If[treeRefusedQ[c, tree], $Failed, runCompiled[runnerOf[c, unionFirst, chainFirst, firstC], tree, c, default]];
 
 (* A rule has nothing to delete with; deletion by relative position (Adjacent,
    Sibling) is a niche operation, documented as unsupported. *)
@@ -727,9 +768,14 @@ queryDelete[c_, tree_] :=
   With[{h = c["Head"]},
     Which[
       c["Body"] =!= None, Message[MessageName[h, "badpat"], c["Query"]]; $Failed,
-      MemberQ[c["Links"], Adjacent | Sibling], Message[MessageName[h, "unsupported"]]; $Failed,
+      MemberQ[Join @@ Lookup[alternativesOf[c], "Links"], Adjacent | Sibling],
+        Message[MessageName[h, "unsupported"]]; $Failed,
       treeRefusedQ[c, tree], $Failed,
-      True, runCompiled[If[chainQ[c], chainDelete, deleteC], tree, c]]];
+      True, runCompiled[runnerOf[c, unionDelete, chainDelete, deleteC], tree, c]]];
+
+(* A query of alternatives holding a combinator runs as their chains, any
+   other combinator as one chain. *)
+runnerOf[c_, union_, chain_, plain_] := Which[unionQ[c], union, chainQ[c], chain, True, plain];
 
 (* A function that tests one element, or $Failed if the query is refused. Only
    the element itself is materialised: its children cannot be reached. *)
@@ -753,15 +799,15 @@ elementQuery[$Failed, _, _, _] := $Failed;
 elementQuery[c_, q_, head_, tag_] :=
   With[{h = head},
     Which[
-      c["Links"] === {}, c,
-      c["Conditions"] === {} || StringQ[q], Message[MessageName[h, tag], q]; $Failed,
+      !unionQ[c] && c["Links"] === {}, c,
+      AllTrue[alternativesOf[c], #["Conditions"] === {} &] || StringQ[q], Message[MessageName[h, tag], q]; $Failed,
       True, Message[MessageName[h, "condcombinator"], patternBase[q]]; $Failed]];
 
 (* Materialise once per query, over the union of the list keys all its stages
    name; strip once, at the output. A chain runner is given the normal form, a
    plain runner the pattern or rule it runs. *)
 runCompiled[run_, tree_, q_, rest___] :=
-  With[{p = If[chainQ[q], q, plainQuery[q]]},
+  With[{p = If[unionQ[q] || chainQ[q], q, plainQuery[q]]},
     If[q["Readings"] === {}, run[tree, p, rest],
       strip @ run[materialise[tree, q["Readings"]], p, rest]]];
 
@@ -788,6 +834,10 @@ plainQuery[q_] :=
 
 (* Every combinator query runs as a chain, nested or not, tested or not. *)
 chainQ[q_] := q["Links"] =!= {};
+
+(* A query of alternatives holding a combinator runs as several (ADR 0015). *)
+unionQ[q_] := KeyExistsQ[q, "Alternatives"];
+alternativesOf[q_] := If[unionQ[q], q["Alternatives"], {q}];
 
 (* The stages and links, alternating, as the chain runner reads them. *)
 chainOf[q_] := Riffle[solvable /@ q["Stages"], q["Links"]];
@@ -1024,6 +1074,94 @@ ruleValues[q_] :=
 chainDelete[tree_, q_] :=
   Block[{$chainTree = tree},
     deleteAt[tree, DeleteDuplicates[Last /@ matchedSites[q]]]];
+
+(* =========================================================== *)
+(* Alternatives of chains (ADR 0015)                            *)
+(*                                                              *)
+(* Alternatives holding a combinator run as the list of their   *)
+(* chains, in disjunctive normal form, over one materialised    *)
+(* tree, and are merged per element, as XPath's union merges    *)
+(* node sets: each element once, in document order, from the    *)
+(* first alternative, in written order, that accepts it. Each   *)
+(* chain chooses its own tuple by ADR 0014's rule, so the       *)
+(* choice of alternative ranks above every choice of stage. An  *)
+(* alternative that is an element pattern is a chain of one     *)
+(* stage, and selects what a plain query with it selects, never *)
+(* the root.                                                    *)
+(* =========================================================== *)
+
+(* The site tuples of alternative a that test accepts, test None when its
+   stages decide, in document order of their last sites. *)
+alternativeSites[a_, test_] /; a["Links"] === {} :=
+  With[{ts = List /@ elementSites[First[a["Stages"]]]}, If[test === None, ts, Select[ts, test]]];
+alternativeSites[a_, test_] := siteTuples[chainOf[a], test];
+
+(* The sites below the root that s matches, in document order. *)
+elementSites[s_] :=
+  Replace[Position[$chainTree, solvable[s], Infinity, Heads -> False], {{} -> {}, ps_ :> fromCasesOrder[ps]}];
+
+(* The accepted tuples of alternative a whose last site keep accepts, each
+   {tuple}, or {tuple, value} when the body can reject and so is evaluated in
+   choosing one. keep is tested first, so a site an earlier alternative took is
+   not tried again, and its body not evaluated. *)
+acceptedTuples[a_, keep_] /; bodyRejectsQ[a] :=
+  Module[{rule = tupleRule[a], values = <||>, tuples},
+    tuples = alternativeSites[a,
+      Function[t, keep[Last[t]] && With[{v = Replace[atAll[t], {rule, _ :> $unmatched}]},
+        v =!= $unmatched && (values[t] = v; True)]]];
+    {#, values[#]} & /@ tuples];
+acceptedTuples[a_, keep_] :=
+  With[{test = If[stagesDecideQ[a], None, MatchQ[solvable[tuplePattern[a]]] @* atAll]},
+    List /@ Select[alternativeSites[a, If[test === None, None, keep[Last[#]] && test[#] &]], keep @* Last]];
+
+(* For each alternative in order, its accepted entries {k, tuple} or {k, tuple,
+   value}, k its index, of the sites no earlier alternative took. *)
+unionEntries[q_] :=
+  Module[{taken = <||>},
+    Join @@ MapIndexed[
+      Function[{a, k}, With[{es = acceptedTuples[a, !KeyExistsQ[taken, #] &]},
+        Scan[(taken[Last[First[#]]] = True) &, es];
+        Prepend[#, First[k]] & /@ es]],
+      q["Alternatives"]]];
+
+(* What an entry gives: its element, or its value, the body evaluated now when
+   it was not in choosing the entry. *)
+entryResult[q_, rules_][{k_, t_}] := If[q["Body"] === None, at[Last[t]], Replace[atAll[t], rules[[k]]]];
+entryResult[_, _][{_, _, v_}] := v;
+
+inSiteOrder[es_] := es[[documentOrdering[es[[All, 2, -1]]]]];
+
+entryRules[q_] := If[q["Body"] === None, None, tupleRule /@ q["Alternatives"]];
+
+unionCases[tree_, q_, n_] :=
+  Block[{$chainTree = tree},
+    With[{es = Take[inSiteOrder[unionEntries[q]], UpTo[n]]},
+      If[q["Body"] === None, atAll[es[[All, 2, -1]]], entryResult[q, entryRules[q]] /@ es]]];
+
+(* Each alternative stops at its first accepted entry before the best so far:
+   the answer is the earliest, ties going to the earlier alternative, as one
+   element can only tie with itself. *)
+unionFirst[tree_, q_, default_] :=
+  Block[{$chainTree = tree},
+    Module[{best = None},
+      MapIndexed[
+        Function[{a, k}, With[{keep = If[best === None, True &, With[{b = best[[2, -1]]}, beforeQ[#, b] &]]},
+          Replace[firstAcceptedTuple[a, keep], {e_} :> (best = Prepend[e, First[k]])]]],
+        q["Alternatives"]];
+      If[best === None, default, entryResult[q, entryRules[q]][best]]]];
+
+(* An element pattern's first match in document order is found without the
+   others; it is a candidate only if keep takes it, and no later match is. *)
+firstAcceptedTuple[a_, keep_] /; a["Links"] === {} && stagesDecideQ[a] && !bodyRejectsQ[a] :=
+  Select[{{#}} & /@ firstMatchPositions[$chainTree, solvable[First[a["Stages"]]], 1], keep[#[[1, -1]]] &];
+firstAcceptedTuple[a_, keep_] := Take[acceptedTuples[a, keep], UpTo[1]];
+
+(* Whether site p comes before site s in document order. *)
+beforeQ[p_, s_] := p =!= s && documentOrdering[{p, s}] === {1, 2};
+
+unionDelete[tree_, q_] :=
+  Block[{$chainTree = tree},
+    deleteAt[tree, DeleteDuplicates[Join @@ (Last @* First /@ acceptedTuples[#, True &] & /@ q["Alternatives"])]]];
 
 deleteAt[tree_, {}] := tree;
 deleteAt[tree_, ps_] := Delete[tree, ps];

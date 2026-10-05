@@ -561,10 +561,9 @@ TestCreate[
 ];
 
 TestCreate[
-  XMLCases[$note, "h1" | "div > p"],
-  $Failed,
-  {XMLCases::badpat},
-  TestID -> "css-string-combinator-in-alternatives-refused"
+  Lookup[XMLCases[$note, "h2" | "div > p"][[All, 2]], "id"],
+  {"q1", "q2", "q3", "h"},
+  TestID -> "css-string-combinator-in-alternatives"
 ];
 
 TestCreate[

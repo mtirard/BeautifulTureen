@@ -32,15 +32,15 @@ TestCreate[
   TestID -> "message-names-the-pattern-as-written"
 ];
 
-(* An Alternatives holding a combinator is refused as a whole: the message names
-   the pattern the caller wrote, not the alternative that tripped it. *)
+(* Named alternatives holding a combinator are refused as a whole: the message
+   names the pattern the caller wrote, not the alternative that tripped it. *)
 TestCreate[
   StringReplace[capturedMessages[
     XMLCases[$msgTree,
-      Child[XMLPattern["article"], XMLPattern["p"]] | Child[XMLPattern["section"], XMLPattern["p"]]]],
+      u : (Child[XMLPattern["article"], XMLPattern["p"]] | Child[XMLPattern["section"], XMLPattern["p"]])]],
     StartOfString ~~ __ ~~ "Got " -> "Got "],
-  {"Got Child[XMLPattern[\"article\"], XMLPattern[\"p\"]] | Child[XMLPattern[\"section\"], XMLPattern[\"p\"]]."},
-  TestID -> "message-names-whole-alternatives-with-combinator"
+  {"Got u:Child[XMLPattern[\"article\"], XMLPattern[\"p\"]] | Child[XMLPattern[\"section\"], XMLPattern[\"p\"]]."},
+  TestID -> "message-names-whole-named-alternatives-with-combinator"
 ];
 
 (* A combinator with one stage is refused with a message that says it needs two. *)

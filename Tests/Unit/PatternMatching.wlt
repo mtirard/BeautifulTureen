@@ -160,14 +160,13 @@ TestCreate[
   TestID -> "cond-combinator-refused-for-an-element-pattern"
 ];
 
-(* An Alternatives of combinators, or a combinator inside an Alternatives, is not
-   a query, tested or not. *)
+(* Alternatives of combinators, or a combinator inside alternatives, are a
+   query, tested or not (ADR 0015). *)
 TestCreate[
-  {XMLCases[$treeCond, (Child[XMLPattern["div"], XMLPattern["span"]] | Child[XMLPattern["section"], XMLPattern["p"]]) /; True],
-   XMLCases[$treeCond, Child[XMLPattern["section"], XMLPattern["p"] | Child[XMLPattern["div"], XMLPattern["span"]]] /; True]},
-  {$Failed, $Failed},
-  {XMLCases::badpat, XMLCases::badpat},
-  TestID -> "cond-combinator-alternatives-refused"
+  {HTMLTextContent /@ XMLCases[$treeCond, (Child[XMLPattern["div"], XMLPattern["span"]] | Child[XMLPattern["section"], XMLPattern["p"]]) /; True],
+   HTMLTextContent /@ XMLCases[$treeCond, Child[XMLPattern["section"], XMLPattern["p"] | Child[XMLPattern["div"], XMLPattern["span"]]] /; True]},
+  {{"C", "x", "y"}, {"C", "x", "y"}},
+  TestID -> "cond-combinator-alternatives"
 ];
 
 (* === Named whole-element conditions (el : pat /; test) === *)
