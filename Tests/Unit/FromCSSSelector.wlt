@@ -551,9 +551,9 @@ TestCreate[
 ];
 
 TestCreate[
-  XMLMatchQ[XMLElement["p", {}, {}], "div > p"],
-  $Failed,
-  {XMLMatchQ::combinator},
+  {XMLMatchQ[XMLElement["p", {}, {}], "div > p"], XMLMatchQ[XMLElement["li", {}, {}], "li:only-child"]},
+  {$Failed, $Failed},
+  {XMLMatchQ::combinator, XMLMatchQ::combinator},
   TestID -> "css-string-combinator-refused-where-an-element-pattern-goes"
 ];
 

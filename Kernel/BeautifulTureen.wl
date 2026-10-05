@@ -745,13 +745,14 @@ treeRefusedQ[c_, tree_] :=
 
 (* A query tested on one element at a time takes no links: a combinator is
    refused under tag, and a combinator with a Condition under condcombinator.
-   q is the query as written. *)
+   q is the query as written; a CSS selector string has no Condition of the
+   caller's, whatever its translation holds. *)
 elementQuery[$Failed, _, _, _] := $Failed;
 elementQuery[c_, q_, head_, tag_] :=
   With[{h = head},
     Which[
       c["Links"] === {}, c,
-      c["Conditions"] === {}, Message[MessageName[h, tag], q]; $Failed,
+      c["Conditions"] === {} || StringQ[q], Message[MessageName[h, tag], q]; $Failed,
       True, Message[MessageName[h, "condcombinator"], patternBase[q]]; $Failed]];
 
 (* Materialise once per query, over the union of the list keys all its stages
@@ -1523,7 +1524,7 @@ cssAttributeOf[{_, t_, ___}, _] := cssInvalid["unexpected " <> cssShown[t] <> " 
 $cssPseudoClasses = {"empty", "checked", "link", "any-link", "only-child", "only-of-type"};
 
 (* Valid Selectors 4 that v1 does not translate, with the workaround. *)
-$cssChildIndexedHow = "Until positions among siblings are supported, write Child[p : XMLPattern[_], e : XMLPattern[...]] /; with a test on the position of e in Last[p].";
+$cssChildIndexedHow = "Write Child[p : XMLPattern[_], e : XMLPattern[...]] /; test, where test checks the position of e among the elements of Last[p].";
 $cssFormHow = "Write the test as a condition on an XMLPattern.";
 $cssUnsupported = Join[
   AssociationMap["To get the top element, use XMLFirstCase[tree, XMLPattern[_]]." &, {"root", "scope"}],
