@@ -2038,20 +2038,20 @@ cssArguments[items_, where_, pos_, relative_, forgiving_] :=
 
 (* :nth-child(An+B of S): the An+B, then for the -child forms an optional
    "of" and a selector list. *)
-cssNthOf[{fromEnd_, of_}, items_, where_, at_, text_] :=
+cssNthOf[{fromEnd_, of_}, items_, where_, pos_, text_] :=
   With[{k = FirstPosition[items, tk["ident", o_, __] /; cssLower[o] === "of", None, {1}, Heads -> False]},
     If[k === None,
-      sNth[cssPos[fromEnd, Sequence @@ cssAnB[cssTrimWS[items], where, at], of, text], None],
+      sNth[cssPos[fromEnd, Sequence @@ cssAnB[cssTrimWS[items], where, pos], of, text], None],
       If[of =!= None || k === {1} || !cssWSQ[items[[First[k] - 1]]],
         cssInvalid["unexpected \"of\" in " <> where, cssStart[items[[First[k]]]]]];
-      sNth[cssPos[fromEnd, Sequence @@ cssAnB[cssTrimWS[Take[items, First[k] - 1]], where, at], "of", text],
-        cssArguments[Drop[items, First[k]], where, at, False, False]]]];
+      sNth[cssPos[fromEnd, Sequence @@ cssAnB[cssTrimWS[Take[items, First[k] - 1]], where, pos], "of", text],
+        cssArguments[Drop[items, First[k]], where, pos, False, False]]]];
 
 (* An+B (CSS Syntax 3, section 6), read from its source text: odd, even, an
    integer, or An+B with whitespace only around the sign of B. *)
 $cssAnB = RegularExpression["(?i)([+-]?)([0-9]*)n(?:[ \\t\\n]*([+-])[ \\t\\n]*([0-9]+))?"];
 
-cssAnB[{}, where_, at_] := cssInvalid[where <> " needs an argument", at];
+cssAnB[{}, where_, pos_] := cssInvalid[where <> " needs an argument", pos];
 cssAnB[items_, where_, _] :=
   With[{t = cssText[items]},
     Which[
@@ -2213,17 +2213,17 @@ cssRunTest[ps_, within_, pre_] :=
    first compound, after the last, and for each ~ between two. A compound
    that already names its element keeps that name. *)
 cssGeneralList[parts_, within_] :=
-  Module[{names = Replace[parts[[All, 2]], None :> cssFreshName["c"], {1}], entries, seq, at},
+  Module[{names = Replace[parts[[All, 2]], None :> cssFreshName["c"], {1}], entries, seq, places},
     entries = MapThread[If[#2 === None, Pattern @@ {#3, First[#1]}, First[#1]] &, {parts, parts[[All, 2]], names}];
     seq = Join[{cssFreshName["g"]},
       Join @@ MapThread[Prepend[If[#2 === Sibling, {cssFreshName["g"]}, {}], #1] &, {Most[names], within}],
       {Last[names], cssFreshName["g"]}];
-    at = Flatten[Position[seq, #, {1}, Heads -> False] & /@ names];
+    places = Flatten[Position[seq, #, {1}, Heads -> False] & /@ names];
     conditionWith[
       Replace[seq, Join[Thread[names -> entries], {n_Symbol :> Pattern @@ {n, BlankNullSequence[]}}], {1}],
       cssAnd[Join @@ MapThread[
         Function[{part, n, k}, cssPositionTest[#, n, If[First[#], Drop[seq, k], Take[seq, k - 1]]] & /@ Last[part]],
-        {parts, names, at}]]]];
+        {parts, names, places}]]]];
 
 (* Whether the element named n is at its position, the siblings on that side
    being the names in side. Held, with no private symbol. *)
@@ -2262,7 +2262,7 @@ cssCompoundT[cpAlt[cps_]] := {cssAlternatives[First @* cssCompoundT /@ cps], Non
 cssCompoundT[c : cp[nodes_, _]] :=
   With[{type = FirstCase[nodes, sType[n_] :> n, _]},
     Replace[cssBranches[c], {bs_, counts_} :>
-      Append[cssFinish[bs, type, False], Replace[counts, cssPos[e_, a_, b_, "type", t_] :> cssPos[e, a, b, cssOfType[type], t], {1}]]]];
+      Append[cssFinish[bs, type], Replace[counts, cssPos[e_, a_, b_, "type", t_] :> cssPos[e, a, b, cssOfType[type], t], {1}]]]];
 
 (* The siblings an -of-type position counts: those of the compound's type, or
    when it has none, those of the element's own tag. *)
@@ -2372,9 +2372,9 @@ cssAlternatives[ps_] := Alternatives @@ ps;
 (* The pattern of a compound, from its branches: a branch whose tag can never
    match is dropped, and with none left the compound is XMLPattern[tag] /;
    False. The tests of a compound are on one name. *)
-cssFinish[bs_, type_, needName_] :=
+cssFinish[bs_, type_] :=
   Module[{live = Select[bs, cssTagPattern[First[#]] =!= cssNever &], name},
-    name = If[needName || AnyTrue[live, Last[#] =!= {} &], cssFreshName["e"], None];
+    name = If[AnyTrue[live, Last[#] =!= {} &], cssFreshName["e"], None];
     {Which[
       live === {}, cssConditioned[XMLPattern[type], name, {Hold[False]}],
       SameQ @@ (Last /@ live), cssConditioned[cssAlternatives[cssElement /@ live], name, Last[First[live]]],

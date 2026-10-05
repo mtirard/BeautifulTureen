@@ -262,6 +262,13 @@ TestCreate[
 ];
 
 TestCreate[
+  XMLCases[$treeCards,
+    Child[XMLPattern[_], {___, XMLPattern["p", "classList" -> {"lead"}], ___, XMLPattern["p", "classList" -> "ad"], ___}]],
+  {XMLElement["p", {"class" -> "ad"}, {"2"}], XMLElement["p", {"class" -> "lead ad"}, {"3"}]},
+  TestID -> "sibling-classlist-both-stages-as-list"
+];
+
+TestCreate[
   XMLCases[$treeCards, Child[XMLPattern[_], {___, XMLPattern["p", "classList" -> {"lead"}], ___, XMLPattern["p", "classList" -> "ad"], ___}]],
   {XMLElement["p", {"class" -> "ad"}, {"2"}], XMLElement["p", {"class" -> "lead ad"}, {"3"}]},
   TestID -> "sibling-classlist-both-stages-as-list"
@@ -337,6 +344,12 @@ TestCreate[
   nestTexts @ Child[Adjacent[XMLPattern["p"], XMLPattern["div"]], XMLPattern["p"]],
   {"2"},
   TestID -> "nested-child-of-adjacent"
+];
+
+TestCreate[
+  nestTexts @ Child[Child[XMLPattern[_], {___, XMLPattern["p"], XMLPattern["div"], ___}], XMLPattern["p"]],
+  {"2"},
+  TestID -> "nested-child-of-adjacent-as-list"
 ];
 
 TestCreate[
@@ -521,6 +534,17 @@ TestCreate[
      (Sibling[h : XMLPattern["h2"], p : XMLPattern["p"]] /; h[[2]] === p[[2]]) :> {HTMLTextContent[h], HTMLTextContent[p]}]},
   {{{"1", "x"}, {"2", "y"}}, {"1", "x"}},
   TestID -> "sibling-shared-name-element-once-bound-to-first-before"
+];
+
+TestCreate[
+  {XMLCases[$treeManyBefore,
+     Child[XMLPattern[_], {___, h : XMLPattern["h2", "class" -> c_], ___, p : XMLPattern["p", "class" -> c_], ___}] :>
+       {HTMLTextContent[h], HTMLTextContent[p]}],
+   XMLFirstCase[$treeManyBefore,
+     (Child[XMLPattern[_], {___, h : XMLPattern["h2"], ___, p : XMLPattern["p"], ___}] /; h[[2]] === p[[2]]) :>
+       {HTMLTextContent[h], HTMLTextContent[p]}]},
+  {{{"1", "x"}, {"2", "y"}}, {"1", "x"}},
+  TestID -> "sibling-shared-name-element-once-bound-to-first-before-as-list"
 ];
 
 TestCreate[
@@ -797,6 +821,16 @@ TestCreate[
        {i, j} /; i === "b"]},
   {{"b"}, "b", {{"b", "2"}}},
   TestID -> "sibling-body-condition-chooses-sibling"
+];
+
+TestCreate[
+  {XMLCases[$treeHeads, Child[XMLPattern[_], {___, XMLPattern["h2", "id" -> i_], ___, XMLPattern["span"], ___}] :> i /; i === "b"],
+   XMLFirstCase[$treeHeads, Child[XMLPattern[_], {___, XMLPattern["h2", "id" -> i_], ___, XMLPattern["span"], ___}] :> i /; i === "b"],
+   XMLCases[$treeHeads,
+     Child[XMLPattern[_], {___, XMLPattern["h2", "id" -> i_], XMLPattern["p", "id" -> j_], ___, XMLPattern["span"], ___}] :>
+       {i, j} /; i === "b"]},
+  {{"b"}, "b", {{"b", "2"}}},
+  TestID -> "sibling-body-condition-chooses-sibling-as-list"
 ];
 
 TestCreate[

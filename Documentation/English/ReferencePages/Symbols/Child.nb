@@ -340,19 +340,6 @@ Cell[BoxData["XMLCases[tree,Child[XMLPattern[\"div\",\"id\"->id_],XMLPattern[\"p
 
 Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"one\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Alternatives cannot contain a combinator:", "ExampleText"], Cell[BoxData["tree=ImportString[\"<article><p>Top.</p><section><p>Nested.</p></section></article>\",{\"HTML\",\"XMLObject\"}];
-XMLCases[tree,Child[XMLPattern[\"article\"],XMLPattern[\"p\"]]|Child[XMLPattern[\"section\"],XMLPattern[\"p\"]]]"], "Input"],
-
-Cell["XMLCases::badpat: The second argument should be an XMLPattern, alternatives of them, a Child, Descendant, Adjacent or Sibling combinator, or a rule pattern -> rhs or pattern :> body with one of these. Each can have a condition (/;), and an XMLPattern or alternatives of them can be named. Got Child[XMLPattern[\"article\"], XMLPattern[\"p\"]] | Child[XMLPattern[\"section\"], XMLPattern[\"p\"]].", "Message", "MSG"],
-
-Cell[BoxData["$Failed"], "Output"],
-
-Cell["Put the alternatives inside a stage instead:", "ExampleText"],
-
-Cell[BoxData["XMLCases[tree,Child[XMLPattern[\"article\"|\"section\"],XMLPattern[\"p\"]]]"], "Input"],
-
-Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Top.\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Nested.\"", "}"}]}], "]"}]}], "}"}]], "Output"]}, Open]],
-
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["XMLMatchQ does not accept Child, since a lone element has no parent:", "ExampleText"], Cell[BoxData["XMLMatchQ[XMLElement[\"p\",{},{\"x\"}],Child[XMLPattern[\"div\"],XMLPattern[\"p\"]]]"], "Input"],
 
 Cell["XMLMatchQ::combinator: Child[XMLPattern[\"div\"], XMLPattern[\"p\"]] relates an element to its parent or siblings, which a lone element does not have. Use XMLCases or XMLFirstCase to search a tree with it.", "Message", "MSG"],
