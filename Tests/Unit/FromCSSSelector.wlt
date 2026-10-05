@@ -157,7 +157,7 @@ TestCreate[
 
 TestCreate[
   MatchQ[FromCSSSelector["a:not([href])"],
-    Verbatim[Condition][Verbatim[Pattern][e_Symbol, XMLPattern["a"]], HoldPattern[! XMLMatchQ[e_, XMLPattern[_, "href"]]]]],
+    Verbatim[Condition][Verbatim[Pattern][e_Symbol, XMLPattern["a"]], HoldPattern[! XMLMatchQ[XMLPattern[_, "href"]][e_]]]],
   True,
   TestID -> "css-not-condition-shape"
 ];

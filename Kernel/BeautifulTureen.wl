@@ -1756,12 +1756,14 @@ cssArgPattern[_, text_] := cssRefuse["unsupported", text, $cssComplexHow];
 
 (* :not() of one class or one type merges into the class list or the tag, so a
    classless element matches, as in CSS; otherwise it is a condition, never an
-   Except at a raw key, which would require the attribute. *)
+   Except at a raw key, which would require the attribute. The operator form
+   keeps its compiled matcher, for the readings in force, so the argument is
+   compiled once per query rather than once per candidate. *)
 cssNot[bs_, {cx[{cp[{sClass[c_]}, _]}, {}]}, _] := cssWith[bs, cssAttr["classList", lacks[c]]];
 cssNot[bs_, {cx[{cp[{sType[n_]}, _]}, {}]}, _] := cssWith[bs, br[tg[All, {n}], <||>, {}]];
 cssNot[bs_, args_, text_] :=
   With[{p = cssAlternatives[cssArgPattern[#, text] & /@ args]},
-    cssWith[bs, cssTest[Hold[! XMLMatchQ[cssSelf, p]]]]];
+    cssWith[bs, cssTest[Hold[! XMLMatchQ[p][cssSelf]]]]];
 
 (* :has(s) and :has(> s) for one compound test the children; any other
    relative selector runs as a chain from an anchor around the children, so
