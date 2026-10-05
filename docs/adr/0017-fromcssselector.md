@@ -1,5 +1,5 @@
 ---
-status: accepted (not yet implemented; amended by ADR-0018)
+status: accepted (amended by ADR-0018)
 ---
 
 # `FromCSSSelector` translates a static CSS selector into XML patterns, and a bare string where an XML pattern goes is CSS
@@ -98,7 +98,20 @@ Until a feature lands, v1 refuses the selectors that need it, with `::unsupporte
 
 A CSS string is the shortest way to write a query that CSS can express, and `FromCSSSelector` turns it into the symbolic form for anything further: names, rule bodies, value tests.
 
-`:not` and `:has` become a nested `XMLMatchQ` or `XMLFirstCase` in a condition. They inherit the per-call cost of those (40–100 µs per candidate in the Rosetta). They also inherit their readings, which is why ADR 0012 now makes the `"AttributeReadings"` option a `Block` of `$AttributeReadings` around the whole call.
+`:not` and `:has` become a nested `XMLMatchQ` or `XMLFirstCase` in a condition. They also inherit their readings, which is why ADR 0012 now makes the `"AttributeReadings"` option a `Block` of `$AttributeReadings` around the whole call.
+
+They inherit the per-candidate cost of the nested call. Measured on the Rosetta pages (v1 phase 1, 2026-10-05; time for the whole query, then per element that the compound's own `XMLPattern` takes):
+
+| selector | page | BeautifulTureen | soupsieve | per candidate |
+|---|---|---|---|---|
+| `li:not(.mw-list-item)` (merged into the class list) | css | 29 ms | 4.7 ms | 40 µs |
+| `a:not([href^="#"])` | sel4 | 17 ms | 12 ms | 5 µs |
+| `div:has(> table)` | css | 7 ms | 4.4 ms | 20 µs |
+| `ul:has(ul li)` | css | 33 ms | 4.7 ms | 200 µs |
+
+- `:not` with a condition tests with the operator form `XMLMatchQ[C][e]`, which keeps its compiled matcher per readings table. The two-argument form compiled `C` for every candidate and took 320 ms on the `a:not` row.
+- `:has(s)` for one compound searches `Cases[Last[e], _XMLElement]`, not `Last[e]`: a list given to `XMLFirstCase` may hold only elements and strings, and an XML document's children can hold comments. Every other `:has` form runs a chain from the anchor element, at about 0.2 to 0.5 ms per candidate. It is the slowest translation, and a candidate for a cache of the compiled chain.
+- Translation takes 0.3 ms at the median and 0.6 ms at most per Rosetta selector, about 4% of the query on the `css` page at the median, so a string is translated each time its query is compiled, with no cache of its own. `XMLMatchQ[string]` is cached by the operator form's own cache (ADR 0013).
 
 Possible Issues, for documentation:
 

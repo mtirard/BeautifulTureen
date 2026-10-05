@@ -30,6 +30,8 @@ Cell["\t", "GuideDelimiter"],
 
 Cell[CellGroupData[{Cell["Building Patterns", "GuideFunctionsSubsection"], Cell[TextData[{Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"]], "InlineGuideFunction"], " \[LongDash] pattern for the tag and attributes of an element"}], "GuideText"],
 
+Cell[TextData[{Cell[BoxData[ButtonBox["FromCSSSelector", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/FromCSSSelector"]], "InlineGuideFunction"], " \[LongDash] translate a CSS selector to an XML pattern"}], "GuideText"],
+
 Cell[TextData[{Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"]], "InlineGuideFunction"], " \[LongDash] the attributes split into lists of tokens, such as class into \"classList\""}], "GuideText"],
 
 Cell[TextData[{Cell[BoxData[ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLWhitespace"]], "InlineGuideFunction"], " \[LongDash] the HTML whitespace characters that separate classes in a class attribute"}], "GuideText"]}, Open]],
