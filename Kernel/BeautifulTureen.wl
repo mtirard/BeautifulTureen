@@ -403,9 +403,7 @@ normalForm[chain[stages_, links_, conditions_], body_] :=
    the body in which the names the query binds and it does not are Sequence[]
    (ADR 0015). *)
 normalForm[union[cs_], body_] :=
-  With[{names = unionNames[cs]},
-    <|"Alternatives" -> (normalForm[#, unboundEmpty[body, Complement[names, chainNames[#]]]] & /@ cs),
-      "Body" -> body|>];
+  <|"Alternatives" -> perAlternative[cs, body, normalForm], "Body" -> body|>;
 
 (* A combinator's stages are element patterns or combinators, compiled to
    chain[stages, links, conditions]. A Condition on a combinator sees the names
@@ -445,16 +443,20 @@ joinChains[a_, link_, b_] :=
 coverChain[chain[s_, l_, c_], test_] := chain[s, l, Append[c, {{1, Length[s]}, test}]];
 (* A Condition on alternatives covers each of their chains, and a name bound
    only in another alternative is Sequence[] in it, as in WL. *)
-coverChain[union[cs_], test_] :=
-  With[{names = unionNames[cs]},
-    union[coverChain[#, unboundEmpty[test, Complement[names, chainNames[#]]]] & /@ cs]];
+coverChain[union[cs_], test_] := union[perAlternative[cs, test, coverChain]];
+
+(* f[chain, held] for each chain, with the names the other chains bind and it
+   does not replaced by Sequence[] in held. *)
+perAlternative[cs_, held_, f_] :=
+  With[{names = unionNames[cs]}, f[#, unboundEmpty[held, Complement[names, chainNames[#]]]] & /@ cs];
 
 (* The names a chain's stages bind, after any renaming, each Hold[name]. *)
 chainNames[chain[s_, _, _]] := Union @@ (namesIn /@ s);
 unionNames[cs_] := Union @@ (chainNames /@ cs);
 
-(* Held code with each of names replaced by Sequence[]. Code that is only
-   such a name stays one expression, which evaluates to Sequence[]. *)
+(* Held code with each of names replaced by Sequence[]. A body or test that is
+   only such a name would become Hold[], so it is kept as one expression,
+   Sequence @@ {}, which evaluates to Sequence[]. *)
 unboundEmpty[held_, {}] := held;
 unboundEmpty[None, _] := None;
 unboundEmpty[held_, names_] :=
@@ -480,7 +482,7 @@ cElem[Verbatim[Pattern][s_Symbol, p_]] :=
   If[multiStageQ[p], badpat[namedPattern[s, p]], bindAs[s, cElem[p], strip]];
 cElem[c_Condition] := conditioned[cElem, c, conditionWith];
 (* The same refusal, for a tested combinator inside Alternatives or a name. *)
-cElem[t : Verbatim[PatternTest][x_, _]] /; combinatorQ[patternBase[x]] := refuseAtHead["testcombinator", t];
+cElem[t : Verbatim[PatternTest][x_, _]] /; multiStageQ[patternBase[x]] := refuseAtHead["testcombinator", t];
 (* pat?f is n : pat /; f[n]: f sees the original element, as a name does. *)
 cElem[Verbatim[PatternTest][p_, test_]] :=
   With[{c = cElem[p]}, If[$mat, PatternTest[c, Function[e, test[strip[e]]]], PatternTest[c, test]]];
@@ -775,7 +777,7 @@ queryDelete[c_, tree_] :=
 
 (* A query of alternatives holding a combinator runs as their chains, any
    other combinator as one chain. *)
-runnerOf[c_, union_, chain_, plain_] := Which[unionQ[c], union, chainQ[c], chain, True, plain];
+runnerOf[c_, onUnion_, onChain_, onPlain_] := Which[unionQ[c], onUnion, chainQ[c], onChain, True, onPlain];
 
 (* A function that tests one element, or $Failed if the query is refused. Only
    the element itself is materialised: its children cannot be reached. *)
@@ -1854,7 +1856,8 @@ cssChain[ss_, links_] :=
    name or None, the :only-* pseudo-classes}. *)
 cssCompoundT[cpAnchor] := {XMLPattern[$cssAnchor], None, {}};
 (* The compounds that differ between the selectors of a list count no siblings
-   (cssSharedChain). *)
+   (cssSharedChain checks their own nodes; a counting compound inside :is() or
+   :not() is refused when its branches are made). *)
 cssCompoundT[cpAlt[cps_]] := {cssAlternatives[First @* cssCompoundT /@ cps], None, {}};
 cssCompoundT[c : cp[nodes_, _]] :=
   Replace[cssBranches[c], {bs_, counts_} :>

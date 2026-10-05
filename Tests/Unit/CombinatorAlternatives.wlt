@@ -5,7 +5,7 @@
    Fixtures are local to this file. *)
 
 html[s_] := ImportString["<html><body>" <> s <> "</body></html>", {"HTML", "XMLObject"}];
-ids[es_] := Lookup[es[[All, 2]], "id", None];
+unionIds[es_] := Lookup[es[[All, 2]], "id", None];
 
 $unionDoc = html["<nav id=\"n\"><a id=\"a1\"></a><ul id=\"u\"><li id=\"l1\"></li><li id=\"l2\"><a id=\"a2\"></a></li></ul></nav>\
 <ul id=\"u2\"><li id=\"l3\"></li></ul><a id=\"a3\"></a>"];
@@ -13,14 +13,14 @@ $unionDoc = html["<nav id=\"n\"><a id=\"a1\"></a><ul id=\"u\"><li id=\"l1\"></li
 (* === As the query === *)
 
 TestCreate[
-  ids @ XMLCases[$unionDoc, Child[XMLPattern["ul"], XMLPattern["li"]] | Descendant[XMLPattern["nav"], XMLPattern["a"]]],
+  unionIds @ XMLCases[$unionDoc, Child[XMLPattern["ul"], XMLPattern["li"]] | Descendant[XMLPattern["nav"], XMLPattern["a"]]],
   {"a1", "l1", "l2", "a2", "l3"},
   TestID -> "union-as-query"
 ];
 
-(* Joining two queries lost elements the alternatives share (17 identical
-   elements on the CSS page). Two identical siblings, each selected by both
-   alternatives, are both given, each once. *)
+(* Two identical siblings, each selected by both alternatives, are both
+   given, each once. Running the alternatives as separate queries and joining
+   the results with Union would give one. *)
 $twins = html["<div><p class=\"x\">t</p><p class=\"x\">t</p></div>"];
 
 TestCreate[
@@ -45,9 +45,9 @@ TestCreate[
 $stageDoc = html["<div id=\"d\"><section id=\"s\"><b><a id=\"x\"></a></b></section><a id=\"y\"></a><i><a id=\"z\"></a></i></div>"];
 
 TestCreate[
-  {ids @ XMLCases[$stageDoc, Child[XMLPattern["div"], Descendant[XMLPattern["section"], XMLPattern["a"]] | XMLPattern["a"]]],
-   ids @ XMLCases[$stageDoc, Child[XMLPattern["div"], Descendant[XMLPattern["section"], XMLPattern["a"]]]],
-   ids @ XMLCases[$stageDoc, Child[XMLPattern["div"], XMLPattern["a"]]]},
+  {unionIds @ XMLCases[$stageDoc, Child[XMLPattern["div"], Descendant[XMLPattern["section"], XMLPattern["a"]] | XMLPattern["a"]]],
+   unionIds @ XMLCases[$stageDoc, Child[XMLPattern["div"], Descendant[XMLPattern["section"], XMLPattern["a"]]]],
+   unionIds @ XMLCases[$stageDoc, Child[XMLPattern["div"], XMLPattern["a"]]]},
   {{"x", "y"}, {"x"}, {"y"}},
   TestID -> "union-as-stage"
 ];
@@ -57,7 +57,7 @@ TestCreate[
 $fourDoc = html["<a><d id=\"1\"></d><e><f id=\"2\"></f></e></a><b><c><d id=\"3\"></d><e><f id=\"4\"></f></e></c></b><e><f id=\"5\"></f></e>"];
 
 TestCreate[
-  ids @ XMLCases[$fourDoc,
+  unionIds @ XMLCases[$fourDoc,
     Child[XMLPattern["a"] | Child[XMLPattern["b"], XMLPattern["c"]], XMLPattern["d"] | Child[XMLPattern["e"], XMLPattern["f"]]]],
   {"1", "2", "3", "4"},
   TestID -> "union-two-stages-of-alternatives"
@@ -167,8 +167,8 @@ TestCreate[
 (* === XMLDeleteCases === *)
 
 TestCreate[
-  {ids @ XMLCases[XMLDeleteCases[$unionDoc, Child[XMLPattern["ul"], XMLPattern["li"]] | Descendant[XMLPattern["nav"], XMLPattern["a"]]], XMLPattern[_, "id" -> _]],
-   ids @ XMLCases[XMLDeleteCases[$unionDoc, XMLPattern["ul"] | Descendant[XMLPattern["nav"], XMLPattern["a"]]], XMLPattern[_, "id" -> _]]},
+  {unionIds @ XMLCases[XMLDeleteCases[$unionDoc, Child[XMLPattern["ul"], XMLPattern["li"]] | Descendant[XMLPattern["nav"], XMLPattern["a"]]], XMLPattern[_, "id" -> _]],
+   unionIds @ XMLCases[XMLDeleteCases[$unionDoc, XMLPattern["ul"] | Descendant[XMLPattern["nav"], XMLPattern["a"]]], XMLPattern[_, "id" -> _]]},
   {{"n", "u", "u2", "a3"}, {"n", "a3"}},
   TestID -> "union-delete-cases"
 ];
@@ -236,7 +236,7 @@ TestCreate[
 
 (* Alternatives of element patterns as a stage are one stage of one chain. *)
 TestCreate[
-  ids @ XMLCases[$unionDoc, Child[XMLPattern["nav"] | XMLPattern["li"], XMLPattern["a"]]],
+  unionIds @ XMLCases[$unionDoc, Child[XMLPattern["nav"] | XMLPattern["li"], XMLPattern["a"]]],
   {"a1", "a2"},
   TestID -> "union-element-alternatives-stage-unchanged"
 ];

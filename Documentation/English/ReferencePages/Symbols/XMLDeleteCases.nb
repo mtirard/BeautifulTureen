@@ -332,7 +332,12 @@ XMLDeleteCases[page,Adjacent[XMLPattern[\"h2\"],XMLPattern[\"p\"]]|XMLPattern[\"
 
 Cell["XMLDeleteCases::unsupported: XMLDeleteCases cannot use Adjacent or Sibling, either as the pattern, as a stage of another combinator, or in any of the alternatives.", "Message", "MSG"],
 
-Cell[BoxData["$Failed"], "Output"]}, Open]]}, Open]],
+Cell[BoxData["$Failed"], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Each stage that is alternatives of combinators multiplies the chains run:", "ExampleText"], Cell[BoxData["page=ImportString[\"<a><d>1</d></a><b><c><e><f>2</f></e></c></b><p>3</p>\",{\"HTML\",\"XMLObject\"}];
+HTMLTextContent[XMLDeleteCases[page,Child[XMLPattern[\"a\"]|Child[XMLPattern[\"b\"],XMLPattern[\"c\"]],XMLPattern[\"d\"]|Child[XMLPattern[\"e\"],XMLPattern[\"f\"]]]]]"], "Input"],
+
+Cell[BoxData["\"3\""], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[

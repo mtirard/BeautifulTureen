@@ -315,7 +315,12 @@ Cell[BoxData["$Failed"], "Output"]}, Open]],
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["When several alternatives match the element, the first of them binds the names:", "ExampleText"], Cell[BoxData["page=ImportString[\"<section id=\\\"s\\\"><div id=\\\"d\\\"><p>x</p></div></section>\",{\"HTML\",\"XMLObject\"}];
 XMLFirstCase[page,Child[XMLPattern[\"div\",\"id\"->i_],XMLPattern[\"p\"]]|Descendant[XMLPattern[\"section\",\"id\"->i_],XMLPattern[\"p\"]]:>i]"], "Input"],
 
-Cell[BoxData["\"d\""], "Output"]}, Open]]}, Open]],
+Cell[BoxData["\"d\""], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A name bound only in an alternative that did not match is ", Cell[BoxData[RowBox[{ButtonBox["Sequence", BaseStyle -> "Link", ButtonData -> "paclet:ref/Sequence"], "[", "]"}]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["page=ImportString[\"<section id=\\\"s\\\"><div id=\\\"d\\\"><p>x</p></div></section>\",{\"HTML\",\"XMLObject\"}];
+XMLFirstCase[page,Child[XMLPattern[\"div\",\"id\"->i_],XMLPattern[\"p\"]]|Descendant[XMLPattern[\"section\",\"id\"->j_],XMLPattern[\"p\"]]:>{i,j}]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", "\"d\"", "}"}]], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[

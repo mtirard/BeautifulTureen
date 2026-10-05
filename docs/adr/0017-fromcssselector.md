@@ -122,5 +122,5 @@ Possible Issues, for documentation:
 - `:checked` tests the `selected` attribute only. HTML's rule that the first `option` is selected by default is not applied, and soupsieve does not apply it either.
 - `:root`, `:scope` and the child-indexed pseudo-classes are refused, with their workarounds named.
 - In a `Roles` or `Constructs` rule, a string is CSS: a tag such as `a.b` needs `XMLPattern["a.b"]`.
-- A selector list of *n* selectors of different shapes runs *n* chains (ADR 0015). On the Rosetta pages (phase 2, 2026-10-05), every two- and three-selector list checked gave soupsieve's elements in soupsieve's order, and translating `div.mw-heading + p, table code, tr > th` took 0.8 ms, the slowest of the Rosetta selectors.
+- A selector list of *n* selectors of different shapes runs *n* chains (ADR 0015). On the Rosetta `css` and `sel4` pages (phase 2, 2026-10-05), every two- and three-selector list checked, and each complex `:is()`/`:where()`, gave soupsieve's elements in soupsieve's order, and translating `div.mw-heading + p, table code, tr > th` took 0.8 ms, the slowest of the Rosetta selectors.
 - `:is()` or `:where()` with a combinator inside is translated only in a selector of one compound: `x :is(a b)` is refused.
