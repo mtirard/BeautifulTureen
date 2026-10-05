@@ -265,6 +265,23 @@ TestCreate[
   TestID -> "readings-list-key-collisions"
 ];
 
+(* A Block of $AttributeReadings, the option's or a caller's, keeps the
+   messages' texts. *)
+SetAttributes[messageText, HoldAll];
+messageText[expr_] :=
+  With[{s = OpenWrite[]},
+    Block[{$Messages = {s}}, expr];
+    With[{f = Close[s]}, (DeleteFile[f]; #) & @ ReadString[f]]];
+
+TestCreate[
+  StringContainsQ[#, "The reading for rel should be an Association"] & /@ {
+    messageText[XMLCases[$links, XMLPattern["a"], "AttributeReadings" -> <|"rel" -> 5|>]],
+    messageText[Block[{$AttributeReadings = <|"rel" -> 5|>}, XMLCases[$links, XMLPattern["a"]]]]},
+  {True, True},
+  {$AttributeReadings::badentry, $AttributeReadings::badentry},
+  TestID -> "readings-messages-keep-their-text-under-block"
+];
+
 (* The emitters refuse a bad table once, whatever rules they are given. *)
 TestCreate[
   {HTMLInnerText[$links, "AttributeReadings" -> <|"rel" -> 1|>],

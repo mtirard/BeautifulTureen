@@ -228,8 +228,19 @@ withReadings[opt_, call_] :=
     $Failed -> $Failed,
     t_ :> Block[{$AttributeReadings = t}, call]}];
 
+(* A Block of $AttributeReadings, the option's or a caller's, hides the
+   symbol's message texts too, so a refusal gives its text back for the
+   Block's duration. *)
+$readingMessages = AssociationMap[MessageName[$AttributeReadings, #] &,
+  {"notassoc", "badkey", "badentry", "badfield", "badmethod", "badvalue", "duplistkey", "listkeyisreading"}];
+
+refuseReading[tag_String, args___] := (
+  If[!StringQ[MessageName[$AttributeReadings, tag]],
+    MessageName[$AttributeReadings, tag] = $readingMessages[tag]];
+  refuse[MessageName[$AttributeReadings, tag], args]);
+
 validTable[t_Association] := t;
-validTable[t_] := refuse[$AttributeReadings::notassoc, t];
+validTable[t_] := refuseReading["notassoc", t];
 
 validReadings[readings_] :=
   (KeyValueMap[validReading, readings]; validListKeys[readings]; readings);
@@ -239,21 +250,21 @@ listKeyOf[key_, spec_] := Replace[Lookup[spec, "ListKey", Automatic], Automatic 
 validListKeys[readings_] :=
   With[{listKeys = KeyValueMap[listKeyOf, readings]},
     Replace[Select[Tally[listKeys], Last[#] > 1 &],
-      {{k_, _}, ___} :> refuse[$AttributeReadings::duplistkey, k]];
+      {{k_, _}, ___} :> refuseReading["duplistkey", k]];
     Replace[Intersection[listKeys, Keys[readings]],
-      {k_, ___} :> refuse[$AttributeReadings::listkeyisreading, k]]];
+      {k_, ___} :> refuseReading["listkeyisreading", k]]];
 
 $readingFields = {Method, Delimiters, "TrimWhitespace", "ListKey"};
 
-validReading[key_, _] /; !StringQ[key] := refuse[$AttributeReadings::badkey, key];
-validReading[key_, spec_] /; !AssociationQ[spec] := refuse[$AttributeReadings::badentry, key, spec];
+validReading[key_, _] /; !StringQ[key] := refuseReading["badkey", key];
+validReading[key_, spec_] /; !AssociationQ[spec] := refuseReading["badentry", key, spec];
 validReading[key_, spec_] := (
   Replace[Complement[Keys[spec], $readingFields],
-    {f_, ___} :> refuse[$AttributeReadings::badfield, key, f]];
+    {f_, ___} :> refuseReading["badfield", key, f]];
   If[!KeyExistsQ[$methodDefaults, Lookup[spec, Method, "SpaceSeparated"]],
-    refuse[$AttributeReadings::badmethod, key, spec[Method]]];
+    refuseReading["badmethod", key, spec[Method]]];
   KeyValueMap[
-    If[!validFieldQ[#1, #2], refuse[$AttributeReadings::badvalue, key, #1, #2]] &,
+    If[!validFieldQ[#1, #2], refuseReading["badvalue", key, #1, #2]] &,
     KeyDrop[spec, Method]]);
 
 (* Whether a value is a string pattern is the string functions' own judgement. *)
@@ -1185,9 +1196,9 @@ matcherOf[q_] := elementMatcher[compileQuery[q, XMLMatchQ]];
 (* The operator form stays unevaluated, as MatchQ[pattern] does, and is applied
    to each element in turn, so its matcher is kept, keyed on everything the
    compiled query depends on: the pattern and $AttributeReadings, which the
-   "AttributeReadings" option joins to (issue #2). A refused pattern is not kept: it
-   gives its message on each call, as the two-argument form does. The cache is
-   emptied when it is full. *)
+   "AttributeReadings" option joins to (issue #2). A refused pattern is not
+   kept: it gives its message on each call, as the two-argument form does. The
+   cache is emptied when it is full. *)
 $matcherCache = <||>;
 $matcherCacheSize = 256;
 
