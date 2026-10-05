@@ -32,7 +32,7 @@ The output contains only public symbols and pattern names that `FromCSSSelector`
 - Type selectors, `*`, `.class`, `#id`, every attribute operator, and the `i` and `s` flags. `i` folds A–Z only, as the spec requires. WL's `IgnoreCase` also folds `é` and `É`, so it cannot be used.
 - Compounds and the four combinators: descendant, `>`, `+` and `~` become `Descendant`, `Child`, `Adjacent` and `Sibling`.
 - Through conditions: `:not()` and `:is()`/`:where()` over compound selectors, `:has()` with relative selectors that start with a descendant or `>` combinator, `:empty`, `:checked`, `:link` and `:any-link`.
-- `:only-child` and `:only-of-type`, by counting the parent's element children, in the first compound of a chain or after `>`.
+- Since ADR 0016, the child-indexed pseudo-classes, as list stages over the parent's element children: `:first-child`, `:last-child`, `:only-child`, `:nth-child()` and `:nth-last-child()` (with `of S` over compounds), and the `-of-type` forms. `li:nth-child(2n+1)` becomes `Child[XMLPattern[_], {PatternSequence[_, _] ..., XMLPattern["li"], ___}]`. A run of compounds joined by `+` or `~` in which one has a position is one list, as `Adjacent` and `Sibling` are its shorthands: `a + b:last-child` becomes `Child[XMLPattern[_], {___, XMLPattern["a"], XMLPattern["b"]}]`. Several positions in one compound, a position that needs the prefix of a sibling entry, and `-of-type` on a compound with no type use a condition on the list over named entries. At the start of a chain the parent is `XMLPattern[_]`, so the root is not reached until ADR 0018 is implemented.
 - Selector lists whose selectors differ in at most one compound, as alternatives in that stage: `a > b, a > c` becomes `Child[a, b | c]`.
 - Since ADR 0015, any other selector list, as the alternatives of its selectors' translations, in written order: `a > b, c d` becomes `Child[a, b] | Descendant[c, d]`. So does `:is()`/`:where()` with complex arguments in a selector of one compound, the rest of the compound merged into each argument's last compound: `p:is(div p, section > p)` becomes `Descendant[div, p] | Child[section, p]`.
 
@@ -51,7 +51,7 @@ Each refusal is a message and `$Failed`. There is one message per kind, and the 
   - namespaces and the `||` combinator
   - complex arguments to `:not()`, and to `:is()` and `:where()` in a selector of more than one compound. `x :is(a b)` matches an element with the ancestors `x` and `a` in either order, or one element that is both, so it is a conjunction of chains, not a chain with `:is()` as its last stage; its expansion grows combinatorially, as for `A :is(B C) D`.
   - `:has(+ …)` and `:has(~ …)`
-  - the child-indexed pseudo-classes other than `:only-*`, and `:only-*` after a descendant, `+` or `~` combinator (these need ADR 0016)
+  - a child-indexed pseudo-class inside `:not()`, `:is()` or `:where()`, which needs the element's parent, and `of S` with a complex `S`
   - `:root` and `:scope`, which no condition can express (the workaround is `XMLFirstCase[tree, XMLPattern[_]]`)
   - `:lang()`, `:dir()` and the form-state pseudo-classes
 - **`FromCSSSelector::impossible`**: the selector depends on a browser session, layout, the URL or shadow trees. This covers pseudo-elements, the user-action, media and display-state pseudo-classes, `:visited`, `:target` and `:host`.
@@ -78,7 +78,7 @@ In a `Roles` or `Constructs` rule, a string used to be a tag name. A tag that is
 Two features widen the translator as they land, each as a phase of the spec:
 
 - **ADR 0015 (alternatives of combinators), done:** selector lists of any shapes, and `:is()`/`:where()` with complex arguments in a selector of one compound, become `Alternatives` of their selectors' translations, in written order. The spec also read `x :is(a b, c > d)` as `Descendant[x, Descendant[a, b] | Child[c, d]]`, but that puts `a` inside `x`, where CSS (and soupsieve) also match an `a` around `x`, so it stays `::unsupported`.
-- **ADR 0016 (list stages):** `:first-child`, `:last-child`, `:nth-child()`, `:nth-last-child()` (with `of S`) and the `-of-type` forms become list stages. `:only-*` moves to list stages, and the restriction to the start of a chain or after `>` goes.
+- **ADR 0016 (list stages), done:** `:first-child`, `:last-child`, `:nth-child()`, `:nth-last-child()` (with `of S`) and the `-of-type` forms become list stages. `:only-*` moves to list stages, and the restriction to the start of a chain or after `>` goes.
 
 Until a feature lands, v1 refuses the selectors that need it, with `::unsupported`.
 
@@ -111,6 +111,7 @@ They inherit the per-candidate cost of the nested call. Measured on the Rosetta 
 
 - `:not` with a condition tests with the operator form `XMLMatchQ[C][e]`, which keeps its compiled matcher per readings table. The two-argument form compiled `C` for every candidate and took 320 ms on the `a:not` row.
 - `:has(s)` for one compound searches `Cases[Last[e], _XMLElement]`, not `Last[e]`: a list given to `XMLFirstCase` may hold only elements and strings, and an XML document's children can hold comments. Every other `:has` form runs a chain from the anchor element, at about 0.2 to 0.5 ms per candidate. It is the slowest translation, and a candidate for a cache of the compiled chain.
+- A position among all the siblings is written with `Repeated` entries. A position among the siblings of a type or that match a selector, other than the first or the last, is written as a condition on the list instead: `{g___, x : C, ___} /; Count[{g}, XMLElement["p", _, _]] + 1 == 2`. The `Repeated` form of `p:nth-of-type(2)`, `{PatternSequence[Except[p] ..., p], Except[p] ..., p, ___}`, backtracks: on a table of 1,000 rows (phase 3, 2026-10-05), `tr:nth-of-type(2)` took 0.9 s and `tr:nth-of-type(50)` more than 20 s, against 0.06 s as a condition. On the same table, `tr:nth-child(500)` takes 23 ms, `tr:nth-child(2n+1)` 37 ms, `tr:nth-of-type(500)` 59 ms, and the general form with two positions in one compound 33 ms. The general form is quadratic when its entries are costly to match: `.b + .a:nth-child(500)` and `.a:nth-of-type(500)` take 2.5 s, as the class list is tested at every split, and `tr:nth-child(2n+1 of .a)` 8.5 s, as `of S` tests each earlier sibling with `XMLMatchQ` for every candidate. On the Rosetta pages every child-indexed row checked takes under 0.4 s.
 - Translation takes 0.3 ms at the median and 0.6 ms at most per Rosetta selector, about 4% of the query on the `css` page at the median, so a string is translated each time its query is compiled, with no cache of its own. `XMLMatchQ[string]` is cached by the operator form's own cache (ADR 0013).
 
 Possible Issues, for documentation:
@@ -120,7 +121,10 @@ Possible Issues, for documentation:
 - `[foo~=x]` needs a reading for `foo`, given where the query runs.
 - `[a="é" i]` does not match `É`, as the spec says. soupsieve matches it.
 - `:checked` tests the `selected` attribute only. HTML's rule that the first `option` is selected by default is not applied, and soupsieve does not apply it either.
-- `:root`, `:scope` and the child-indexed pseudo-classes are refused, with their workarounds named.
+- `:root` and `:scope` are refused, with their workaround named.
+- A child-indexed pseudo-class does not select the root, which a browser counts as the only child of the document (ADR 0016), until ADR 0018 is implemented.
+- A selector with a child-indexed pseudo-class translates to a combinator, so `XMLMatchQ` and `Roles` refuse it.
+- `:nth-child(An+B of S)` and the positions written as a condition are quadratic in the number of siblings: 8.5 s for `tr:nth-child(2n+1 of .a)` over 1,000 rows.
 - In a `Roles` or `Constructs` rule, a string is CSS: a tag such as `a.b` needs `XMLPattern["a.b"]`.
 - A selector list of *n* selectors of different shapes runs *n* chains (ADR 0015). On the Rosetta `css` and `sel4` pages (phase 2, 2026-10-05), every two- and three-selector list checked, and each complex `:is()`/`:where()`, gave soupsieve's elements in soupsieve's order, and translating `div.mw-heading + p, table code, tr > th` took 0.8 ms, the slowest of the Rosetta selectors.
 - `:is()` or `:where()` with a combinator inside is translated only in a selector of one compound: `x :is(a b)` is refused.

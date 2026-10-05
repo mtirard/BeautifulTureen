@@ -106,6 +106,10 @@ As built, three points are narrower than the decision above:
 - Alternatives that hold a combinator can be the selected entry, which makes one chain per alternative, but not a context entry, which is refused (`::listentry`).
 - A refused list gives `::liststage` (the list cannot stand there, or has no XML-pattern entry) or `::listentry` (an entry is a list, an `XMLElement` pattern, a combinator whose first stage is a list, or one of the two cases above), each with the reason, rather than `::badpat`.
 
+A raw `XMLElement` pattern is refused as an entry, though it is still accepted as an element pattern elsewhere. When raw `XMLElement` patterns are dropped everywhere (GitHub issue #31), this refusal becomes part of that one.
+
+`FromCSSSelector` writes the child-indexed pseudo-classes as list stages (ADR 0017).
+
 Possible Issues, for documentation:
 
 - A list stage does not select the root, though a browser's `:first-child` and `:only-child` match it.

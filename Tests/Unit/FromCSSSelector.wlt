@@ -275,16 +275,92 @@ TestCreate[
 ];
 
 TestCreate[
-  {MatchQ[FromCSSSelector["li:only-child"],
-      Verbatim[Condition][Child[Verbatim[Pattern][p_Symbol, XMLPattern[_]], Verbatim[Pattern][_Symbol, XMLPattern["li"]]],
-        HoldPattern[Count[Last[p_], Verbatim[_XMLElement]] == 1]]],
+  {FromCSSSelector["li:only-child"], FromCSSSelector["li:only-child a"], FromCSSSelector["ul li:only-child"],
+    FromCSSSelector["li:only-of-type"],
     MatchQ[FromCSSSelector["ul > li:only-child:only-of-type"],
-      Verbatim[Condition][Child[Verbatim[Pattern][p_Symbol, XMLPattern["ul"]], Verbatim[Pattern][e_Symbol, XMLPattern["li"]]],
-        HoldPattern[Count[Last[p_], Verbatim[_XMLElement]] == 1 && Count[Last[p_], XMLElement[First[e_], Verbatim[_], Verbatim[_]]] == 1]]],
-    MatchQ[FromCSSSelector["li:only-child a"],
-      Descendant[Verbatim[Condition][Child[_, _], _], XMLPattern["a"]]]},
-  {True, True, True},
-  TestID -> "css-only-shapes"
+      Child[XMLPattern["ul"], Verbatim[Condition][{Verbatim[Pattern][_Symbol, Verbatim[___]],
+        Verbatim[Pattern][_Symbol, XMLPattern["li"]], Verbatim[Pattern][_Symbol, Verbatim[___]]}, _And]]]},
+  {Child[XMLPattern[_], {XMLPattern["li"]}], Child[XMLPattern[_], Descendant[{XMLPattern["li"]}, XMLPattern["a"]]],
+    Descendant[XMLPattern["ul"], {XMLPattern["li"]}],
+    Child[XMLPattern[_], {Except[XMLPattern["li"]] ..., XMLPattern["li"], Except[XMLPattern["li"]] ...}], True},
+  TestID -> "css-only-exact"
+];
+
+(* :only-child after a descendant combinator, + or ~ translates (ADR 0016). *)
+TestCreate[
+  {ids[$only, "div li:only-child"], ids[$only, "div li:only-child > a"], ids[$only, "ul + ul > li:only-of-type"],
+    ids[$only, "ul ~ ol:only-of-type"], ids[$only, "li ~ p:only-of-type"]},
+  {{"l1"}, {"a1"}, {}, {"o1"}, {"p1"}},
+  TestID -> "css-only-after-any-link"
+];
+
+(* === Child-indexed pseudo-classes === *)
+
+(* Six children, three of them p, two with class a. *)
+$kids = element["<div id='root'><p id='p1'>1</p><span id='s1'></span><p id='p2'>2</p><p id='p3' class='a'>3</p>" <>
+  "<b id='b1'><i id='i1'></i></b><p id='p4' class='a'>4</p></div>"];
+
+TestCreate[
+  {FromCSSSelector["li:first-child"], FromCSSSelector["li:last-child"], FromCSSSelector["div > p:nth-child(3)"],
+    FromCSSSelector["tr:nth-child(2n+1)"], FromCSSSelector["tr:nth-child(odd)"], FromCSSSelector["tr:nth-last-child(-n+3)"],
+    MatchQ[FromCSSSelector["p:nth-of-type(2)"], Child[XMLPattern[_], Verbatim[Condition][{Verbatim[Pattern][_Symbol, Verbatim[___]],
+      Verbatim[Pattern][_Symbol, XMLPattern["p"]], Verbatim[Pattern][_Symbol, Verbatim[___]]}, _]]],
+    FromCSSSelector["p:last-of-type"], FromCSSSelector["a + b:last-child"],
+    FromCSSSelector["a:first-child ~ b"], FromCSSSelector["p:nth-child(0)"]},
+  {Child[XMLPattern[_], {XMLPattern["li"], ___}], Child[XMLPattern[_], {___, XMLPattern["li"]}],
+    Child[XMLPattern["div"], {Repeated[_, {2}], XMLPattern["p"], ___}],
+    Child[XMLPattern[_], {PatternSequence[_, _] ..., XMLPattern["tr"], ___}],
+    Child[XMLPattern[_], {PatternSequence[_, _] ..., XMLPattern["tr"], ___}],
+    Child[XMLPattern[_], {___, XMLPattern["tr"], Repeated[_, {0, 2}]}],
+    True,
+    Child[XMLPattern[_], {___, XMLPattern["p"], Except[XMLPattern["p"]] ...}],
+    Child[XMLPattern[_], {___, XMLPattern["a"], XMLPattern["b"]}],
+    Child[XMLPattern[_], {XMLPattern["a"], ___, XMLPattern["b"], ___}],
+    Child[XMLPattern[_], {Except[_], XMLPattern["p"], ___}]},
+  TestID -> "css-child-indexed-exact"
+];
+
+(* Each An+B branch: a = 0, a > 0, a < 0, b < 1, and an index past the end. *)
+TestCreate[
+  ids[$kids, #] & /@ {"p:nth-child(3)", "p:nth-child(0)", "p:nth-child(-3)", "p:nth-child(7)", ":nth-child(2n+1)",
+    ":nth-child(3n-1)", ":nth-child(2n-4)", ":nth-child(n+5)", ":nth-child(-n+2)", ":nth-child(-2n+5)", ":nth-child(-n)",
+    ":nth-child(-n-1)", ":nth-last-child(2n)", ":nth-last-child(-n+2)", "p:nth-of-type(3)", "p:nth-last-of-type(2n+1)",
+    "p:nth-of-type(-n+2)", "div > :first-child", "div > :last-child"},
+  {{"p2"}, {}, {}, {}, {"p1", "p2", "b1", "i1"}, {"s1", "b1"}, {"s1", "p3", "p4"}, {"b1", "p4"}, {"p1", "s1", "i1"},
+    {"p1", "p2", "b1", "i1"}, {}, {}, {"p1", "p2", "b1"}, {"b1", "i1", "p4"}, {"p3"}, {"p2", "p4"}, {"p1", "p2"},
+    {"p1"}, {"p4"}},
+  TestID -> "css-child-indexed-an-plus-b"
+];
+
+TestCreate[
+  ids[$kids, #] & /@ {":nth-child(2 of .a)", "p:nth-child(2n+1 of .a)", ":nth-last-child(1 of :has(i))",
+    ":nth-child(2 of :has(i), .a)", ".a:first-of-type", ".a:last-of-type", ":first-of-type", "span + p:nth-child(3)",
+    "span ~ p:nth-of-type(4)", "p:first-child ~ b:has(i)", "p:first-child:last-of-type", "p:nth-child(2):nth-last-child(1)"},
+  {{"p4"}, {"p3"}, {"b1"}, {"b1"}, {}, {"p4"}, {"p1", "s1", "b1", "i1"}, {"p2"}, {"p4"}, {"b1"}, {}, {}},
+  TestID -> "css-child-indexed-selects"
+];
+
+(* The general form is a condition on the list, named apart from the user's
+   names, and keeps a compound's own name. The compounds of a run before the
+   last are tested on the siblings before it. *)
+TestCreate[
+  {MatchQ[FromCSSSelector[".x:first-of-type"],
+      Child[XMLPattern[_], Verbatim[Condition][{_Pattern, Verbatim[Pattern][_Symbol, XMLPattern[_, "classList" -> "x"]], _Pattern}, _]]],
+    MatchQ[FromCSSSelector["b:has(i) ~ p:nth-child(4)"],
+      Child[XMLPattern[_], Verbatim[Condition][{_Pattern, Verbatim[Pattern][_Symbol, XMLPattern["p"]], _Pattern}, _And]]],
+    MatchQ[FromCSSSelector[":has(i):nth-of-type(1)"],
+      Child[XMLPattern[_], Verbatim[Condition][{_Pattern, Verbatim[Condition][Verbatim[Pattern][_Symbol, XMLPattern[_]], _], _Pattern}, _]]],
+    Lookup[XMLCases[$kids, Child[":has(i):nth-child(5):first-of-type", e : XMLPattern["i"]] :> e][[All, 2]], "id"]},
+  {True, True, True, {"i1"}},
+  TestID -> "css-child-indexed-general-form"
+];
+
+TestCreate[
+  {Lookup[XMLDeleteCases[$kids, ":nth-child(odd)"][[3, All, 2]], "id"], ids[$kids, "b:has(> i:last-child)"],
+    ids[$kids, "div:has(b:first-child)"], XMLMatchQ[XMLElement["li", {}, {}], "li:first-child"]},
+  {{"s1", "p3", "p4"}, {"b1"}, {}, $Failed},
+  {XMLMatchQ::combinator},
+  TestID -> "css-child-indexed-in-the-consumers"
 ];
 
 (* Several pseudo-classes in one compound give one name and one condition. *)
@@ -320,11 +396,11 @@ TestCreate[
    in written order (ADR 0015). *)
 TestCreate[
   {FromCSSSelector["a > b, c > d"], FromCSSSelector["a b, c > d, e"], FromCSSSelector["a > b, a > c > d, a > b"],
-    MatchQ[FromCSSSelector["ul > li:only-child, ul > li"],
-      Verbatim[Alternatives][Verbatim[Condition][Child[_, _], _], Child[XMLPattern["ul"], XMLPattern["li"]]]]},
+    FromCSSSelector["ul > li:only-child, ul > li"]},
   {Child[XMLPattern["a"], XMLPattern["b"]] | Child[XMLPattern["c"], XMLPattern["d"]],
     Descendant[XMLPattern["a"], XMLPattern["b"]] | Child[XMLPattern["c"], XMLPattern["d"]] | XMLPattern["e"],
-    Child[XMLPattern["a"], XMLPattern["b"]] | Child[XMLPattern["a"], XMLPattern["c"], XMLPattern["d"]], True},
+    Child[XMLPattern["a"], XMLPattern["b"]] | Child[XMLPattern["a"], XMLPattern["c"], XMLPattern["d"]],
+    Child[XMLPattern["ul"], {XMLPattern["li"]}] | Child[XMLPattern["ul"], XMLPattern["li"]]},
   TestID -> "css-selector-list-of-shapes-exact"
 ];
 
@@ -536,17 +612,25 @@ TestCreate[
   TestID -> "css-grammar-is-is-forgiving"
 ];
 
+TestCreate[
+  {ids[$kids, ":nth-child(2N+1)"], ids[$kids, ":nth-child( -n+ 2 )"], ids[$kids, ":nth-child(2n + 1)"],
+    ids[$kids, ":nth-child(n- 1)"], ids[$kids, ":nth-child(+5)"], ids[$kids, ":nth-child(EVEN)"],
+    invalidQ /@ {":nth-child(foo)", ":nth-child(2 n)", ":nth-child(+ 2n)", ":nth-child(2n-)", ":nth-child(1.5)",
+      ":nth-child()", ":nth-child(2 of)", ":nth-of-type(2 of p)", ":nth-child(of p)", ":nth-child(2n+-1)", ":nth-child(2of p)"}},
+  {{"p1", "p2", "b1", "i1"}, {"p1", "s1", "i1"}, {"p1", "p2", "b1", "i1"}, {"p1", "s1", "p2", "p3", "b1", "i1", "p4"},
+    {"b1"}, {"s1", "p3", "p4"}, ConstantArray[True, 11]},
+  TestID -> "css-child-indexed-an-plus-b-grammar"
+];
+
 (* === The messages === *)
 
 
 TestCreate[
-  kindOf /@ {":root", ":scope", "a:lang(fr)", ":dir(ltr)", ":enabled", ":disabled", ":first-child",
-    ":last-child", ":first-of-type", ":last-of-type", ":nth-child(2n+1)", ":nth-last-child(2)", ":nth-of-type(odd)",
-    ":nth-last-of-type(1)", ":required", ":defined", "svg|rect", "*|a", "|a", "[xlink|href]", "a || b",
-    "x :is(a b)", "x > p:is(a b)", ":has(+ a)", ":has(~ a)", ":not(a b)", ":is(a b):is(c d)", "ul li:only-child",
-    "a + li:only-child", "a ~ li:only-of-type", ":not(:only-child)", ":is(li:only-child)",
-    "div:has(:is(a b))"},
-  ConstantArray["unsupported", 33],
+  kindOf /@ {":root", ":scope", "a:lang(fr)", ":dir(ltr)", ":enabled", ":disabled", ":required", ":defined",
+    "svg|rect", "*|a", "|a", "[xlink|href]", "a || b", "x :is(a b)", "x > p:is(a b)", ":has(+ a)", ":has(~ a)",
+    ":not(a b)", ":is(a b):is(c d)", ":not(:only-child)", ":is(li:only-child)", ":not(:nth-child(2))",
+    ":where(:first-of-type)", ":nth-child(1 of a b)", ":nth-child(1 of :first-child)", "div:has(:is(a b))"},
+  ConstantArray["unsupported", 26],
   TestID -> "css-messages-unsupported"
 ];
 
