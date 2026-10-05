@@ -2001,7 +2001,7 @@ cssAttributeOf[{_, t_, ___}, _] := cssInvalid["unexpected " <> cssShown[t] <> " 
    children (of None), those of the compound's type ("type"), or those that
    match a selector ("of", then the pattern). *)
 $cssPseudoClasses = {"empty", "checked", "link", "any-link", "only-child", "only-of-type",
-  "first-child", "last-child", "first-of-type", "last-of-type"};
+  "first-child", "last-child", "first-of-type", "last-of-type", "root", "scope"};
 
 $cssPositions = <|
   "first-child" -> {{False, 0, 1, None}}, "last-child" -> {{True, 0, 1, None}},
@@ -2015,8 +2015,11 @@ $cssNth = <|"nth-child" -> {False, None}, "nth-last-child" -> {True, None},
 (* Valid Selectors 4 that is not translated, with the workaround. *)
 $cssChildIndexedHow = "It needs the element's parent, so it can be in a compound of the selector or of a relative selector in :has(), but not in an argument of :not(), :is() or :where(). Write a list of patterns for the parent's children instead, as in Child[XMLPattern[_], {XMLPattern[\"li\"], ___}].";
 $cssFormHow = "Write the test as a condition on an XMLPattern.";
+(* :root and :scope are the only top element (ADR 0018), at the start of a
+   selector. *)
+$cssRootHow = "It matches the only top element, which has no parent or sibling in the tree, so it can only be in the first compound of a selector, followed by > or a descendant combinator, as in :root > body.";
+$cssRootInsideHow = "It cannot be in an argument of :not(), :is(), :where(), :has() or :nth-child(). Put it in the first compound of the selector, as in :root > body.";
 $cssUnsupported = Join[
-  AssociationMap["To get the top element, use XMLFirstCase[tree, XMLPattern[_]]." &, {"root", "scope"}],
   AssociationMap[$cssFormHow &, {"enabled", "disabled", "read-only", "read-write", "placeholder-shown",
     "default", "unchecked", "indeterminate", "valid", "invalid", "in-range", "out-of-range",
     "required", "optional", "defined"}]];
@@ -2154,7 +2157,7 @@ cssSharedChain[u_] :=
             Last[First[u]]]]]]]];
 
 cssPositionedQ[cp[nodes_, _]] :=
-  MemberQ[nodes, _sNth] || AnyTrue[Cases[nodes, sPseudo[c_, _] :> c], KeyExistsQ[$cssPositions, #] &];
+  MemberQ[nodes, _sNth] || AnyTrue[Cases[nodes, sPseudo[c_, _] :> c], KeyExistsQ[$cssPositions, #] || MemberQ[{"root", "scope"}, #] &];
 
 (* A selector of one compound whose :is() or :where() has an argument with a
    combinator is a selector list: each argument with the rest of the compound
@@ -2191,6 +2194,19 @@ cssChainPattern[cx[comps_, links_]] :=
     If[MemberQ[links, cssColumn], cssRefuse["unsupported", "the column combinator ||", "Columns are not supported."]];
     runs = Split[Transpose[{ts, Prepend[links, None]}], MatchQ[Last[#2], Adjacent | Sibling] &];
     Apply[cssChain, Fold[cssAddRun, {{}, {}}, runs]]];
+
+(* :root and :scope: the first compound, alone in its run, is the only child
+   of the document, and its positions among its siblings are each 1 or never
+   hold. *)
+cssAddRun[{stages_, links_}, run_] /; AnyTrue[run[[All, 1]], MemberQ[Last[#], _cssRoot] &] :=
+  If[stages === {} && Length[run] == 1,
+    With[{part = run[[1, 1]]},
+      {{XMLDocument[], If[AllTrue[Last[part], cssFirstQ], {}, {Except[_]}] ~Append~ First[part]}, {Child}}],
+    cssRefuse["unsupported", First[FirstCase[Join @@ run[[All, 1, 3]], _cssRoot]], $cssRootHow]];
+
+cssFirstQ[_cssRoot] := True;
+cssFirstQ[cssPos[_, a_, b_, _, _]] :=
+  Which[a == 0, b == 1, a > 0, b <= 1 && Mod[1 - b, a] == 0, True, b >= 1 && Mod[b - 1, -a] == 0];
 
 cssAddRun[{stages_, links_}, run_] :=
   With[{lead = run[[1, 2]], parts = run[[All, 1]], within = Rest[run[[All, 2]]]},
@@ -2358,6 +2374,8 @@ cssApply[bs_, sPseudo["empty", _]] := cssWith[bs, cssTest[$cssEmptyTest]];
 cssApply[bs_, sPseudo["checked", _]] := Flatten[Outer[cssMerge, bs, $cssChecked], 1];
 cssApply[bs_, sPseudo[c_, text_]] /; KeyExistsQ[$cssPositions, c] :=
   (Scan[Sow[cssPos[Sequence @@ #, text], cssPosTag] &, $cssPositions[c]]; bs);
+(* A place in the tree, as a position is: the compound is a list stage. *)
+cssApply[bs_, sPseudo["root" | "scope", text_]] := (Sow[cssRoot[text], cssPosTag]; bs);
 (* of S: the element matches S, and is counted among the siblings that do. *)
 cssApply[bs_, sNth[p_, None]] := (Sow[p, cssPosTag]; bs);
 cssApply[bs_, sNth[cssPos[e_, a_, b_, "of", text_], args_]] := (
@@ -2391,7 +2409,10 @@ cssArgPattern[_, text_] := cssRefuse["unsupported", text, $cssComplexHow];
    with one is a list stage, not an element pattern. *)
 cssUnpositioned[{x_, {}}, _, _] := x;
 cssUnpositioned[{x_, _, {}}, _, _] := x;
-cssUnpositioned[{__, counts_List}, where_, how_] := cssRefuse["unsupported", Last[First[counts]] <> where, how];
+cssUnpositioned[{__, counts_List}, where_, how_] :=
+  Replace[FirstCase[counts, _cssRoot, None], {
+    None :> cssRefuse["unsupported", Last[First[counts]] <> where, how],
+    cssRoot[text_] :> cssRefuse["unsupported", text <> where, $cssRootInsideHow]}];
 
 (* :not() of one class or one type merges into the class list or the tag, so a
    classless element matches, as in CSS; otherwise it is a condition, never an

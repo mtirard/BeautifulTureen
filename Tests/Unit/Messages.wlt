@@ -222,8 +222,8 @@ TestCreate[
 ];
 
 TestCreate[
-  Join @@ (capturedMessages[FromCSSSelector[#]] & /@ {"li:root", "x :is(a b)"}),
-  {"\"li:root\" is valid CSS, but \":root\" cannot be translated to an XML pattern. \"To get the top element, use XMLFirstCase[tree, XMLPattern[_]].\"",
+  Join @@ (capturedMessages[FromCSSSelector[#]] & /@ {"body :root", "x :is(a b)"}),
+  {"\"body :root\" is valid CSS, but \":root\" cannot be translated to an XML pattern. \"It matches the only top element, which has no parent or sibling in the tree, so it can only be in the first compound of a selector, followed by > or a descendant combinator, as in :root > body.\"",
    "\"x :is(a b)\" is valid CSS, but \":is(a b)\" cannot be translated to an XML pattern. \"Its arguments can hold a combinator only when its compound is the whole selector, as in p:is(div p, section > p), and not inside :not() or :has().\""},
   TestID -> "message-css-unsupported"
 ];

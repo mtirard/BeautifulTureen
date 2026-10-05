@@ -626,7 +626,7 @@ TestCreate[
 
 
 TestCreate[
-  kindOf /@ {":root", ":scope", "a:lang(fr)", ":dir(ltr)", ":enabled", ":disabled", ":required", ":defined",
+  kindOf /@ {"body :root", "p > :scope", "a:lang(fr)", ":dir(ltr)", ":enabled", ":disabled", ":required", ":defined",
     "svg|rect", "*|a", "|a", "[xlink|href]", "a || b", "x :is(a b)", "x > p:is(a b)", ":has(+ a)", ":has(~ a)",
     ":not(a b)", ":is(a b):is(c d)", ":not(:only-child)", ":is(li:only-child)", ":not(:nth-child(2))",
     ":where(:first-of-type)", ":nth-child(1 of a b)", ":nth-child(1 of :first-child)", "div:has(:is(a b))"},
@@ -643,7 +643,7 @@ TestCreate[
 ];
 
 TestCreate[
-  Quiet[FromCSSSelector[#]] & /@ {":root", "a:hover", ":foo"},
+  Quiet[FromCSSSelector[#]] & /@ {"p :root", "a:hover", ":foo"},
   {$Failed, $Failed, $Failed},
   TestID -> "css-messages-give-failed"
 ];
@@ -651,7 +651,7 @@ TestCreate[
 (* The whole string is parsed first, so a selector that is not valid is
    ::invalid even after a part that cannot be translated. *)
 TestCreate[
-  kindOf[":root, a/**/b"],
+  kindOf["p :root, a/**/b"],
   "invalid",
   TestID -> "css-messages-invalid-first"
 ];
@@ -710,7 +710,7 @@ TestCreate[
 ];
 
 TestCreate[
-  {XMLCases[$note, "a > > b"], XMLMatchQ[XMLElement["p", {}, {}], ":hover"], HTMLInnerText[$note, "Roles" -> {":root" -> "Skip"}]},
+  {XMLCases[$note, "a > > b"], XMLMatchQ[XMLElement["p", {}, {}], ":hover"], HTMLInnerText[$note, "Roles" -> {"p :root" -> "Skip"}]},
   {$Failed, $Failed, $Failed},
   {FromCSSSelector::invalid, FromCSSSelector::impossible, FromCSSSelector::unsupported},
   TestID -> "css-string-refused-gives-only-the-translators-message"
@@ -748,4 +748,67 @@ TestCreate[
       Lookup[XMLCases[$rel, "a[rel~=x]"][[All, 2]], "id", None]]},
   {{"r2", "r3"}, {"v1"}, {"r1", None}},
   TestID -> "css-string-readings-reach-nested-queries"
+];
+
+
+(* === :root and :scope (ADR 0018) ===
+   The only top element under the document, with the rest of the compound
+   merged into the list's one entry. *)
+
+TestCreate[
+  {FromCSSSelector["html:root"], FromCSSSelector[":scope > p"], FromCSSSelector[":root:first-child"],
+   FromCSSSelector[":ROOT:only-of-type"], FromCSSSelector[":root:nth-child(2)"], FromCSSSelector[":root:nth-last-child(-n+3)"],
+   FromCSSSelector[":root p"]},
+  {Child[XMLDocument[], {XMLPattern["html"]}], Child[XMLDocument[], {XMLPattern[_]}, XMLPattern["p"]],
+   Child[XMLDocument[], {XMLPattern[_]}], Child[XMLDocument[], {XMLPattern[_]}],
+   Child[XMLDocument[], {Except[_], XMLPattern[_]}], Child[XMLDocument[], {XMLPattern[_]}],
+   Child[XMLDocument[], Descendant[{XMLPattern[_]}, XMLPattern["p"]]]},
+  TestID -> "css-root-exact"
+];
+
+$rootDoc = ImportString["<html><head><title>t</title></head><body><p>a</p></body></html>", {"HTML", "XMLObject"}];
+tags[tree_, sel_] := First /@ XMLCases[tree, sel];
+
+(* As soupsieve gives them. *)
+TestCreate[
+  {tags[$rootDoc, ":root"], tags[$rootDoc, ":root > body"], tags[$rootDoc, ":scope > *"],
+   tags[$rootDoc, "html:root:first-child"], tags[$rootDoc, ":root:has(> body)"], tags[$rootDoc, "body:root"], tags[$rootDoc, "html:root, body"],
+   tags[{XMLElement["p", {}, {"a"}], XMLElement["p", {}, {"b"}]}, ":root"],
+   tags[{XMLElement["p", {}, {"a"}]}, ":root"]},
+  {{"html"}, {"body"}, {"head", "body"}, {"html"}, {"html"}, {}, {"html", "body"}, {}, {"p"}},
+  TestID -> "css-root-selects"
+];
+
+(* A bare element is the only top element, and never a result. *)
+TestCreate[
+  {tags[XMLElement["html", {}, {XMLElement["body", {}, {}]}], ":root"],
+   tags[XMLElement["html", {}, {XMLElement["body", {}, {}]}], ":root > body"],
+   tags[XMLElement["div", {}, {XMLElement["p", {}, {}], XMLElement["span", {}, {XMLElement["p", {}, {}]}]}], ":scope > p"]},
+  {{}, {"body"}, {"p"}},
+  TestID -> "css-root-on-bare-element"
+];
+
+(* ADR 0018's Possible Issues: top-level text does not stop :root, which
+   soupsieve refuses; :scope > p on a list of several top elements gives
+   nothing. *)
+TestCreate[
+  {tags[{"text", XMLElement["p", {}, {}]}, ":root"],
+   tags[{XMLElement["p", {}, {}], XMLElement["p", {}, {}]}, ":scope > p"]},
+  {{"p"}, {}},
+  TestID -> "css-root-possible-issues"
+];
+
+TestCreate[
+  kindOf /@ {"body :root", "p > :scope", ":root + p", ":root ~ p", "p ~ :scope", ":not(:root)", ":is(:root)",
+    ":where(:scope)", ":has(:root)", "div:has(> :scope)", "p:nth-child(1 of :root)"},
+  ConstantArray["unsupported", 11],
+  TestID -> "css-root-refused"
+];
+
+TestCreate[
+  {XMLCases[$rootDoc, Child[XMLPattern["html"], ":root"]], XMLCases[$rootDoc, Descendant[XMLPattern["html"], ":scope > p"]],
+   XMLMatchQ[XMLElement["html", {}, {}], ":root"]},
+  {$Failed, $Failed, $Failed},
+  {XMLCases::badpat, XMLCases::badpat, XMLMatchQ::combinator},
+  TestID -> "css-root-as-later-stage-refused"
 ];
