@@ -18,7 +18,8 @@ Child::usage = "Child[parentPat, childPat] is a combinator for XMLCases, XMLFirs
 Adjacent::usage = "Adjacent[beforePat, afterPat] is a combinator for XMLCases and XMLFirstCase that matches elements that match afterPat and immediately follow a sibling that matches beforePat. Adjacent[pat1, pat2, pat3, ...] is Adjacent[pat1, Adjacent[pat2, pat3, ...]], so Adjacent[a, b, c] matches each c that immediately follows a b that immediately follows an a. Each argument is a stage: an XMLPattern, alternatives of them, or another combinator. Stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements. A condition on a stage can use the names bound in that stage. A condition on the whole combinator can use the names bound in all its stages.";
 Sibling::usage = "Sibling[beforePat, afterPat] is a combinator for XMLCases and XMLFirstCase that matches elements that match afterPat and follow a sibling that matches beforePat, at any distance. Each such element is given once. A name bound in beforePat, as used in a rule body, gives the first matching earlier sibling in document order. Sibling[pat1, pat2, pat3, ...] is Sibling[pat1, Sibling[pat2, pat3, ...]], so Sibling[a, b, c] matches each c that follows a b that follows an a. Each argument is a stage: an XMLPattern, alternatives of them, or another combinator. Stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements. A condition on a stage can use the names bound in that stage. A condition on the whole combinator can use the names bound in all its stages.";
 Descendant::usage = "Descendant[ancestorPat, descPat] is a combinator for XMLCases, XMLFirstCase and XMLDeleteCases that matches elements that match descPat and are nested at any depth inside an element that matches ancestorPat. Each such element is given once, however many of its ancestors match. A name bound in ancestorPat, as used in a rule body, gives the outermost matching ancestor. Descendant[pat1, pat2, pat3, ...] is Descendant[pat1, Descendant[pat2, pat3, ...]], so Descendant[a, b, c] matches each c inside a b inside an a. Each argument is a stage: an XMLPattern, alternatives of them, or another combinator. Stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements. A condition on a stage can use the names bound in that stage. A condition on the whole combinator can use the names bound in all its stages.";
-HTMLTextContent::usage = "HTMLTextContent[tree] gives the text of an XML tree: all the strings it contains, joined in document order. No whitespace is added or removed, so source indentation and the whitespace in <pre> are kept. tree can be an XMLElement, an XMLObject document, a list, or a string.";
+FromCSSSelector::usage = "FromCSSSelector[\"selector\"] gives the XML pattern that a CSS selector describes, for use in XMLCases, XMLFirstCase, XMLDeleteCases and XMLMatchQ, or as a stage of Child, Descendant, Adjacent or Sibling. A CSS selector string can also be given directly wherever these take a pattern, and means its translation. The selector is matched as written: letter case matters in tag names, attribute names and values, and attributes that the HTML importer adds, such as rowspan=\"1\", count as present. [foo~=\"x\"] becomes \"fooList\" -> \"x\", which needs a reading for foo in $AttributeReadings or in the \"AttributeReadings\" option of the function that runs the query.";
+HTMLTextContent::usage ="HTMLTextContent[tree] gives the text of an XML tree: all the strings it contains, joined in document order. No whitespace is added or removed, so source indentation and the whitespace in <pre> are kept. tree can be an XMLElement, an XMLObject document, a list, or a string.";
 HTMLInnerText::usage = "HTMLInnerText[tree] gives the readable text of an XML tree. Runs of whitespace are collapsed, block-level elements go on their own lines, <br> becomes a newline, <pre> content is kept as written, tags such as script and style are dropped, and the result is trimmed. How each element is treated depends only on its tag, as given by the built-in user-agent stylesheet. HTMLInnerText[tree, \"Roles\" -> rules] changes this, with rules of the form pattern -> role, where pattern is an XMLPattern or a tag string and role is \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\" or \"Skip\". \"BlockSeparator\" -> sep sets the string inserted between blocks (default \"\\n\"). \"AttributeReadings\" -> readings adds readings to $AttributeReadings for this call. tree can be an XMLElement, an XMLObject document, a list, or a string.";
 HTMLToNotebook::usage = "HTMLToNotebook[tree] converts an HTML or XML tree to a Notebook expression, which can be displayed or exported with Export to Markdown, PDF, RTF, etc. Block-level tags become cells, such as headings -> Title, Chapter, Section, etc., p -> Text, li -> Item, Subitem, etc., blockquote -> a framed quote, pre -> a Program cell, and table -> a Dataset or Grid, with its caption as a Text cell before it. Inline tags become boxes in the surrounding cell, such as b -> bold, i -> italic, code -> inline code, a -> a hyperlink and img -> its alt text, linked to its src. How each element is treated depends only on its tag, as given by the built-in user-agent stylesheet. HTMLToNotebook[tree, \"Roles\" -> rules] changes the role of elements, such as block or inline. \"Constructs\" -> rules changes what an element becomes: an inline style such as \"Bold\", a cell style, or a function that is applied to the element and gives a Cell or boxes. The left-hand side of each rule is an XMLPattern or a tag string. \"AttributeReadings\" -> readings adds readings to $AttributeReadings for this call. tree can be an XMLElement, an XMLObject document, a list, or a string.";
 
@@ -57,7 +58,10 @@ $AttributeReadings::badvalue = "The reading for `1` has `2` -> `3`. Delimiters s
 $AttributeReadings::duplistkey = "More than one reading has the list key `1`. Give each reading a different \"ListKey\".";
 $AttributeReadings::listkeyisreading = "The list key `1` is also an attribute with a reading, so `1` in an XMLPattern would be ambiguous. Choose a different \"ListKey\".";
 XMLMatchQ::combinator = "`1` relates an element to its parent or siblings, which a lone element does not have. Use XMLCases or XMLFirstCase to search a tree with it.";
-HTMLTextContent::badtree = "The first argument should be an XMLObject, an XMLElement, a string, or a list of these. Got head `1`.";
+FromCSSSelector::invalid = "`1` is not a valid CSS selector: `2`.";
+FromCSSSelector::unsupported = "`1` is valid CSS, but `2` cannot be translated to an XML pattern. `3`";
+FromCSSSelector::impossible = "`2` in `1` depends on a browser, such as user input, layout or the page's URL, and cannot be matched in a static document. `3`";
+HTMLTextContent::badtree ="The first argument should be an XMLObject, an XMLElement, a string, or a list of these. Got head `1`.";
 HTMLClassList::notelement = "The argument should be a single XMLElement. Got head `1`. For a list of elements, use HTMLClassList /@ elements.";
 HTMLInnerText::badtree = "The first argument should be an XMLObject, an XMLElement, a string, or a list of these. Got head `1`.";
 HTMLInnerText::badrole = "A \"Roles\" rule gave `1`, which is not \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\" or \"Skip\". The element gets its role from the built-in user-agent stylesheet instead.";
@@ -400,6 +404,10 @@ normalForm[chain[stages_, links_, conditions_], body_] :=
    chain[stages, links, conditions]. A Condition on a combinator sees the names
    of all its stages, and covers them. L[s1, s2, ..., sn] is the right-nested
    chain L[s1, L[s2, ..., sn]]; one stage or none is refused. *)
+(* A string is a CSS selector, and means its translation (ADR 0017): one that
+   gives a combinator is spliced into the chain, as any combinator stage is. *)
+cStage[s_String] := cStage[cssPattern[s]];
+cStage[c : Verbatim[Condition][_String, _]] := cStage[conditionWith[cssPattern[c[[1]]], Extract[c, {2}, Hold]]];
 cStage[(h : $links)[a_, b_]] := joinChains[cStage[a], h, cStage[b]];
 cStage[(h : $links)[a_, b_, rest__]] := cStage[h[a, h[b, rest]]];
 cStage[q : $links[RepeatedNull[_, 1]]] := refuseAtHead["stages", q];
@@ -418,8 +426,12 @@ coverChain[chain[s_, l_, c_], test_] := chain[s, l, Append[c, {{1, Length[s]}, t
 (* ---- Element patterns ---- *)
 
 cElem[XMLPattern[args___]] := cXMLPattern[{args}];
+(* A string that gives a combinator is not an element pattern, and is named as
+   written. *)
+cElem[s_String] := With[{t = cssPattern[s]}, If[combinatorQ[patternBase[t]], badpat[s], cElem[t]]];
 (* A combinator is not an element pattern; the whole Alternatives is named. *)
-cElem[alts_Alternatives] /; AnyTrue[List @@ alts, combinatorQ] := badpat[alts];
+cElem[alts_Alternatives] /; AnyTrue[List @@ alts, combinatorQ[If[StringQ[#], patternBase[cssPattern[#]], #]] &] :=
+  badpat[alts];
 cElem[alts_Alternatives] := Alternatives @@ (cElem /@ List @@ alts);
 cElem[Verbatim[Pattern][s_Symbol, p_]] :=
   If[combinatorQ[p], badpat[namedPattern[s, p]], bindAs[s, cElem[p], strip]];
@@ -435,6 +447,9 @@ cElem[q_] := badpat[q];
 
 (* A Condition's test sees the names bound in its left-hand side, compiled by
    comp; attach puts the held test on the compiled left-hand side. *)
+(* A selector that is not translated has given FromCSSSelector's message. *)
+cssPattern[s_] := Replace[FromCSSSelector[s], $Failed :> refuseQuietly[]];
+
 conditioned[comp_, c_, attach_] :=
   Module[{lhs, binds},
     {lhs, binds} = reapBinds[comp[c[[1]]]];
@@ -1212,6 +1227,676 @@ cachedMatcher[q_] :=
         m]]];
 
 (* =========================================================== *)
+(* FromCSSSelector (ADR 0017)                                   *)
+(*                                                              *)
+(* A CSS selector, tokenised by CSS Syntax 3 and read as static *)
+(* Selectors Level 4, to the XML pattern it says. The string is *)
+(* parsed whole first, so a selector that is not valid CSS is   *)
+(* ::invalid wherever the fault is, into a tree:                *)
+(*   a selector list   {cx, ...}                                *)
+(*   a selector        cx[{compound, ...}, {link, ...}]         *)
+(*   a compound        cp[{simple, ...}, its text]              *)
+(*   a relative one    rel[link, cx[...]], in :has()            *)
+(* The tree is then translated, and what cannot be translated   *)
+(* is ::unsupported or ::impossible, naming the workaround.     *)
+(* The output holds only public symbols and the names made by   *)
+(* cssFreshName, so it can be spliced into a larger pattern.    *)
+(* =========================================================== *)
+
+FromCSSSelector[s_String] := cssTranslate[s];
+FromCSSSelector[x_] := (Message[FromCSSSelector::string, 1, HoldForm[FromCSSSelector[x]]]; $Failed);
+FromCSSSelector[args___] := (argumentCountMessage[FromCSSSelector, Length[{args}], {1, 1}]; $Failed);
+
+(* An invalid selector is caught before any translation, as the whole string
+   is parsed first. *)
+cssTranslate[s_] :=
+  Block[{$cssInput = cssPreprocess[s], $cssArgOf = None, $cssInHas = False},
+    Catch[
+      Catch[cssListPattern[cssParse[cssTokens[$cssInput]]], $cssRefused,
+        Function[{why, tag}, cssRefusal[s, why]]],
+      $cssInvalid,
+      Function[{why, tag}, Message[FromCSSSelector::invalid, s, why]; $Failed]]];
+
+cssRefusal[s_, {kind_, part_, how_}] := (Message[MessageName[FromCSSSelector, kind], s, part, how]; $Failed);
+
+cssInvalid[why_String, pos_Integer] := Throw[why <> " at character " <> ToString[pos], $cssInvalid];
+cssInvalid[why_String, pos_Integer, hint_String] :=
+  Throw[why <> " at character " <> ToString[pos] <> "; " <> hint, $cssInvalid];
+cssInvalid[why_String] := Throw[why, $cssInvalid];
+cssRefuse[kind_, part_, how_] := Throw[{kind, part, how}, $cssRefused];
+
+(* ASCII case-insensitivity, as Selectors requires for keywords: ToLowerCase
+   would also fold letters such as \[CapitalEAcute]. *)
+cssLower[s_] := StringReplace[s, RegularExpression["[A-Z]"] :> ToLowerCase["$0"]];
+
+(* ---- Tokens (CSS Syntax 3, sections 3 and 4) ---- *)
+
+cssPreprocess[s_] :=
+  StringReplace[s, {"\r\n" -> "\n", "\r" -> "\n", "\f" -> "\n", FromCharacterCode[0] -> "\:fffd"}];
+
+(* The non-ASCII code points an identifier may hold unescaped (the current
+   draft's list, after HTML's valid custom element names): U+00A0, for one,
+   must be escaped. *)
+$cssNonASCII = "\\x{B7}\\x{C0}-\\x{D6}\\x{D8}-\\x{F6}\\x{F8}-\\x{37D}\\x{37F}-\\x{1FFF}\\x{200C}\\x{200D}\\x{203F}\\x{2040}\\x{2070}-\\x{218F}\\x{2C00}-\\x{2FEF}\\x{3001}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFFD}\\x{10000}-\\x{10FFFF}";
+(* An escape: hex digits and one optional whitespace, or any other code point
+   but a newline, or the end of the input. *)
+$cssEscape = "\\\\(?:[0-9a-fA-F]{1,6}[ \\t\\n]?|[^\\n0-9a-fA-F]|\\z)";
+$cssNameChar = "(?:[a-zA-Z0-9_\\-" <> $cssNonASCII <> "]|" <> $cssEscape <> ")";
+$cssIdent = "(?:--|-?(?:[a-zA-Z_" <> $cssNonASCII <> "]|" <> $cssEscape <> "))" <> $cssNameChar <> "*";
+cssStringRegex[q_] := q <> "(?:[^" <> q <> "\\\\\\n]|\\\\[\\s\\S]?)*" <> q <> "?";
+cssClosedStringRegex[q_] := q <> "(?:[^" <> q <> "\\\\\\n]|\\\\[\\s\\S])*" <> q;
+
+(* In the order consume-token tries them, the first that matches winning: so a
+   "-" starts a number, then -->, then an identifier, before it is a delim. *)
+$cssTokenKinds = {
+  "comment" -> "/\\*[\\s\\S]*?(?:\\*/|\\z)",
+  "ws" -> "[ \\t\\n]+",
+  "string" -> cssStringRegex["\""] <> "|" <> cssStringRegex["'"],
+  "hash" -> "#" <> $cssNameChar <> "+",
+  "number" -> "[+-]?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)(?:[eE][+-]?[0-9]+)?(?:%|" <> $cssIdent <> ")?",
+  "cdc" -> "-->",
+  "function" -> $cssIdent <> "\\(",
+  "ident" -> $cssIdent,
+  "cdo" -> "<!--",
+  "delim" -> "[\\s\\S]"};
+
+$cssTokenRegex = RegularExpression[StringRiffle[("(?:" <> # <> ")") & /@ Values[$cssTokenKinds], "|"]];
+$cssTokenTests = MapAt[RegularExpression, $cssTokenKinds, {All, 2}];
+
+(* tk[kind, value, start, end], with escapes resolved; comments are dropped,
+   and are not whitespace. *)
+cssTokens[s_] := cssToken[s, #] & /@ StringPosition[s, $cssTokenRegex, Overlaps -> False];
+
+cssToken[s_, {i_, j_}] :=
+  With[{text = StringTake[s, {i, j}]},
+    cssTokenOf[SelectFirst[$cssTokenTests, StringMatchQ[text, Last[#]] &][[1]], text, s, i, j]];
+
+cssTokenOf["comment", __] := Nothing;
+cssTokenOf["ws", _, _, i_, j_] := tk["ws", " ", i, j];
+cssTokenOf["string", text_, s_, i_, j_] :=
+  With[{closed = StringMatchQ[text, RegularExpression[cssClosedStringRegex[StringTake[text, 1]]]]},
+    Which[
+      closed, tk["string", cssUnescape[StringTake[text, {2, -2}], ""], i, j],
+      (* Open at the end of the input, it is closed; open at a newline, bad. *)
+      j == StringLength[s], tk["string", cssUnescape[StringDrop[text, 1], ""], i, j],
+      True, tk["badstring", text, i, j]]];
+cssTokenOf["hash", text_, _, i_, j_] :=
+  tk[If[StringMatchQ[StringDrop[text, 1], RegularExpression[$cssIdent]], "hash-id", "hash"],
+    cssUnescape[StringDrop[text, 1], "\:fffd"], i, j];
+cssTokenOf["number", text_, _, i_, j_] := tk["number", text, i, j];
+cssTokenOf["function", text_, _, i_, j_] := tk["function", cssUnescape[StringDrop[text, -1], "\:fffd"], i, j];
+cssTokenOf["ident", text_, _, i_, j_] := tk["ident", cssUnescape[text, "\:fffd"], i, j];
+cssTokenOf[_, text_, _, i_, j_] := tk["delim", text, i, j];
+
+(* A backslash at the end of the input is U+FFFD in a name, and nothing in a
+   string; before a newline, in a string, it continues the line. *)
+cssUnescape[s_, atEnd_] :=
+  StringReplace[s, {
+    RegularExpression["\\\\([0-9a-fA-F]{1,6})[ \\t\\n]?"] :> cssCodePoint[FromDigits["$1", 16]],
+    RegularExpression["\\\\\\n"] -> "",
+    RegularExpression["\\\\([\\s\\S])"] :> "$1",
+    RegularExpression["\\\\\\z"] -> atEnd}];
+
+cssCodePoint[n_] :=
+  If[n == 0 || 16^^D800 <= n <= 16^^DFFF || n > 16^^10FFFF, "\:fffd", FromCharacterCode[n]];
+
+(* ---- Blocks (CSS Syntax 3, section 5) ---- *)
+
+(* [ ], ( ) and a function's ( ) become blk[opener, contents, end]. A block
+   still open at the end of the input is closed there, without error. *)
+cssBlocks[toks_] :=
+  With[{stack = Fold[cssBlockStep, {{None, {}}}, toks]},
+    Last @ First @ Nest[cssCloseBlock[#, StringLength[$cssInput]] &, stack, Length[stack] - 1]];
+
+cssBlockStep[stack_, t : (tk["delim", "[" | "(", _, _] | tk["function", __])] := Append[stack, {t, {}}];
+cssBlockStep[stack_, t : tk["delim", "]" | ")", _, _]] /; cssClosesQ[stack[[-1, 1]], t] :=
+  cssCloseBlock[stack, t[[4]]];
+cssBlockStep[stack_, t_] := MapAt[Append[t], stack, {-1, 2}];
+
+cssCloseBlock[stack_, end_] :=
+  MapAt[Append[blk[stack[[-1, 1]], stack[[-1, 2]], end]], Most[stack], {-1, 2}];
+
+cssClosesQ[tk["delim", "[", __], tk["delim", "]", __]] := True;
+cssClosesQ[tk["delim", "(", __] | tk["function", __], tk["delim", ")", __]] := True;
+cssClosesQ[_, _] := False;
+
+cssStart[tk[_, _, i_, _]] := i;
+cssStart[blk[o_, _, _]] := cssStart[o];
+cssEnd[tk[_, _, _, j_]] := j;
+cssEnd[blk[_, _, j_]] := j;
+
+(* The source text of a run of items, and of one item as a message shows it. *)
+cssText[items_List] := StringTake[$cssInput, {cssStart[First[items]], cssEnd[Last[items]]}];
+cssShown[blk[o_, _, _]] := cssShown[o];
+cssShown[t_tk] := cssText[{t}];
+
+cssWSQ[tk["ws", __]] := True;
+cssWSQ[_] := False;
+
+cssTrimWS[items_] :=
+  With[{n = LengthWhile[items, cssWSQ]},
+    If[n == Length[items], {}, Drop[Drop[items, n], -LengthWhile[Reverse[items], cssWSQ]]]];
+
+(* ---- The grammar (Selectors Level 4, section 16) ---- *)
+
+cssParse[toks_] := (
+  Replace[FirstCase[toks, tk["badstring", __]],
+    t_tk :> cssInvalid["a string cannot hold a newline that is not escaped", cssStart[t]]];
+  Replace[FirstCase[toks, tk["delim", "\\", __]],
+    t_tk :> cssInvalid["\\ before a newline is not an escape outside a string", cssStart[t]]];
+  cssSelectorList[cssBlocks[toks]]);
+
+cssSelectorList[items_] :=
+  Replace[cssCommaSplit[items], {
+    {{{}, _}} :> cssInvalid["the selector is empty"],
+    parts_ :> (cssComplex[cssNonEmpty[#, items], False] & /@ parts)}];
+
+(* The items between commas, each with whitespace trimmed, and the index of
+   the comma before it (0 for the first). *)
+cssCommaSplit[items_] :=
+  With[{cs = Flatten[Position[items, tk["delim", ",", _, _], {1}, Heads -> False]]},
+    MapThread[{cssTrimWS[items[[#1 + 1 ;; #2 - 1]]], #1} &, {Prepend[cs, 0], Append[cs, Length[items] + 1]}]];
+
+cssNonEmpty[{{}, 0}, items_] :=
+  cssInvalid["a selector is missing before ,", cssStart[First[Select[items, MatchQ[tk["delim", ",", _, _]]]]]];
+cssNonEmpty[{{}, k_}, items_] := cssInvalid["a selector is missing after ,", cssStart[items[[k]]]];
+cssNonEmpty[{seg_, _}, _] := seg;
+
+(* Compounds and the links between them: a run of whitespace alone is a
+   descendant combinator, and whitespace around >, +, ~ and || is ignored. A
+   relative selector, in :has(), may start with a combinator. *)
+cssComplex[items_, relative_] :=
+  Module[{runs = SplitBy[cssColumns[items], cssSeparatorQ], lead = Descendant, compounds},
+    If[cssSeparatorQ[runs[[1, 1]]],
+      If[!relative,
+        cssInvalid["a selector cannot start with " <> cssShown[runs[[1, 1]]], cssStart[runs[[1, 1]]]]];
+      lead = cssLink[First[runs]];
+      runs = Rest[runs];
+      If[runs === {}, cssInvalid["a selector is missing after " <> cssShown[Last[items]], cssStart[Last[items]]]]];
+    If[cssSeparatorQ[runs[[-1, 1]]],
+      With[{c = Last[Select[runs[[-1]], cssCombinatorQ]]},
+        cssInvalid["a selector cannot end with " <> cssShown[c], cssStart[c]]]];
+    compounds = cssCompound /@ runs[[1 ;; ;; 2]];
+    cssPseudoElementsLast[compounds];
+    With[{c = cx[compounds, cssLink /@ runs[[2 ;; ;; 2]]]}, If[relative, rel[lead, c], c]]];
+
+cssColumns[items_] :=
+  SequenceReplace[items,
+    {tk["delim", "|", i_, _], tk["delim", "|", k_, j_]} /; k == i + 1 :> tk["column", "||", i, j]];
+
+cssCombinatorQ[tk["delim", ">" | "+" | "~", _, _] | tk["column", __]] := True;
+cssCombinatorQ[_] := False;
+
+cssSeparatorQ[t_] := cssWSQ[t] || cssCombinatorQ[t];
+
+cssLink[run_] :=
+  With[{cs = Select[run, cssCombinatorQ]},
+    Switch[Length[cs],
+      0, Descendant,
+      1, cssLinkOf[First[cs]],
+      _, cssInvalid["two combinators in a row", cssStart[cs[[2]]]]]];
+
+cssLinkOf[tk["delim", ">", __]] := Child;
+cssLinkOf[tk["delim", "+", __]] := Adjacent;
+cssLinkOf[tk["delim", "~", __]] := Sibling;
+cssLinkOf[tk["column", __]] := cssColumn;
+
+(* A pseudo-element can only end the last compound of a selector, and is
+   never valid in a pseudo-class's argument. *)
+cssPseudoElementsLast[compounds_] := (
+  Scan[Replace[FirstCase[First[#], _sPseudoElement],
+      e_sPseudoElement :> cssInvalid[e[[1]] <> " can only end a selector", e[[2]]]] &,
+    Most[compounds]];
+  If[$cssArgOf =!= None,
+    Replace[FirstCase[First[Last[compounds]], _sPseudoElement],
+      e_sPseudoElement :> cssInvalid[e[[1]] <> " cannot be used inside " <> $cssArgOf, e[[2]]]]]);
+
+(* A compound: at most one type selector, first, then subclass selectors, with
+   only pseudo-classes after a pseudo-element. *)
+cssCompound[parts_] :=
+  With[{nodes = Replace[cssType[parts], {t_, rest_} :> Join[t, cssSubclasses[rest]]]},
+    Replace[FirstPosition[nodes, _sPseudoElement, None, {1}], {k_} :>
+      If[!FreeQ[Drop[nodes, k], _sId | _sClass | _sAttr, {1}],
+        cssInvalid[nodes[[k, 1]] <> " must come last in its compound", nodes[[k, 2]]]]];
+    cp[nodes, cssText[parts]]];
+
+$cssTypeName = tk["ident", __] | tk["delim", "*", __];
+
+cssType[{a : $cssTypeName, tk["delim", "|", __], b : $cssTypeName, r___}] := {{cssNamespaced[{a, b}]}, {r}};
+cssType[{a : tk["delim", "|", __], b : $cssTypeName, r___}] := {{cssNamespaced[{a, b}]}, {r}};
+cssType[{tk["ident", n_, __], r___}] := {{sType[n]}, {r}};
+cssType[{tk["delim", "*", __], r___}] := {{sUniversal[]}, {r}};
+cssType[parts_] := {{}, parts};
+
+cssNamespaced[items_] := sRefuse["unsupported", cssText[items], $cssNamespaceHow];
+
+cssSubclasses[{}] := {};
+cssSubclasses[parts_] := Replace[cssSubclass[parts], {node_, rest_} :> Prepend[cssSubclasses[rest], node]];
+
+cssSubclass[{tk["hash-id", v_, __], r___}] := {sId[v], {r}};
+cssSubclass[{t : tk["hash", __], ___}] := cssInvalid[cssShown[t] <> " is not a valid id selector", cssStart[t]];
+cssSubclass[{tk["delim", ".", __], tk["ident", v_, __], r___}] := {sClass[v], {r}};
+cssSubclass[{t : tk["delim", ".", __], ___}] := cssInvalid["a class name is missing after .", cssStart[t]];
+cssSubclass[{b : blk[tk["delim", "[", __], _, _], r___}] := {cssAttribute[b], {r}};
+cssSubclass[{c : tk["delim", ":", __], tk["delim", ":", __], x : (tk["ident", __] | blk[tk["function", __], _, _]), r___}] :=
+  {cssPseudoElement[c, x], {r}};
+cssSubclass[{c : tk["delim", ":", __], x : tk["ident", __], r___}] := {cssPseudoClass[c, x], {r}};
+cssSubclass[{c : tk["delim", ":", __], x : blk[tk["function", __], _, _], r___}] := {cssPseudoFunction[c, x], {r}};
+cssSubclass[{c : tk["delim", ":", __], ___}] := cssInvalid["a pseudo-class name is missing after :", cssStart[c]];
+cssSubclass[{t_, ___}] := cssInvalid["unexpected " <> cssShown[t], cssStart[t]];
+
+(* ---- Attribute selectors ---- *)
+
+(* The value must be one identifier or one string. No whitespace is allowed
+   inside a matcher such as ^=, so its two delims must be adjacent. *)
+cssAttribute[b : blk[_, items_, _]] :=
+  With[{its = DeleteCases[cssMatchers[items], tk["ws", __]]},
+    If[MatchQ[its, {$cssTypeName, tk["delim", "|", __], tk["ident", __], ___} | {tk["delim", "|", __], tk["ident", __], ___}],
+      sRefuse["unsupported", cssText[{b}], $cssNamespaceHow],
+      cssAttributeOf[its, b]]];
+
+cssMatchers[items_] :=
+  SequenceReplace[items, {
+    {tk["delim", m : "~" | "|" | "^" | "$" | "*", i_, _], tk["delim", "=", k_, j_]} /; k == i + 1 :>
+      tk["matcher", m <> "=", i, j],
+    {tk["delim", "=", i_, j_]} :> tk["matcher", "=", i, j]}];
+
+cssAttributeOf[{tk["ident", n_, __]}, _] := sAttr[n];
+cssAttributeOf[{tk["ident", n_, __], tk["matcher", m_, __], tk["ident" | "string", v_, __]}, _] := sAttr[n, m, v, None];
+cssAttributeOf[{tk["ident", n_, __], tk["matcher", m_, __], tk["ident" | "string", v_, __], f : tk["ident", flag_, __]}, _] :=
+  If[MemberQ[{"i", "s"}, cssLower[flag]], sAttr[n, m, v, cssLower[flag]],
+    cssInvalid["unknown attribute flag " <> cssShown[f], cssStart[f]]];
+cssAttributeOf[{tk["ident", __], tk["matcher", __], tk["ident" | "string", __], t_, ___}, _] :=
+  cssInvalid["unexpected " <> cssShown[t] <> " in an attribute selector", cssStart[t]];
+cssAttributeOf[{tk["ident", __], tk["matcher", __], v_, ___}, _] :=
+  cssInvalid["an attribute value must be an identifier or a string, not " <> cssShown[v], cssStart[v]];
+cssAttributeOf[{tk["ident", __], m : tk["matcher", __]}, _] :=
+  cssInvalid["an attribute value is missing after " <> cssShown[m], cssStart[m]];
+cssAttributeOf[{}, b_] := cssInvalid["an attribute selector is empty", cssStart[b]];
+cssAttributeOf[{t : Except[tk["ident", __]], ___}, _] :=
+  cssInvalid["an attribute name is missing before " <> cssShown[t], cssStart[t]];
+cssAttributeOf[{_, t_, ___}, _] := cssInvalid["unexpected " <> cssShown[t] <> " in an attribute selector", cssStart[t]];
+
+(* ---- Pseudo-classes and pseudo-elements ---- *)
+
+(* Translated in v1. *)
+$cssPseudoClasses = {"empty", "checked", "link", "any-link", "only-child", "only-of-type"};
+
+(* Valid Selectors 4 that v1 does not translate, with the workaround. *)
+$cssChildIndexedHow = "Until positions among siblings are supported, write Child[p : XMLPattern[_], e : XMLPattern[...]] /; with a test on the position of e in Last[p].";
+$cssFormHow = "Write the test as a condition on an XMLPattern.";
+$cssUnsupported = Join[
+  AssociationMap["To get the top element, use XMLFirstCase[tree, XMLPattern[_]]." &, {"root", "scope"}],
+  AssociationMap[$cssChildIndexedHow &, {"first-child", "last-child", "first-of-type", "last-of-type"}],
+  AssociationMap[$cssFormHow &, {"enabled", "disabled", "read-only", "read-write", "placeholder-shown",
+    "default", "unchecked", "indeterminate", "valid", "invalid", "in-range", "out-of-range",
+    "required", "optional", "defined"}]];
+$cssUnsupportedFunctions = Join[
+  AssociationMap[$cssChildIndexedHow &, {"nth-child", "nth-last-child", "nth-of-type", "nth-last-of-type"}],
+  <|"lang" -> "Use Descendant[XMLPattern[_, \"lang\" -> ...], ...], which takes the lang of any ancestor, not only the nearest.",
+    "dir" -> $cssFormHow|>];
+
+(* Valid, but true only in a browser. *)
+$cssStateHow = "Leave it out of the selector to match the elements in any state.";
+$cssImpossible = Join[
+  AssociationMap[$cssStateHow &, {"visited", "hover", "active", "focus", "focus-visible", "focus-within",
+    "playing", "paused", "seeking", "buffering", "stalled", "muted", "volume-locked", "open",
+    "popover-open", "modal", "fullscreen", "picture-in-picture", "autofill", "-webkit-autofill",
+    "user-valid", "user-invalid"}],
+  <|"target" -> "To match the element that a fragment names, use XMLPattern[_, \"id\" -> fragment].",
+    "host" -> "A document has no shadow trees."|>];
+$cssImpossibleFunctions = <|"host" -> "A document has no shadow trees.", "host-context" -> "A document has no shadow trees."|>;
+
+(* The functional pseudo-classes, for the message on one written without
+   parentheses. *)
+$cssPseudoFunctions = {"not", "is", "where", "has", "nth-child", "nth-last-child", "nth-of-type",
+  "nth-last-of-type", "lang", "dir", "host-context"};
+
+$cssLegacyPseudoElements = {"before", "after", "first-line", "first-letter"};
+$cssPseudoElements = {"before", "after", "first-line", "first-letter", "prefix", "suffix", "marker",
+  "placeholder", "file-selector-button", "details-content", "selection", "target-text", "search-text",
+  "spelling-error", "grammar-error", "backdrop", "cue", "column", "scroll-marker", "scroll-marker-group",
+  "view-transition"};
+$cssPseudoElementFunctions = {"highlight", "cue", "part", "slotted", "view-transition-group",
+  "view-transition-image-pair", "view-transition-old", "view-transition-new", "scroll-button", "picker"};
+
+cssPseudoElementHow["first-letter"] := "To get the first letter of each match, use StringTake[HTMLInnerText[e], UpTo[1]].";
+cssPseudoElementHow[_] := "Pseudo-elements are generated or laid out by a browser, and are not elements of the document.";
+
+cssPseudoClass[c_, x : tk["ident", n_, __]] :=
+  With[{name = cssLower[n], text = cssText[{c, x}]},
+    Which[
+      MemberQ[$cssPseudoClasses, name], sPseudo[name, text],
+      KeyExistsQ[$cssUnsupported, name], sRefuse["unsupported", text, $cssUnsupported[name]],
+      KeyExistsQ[$cssImpossible, name], sRefuse["impossible", text, $cssImpossible[name]],
+      MemberQ[$cssLegacyPseudoElements, name], sPseudoElement[text, cssStart[c], name],
+      MemberQ[$cssPseudoFunctions, name], cssInvalid[text <> " needs an argument in parentheses", cssStart[c]],
+      True, cssInvalid["unknown pseudo-class " <> text, cssStart[c]]]];
+
+cssPseudoFunction[c_, b : blk[tk["function", n_, __], items_, _]] :=
+  With[{name = cssLower[n], text = cssText[{c, b}], where = ":" <> n <> "()"},
+    Switch[name,
+      "not", sNot[cssArguments[items, where, cssStart[c], False, False], text],
+      "is" | "where", sIs[cssArguments[items, where, cssStart[c], False, True], text],
+      "has",
+        If[$cssInHas, cssInvalid[":has() cannot be used inside :has()", cssStart[c]]];
+        sHas[Block[{$cssInHas = True}, cssArguments[items, where, cssStart[c], True, False]], text],
+      "matches", cssInvalid["unknown pseudo-class " <> where, cssStart[c], "write :is() instead"],
+      "contains" | "-soup-contains" | "-soup-contains-own",
+        cssInvalid["unknown pseudo-class " <> where, cssStart[c],
+          "soupsieve adds it; test the text in a condition instead, as in e : XMLPattern[...] /; StringContainsQ[HTMLTextContent[e], ...]"],
+      _, Which[
+        KeyExistsQ[$cssUnsupportedFunctions, name], sRefuse["unsupported", text, $cssUnsupportedFunctions[name]],
+        KeyExistsQ[$cssImpossibleFunctions, name], sRefuse["impossible", text, $cssImpossibleFunctions[name]],
+        MemberQ[$cssPseudoClasses, name], cssInvalid[":" <> n <> " takes no argument", cssStart[c]],
+        True, cssInvalid["unknown pseudo-class " <> where, cssStart[c]]]]];
+
+(* The arguments of :not(), :is(), :where() and :has(). :is() and :where() are
+   forgiving: an argument that is not valid is dropped, and none at all is
+   valid. *)
+cssArguments[items_, where_, pos_, relative_, forgiving_] :=
+  Block[{$cssArgOf = where},
+    If[forgiving,
+      Cases[cssCommaSplit[items], {seg : Except[{}], _} :>
+        Catch[cssComplex[seg, relative], $cssInvalid, Nothing &]],
+      Replace[cssCommaSplit[items], {
+        {{{}, _}} :> cssInvalid[where <> " needs an argument", pos],
+        parts_ :> (cssComplex[cssNonEmpty[#, items], relative] & /@ parts)}]]];
+
+cssPseudoElement[c_, x_] :=
+  With[{name = cssLower[If[MatchQ[x, _blk], x[[1, 2]], x[[2]]]], text = cssText[{c, x}]},
+    If[If[MatchQ[x, _blk], MemberQ[$cssPseudoElementFunctions, name],
+        MemberQ[$cssPseudoElements, name] || StringStartsQ[name, "-webkit-"]],
+      sPseudoElement[text, cssStart[c], name],
+      cssInvalid["unknown pseudo-element " <> text, cssStart[c]]]];
+
+$cssNamespaceHow = "Namespaces are not supported in a CSS selector; give the tag or key as {namespace, name} in an XMLPattern.";
+$cssComplexHow = "Its arguments can only be compound selectors, with no combinator.";
+$cssListHow = "Run one query for each selector.";
+
+(* ---- Translation: selector lists ---- *)
+
+(* A selector list translates when its selectors have the same links and
+   differ, as parsed, in at most one compound: the shared chain, with the
+   alternatives at that compound. *)
+cssListPattern[cs_] :=
+  Replace[DeleteDuplicates[cs], {
+    {c_} :> cssChainPattern[c],
+    u_ :> cssSharedChain[u]}];
+
+cssSharedChain[u_] :=
+  With[{comps = First /@ u},
+    If[!(SameQ @@ (Last /@ u)),
+      cssRefuse["unsupported", "a selector list whose selectors have different combinators", $cssListHow]];
+    With[{diff = Select[Range[Length[First[comps]]], !(SameQ @@ comps[[All, #]]) &]},
+      If[Length[diff] > 1,
+        cssRefuse["unsupported", "a selector list whose selectors differ in more than one compound", $cssListHow]];
+      cssChainPattern[cx[
+        ReplacePart[First[comps], First[diff] -> cpAlt[DeleteDuplicates[comps[[All, First[diff]]]]]],
+        Last[First[u]]]]]];
+
+(* ---- Translation: chains ---- *)
+
+(* The stages, each st[pattern, name of its element or None], and the links
+   between them. A compound with :only-child or :only-of-type counts its
+   parent's children, so it is a Child stage with its parent: the previous
+   compound after >, or any element at the start of a chain. *)
+cssChainPattern[cx[comps_, links_]] :=
+  Apply[cssChain, MapAt[First /@ # &, Fold[cssAddStage, {{}, {}}, Transpose[{comps, Prepend[links, None]}]], 1]];
+
+cssAddStage[_, {_, cssColumn}] :=
+  cssRefuse["unsupported", "the column combinator ||", "Columns are not supported."];
+cssAddStage[{stages_, links_}, {comp_, link_}] :=
+  Replace[cssCompoundT[comp], {
+    {p_, n_, {}} :> {Append[stages, st[p, n]], If[link === None, links, Append[links, link]]},
+    {p_, n_, counts_} :> Which[
+      link === None,
+        {Append[stages, cssCounted[cssNamed[st[XMLPattern[_], None], "p"], p, n, counts]], links},
+      link === Child,
+        {Append[Most[stages], cssCounted[cssNamed[Last[stages], "p"], p, n, counts]], links},
+      True,
+        cssRefuse["unsupported", StringRiffle[":" <> # & /@ counts, ""] <> " after " <> cssLinkName[link],
+          $cssChildIndexedHow]]}];
+
+cssLinkName[Descendant] := "a descendant combinator";
+cssLinkName[Adjacent] := "+";
+cssLinkName[Sibling] := "~";
+
+(* A stage with a name for its element: its own, or a fresh one. *)
+cssNamed[st[p_, None], base_] := With[{s = cssFreshName[base]}, {Pattern @@ {s, p}, s}];
+cssNamed[st[p_, n_], _] := {p, n};
+
+cssCounted[{parent_, pn_}, p_, n_, counts_] :=
+  st[conditionWith[Child[parent, p], cssAnd[cssCountTest[#, pn, n] & /@ counts]], n];
+
+cssCountTest["only-child", p_, _] := Hold[Count[Last[p], _XMLElement] == 1];
+cssCountTest["only-of-type", p_, e_] := Hold[Count[Last[p], XMLElement[First[e], _, _]] == 1];
+
+(* Runs of one link use the n-ary form; mixed links are right-nested. *)
+cssChain[{s_}, {}] := s;
+cssChain[ss_, links_] :=
+  With[{k = LengthWhile[links, # === First[links] &]},
+    If[k == Length[links], First[links] @@ ss,
+      First[links] @@ Append[Take[ss, k], cssChain[Drop[ss, k], Drop[links, k]]]]];
+
+(* ---- Translation: compounds ---- *)
+
+(* A compound is a list of branches, br[tag, attributes, tests], its
+   alternatives: :is() and :checked give several. The tag is tg[allowed, or
+   All, excluded]; the attributes map each key to its constraints; a test is
+   held, with cssSelf for the compound's element. compoundT gives {pattern,
+   name or None, the :only-* pseudo-classes}. *)
+cssCompoundT[cpAnchor] := {XMLPattern[$cssAnchor], None, {}};
+cssCompoundT[cpAlt[cps_]] :=
+  {cssAlternatives[Replace[cssCompoundT[#], {{p_, _, {}} :> p,
+    {_, _, counts_} :> cssRefuse["unsupported", ":" <> First[counts] <> " in a compound that differs between the selectors of a list", $cssListHow]}] & /@ cps],
+   None, {}};
+cssCompoundT[c : cp[nodes_, _]] :=
+  Replace[cssBranches[c], {bs_, counts_} :>
+    Append[cssFinish[bs, FirstCase[nodes, sType[n_] :> n, _], counts =!= {}], counts]];
+
+(* The anchor wraps an element's children in :has(), so that they have a
+   parent; its namespaced tag is in no document. *)
+$cssAnchor = {"urn:x-beautifultureen:anchor", "anchor"};
+
+$cssAny = br[tg[All, {}], <||>, {}];
+
+cssBranches[cp[nodes_, _]] :=
+  MapAt[DeleteDuplicates[Flatten[#]] &, Reap[Fold[cssApply, {$cssAny}, nodes], $cssCount], 2];
+
+cssWith[bs_, b_] := cssMerge[#, b] & /@ bs;
+cssAttr[k_, c_] := br[tg[All, {}], <|k -> {c}|>, {}];
+cssTest[t_Hold] := br[tg[All, {}], <||>, {t}];
+
+cssMerge[br[t1_, a1_, s1_], br[t2_, a2_, s2_]] :=
+  br[cssTagMerge[t1, t2], Merge[{a1, a2}, Apply[Join]], Join[s1, s2]];
+
+cssTagMerge[tg[a1_, x1_], tg[a2_, x2_]] :=
+  tg[Which[a1 === All, a2, a2 === All, a1, True, Select[a1, MemberQ[a2, #] &]], DeleteDuplicates[Join[x1, x2]]];
+
+cssApply[bs_, sType[n_]] := cssWith[bs, br[tg[{n}, {}], <||>, {}]];
+cssApply[bs_, sUniversal[]] := bs;
+cssApply[bs_, sId[v_]] := cssWith[bs, cssAttr["id", eq[v]]];
+cssApply[bs_, sClass[v_]] := cssWith[bs, cssAttr["classList", has[v]]];
+cssApply[bs_, sAttr[n_]] := cssWith[bs, cssAttr[n, present]];
+cssApply[bs_, sAttr[n_, m_, v_, f_]] := cssWith[bs, cssAttr[If[m === "~=", n <> "List", n], cssConstraint[m, v, f === "i"]]];
+cssApply[bs_, sPseudo["link" | "any-link", _]] := cssWith[bs, br[tg[{"a", "area"}, {}], <|"href" -> {present}|>, {}]];
+cssApply[bs_, sPseudo["empty", _]] := cssWith[bs, cssTest[$cssEmptyTest]];
+cssApply[bs_, sPseudo["checked", _]] := Flatten[Outer[cssMerge, bs, $cssChecked], 1];
+cssApply[bs_, sPseudo[c : "only-child" | "only-of-type", _]] := (Sow[c, $cssCount]; bs);
+cssApply[bs_, sNot[args_, text_]] := cssNot[bs, args, text];
+cssApply[bs_, sIs[args_, text_]] := Flatten[Outer[cssMerge, bs, Join @@ (cssArgBranches[#, text] & /@ args)], 1];
+cssApply[bs_, sHas[rels_, text_]] := cssWith[bs, cssTest[cssOr[cssHasTest[#, text] & /@ rels]]];
+cssApply[_, sRefuse[kind_, part_, how_]] := cssRefuse[kind, part, how];
+cssApply[_, sPseudoElement[text_, _, name_]] := cssRefuse["impossible", text, cssPseudoElementHow[name]];
+
+(* Whitespace-only text counts as empty, and comments and processing
+   instructions are ignored, as in Selectors 4. *)
+$cssEmptyTest = Hold[MatchQ[Last[cssSelf],
+  {(_String?(StringMatchQ["" | HTMLWhitespace]) | XMLObject["Comment" | "ProcessingInstruction"][___]) ...}]];
+
+(* type is an enumerated attribute, which HTML matches ASCII case-insensitively. *)
+$cssChecked = {
+  br[tg[{"input"}, {}], <|"type" -> {checkedType}, "checked" -> {present}|>, {}],
+  br[tg[{"option"}, {}], <|"selected" -> {present}|>, {}]};
+
+(* An argument of :is() or :where() is merged into the compound. *)
+cssArgBranches[cx[{c_}, {}], text_] :=
+  Replace[cssBranches[c], {
+    {bs_, {}} :> bs,
+    {_, counts_} :> cssRefuse["unsupported", ":" <> First[counts] <> " inside " <> text, $cssChildIndexedHow]}];
+cssArgBranches[_, text_] := cssRefuse["unsupported", text, $cssComplexHow];
+
+(* An argument of :not() or :has() is a pattern of its own, with its own names. *)
+cssArgPattern[cx[{c_}, {}], text_] :=
+  Replace[cssCompoundT[c], {
+    {p_, _, {}} :> p,
+    {_, _, counts_} :> cssRefuse["unsupported", ":" <> First[counts] <> " inside " <> text, $cssChildIndexedHow]}];
+cssArgPattern[_, text_] := cssRefuse["unsupported", text, $cssComplexHow];
+
+(* :not() of one class or one type merges into the class list or the tag, so a
+   classless element matches, as in CSS; otherwise it is a condition, never an
+   Except at a raw key, which would require the attribute. *)
+cssNot[bs_, {cx[{cp[{sClass[c_]}, _]}, {}]}, _] := cssWith[bs, cssAttr["classList", lacks[c]]];
+cssNot[bs_, {cx[{cp[{sType[n_]}, _]}, {}]}, _] := cssWith[bs, br[tg[All, {n}], <||>, {}]];
+cssNot[bs_, args_, text_] :=
+  With[{p = cssAlternatives[cssArgPattern[#, text] & /@ args]},
+    cssWith[bs, cssTest[Hold[! XMLMatchQ[cssSelf, p]]]]];
+
+(* :has(s) and :has(> s) for one compound test the children; any other
+   relative selector runs as a chain from an anchor around the children, so
+   that siblings among them are siblings. *)
+cssHasTest[rel[Adjacent | Sibling | cssColumn, _], text_] :=
+  cssRefuse["unsupported", text, "A relative selector in :has() can only start with a descendant combinator or >."];
+cssHasTest[rel[link_, cx[comps_, links_]], _] :=
+  Replace[If[links === {}, cssCompoundT[First[comps]], None], {
+    {p_, _, {}} :> cssHasChild[link, p],
+    _ :> With[{chain = cssChainPattern[cx[Prepend[comps, cpAnchor], Prepend[links, link]]], a = $cssAnchor},
+      Hold[! MissingQ[XMLFirstCase[XMLElement[a, {}, Last[cssSelf]], chain]]]]}];
+
+(* The children are filtered to elements, as a list given to XMLFirstCase can
+   hold only elements and strings, and an XML document's can hold comments. *)
+cssHasChild[Child, p_] := Hold[AnyTrue[Last[cssSelf], XMLMatchQ[p]]];
+cssHasChild[Descendant, p_] := Hold[! MissingQ[XMLFirstCase[Cases[Last[cssSelf], _XMLElement], p]]];
+
+cssAnd[{t_}] := t;
+cssAnd[ts_] := Replace[Join @@ ts, Hold[xs___] :> Hold[And[xs]]];
+cssOr[{t_}] := t;
+cssOr[ts_] := Replace[Join @@ ts, Hold[xs___] :> Hold[Or[xs]]];
+
+cssAlternatives[{p_}] := p;
+cssAlternatives[ps_] := Alternatives @@ ps;
+
+(* The pattern of a compound, from its branches: a branch whose tag can never
+   match is dropped, and with none left the compound is XMLPattern[tag] /;
+   False. The tests of a compound are on one name. *)
+cssFinish[bs_, type_, needName_] :=
+  Module[{live = Select[bs, cssTagPattern[First[#]] =!= cssNever &], name},
+    name = If[needName || AnyTrue[live, Last[#] =!= {} &], cssFreshName["e"], None];
+    {Which[
+      live === {}, cssConditioned[XMLPattern[type], name, {Hold[False]}],
+      SameQ @@ (Last /@ live), cssConditioned[cssAlternatives[cssElement /@ live], name, Last[First[live]]],
+      True, Alternatives @@ (cssConditioned[cssElement[#], name, Last[#]] & /@ live)],
+     name}];
+
+cssConditioned[p_, None, {}] := p;
+cssConditioned[p_, None, ts_] := conditionWith[p, cssAnd[ts]];
+cssConditioned[p_, n_, {}] := Pattern @@ {n, p};
+cssConditioned[p_, n_, ts_] := conditionWith[Pattern @@ {n, p}, cssAnd[ts] /. cssSelf -> n];
+
+cssElement[br[t_, a_, _]] :=
+  With[{tag = cssTagPattern[t], rules = KeyValueMap[cssRule, a]},
+    Switch[Length[rules], 0, XMLPattern[tag], 1, XMLPattern[tag, First[rules]], _, XMLPattern[tag, rules]]];
+
+cssTagPattern[tg[All, {}]] := _;
+cssTagPattern[tg[All, {x_}]] := _?(# =!= x &);
+cssTagPattern[tg[All, xs_]] := cssPatternTest[_, Function @@ cssAnd[cssNotTag /@ xs]];
+cssTagPattern[tg[allowed_, xs_]] :=
+  Replace[Select[allowed, !MemberQ[xs, #] &], {{} -> cssNever, {t_} :> t, ts_ :> Alternatives @@ ts}];
+
+cssNotTag[x_] := Hold[# =!= x];
+
+(* PatternTest holds its test, which is built here. *)
+cssPatternTest[p_, f_] := PatternTest[p, f];
+
+(* A temporary symbol in the caller's context, as Module makes one: no name
+   the caller writes can be it. *)
+cssFreshName[base_] :=
+  Module[{name},
+    While[NameQ[name = $Context <> base <> "$" <> ToString[$ModuleNumber++]]];
+    With[{s = Symbol[name]}, SetAttributes[s, Temporary]; s]];
+
+(* ---- Translation: attribute values ---- *)
+
+(* XMLPattern refuses a key given twice, so every constraint on one key is
+   merged into one value pattern. A raw key holds present, never, eq, eqI,
+   dash, dashI, pre, preI, suf, sufI, sub, subI or checkedType; a list key
+   holds has, hasI or lacks. The I forms hold their value folded. *)
+cssConstraint["~=", v_, False] := has[v];
+cssConstraint["~=", v_, True] := hasI[cssLower[v]];
+cssConstraint["=", v_, False] := eq[v];
+cssConstraint["=", v_, True] := eqI[cssLower[v]];
+cssConstraint["|=", v_, False] := dash[v];
+cssConstraint["|=", v_, True] := dashI[cssLower[v]];
+(* An empty value of ^=, $= or *= represents nothing (Selectors 4, 6.2). *)
+cssConstraint["^=" | "$=" | "*=", "", _] := never;
+cssConstraint["^=", v_, i_] := If[i, preI[cssLower[v]], pre[v]];
+cssConstraint["$=", v_, i_] := If[i, sufI[cssLower[v]], suf[v]];
+cssConstraint["*=", v_, i_] := If[i, subI[cssLower[v]], sub[v]];
+
+cssRule[k_, cs_] := Replace[If[MemberQ[cs, _has | _hasI | _lacks], cssListValue[cs], cssRawValue[cs]], {None -> k, v_ :> k -> v}];
+
+(* A value implies presence, and an exact value decides every other
+   constraint at once. *)
+cssRawValue[cs_] :=
+  With[{c = DeleteDuplicates[DeleteCases[cs, present]]},
+    Which[
+      MemberQ[c, never], Except[_],
+      c === {}, None,
+      MemberQ[c, _eq], With[{v = FirstCase[c, eq[v_] :> v]}, If[AllTrue[c, TrueQ[(Function @@ cssSlot[#])[v]] &], v, Except[_]]],
+      Length[c] == 1, cssSingle[First[c]],
+      True, cssPatternTest[_, Function @@ cssAnd[cssSlot /@ c]]]];
+
+cssListValue[cs_] :=
+  With[{h = DeleteDuplicates[Cases[cs, has[v_] :> v]], l = DeleteDuplicates[Cases[cs, lacks[v_] :> v]],
+      hi = DeleteDuplicates[Cases[cs, hasI[v_] :> v]]},
+    Which[
+      IntersectingQ[h, l], Except[_],
+      hi === {} && l === {}, If[Length[h] == 1, First[h], _?(ContainsAll[h])],
+      hi === {} && h === {}, If[Length[l] == 1, With[{c = First[l]}, _?(FreeQ[c])], _?(ContainsNone[l])],
+      True, cssPatternTest[_, Function @@ cssAnd[Join[
+        If[h === {}, {}, {Hold[ContainsAll[#, h]]}],
+        If[l === {}, {}, {Hold[ContainsNone[#, l]]}],
+        cssSlot[hasI[#]] & /@ hi]]]]];
+
+(* A constraint alone, as the value pattern. *)
+cssSingle[eq[v_]] := v;
+cssSingle[dash[v_]] := With[{w = v <> "-"}, v | _?(StringStartsQ[w])];
+cssSingle[pre[v_]] := _?(StringStartsQ[v]);
+cssSingle[suf[v_]] := _?(StringEndsQ[v]);
+cssSingle[sub[v_]] := _?(StringContainsQ[v]);
+cssSingle[checkedType] := _?(StringMatchQ["checkbox" | "radio", IgnoreCase -> True]);
+cssSingle[c_] := cssPatternTest[_, Function @@ cssSlot[c]];
+
+(* A constraint as a held test on #, to be joined with others. The i flag
+   folds A-Z only, on both sides, as Selectors requires: IgnoreCase would
+   also fold letters such as \[CapitalEAcute]. *)
+cssSlot[eq[v_]] := Hold[# === v];
+cssSlot[eqI[v_]] := Hold[StringReplace[#, RegularExpression["[A-Z]"] :> ToLowerCase["$0"]] === v];
+cssSlot[dash[v_]] := With[{w = v <> "-"}, Hold[# === v || StringStartsQ[#, w]]];
+cssSlot[dashI[v_]] := With[{w = v <> "-"},
+  Hold[StringReplace[#, RegularExpression["[A-Z]"] :> ToLowerCase["$0"]] === v ||
+    StringStartsQ[StringReplace[#, RegularExpression["[A-Z]"] :> ToLowerCase["$0"]], w]]];
+cssSlot[pre[v_]] := Hold[StringStartsQ[#, v]];
+cssSlot[preI[v_]] := Hold[StringStartsQ[StringReplace[#, RegularExpression["[A-Z]"] :> ToLowerCase["$0"]], v]];
+cssSlot[suf[v_]] := Hold[StringEndsQ[#, v]];
+cssSlot[sufI[v_]] := Hold[StringEndsQ[StringReplace[#, RegularExpression["[A-Z]"] :> ToLowerCase["$0"]], v]];
+cssSlot[sub[v_]] := Hold[StringContainsQ[#, v]];
+cssSlot[subI[v_]] := Hold[StringContainsQ[StringReplace[#, RegularExpression["[A-Z]"] :> ToLowerCase["$0"]], v]];
+cssSlot[checkedType] := Hold[StringMatchQ[#, "checkbox" | "radio", IgnoreCase -> True]];
+cssSlot[hasI[v_]] := Hold[MemberQ[StringReplace[#, RegularExpression["[A-Z]"] :> ToLowerCase["$0"]], v]];
+
+(* =========================================================== *)
 (* HTMLTextContent                                             *)
 (* Lossless tree-fold: concatenate every descendant string in  *)
 (* document order, inserting/removing no whitespace.           *)
@@ -1276,25 +1961,23 @@ defaultRole[tag_String] := Which[
   True,                        "Inline"];
 defaultRole[_] := "Inline";
 
-(* ---- Role rules: string LHS sugars to XMLPattern; Association sugars to
-   an ordered rule list; first match wins. ---- *)
+(* ---- Role rules: an Association sugars to an ordered rule list; first
+   match wins. A string left-hand side is a CSS selector, as anywhere an XML
+   pattern goes. ---- *)
 $displayRoles = {"Block", "Inline", "Preformatted", "LineBreak", "Skip"};
 validRoleQ[r_] := MemberQ[$displayRoles, r];
-
-sugarRoleLHS[s_String] := XMLPattern[s];
-sugarRoleLHS[lhs_] := lhs;
 
 (* Each rule's left-hand side is compiled like a query, and must be an element
    pattern: a rule is tried against one element at a time. compileRule gives
    {rule, readings}, the readings being those of the list keys it names, or
    $Failed for an entry that is refused, a non-rule among them. *)
 compileRule[Verbatim[Rule][lhs_, r_], head_, readings_] :=
-  Replace[elementQuery[compileWith[sugarRoleLHS[lhs], head, readings], lhs, head, "badpat"],
+  Replace[elementQuery[compileWith[lhs, head, readings], lhs, head, "badpat"],
     c_Association :> {plainQuery[c] -> r, c["Readings"]}];
 compileRule[rule_RuleDelayed, head_, readings_] :=
   Replace[
     elementQuery[
-      compileWith[RuleDelayed @@ Join[Hold @@ {sugarRoleLHS[rule[[1]]]}, Extract[rule, {2}, Hold]], head, readings],
+      compileWith[RuleDelayed @@ Join[Hold @@ {rule[[1]]}, Extract[rule, {2}, Hold]], head, readings],
       rule[[1]], head, "badpat"],
     c_Association :> {plainQuery[c], c["Readings"]}];
 compileRule[x_, head_, _] := With[{h = head}, Message[MessageName[h, "notrule"], x]; $Failed];
@@ -1839,7 +2522,7 @@ Scan[
   {XMLCases -> {_, _., _., OptionsPattern[]}, XMLFirstCase -> {_, _., _., OptionsPattern[]},
     XMLDeleteCases -> {_, _., OptionsPattern[]}, XMLMatchQ -> {_, _., OptionsPattern[]},
     HTMLInnerText -> {_, OptionsPattern[]}, HTMLTextContent -> {_},
-    HTMLToNotebook -> {_, OptionsPattern[]}, HTMLClassList -> {_},
+    HTMLToNotebook -> {_, OptionsPattern[]}, HTMLClassList -> {_}, FromCSSSelector -> {_},
     XMLPattern -> {_, _.},
     Child -> {_, _, ___}, Descendant -> {_, _, ___}, Adjacent -> {_, _, ___}, Sibling -> {_, _, ___}}];
 

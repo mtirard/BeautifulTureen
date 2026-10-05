@@ -114,9 +114,10 @@ TestCreate[
   TestID -> "delete-adjacent-unsupported"
 ];
 
-(* Bad pattern fallback *)
+(* Bad pattern fallback. A string is a CSS selector (ADR 0017), so the bad
+   pattern is a number. *)
 TestCreate[
-  XMLDeleteCases[$treeNoise, "not-a-pattern"],
+  XMLDeleteCases[$treeNoise, 42],
   $Failed,
   {XMLDeleteCases::badpat},
   TestID -> "delete-bad-pattern"

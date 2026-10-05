@@ -210,3 +210,35 @@ TestCreate[
   {XMLCases::argt, XMLDeleteCases::argrx, XMLFirstCase::argt},
   TestID -> "count-no-arguments-and-option-before-extra"
 ];
+
+(* FromCSSSelector: one message per kind, naming the selector, the part that
+   caused it and, where there is one, the workaround. *)
+TestCreate[
+  Join @@ (capturedMessages[FromCSSSelector[#]] & /@ {"a > > b", ":foo", ":matches(a)"}),
+  {"\"a > > b\" is not a valid CSS selector: \"two combinators in a row at character 5\".",
+   "\":foo\" is not a valid CSS selector: \"unknown pseudo-class :foo at character 1\".",
+   "\":matches(a)\" is not a valid CSS selector: \"unknown pseudo-class :matches() at character 1; write :is() instead\"."},
+  TestID -> "message-css-invalid"
+];
+
+TestCreate[
+  Join @@ (capturedMessages[FromCSSSelector[#]] & /@ {"li:root", "a > b, c > d"}),
+  {"\"li:root\" is valid CSS, but \":root\" cannot be translated to an XML pattern. \"To get the top element, use XMLFirstCase[tree, XMLPattern[_]].\"",
+   "\"a > b, c > d\" is valid CSS, but \"a selector list whose selectors differ in more than one compound\" cannot be translated to an XML pattern. \"Run one query for each selector.\""},
+  TestID -> "message-css-unsupported"
+];
+
+TestCreate[
+  Join @@ (capturedMessages[FromCSSSelector[#]] & /@ {"a:target", "p::first-letter"}),
+  {"\":target\" in \"a:target\" depends on a browser, such as user input, layout or the page's URL, and cannot be matched in a static document. \"To match the element that a fragment names, use XMLPattern[_, \\\"id\\\" -> fragment].\"",
+   "\"::first-letter\" in \"p::first-letter\" depends on a browser, such as user input, layout or the page's URL, and cannot be matched in a static document. \"To get the first letter of each match, use StringTake[HTMLInnerText[e], UpTo[1]].\""},
+  TestID -> "message-css-impossible"
+];
+
+(* A string that gives a combinator, where an element pattern goes, is named
+   as written. *)
+TestCreate[
+  capturedMessages[XMLMatchQ[XMLElement["p", {}, {}], "div > p"]],
+  {"\"div > p\" relates an element to its parent or siblings, which a lone element does not have. Use XMLCases or XMLFirstCase to search a tree with it."},
+  TestID -> "message-css-string-combinator-names-the-string"
+];
