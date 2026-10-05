@@ -17,11 +17,11 @@ Cell[TextData[{Cell[BoxData[ButtonBox["XMLDeleteCases", BaseStyle -> "Link", But
 
 Cell[TextData[{Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " can be an ", Cell[BoxData[ButtonBox["XMLObject", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLObject"]], "InlineFormula"], ", an ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], ", or a list of ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], " objects."}], "Notes"],
 
-Cell[TextData[{Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " can be an ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"]], "InlineFormula"], ", a ", Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"]], "InlineFormula"], " or ", Cell[BoxData[ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"]], "InlineFormula"], " combinator, a CSS selector string, which means its translation by ", Cell[BoxData[ButtonBox["FromCSSSelector", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/FromCSSSelector"]], "InlineFormula"], ", or alternatives of any of these, each with or without a condition. Each argument of a combinator is a ", StyleBox["stage", FontWeight->"Bold"], ", which can be another combinator or alternatives holding one. Names are bound as in ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"]], "InlineFormula"], "."}], "Notes"],
+Cell[TextData[{Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " can be an ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"]], "InlineFormula"], ", a ", Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["Adjacent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Adjacent"]], "InlineFormula"], " or ", Cell[BoxData[ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"]], "InlineFormula"], " combinator, a CSS selector string, which means its translation by ", Cell[BoxData[ButtonBox["FromCSSSelector", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/FromCSSSelector"]], "InlineFormula"], ", or alternatives of any of these, each with or without a condition. Each argument of a combinator is a ", StyleBox["stage", FontWeight->"Bold"], ", which can be another combinator, alternatives holding one, or after ", Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"]], "InlineFormula"], " or ", Cell[BoxData[ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"]], "InlineFormula"], " a list of patterns for the parent's element children. Names are bound as in ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"]], "InlineFormula"], "."}], "Notes"],
 
-Cell[TextData[{Cell[BoxData[ButtonBox["Adjacent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Adjacent"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"]], "InlineFormula"], " cannot be used, even as a stage of another combinator or in one of several alternatives. A rule ", Cell[BoxData[RowBox[{StyleBox["pattern", "TI"], "\[RuleDelayed]", StyleBox["rhs", "TI"]}]], "InlineFormula"], " cannot be used either."}], "Notes"],
+Cell[TextData[{"A rule ", Cell[BoxData[RowBox[{StyleBox["pattern", "TI"], "\[RuleDelayed]", StyleBox["rhs", "TI"]}]], "InlineFormula"], " cannot be used."}], "Notes"],
 
-Cell["A combinator removes the elements that its last stage matches. Alternatives that hold a combinator remove the elements that any of them matches.", "Notes"],
+Cell[TextData[{"A combinator removes the elements that its last stage matches, by their position in the original ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], ": ", Cell[BoxData[RowBox[{ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"], "[", RowBox[{RowBox[{ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"], "[", StyleBox["_", "TR"], "]"}], ",", " ", RowBox[{"{", RowBox[{RowBox[{ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"], "[", StyleBox["\"li\"", "TR"], "]"}], ",", " ", StyleBox["___", "TR"]}], "}"}]}], "]"}]], "InlineFormula"], " removes the first ", Cell[BoxData[StyleBox["li", "TR"]], "InlineFormula"], " of each list, and not the one that is first after it. Alternatives that hold a combinator remove the elements that any of them matches."}], "Notes"],
 
 Cell[TextData[{"The earlier stages are matched against the original ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], ", so removing an element does not change whether its parent or ancestor matches."}], "Notes"],
 
@@ -218,7 +218,23 @@ Cell[BoxData["\"Text\""], "Output"]}, Open]],
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Use alternatives that hold a combinator as a stage:", "ExampleText"], Cell[BoxData["page=ImportString[\"<section><b>1</b><ul><li><b>2</b></li></ul></section><b>3</b>\",{\"HTML\",\"XMLObject\"}];
 HTMLTextContent[XMLDeleteCases[page,Child[XMLPattern[\"section\"],XMLPattern[\"b\"]|Descendant[XMLPattern[\"ul\"],XMLPattern[\"b\"]]]]]"], "Input"],
 
-Cell[BoxData["\"\""], "Output"]}, Open]]}, Open]],
+Cell[BoxData["\"\""], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Remove the first item of each list with a list of patterns for the children:", "ExampleText"], Cell[BoxData["lists=ImportString[\"<ul><li>Miso</li><li>Pho</li></ul><ol><li>Rice</li><li>Bread</li></ol>\",{\"HTML\",\"XMLObject\"}];
+HTMLTextContent/@XMLCases[XMLDeleteCases[lists,Child[XMLPattern[_],{XMLPattern[\"li\"],___}]],XMLPattern[\"li\"]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"\"Pho\"", ",", "\"Bread\""}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Remove the paragraphs that follow a heading, with ", Cell[BoxData[ButtonBox["Adjacent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Adjacent"]], "InlineFormula"], " or ", Cell[BoxData[ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["doc=ImportString[\"<section><p>intro</p><h2>A</h2><p>a1</p><p>a2</p></section>\",{\"HTML\",\"XMLObject\"}];
+HTMLTextContent/@XMLCases[XMLDeleteCases[doc,Adjacent[XMLPattern[\"h2\"],XMLPattern[\"p\"]]],XMLPattern[\"p\"]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"\"intro\"", ",", "\"a2\""}], "}"}]], "Output"],
+
+Cell[TextData[{Cell[BoxData[ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"]], "InlineFormula"], " removes every later paragraph:"}], "ExampleText"],
+
+Cell[BoxData["HTMLTextContent/@XMLCases[XMLDeleteCases[doc,Sibling[XMLPattern[\"h2\"],XMLPattern[\"p\"]]],XMLPattern[\"p\"]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", "\"intro\"", "}"}]], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
@@ -290,21 +306,6 @@ Cell[CellGroupData[{Cell[BoxData[
   "Possible Issues", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Adjacent and Sibling cannot be used:", "ExampleText"], Cell[BoxData["tree=ImportString[\"<div><p>a</p><p>b</p></div>\",{\"HTML\",\"XMLObject\"}];
-XMLDeleteCases[tree,Adjacent[XMLPattern[\"p\"],XMLPattern[\"p\"]]]"], "Input"],
-
-Cell["XMLDeleteCases::unsupported: XMLDeleteCases cannot use Adjacent or Sibling, either as the pattern or as a stage of another combinator.", "Message", "MSG"],
-
-Cell[BoxData["$Failed"], "Output"],
-
-Cell["They cannot be used as a stage of another combinator either:", "ExampleText"],
-
-Cell[BoxData["XMLDeleteCases[tree,Child[XMLPattern[\"div\"],Sibling[XMLPattern[\"p\"],XMLPattern[\"p\"]]]]"], "Input"],
-
-Cell["XMLDeleteCases::unsupported: XMLDeleteCases cannot use Adjacent or Sibling, either as the pattern or as a stage of another combinator.", "Message", "MSG"],
-
-Cell[BoxData["$Failed"], "Output"]}, Open]],
-
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A rule cannot be used:", "ExampleText"], Cell[BoxData["tree=ImportString[\"<p>a</p>\",{\"HTML\",\"XMLObject\"}];
 XMLDeleteCases[tree,XMLPattern[\"p\"]:>\"x\"]"], "Input"],
 
@@ -324,13 +325,6 @@ Cell[BoxData["True"], "Output"]}, Open]],
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["An invalid tree gives a message and $Failed:", "ExampleText"], Cell[BoxData["XMLDeleteCases[42,XMLPattern[\"p\"]]"], "Input"],
 
 Cell["XMLDeleteCases::badtree: The first argument should be an XMLObject, an XMLElement, or a list of these. Got head Integer.", "Message", "MSG"],
-
-Cell[BoxData["$Failed"], "Output"]}, Open]],
-
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["Adjacent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Adjacent"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"]], "InlineFormula"], " cannot be used in any of several alternatives:"}], "ExampleText"], Cell[BoxData["page=ImportString[\"<h2>A</h2><p>x</p>\",{\"HTML\",\"XMLObject\"}];
-XMLDeleteCases[page,Adjacent[XMLPattern[\"h2\"],XMLPattern[\"p\"]]|XMLPattern[\"h2\"]]"], "Input"],
-
-Cell["XMLDeleteCases::unsupported: XMLDeleteCases cannot use Adjacent or Sibling, either as the pattern, as a stage of another combinator, or in any of the alternatives.", "Message", "MSG"],
 
 Cell[BoxData["$Failed"], "Output"]}, Open]],
 

@@ -4,7 +4,7 @@ status: accepted (amended by ADR-0016)
 
 # Alternatives of combinators read as WL alternatives, and the first alternative that accepts an element binds its names
 
-> **Amended by [ADR 0016](./0016-list-stages.md)** (2026-10-02, not yet implemented). `XMLDeleteCases` accepts `Adjacent` and `Sibling`, so an alternative holding one no longer makes the query `::unsupported`. Alternatives of list stages are a stage, read as here.
+> **Amended by [ADR 0016](./0016-list-stages.md)** (2026-10-02). `XMLDeleteCases` accepts `Adjacent` and `Sibling`, so an alternative holding one no longer makes the query `::unsupported`. Alternatives of list stages are a stage, read as here.
 
 ADR 0014 refused an `Alternatives` holding a combinator as having "no tuple-pattern reading". It has one: `Child[a, b] | Descendant[c, d, e]` reads as `{a, b} | {c, d, e}`, an ordinary WL pattern. What actually stood in the way was that each query compiled to one chain and ran as one pass. CSS selector lists (`a > b, c d e`) need the shape, and running the alternatives as separate queries and joining the results is wrong: on the CSS page it loses 17 identical elements, and padding the alternatives to one shape costs 0.2–2.3 s (probes summarised in `.scratch/css-selectors/issues/01-decide-the-shape-of-the-css-selector-front-end.md`). This ADR lifts the refusal.
 
