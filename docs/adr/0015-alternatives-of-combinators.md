@@ -1,5 +1,5 @@
 ---
-status: accepted (not yet implemented; amended by ADR-0016)
+status: accepted (amended by ADR-0016)
 ---
 
 # Alternatives of combinators read as WL alternatives, and the first alternative that accepts an element binds its names
@@ -23,7 +23,7 @@ As a stage, they splice into the chain as any stage does: `Child[x, Descendant[c
 - A name bound only in an alternative that did not match is `Sequence[]`, as in WL, in a rule body, in a `Condition` on the alternatives, and in a `Condition` on a combinator that holds them. `{i, j}` in a body is then a list of length 1.
 - A name in several alternatives is one name, bound by the alternative that matched.
 - A name shared between an alternative and a stage outside the alternatives must agree only when that alternative matched.
-- Within an alternative, ADR 0014's scoping holds unchanged.
+- Within an alternative, ADR 0014's scoping holds unchanged. A `Condition` inside one alternative does not see the names of another, which are then neither bound nor `Sequence[]`, as in WL, where the test in `{x_ /; test} | {y_, _}` sees the global `y`.
 
 ### Which alternative binds
 
@@ -61,7 +61,9 @@ A named combinator, and named alternatives holding a combinator (`u : (Child[a, 
 
 Alternatives that hold combinators are run as the list of their alternatives' chains, in disjunctive normal form, one materialisation shared, and merged per element, as XPath's `union` merges node sets into document order without duplicates. A stage that is alternatives multiplies: *k* such stages of two alternatives each give 2^*k* chains, each run in full. A CSS selector list of *n* selectors gives *n*.
 
-A query without alternatives of combinators runs as before. The cost of one with them is to be measured during implementation against running its alternatives as separate queries, and written here.
+A query without alternatives of combinators runs as before. Measured on a 2026 laptop, a query without them was unchanged within noise: on 5 000 `div`s each holding a `p`, `Child[div, p]` 34.5 → 34.2 ms and `Child[div | section, p]` 34.3 → 35.1 ms; on the CSS page, `tr > th` 3.7 → 3.7 ms. A union costs about the sum of its alternatives run as separate queries, plus the merge: on the CSS page, `tr > th | table code` 6.3 ms against 3.7 + 3.2 ms, and with `div.mw-heading + p` as a third alternative 30 ms against 28 ms. On the 5 000 `div`s, `Child[div, p] | Child[body, div.c3]` took 86 ms against 59 ms for the two queries, and a third alternative selecting one `p` 92 ms against 62 ms: one alternative names a list key, so all of them run on the materialised tree and the 5 714 results are stripped, which the separate query without a list key does not pay. `XMLFirstCase` on `p | tr > th`, whose first match is early, took 4.5 ms: the element pattern stops at its first match (1.5 ms alone), but a chain alternative runs in full, as one chain does in `XMLFirstCase` (3.7 ms alone).
+
+Running alternative after alternative changes one thing a single chain does not have: a rule body that can reject (`:> body /; test`) is tried on each candidate of the first alternative, then of the next, not on all candidates in document order. Each result's body is still evaluated once, and a site an earlier alternative accepted is not tried again.
 
 Possible Issues, for documentation:
 
