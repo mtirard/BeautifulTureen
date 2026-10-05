@@ -62,6 +62,7 @@ As built:
 
 - The document is the chain site `{0}`, which is no position in the tree; `Extract` gives the tree's head there, which the compiled `XMLDocument[]` matches. A bare `XMLElement` input stays at `{}`, so no position shifts.
 - `XMLMatchQ` and the `Roles`/`Constructs` rules refuse `XMLDocument[]` with `::badpat`, since it is not a combinator. A combinator holding it is refused as any combinator is.
+- As an entry in a list stage, `XMLDocument[]` is refused with `::listentry`, as any entry that is not an XML pattern is, rather than `::badpat`.
 - `Adjacent[XMLDocument[], b]` gives `{}`, as the document has no siblings, rather than a refusal.
 - A CSS string given as a later stage, such as `Child[a, "li:first-child"]`, starts with `XMLPattern[_]` there, not `XMLDocument[] | XMLPattern[_]`, since no later stage can be the document. A string that needs the document there, such as `":root"`, is `::badpat`.
 - `:root` and `:scope` in a run with `+` or `~` (`:root + p`) are `::unsupported`, as after a combinator: the top element has no siblings. On `:root`, a position among siblings holds when it admits index 1 and otherwise never matches, so `:root:nth-child(2)` is `Child[XMLDocument[], {Except[_], XMLPattern[_]}]`.
