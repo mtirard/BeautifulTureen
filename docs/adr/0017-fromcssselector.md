@@ -4,7 +4,7 @@ status: accepted (amended by ADR-0018)
 
 # `FromCSSSelector` translates a static CSS selector into XML patterns, and a bare string where an XML pattern goes is CSS
 
-> **Amended by [ADR 0018](./0018-the-document-above-the-top-elements.md)** (2026-10-02, not yet implemented). Once `XMLDocument[]` exists, `:root` and `:scope` translate as `Child[XMLDocument[], {x : XMLPattern[_]}]` and are no longer refused, and a child-indexed pseudo-class at the start of a chain lists under `XMLDocument[] | XMLPattern[_]`, so it reaches the root. The refusal of `:root` and `:scope` under "What v1 refuses" holds until then.
+> **Amended by [ADR 0018](./0018-the-document-above-the-top-elements.md)** (2026-10-02, implemented 2026-10-05). `:root` and `:scope` translate as `Child[XMLDocument[], {C}]`, with the rest of the compound in `C`, at the start of a selector, and a child-indexed pseudo-class at the start of a chain lists under `XMLDocument[] | XMLPattern[_]`, so it reaches the root. After a combinator, before `+` or `~`, and inside `:not()`, `:is()`, `:where()`, `:has()` and `of S`, `:root` and `:scope` are still `::unsupported`.
 
 A bs4 user writes `soup.select("div.note > p")`. The same query here is `XMLCases[tree, Child[XMLPattern["div", "classList" -> "note"], XMLPattern["p"]]]`, about 2.5 times the characters. The CSS-Rosetta demo measured this on every row of Wikipedia's selector table (`.scratch/wtc-presentation/demos/css-rosetta/README.md`). Every clean row is longer than its CSS, and a CSS-fluent user has to learn the symbolic form before writing their first query. This ADR adds a translator from CSS to the paclet's existing patterns, and lets a CSS string stand wherever an XML pattern is accepted. The symbolic form stays the language. CSS is a way to write it, and `FromCSSSelector` shows the user what they wrote.
 
@@ -52,7 +52,7 @@ Each refusal is a message and `$Failed`. There is one message per kind, and the 
   - complex arguments to `:not()`, and to `:is()` and `:where()` in a selector of more than one compound. `x :is(a b)` matches an element with the ancestors `x` and `a` in either order, or one element that is both, so it is a conjunction of chains, not a chain with `:is()` as its last stage; its expansion grows combinatorially, as for `A :is(B C) D`.
   - `:has(+ …)` and `:has(~ …)`
   - a child-indexed pseudo-class inside `:not()`, `:is()` or `:where()`, which needs the element's parent, and `of S` with a complex `S`
-  - `:root` and `:scope`, which no condition can express (the workaround is `XMLFirstCase[tree, XMLPattern[_]]`)
+  - `:root` and `:scope` anywhere but the first compound of a selector, followed by `>` or a descendant combinator (ADR 0018)
   - `:lang()`, `:dir()` and the form-state pseudo-classes
 - **`FromCSSSelector::impossible`**: the selector depends on a browser session, layout, the URL or shadow trees. This covers pseudo-elements, the user-action, media and display-state pseudo-classes, `:visited`, `:target` and `:host`.
 
@@ -98,6 +98,8 @@ Until a feature lands, v1 refuses the selectors that need it, with `::unsupporte
 
 A CSS string is the shortest way to write a query that CSS can express, and `FromCSSSelector` turns it into the symbolic form for anything further: names, rule bodies, value tests.
 
+Two issues this depends on are tracked on their own: a `"classList"` key, which most translated CSS uses, makes a query rebuild the whole tree (#22), and a pattern that names a list key with no reading, as `[foo~=x]` does without a reading for `foo`, gives no warning (#24).
+
 `:not` and `:has` become a nested `XMLMatchQ` or `XMLFirstCase` in a condition. They also inherit their readings, which is why ADR 0012 now makes the `"AttributeReadings"` option a `Block` of `$AttributeReadings` around the whole call.
 
 They inherit the per-candidate cost of the nested call. Measured on the Rosetta pages (v1 phase 1, 2026-10-05; time for the whole query, then per element that the compound's own `XMLPattern` takes):
@@ -121,8 +123,7 @@ Possible Issues, for documentation:
 - `[foo~=x]` needs a reading for `foo`, given where the query runs.
 - `[a="é" i]` does not match `É`, as the spec says. soupsieve matches it.
 - `:checked` tests the `selected` attribute only. HTML's rule that the first `option` is selected by default is not applied, and soupsieve does not apply it either.
-- `:root` and `:scope` are refused, with their workaround named.
-- A child-indexed pseudo-class does not select the root, which a browser counts as the only child of the document (ADR 0016), until ADR 0018 is implemented.
+- `:root` and `:scope` are translated only at the start of a selector. Top-level text does not stop `:root`, as it does in soupsieve, and `:scope > p` on a list of several top-level elements gives `{}` (ADR 0018).
 - A selector with a child-indexed pseudo-class translates to a combinator, so `XMLMatchQ` and `Roles` refuse it.
 - `:nth-child(An+B of S)` and the positions written as a condition are quadratic in the number of siblings: 8.5 s for `tr:nth-child(2n+1 of .a)` over 1,000 rows.
 - In a `Roles` or `Constructs` rule, a string is CSS: a tag such as `a.b` needs `XMLPattern["a.b"]`.

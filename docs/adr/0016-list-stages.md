@@ -4,7 +4,7 @@ status: accepted (amended by ADR-0018)
 
 # A list stage is a WL list pattern over a parent's element children, and `Adjacent` and `Sibling` are its shorthands
 
-> **Amended by [ADR 0018](./0018-the-document-above-the-top-elements.md)** (2026-10-02, not yet implemented). A list stage after `XMLDocument[]` lists the top elements, so `Child[XMLDocument[] | XMLPattern[_], {…}]` reaches the root, and "The root" below is reversed. In "`Adjacent` and `Sibling`", `_` as the parent stands for `XMLDocument[] | XMLPattern[_]`.
+> **Amended by [ADR 0018](./0018-the-document-above-the-top-elements.md)** (2026-10-02, implemented 2026-10-05). A list stage after `XMLDocument[]` lists the top elements, so `Child[XMLDocument[] | XMLPattern[_], {…}]` reaches the root, and "The root" below is reversed. In "`Adjacent` and `Sibling`", `_` as the parent stands for `XMLDocument[] | XMLPattern[_]`.
 
 A combinator relates elements by ancestry and by the next or a later sibling, but it cannot say where an element sits among its siblings. CSS's child-indexed pseudo-classes (`:first-child`, `:nth-child(2n+1)`, `:nth-last-of-type(-n+3)`) need that. Comparing an element by value with its parent's children cannot express it: identical siblings collapse, so Hacker News `tr:nth-child(2n+1)` gave 65 rows instead of 50. WL already has a language for position in a sequence, the list pattern, and a [[Stage]] that is one reads `:nth-child(n)` as `{Repeated[_, {n - 1}], c, ___}`. This ADR adds that stage. A prototype matched it against soupsieve on the CSS-Rosetta snapshots: 29 of 31 selectors agree, and the two misses are the root (`.scratch/css-selectors/issues/03-prototype-list-stage-matching-on-real-pages.md`).
 
@@ -112,7 +112,7 @@ A raw `XMLElement` pattern is refused as an entry, though it is still accepted a
 
 Possible Issues, for documentation:
 
-- A list stage does not select the root, though a browser's `:first-child` and `:only-child` match it.
+- A list stage after an element pattern does not select the root, though a browser's `:first-child` and `:only-child` match it. After `XMLDocument[] | XMLPattern[_]` it does (ADR 0018).
 - A list sees element children only. A named list or a named sequence entry gives the elements without the text between them.
 - A list with two unbounded gaps around context entries, such as `{___, a, ___, b, ___}` written out, is quadratic in the number of children when matched in full: 2.3 s at 1,000 children.
 - A combinator as a context entry searches below every candidate sibling, as `:has` does.

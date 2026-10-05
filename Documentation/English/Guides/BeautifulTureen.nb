@@ -44,7 +44,9 @@ Cell[TextData[{Cell[BoxData[ButtonBox["Descendant", BaseStyle -> "Link", ButtonD
 
 Cell[TextData[{Cell[BoxData[ButtonBox["Adjacent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Adjacent"]], "InlineGuideFunction"], " \[LongDash] match an element that immediately follows a sibling match"}], "GuideText"],
 
-Cell[TextData[{Cell[BoxData[ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"]], "InlineGuideFunction"], " \[LongDash] match an element that follows a sibling match at any distance"}], "GuideText"]}, Open]],
+Cell[TextData[{Cell[BoxData[ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"]], "InlineGuideFunction"], " \[LongDash] match an element that follows a sibling match at any distance"}], "GuideText"],
+
+Cell[TextData[{Cell[BoxData[ButtonBox["XMLDocument", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDocument"]], "InlineGuideFunction"], " \[LongDash] the parent of the top-level elements, as the first stage of a combinator"}], "GuideText"]}, Open]],
 
 Cell["\t", "GuideDelimiter"],
 
