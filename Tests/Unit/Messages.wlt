@@ -222,9 +222,9 @@ TestCreate[
 ];
 
 TestCreate[
-  Join @@ (capturedMessages[FromCSSSelector[#]] & /@ {"li:root", "a > b, c > d"}),
+  Join @@ (capturedMessages[FromCSSSelector[#]] & /@ {"li:root", "x :is(a b)"}),
   {"\"li:root\" is valid CSS, but \":root\" cannot be translated to an XML pattern. \"To get the top element, use XMLFirstCase[tree, XMLPattern[_]].\"",
-   "\"a > b, c > d\" is valid CSS, but \"a selector list whose selectors differ in more than one compound\" cannot be translated to an XML pattern. \"Run one query for each selector.\""},
+   "\"x :is(a b)\" is valid CSS, but \":is(a b)\" cannot be translated to an XML pattern. \"Its arguments can hold a combinator only when its compound is the whole selector, as in p:is(div p, section > p), and not inside :not() or :has().\""},
   TestID -> "message-css-unsupported"
 ];
 

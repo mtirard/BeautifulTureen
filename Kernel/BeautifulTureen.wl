@@ -1755,28 +1755,45 @@ cssPseudoElement[c_, x_] :=
 
 $cssNamespaceHow = "Namespaces are not supported in a CSS selector; give the tag or key as {namespace, name} in an XMLPattern.";
 $cssComplexHow = "Its arguments can only be compound selectors, with no combinator.";
-$cssListHow = "Run one query for each selector.";
+$cssComplexIsHow = "Its arguments can hold a combinator only when its compound is the whole selector, as in p:is(div p, section > p), and not inside :not() or :has().";
 
 (* ---- Translation: selector lists ---- *)
 
-(* A selector list translates when its selectors have the same links and
-   differ, as parsed, in at most one compound: the shared chain, with the
-   alternatives at that compound. *)
+(* A selector list whose selectors have the same links and differ, as parsed,
+   in at most one compound, which counts no siblings, is the shared chain, with
+   the alternatives at that compound. Any other is the alternatives of its
+   selectors' chains, in written order (ADR 0015). *)
 cssListPattern[cs_] :=
-  Replace[DeleteDuplicatesBy[cs, cssShape], {
+  Replace[DeleteDuplicatesBy[Join @@ (cssSpreadIs /@ cs), cssShape], {
     {c_} :> cssChainPattern[c],
-    u_ :> cssSharedChain[u]}];
+    u_ :> Replace[cssSharedChain[u], None :> cssAlternatives[cssChainPattern /@ u]]}];
 
 cssSharedChain[u_] :=
   With[{comps = First /@ u},
-    If[!(SameQ @@ (Last /@ u)),
-      cssRefuse["unsupported", "a selector list whose selectors have different combinators", $cssListHow]];
-    With[{diff = Select[Range[Length[First[comps]]], !(SameQ @@ cssShape /@ comps[[All, #]]) &]},
-      If[Length[diff] > 1,
-        cssRefuse["unsupported", "a selector list whose selectors differ in more than one compound", $cssListHow]];
-      cssChainPattern[cx[
-        ReplacePart[First[comps], First[diff] -> cpAlt[DeleteDuplicatesBy[comps[[All, First[diff]]], cssShape]]],
-        Last[First[u]]]]]];
+    If[!(SameQ @@ (Last /@ u)), None,
+      With[{diff = Select[Range[Length[First[comps]]], !(SameQ @@ cssShape /@ comps[[All, #]]) &]},
+        If[Length[diff] > 1 || AnyTrue[comps[[All, First[diff]]], cssCountingQ], None,
+          cssChainPattern[cx[
+            ReplacePart[First[comps], First[diff] -> cpAlt[DeleteDuplicatesBy[comps[[All, First[diff]]], cssShape]]],
+            Last[First[u]]]]]]]];
+
+cssCountingQ[cp[nodes_, _]] := MemberQ[nodes, sPseudo["only-child" | "only-of-type", _]];
+
+(* A selector of one compound whose :is() or :where() has an argument with a
+   combinator is a selector list: each argument with the rest of the compound
+   merged into its last compound, as p:is(div p) is div p.p. With a compound
+   before it, x :is(a b) is an element with ancestors x and a in either order,
+   whose expansion grows with the chains, so it is not translated (cssApply). *)
+cssSpreadIs[cx[{cp[nodes_, text_]}, {}]] /; Count[nodes, _?cssComplexIsQ] == 1 :=
+  With[{k = First[FirstPosition[nodes, _?cssComplexIsQ, None, {1}, Heads -> False]]},
+    cssMergeInto[#, Delete[nodes, k], text] & /@ First[nodes[[k]]]];
+cssSpreadIs[c_] := {c};
+
+cssComplexIsQ[sIs[args_, _]] := !MatchQ[args, {cx[{_}, {}] ...}];
+cssComplexIsQ[_] := False;
+
+cssMergeInto[cx[comps_, links_], rest_, text_] :=
+  cx[Append[Most[comps], cp[Join[First[Last[comps]], rest], text]], links];
 
 (* A part of the tree without its source text and positions, which only
    messages use: compounds written differently, as with other quotes or
@@ -1836,9 +1853,9 @@ cssChain[ss_, links_] :=
    held, with cssSelf for the compound's element. cssCompoundT gives {pattern,
    name or None, the :only-* pseudo-classes}. *)
 cssCompoundT[cpAnchor] := {XMLPattern[$cssAnchor], None, {}};
-cssCompoundT[cpAlt[cps_]] :=
-  {cssAlternatives[cssUncounted[cssCompoundT[#], " in a compound that differs between the selectors of a list", $cssListHow] & /@ cps],
-   None, {}};
+(* The compounds that differ between the selectors of a list count no siblings
+   (cssSharedChain). *)
+cssCompoundT[cpAlt[cps_]] := {cssAlternatives[First @* cssCompoundT /@ cps], None, {}};
 cssCompoundT[c : cp[nodes_, _]] :=
   Replace[cssBranches[c], {bs_, counts_} :>
     Append[cssFinish[bs, FirstCase[nodes, sType[n_] :> n, _], counts =!= {}], counts]];
@@ -1890,7 +1907,7 @@ $cssChecked = {
 
 (* An argument of :is() or :where() is merged into the compound. *)
 cssArgBranches[cx[{c_}, {}], text_] := cssUncounted[cssBranches[c], " inside " <> text, $cssChildIndexedHow];
-cssArgBranches[_, text_] := cssRefuse["unsupported", text, $cssComplexHow];
+cssArgBranches[_, text_] := cssRefuse["unsupported", text, $cssComplexIsHow];
 
 (* An argument of :not() or :has() is a pattern of its own, with its own names. *)
 cssArgPattern[cx[{c_}, {}], text_] := cssUncounted[cssCompoundT[c], " inside " <> text, $cssChildIndexedHow];

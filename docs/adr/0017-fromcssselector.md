@@ -34,6 +34,7 @@ The output contains only public symbols and pattern names that `FromCSSSelector`
 - Through conditions: `:not()` and `:is()`/`:where()` over compound selectors, `:has()` with relative selectors that start with a descendant or `>` combinator, `:empty`, `:checked`, `:link` and `:any-link`.
 - `:only-child` and `:only-of-type`, by counting the parent's element children, in the first compound of a chain or after `>`.
 - Selector lists whose selectors differ in at most one compound, as alternatives in that stage: `a > b, a > c` becomes `Child[a, b | c]`.
+- Since ADR 0015, any other selector list, as the alternatives of its selectors' translations, in written order: `a > b, c d` becomes `Child[a, b] | Descendant[c, d]`. So does `:is()`/`:where()` with complex arguments in a selector of one compound, the rest of the compound merged into each argument's last compound: `p:is(div p, section > p)` becomes `Descendant[div, p] | Child[section, p]`.
 
 `[foo~="x"]` always becomes `"fooList" -> "x"`. `FromCSSSelector` takes no readings option. The reading is supplied where the query runs, through the consumer's `"AttributeReadings"` option or `$AttributeReadings`, and a consumer warns when a list key has no reading (#24).
 
@@ -48,8 +49,7 @@ Each refusal is a message and `$Failed`. There is one message per kind, and the 
 - **`FromCSSSelector::invalid`**: the string is not a valid selector, including unknown pseudo-classes, Level 5 names, `:matches()` and soupsieve extensions.
 - **`FromCSSSelector::unsupported`**: valid Selectors 4 that v1 does not translate:
   - namespaces and the `||` combinator
-  - selector lists that differ in more than one compound (these need ADR 0015)
-  - complex arguments to `:not()`, `:is()` and `:where()`
+  - complex arguments to `:not()`, and to `:is()` and `:where()` in a selector of more than one compound. `x :is(a b)` matches an element with the ancestors `x` and `a` in either order, or one element that is both, so it is a conjunction of chains, not a chain with `:is()` as its last stage; its expansion grows combinatorially, as for `A :is(B C) D`.
   - `:has(+ …)` and `:has(~ …)`
   - the child-indexed pseudo-classes other than `:only-*`, and `:only-*` after a descendant, `+` or `~` combinator (these need ADR 0016)
   - `:root` and `:scope`, which no condition can express (the workaround is `XMLFirstCase[tree, XMLPattern[_]]`)
@@ -77,7 +77,7 @@ In a `Roles` or `Constructs` rule, a string used to be a tag name. A tag that is
 
 Two features widen the translator as they land, each as a phase of the spec:
 
-- **ADR 0015 (alternatives of combinators):** selector lists of any shapes, and `:is()`/`:where()` with complex arguments in the last compound, become `Alternatives` of their selectors' translations, in written order.
+- **ADR 0015 (alternatives of combinators), done:** selector lists of any shapes, and `:is()`/`:where()` with complex arguments in a selector of one compound, become `Alternatives` of their selectors' translations, in written order. The spec also read `x :is(a b, c > d)` as `Descendant[x, Descendant[a, b] | Child[c, d]]`, but that puts `a` inside `x`, where CSS (and soupsieve) also match an `a` around `x`, so it stays `::unsupported`.
 - **ADR 0016 (list stages):** `:first-child`, `:last-child`, `:nth-child()`, `:nth-last-child()` (with `of S`) and the `-of-type` forms become list stages. `:only-*` moves to list stages, and the restriction to the start of a chain or after `>` goes.
 
 Until a feature lands, v1 refuses the selectors that need it, with `::unsupported`.
@@ -122,3 +122,5 @@ Possible Issues, for documentation:
 - `:checked` tests the `selected` attribute only. HTML's rule that the first `option` is selected by default is not applied, and soupsieve does not apply it either.
 - `:root`, `:scope` and the child-indexed pseudo-classes are refused, with their workarounds named.
 - In a `Roles` or `Constructs` rule, a string is CSS: a tag such as `a.b` needs `XMLPattern["a.b"]`.
+- A selector list of *n* selectors of different shapes runs *n* chains (ADR 0015). On the Rosetta pages (phase 2, 2026-10-05), every two- and three-selector list checked gave soupsieve's elements in soupsieve's order, and translating `div.mw-heading + p, table code, tr > th` took 0.8 ms, the slowest of the Rosetta selectors.
+- `:is()` or `:where()` with a combinator inside is translated only in a selector of one compound: `x :is(a b)` is refused.

@@ -316,6 +316,65 @@ TestCreate[
   TestID -> "css-selector-list-selects"
 ];
 
+(* Selectors of different shapes are the alternatives of their translations,
+   in written order (ADR 0015). *)
+TestCreate[
+  {FromCSSSelector["a > b, c > d"], FromCSSSelector["a b, c > d, e"], FromCSSSelector["a > b, a > c > d, a > b"],
+    MatchQ[FromCSSSelector["ul > li:only-child, ul > li"],
+      Verbatim[Alternatives][Verbatim[Condition][Child[_, _], _], Child[XMLPattern["ul"], XMLPattern["li"]]]]},
+  {Child[XMLPattern["a"], XMLPattern["b"]] | Child[XMLPattern["c"], XMLPattern["d"]],
+    Descendant[XMLPattern["a"], XMLPattern["b"]] | Child[XMLPattern["c"], XMLPattern["d"]] | XMLPattern["e"],
+    Child[XMLPattern["a"], XMLPattern["b"]] | Child[XMLPattern["a"], XMLPattern["c"], XMLPattern["d"]], True},
+  TestID -> "css-selector-list-of-shapes-exact"
+];
+
+(* a > b, c > d must not match c > b; an element both select is given once. *)
+$shapes = element["<div id='d'><a id='a'><b id='b1'></b></a><c id='c'><b id='b2'></b><d id='d1'></d></c><e id='e'><b id='b3'></b></e></div>"];
+
+TestCreate[
+  {ids[$shapes, "a > b, c > d"], ids[$shapes, "a > b, div b"], ids[$shapes, "div > a > b, c > d, e > b"]},
+  {{"b1", "d1"}, {"b1", "b2", "b3"}, {"b1", "d1", "b3"}},
+  TestID -> "css-selector-list-of-shapes-selects"
+];
+
+(* :is() with complex arguments, in the only compound of a selector, reads as
+   a selector list there, with the rest of the compound merged into the last
+   compound of each argument. *)
+TestCreate[
+  {FromCSSSelector[":is(a b, c > d)"], FromCSSSelector["b:is(a b)"], FromCSSSelector[".x:where(a b, c > d)"],
+    FromCSSSelector["b:is(a b, .y)"], FromCSSSelector[":is(div p, section p)"]},
+  {Descendant[XMLPattern["a"], XMLPattern["b"]] | Child[XMLPattern["c"], XMLPattern["d"]],
+    Descendant[XMLPattern["a"], XMLPattern["b"]],
+    Descendant[XMLPattern["a"], XMLPattern["b", "classList" -> "x"]] | Child[XMLPattern["c"], XMLPattern["d", "classList" -> "x"]],
+    Descendant[XMLPattern["a"], XMLPattern["b"]] | XMLPattern["b", "classList" -> "y"],
+    Descendant[XMLPattern["div"] | XMLPattern["section"], XMLPattern["p"]]},
+  TestID -> "css-is-complex-exact"
+];
+
+TestCreate[
+  {ids[$shapes, ":is(a b, c > d)"], ids[$shapes, "b:is(c b, e > *)"], ids[$shapes, ":where(a > b, c d)"]},
+  {{"b1", "d1"}, {"b2", "b3"}, {"b1", "d1"}},
+  TestID -> "css-is-complex-selects"
+];
+
+(* A selector list of n selectors of different shapes runs n chains, and a
+   compound before :is() with a combinator inside is not translated: x
+   :is(a b) is an element with ancestors x and a in either order. *)
+TestCreate[
+  {Length[FromCSSSelector["a > b, c d, e + f"]], kindOf["x :is(a b)"]},
+  {3, "unsupported"},
+  TestID -> "css-selector-list-possible-issues"
+];
+
+(* A string giving alternatives of combinators is refused where one element is
+   tested, as a combinator is. *)
+TestCreate[
+  {XMLMatchQ[XMLElement["d", {}, {}], "a > b, c > d"], HTMLInnerText[XMLElement["d", {}, {}], "Roles" -> {"a > b, c" -> "Skip"}]},
+  {$Failed, $Failed},
+  {XMLMatchQ::combinator, HTMLInnerText::badpat},
+  TestID -> "css-selector-list-of-shapes-refused-for-one-element"
+];
+
 (* === Names === *)
 
 (* A translation's names are its own, so it can sit next to the user's. *)
@@ -484,9 +543,9 @@ TestCreate[
   kindOf /@ {":root", ":scope", "a:lang(fr)", ":dir(ltr)", ":enabled", ":disabled", ":first-child",
     ":last-child", ":first-of-type", ":last-of-type", ":nth-child(2n+1)", ":nth-last-child(2)", ":nth-of-type(odd)",
     ":nth-last-of-type(1)", ":required", ":defined", "svg|rect", "*|a", "|a", "[xlink|href]", "a || b",
-    "a > b, c > d", "a b, c > d", ":has(+ a)", ":has(~ a)", ":not(a b)", ":is(a > b)", "ul li:only-child",
+    "x :is(a b)", "x > p:is(a b)", ":has(+ a)", ":has(~ a)", ":not(a b)", ":is(a b):is(c d)", "ul li:only-child",
     "a + li:only-child", "a ~ li:only-of-type", ":not(:only-child)", ":is(li:only-child)",
-    "ul > li:only-child, ul > li:only-of-type"},
+    "div:has(:is(a b))"},
   ConstantArray["unsupported", 33],
   TestID -> "css-messages-unsupported"
 ];
