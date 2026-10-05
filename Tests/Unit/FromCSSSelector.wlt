@@ -280,9 +280,9 @@ TestCreate[
     MatchQ[FromCSSSelector["ul > li:only-child:only-of-type"],
       Child[XMLPattern["ul"], Verbatim[Condition][{Verbatim[Pattern][_Symbol, Verbatim[___]],
         Verbatim[Pattern][_Symbol, XMLPattern["li"]], Verbatim[Pattern][_Symbol, Verbatim[___]]}, _And]]]},
-  {Child[XMLPattern[_], {XMLPattern["li"]}], Child[XMLPattern[_], Descendant[{XMLPattern["li"]}, XMLPattern["a"]]],
+  {Child[XMLDocument[] | XMLPattern[_], {XMLPattern["li"]}], Child[XMLDocument[] | XMLPattern[_], Descendant[{XMLPattern["li"]}, XMLPattern["a"]]],
     Descendant[XMLPattern["ul"], {XMLPattern["li"]}],
-    Child[XMLPattern[_], {Except[XMLPattern["li"]] ..., XMLPattern["li"], Except[XMLPattern["li"]] ...}], True},
+    Child[XMLDocument[] | XMLPattern[_], {Except[XMLPattern["li"]] ..., XMLPattern["li"], Except[XMLPattern["li"]] ...}], True},
   TestID -> "css-only-exact"
 ];
 
@@ -303,20 +303,20 @@ $kids = element["<div id='root'><p id='p1'>1</p><span id='s1'></span><p id='p2'>
 TestCreate[
   {FromCSSSelector["li:first-child"], FromCSSSelector["li:last-child"], FromCSSSelector["div > p:nth-child(3)"],
     FromCSSSelector["tr:nth-child(2n+1)"], FromCSSSelector["tr:nth-child(odd)"], FromCSSSelector["tr:nth-last-child(-n+3)"],
-    MatchQ[FromCSSSelector["p:nth-of-type(2)"], Child[XMLPattern[_], Verbatim[Condition][{Verbatim[Pattern][_Symbol, Verbatim[___]],
+    MatchQ[FromCSSSelector["p:nth-of-type(2)"], Child[Verbatim[XMLDocument[] | XMLPattern[_]], Verbatim[Condition][{Verbatim[Pattern][_Symbol, Verbatim[___]],
       Verbatim[Pattern][_Symbol, XMLPattern["p"]], Verbatim[Pattern][_Symbol, Verbatim[___]]}, _]]],
     FromCSSSelector["p:last-of-type"], FromCSSSelector["a + b:last-child"],
     FromCSSSelector["a:first-child ~ b"], FromCSSSelector["p:nth-child(0)"]},
-  {Child[XMLPattern[_], {XMLPattern["li"], ___}], Child[XMLPattern[_], {___, XMLPattern["li"]}],
+  {Child[XMLDocument[] | XMLPattern[_], {XMLPattern["li"], ___}], Child[XMLDocument[] | XMLPattern[_], {___, XMLPattern["li"]}],
     Child[XMLPattern["div"], {Repeated[_, {2}], XMLPattern["p"], ___}],
-    Child[XMLPattern[_], {PatternSequence[_, _] ..., XMLPattern["tr"], ___}],
-    Child[XMLPattern[_], {PatternSequence[_, _] ..., XMLPattern["tr"], ___}],
-    Child[XMLPattern[_], {___, XMLPattern["tr"], Repeated[_, {0, 2}]}],
+    Child[XMLDocument[] | XMLPattern[_], {PatternSequence[_, _] ..., XMLPattern["tr"], ___}],
+    Child[XMLDocument[] | XMLPattern[_], {PatternSequence[_, _] ..., XMLPattern["tr"], ___}],
+    Child[XMLDocument[] | XMLPattern[_], {___, XMLPattern["tr"], Repeated[_, {0, 2}]}],
     True,
-    Child[XMLPattern[_], {___, XMLPattern["p"], Except[XMLPattern["p"]] ...}],
-    Child[XMLPattern[_], {___, XMLPattern["a"], XMLPattern["b"]}],
-    Child[XMLPattern[_], {XMLPattern["a"], ___, XMLPattern["b"], ___}],
-    Child[XMLPattern[_], {Except[_], XMLPattern["p"], ___}]},
+    Child[XMLDocument[] | XMLPattern[_], {___, XMLPattern["p"], Except[XMLPattern["p"]] ...}],
+    Child[XMLDocument[] | XMLPattern[_], {___, XMLPattern["a"], XMLPattern["b"]}],
+    Child[XMLDocument[] | XMLPattern[_], {XMLPattern["a"], ___, XMLPattern["b"], ___}],
+    Child[XMLDocument[] | XMLPattern[_], {Except[_], XMLPattern["p"], ___}]},
   TestID -> "css-child-indexed-exact"
 ];
 
@@ -345,11 +345,11 @@ TestCreate[
    last are tested on the siblings before it. *)
 TestCreate[
   {MatchQ[FromCSSSelector[".x:first-of-type"],
-      Child[XMLPattern[_], Verbatim[Condition][{_Pattern, Verbatim[Pattern][_Symbol, XMLPattern[_, "classList" -> "x"]], _Pattern}, _]]],
+      Child[Verbatim[XMLDocument[] | XMLPattern[_]], Verbatim[Condition][{_Pattern, Verbatim[Pattern][_Symbol, XMLPattern[_, "classList" -> "x"]], _Pattern}, _]]],
     MatchQ[FromCSSSelector["b:has(i) ~ p:nth-child(4)"],
-      Child[XMLPattern[_], Verbatim[Condition][{_Pattern, Verbatim[Pattern][_Symbol, XMLPattern["p"]], _Pattern}, _And]]],
+      Child[Verbatim[XMLDocument[] | XMLPattern[_]], Verbatim[Condition][{_Pattern, Verbatim[Pattern][_Symbol, XMLPattern["p"]], _Pattern}, _And]]],
     MatchQ[FromCSSSelector[":has(i):nth-of-type(1)"],
-      Child[XMLPattern[_], Verbatim[Condition][{_Pattern, Verbatim[Condition][Verbatim[Pattern][_Symbol, XMLPattern[_]], _], _Pattern}, _]]],
+      Child[Verbatim[XMLDocument[] | XMLPattern[_]], Verbatim[Condition][{_Pattern, Verbatim[Condition][Verbatim[Pattern][_Symbol, XMLPattern[_]], _], _Pattern}, _]]],
     Lookup[XMLCases[$kids, Child[":has(i):nth-child(5):first-of-type", e : XMLPattern["i"]] :> e][[All, 2]], "id"]},
   {True, True, True, {"i1"}},
   TestID -> "css-child-indexed-general-form"

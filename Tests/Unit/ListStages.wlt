@@ -302,9 +302,10 @@ TestCreate[
 ];
 
 (* === The root (ADR 0016, "The root") ===
-   A list stage never selects the root: on an XMLObject the root element is no
-   element's child, and a bare XMLElement input is a parent, not a result. To be
-   reversed by ADR 0018. *)
+   After an element pattern, a list stage never selects the root: on an
+   XMLObject the root element is no element's child, and a bare XMLElement
+   input is a parent, not a result. After XMLDocument[] it does (ADR 0018,
+   XMLDocument.wlt). *)
 TestCreate[
   {XMLCases[$five, Child[any, {x : XMLPattern["html"], ___}]],
    HTMLTextContent /@ XMLCases[XMLElement["body", {}, {"t", XMLElement["p", {}, {"1"}], XMLElement["p", {}, {"2"}]}], Child[any, {p, ___}]]},
