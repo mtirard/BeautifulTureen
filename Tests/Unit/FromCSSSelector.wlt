@@ -396,8 +396,8 @@ TestCreate[
 TestCreate[
   {FromCSSSelector["[a=-x]"], FromCSSSelector["[a=--]"], FromCSSSelector["[ href ^= \"x\" i ]"], FromCSSSelector["[a=\"b\"i]"]},
   {XMLPattern[_, "a" -> "-x"], XMLPattern[_, "a" -> "--"],
-    XMLPattern[_, "href" -> _?(StringStartsQ[StringReplace[#, RegularExpression["[A-Z]"] :> ToLowerCase["$0"]], "x"] &)],
-    XMLPattern[_, "a" -> _?(StringReplace[#, RegularExpression["[A-Z]"] :> ToLowerCase["$0"]] === "b" &)]},
+    XMLPattern[_, "href" -> _?(StringStartsQ[StringReplace[RegularExpression["[A-Z]"] :> ToLowerCase["$0"]][#], "x"] &)],
+    XMLPattern[_, "a" -> _?(StringReplace[RegularExpression["[A-Z]"] :> ToLowerCase["$0"]][#] === "b" &)]},
   TestID -> "css-grammar-attribute-values-valid"
 ];
 
@@ -551,9 +551,10 @@ TestCreate[
 ];
 
 TestCreate[
-  {XMLMatchQ[XMLElement["p", {}, {}], "div > p"], XMLMatchQ[XMLElement["li", {}, {}], "li:only-child"]},
-  {$Failed, $Failed},
-  {XMLMatchQ::combinator, XMLMatchQ::combinator},
+  {XMLMatchQ[XMLElement["p", {}, {}], "div > p"], XMLMatchQ[XMLElement["li", {}, {}], "li:only-child"],
+    XMLMatchQ[XMLElement["p", {}, {}], e : "div > p"]},
+  {$Failed, $Failed, $Failed},
+  {XMLMatchQ::combinator, XMLMatchQ::combinator, XMLMatchQ::badpat},
   TestID -> "css-string-combinator-refused-where-an-element-pattern-goes"
 ];
 

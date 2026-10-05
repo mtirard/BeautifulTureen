@@ -429,12 +429,14 @@ cElem[XMLPattern[args___]] := cXMLPattern[{args}];
 (* A string that gives a combinator is not an element pattern, and is named as
    written. *)
 cElem[s_String] := With[{t = cssPattern[s]}, If[combinatorQ[patternBase[t]], badpat[s], cElem[t]]];
+(* A combinator, or a CSS selector string that gives one. *)
+stageCombinatorQ[s_String] := combinatorQ[patternBase[cssPattern[s]]];
+stageCombinatorQ[p_] := combinatorQ[p];
 (* A combinator is not an element pattern; the whole Alternatives is named. *)
-cElem[alts_Alternatives] /; AnyTrue[List @@ alts, combinatorQ[If[StringQ[#], patternBase[cssPattern[#]], #]] &] :=
-  badpat[alts];
+cElem[alts_Alternatives] /; AnyTrue[List @@ alts, stageCombinatorQ] := badpat[alts];
 cElem[alts_Alternatives] := Alternatives @@ (cElem /@ List @@ alts);
 cElem[Verbatim[Pattern][s_Symbol, p_]] :=
-  If[combinatorQ[p], badpat[namedPattern[s, p]], bindAs[s, cElem[p], strip]];
+  If[stageCombinatorQ[p], badpat[namedPattern[s, p]], bindAs[s, cElem[p], strip]];
 cElem[c_Condition] := conditioned[cElem, c, conditionWith];
 (* The same refusal, for a tested combinator inside Alternatives or a name. *)
 cElem[t : Verbatim[PatternTest][x_, _]] /; combinatorQ[patternBase[x]] := refuseAtHead["testcombinator", t];
@@ -1268,7 +1270,8 @@ cssRefuse[kind_, part_, how_] := Throw[{kind, part, how}, $cssRefused];
 
 (* ASCII case-insensitivity, as Selectors requires for keywords: ToLowerCase
    would also fold letters such as \[CapitalEAcute]. *)
-cssLower[s_] := StringReplace[s, RegularExpression["[A-Z]"] :> ToLowerCase["$0"]];
+$cssFold = StringReplace[RegularExpression["[A-Z]"] :> ToLowerCase["$0"]];
+cssLower[s_] := $cssFold[s];
 
 (* ---- Tokens (CSS Syntax 3, sections 3 and 4) ---- *)
 
@@ -1538,6 +1541,7 @@ $cssUnsupportedFunctions = Join[
     "dir" -> $cssFormHow|>];
 
 (* Valid, but true only in a browser. *)
+$cssShadowHow = "A document has no shadow trees.";
 $cssStateHow = "Leave it out of the selector to match the elements in any state.";
 $cssImpossible = Join[
   AssociationMap[$cssStateHow &, {"visited", "hover", "active", "focus", "focus-visible", "focus-within",
@@ -1545,8 +1549,8 @@ $cssImpossible = Join[
     "popover-open", "modal", "fullscreen", "picture-in-picture", "autofill", "-webkit-autofill",
     "user-valid", "user-invalid"}],
   <|"target" -> "To match the element that a fragment names, use XMLPattern[_, \"id\" -> fragment].",
-    "host" -> "A document has no shadow trees."|>];
-$cssImpossibleFunctions = <|"host" -> "A document has no shadow trees.", "host-context" -> "A document has no shadow trees."|>;
+    "host" -> $cssShadowHow|>];
+$cssImpossibleFunctions = <|"host" -> $cssShadowHow, "host-context" -> $cssShadowHow|>;
 
 (* The functional pseudo-classes, for the message on one written without
    parentheses. *)
@@ -1685,12 +1689,11 @@ cssChain[ss_, links_] :=
 (* A compound is a list of branches, br[tag, attributes, tests], its
    alternatives: :is() and :checked give several. The tag is tg[allowed, or
    All, excluded]; the attributes map each key to its constraints; a test is
-   held, with cssSelf for the compound's element. compoundT gives {pattern,
+   held, with cssSelf for the compound's element. cssCompoundT gives {pattern,
    name or None, the :only-* pseudo-classes}. *)
 cssCompoundT[cpAnchor] := {XMLPattern[$cssAnchor], None, {}};
 cssCompoundT[cpAlt[cps_]] :=
-  {cssAlternatives[Replace[cssCompoundT[#], {{p_, _, {}} :> p,
-    {_, _, counts_} :> cssRefuse["unsupported", ":" <> First[counts] <> " in a compound that differs between the selectors of a list", $cssListHow]}] & /@ cps],
+  {cssAlternatives[cssUncounted[cssCompoundT[#], " in a compound that differs between the selectors of a list", $cssListHow] & /@ cps],
    None, {}};
 cssCompoundT[c : cp[nodes_, _]] :=
   Replace[cssBranches[c], {bs_, counts_} :>
@@ -1742,18 +1745,18 @@ $cssChecked = {
   br[tg[{"option"}, {}], <|"selected" -> {present}|>, {}]};
 
 (* An argument of :is() or :where() is merged into the compound. *)
-cssArgBranches[cx[{c_}, {}], text_] :=
-  Replace[cssBranches[c], {
-    {bs_, {}} :> bs,
-    {_, counts_} :> cssRefuse["unsupported", ":" <> First[counts] <> " inside " <> text, $cssChildIndexedHow]}];
+cssArgBranches[cx[{c_}, {}], text_] := cssUncounted[cssBranches[c], " inside " <> text, $cssChildIndexedHow];
 cssArgBranches[_, text_] := cssRefuse["unsupported", text, $cssComplexHow];
 
 (* An argument of :not() or :has() is a pattern of its own, with its own names. *)
-cssArgPattern[cx[{c_}, {}], text_] :=
-  Replace[cssCompoundT[c], {
-    {p_, _, {}} :> p,
-    {_, _, counts_} :> cssRefuse["unsupported", ":" <> First[counts] <> " inside " <> text, $cssChildIndexedHow]}];
+cssArgPattern[cx[{c_}, {}], text_] := cssUncounted[cssCompoundT[c], " inside " <> text, $cssChildIndexedHow];
 cssArgPattern[_, text_] := cssRefuse["unsupported", text, $cssComplexHow];
+
+(* A compound's pattern or branches, which must not count its siblings: a
+   counting compound is a combinator, not an element pattern. *)
+cssUncounted[{x_, {}}, _, _] := x;
+cssUncounted[{x_, _, {}}, _, _] := x;
+cssUncounted[{__, counts_List}, where_, how_] := cssRefuse["unsupported", ":" <> First[counts] <> where, how];
 
 (* :not() of one class or one type merges into the class list or the tag, so a
    classless element matches, as in CSS; otherwise it is a condition, never an
@@ -1885,19 +1888,17 @@ cssSingle[c_] := cssPatternTest[_, Function @@ cssSlot[c]];
    folds A-Z only, on both sides, as Selectors requires: IgnoreCase would
    also fold letters such as \[CapitalEAcute]. *)
 cssSlot[eq[v_]] := Hold[# === v];
-cssSlot[eqI[v_]] := Hold[StringReplace[#, RegularExpression["[A-Z]"] :> ToLowerCase["$0"]] === v];
+cssSlot[eqI[v_]] := With[{f = $cssFold}, Hold[f[#] === v]];
 cssSlot[dash[v_]] := With[{w = v <> "-"}, Hold[# === v || StringStartsQ[#, w]]];
-cssSlot[dashI[v_]] := With[{w = v <> "-"},
-  Hold[StringReplace[#, RegularExpression["[A-Z]"] :> ToLowerCase["$0"]] === v ||
-    StringStartsQ[StringReplace[#, RegularExpression["[A-Z]"] :> ToLowerCase["$0"]], w]]];
+cssSlot[dashI[v_]] := With[{f = $cssFold, w = v <> "-"}, Hold[f[#] === v || StringStartsQ[f[#], w]]];
 cssSlot[pre[v_]] := Hold[StringStartsQ[#, v]];
-cssSlot[preI[v_]] := Hold[StringStartsQ[StringReplace[#, RegularExpression["[A-Z]"] :> ToLowerCase["$0"]], v]];
+cssSlot[preI[v_]] := With[{f = $cssFold}, Hold[StringStartsQ[f[#], v]]];
 cssSlot[suf[v_]] := Hold[StringEndsQ[#, v]];
-cssSlot[sufI[v_]] := Hold[StringEndsQ[StringReplace[#, RegularExpression["[A-Z]"] :> ToLowerCase["$0"]], v]];
+cssSlot[sufI[v_]] := With[{f = $cssFold}, Hold[StringEndsQ[f[#], v]]];
 cssSlot[sub[v_]] := Hold[StringContainsQ[#, v]];
-cssSlot[subI[v_]] := Hold[StringContainsQ[StringReplace[#, RegularExpression["[A-Z]"] :> ToLowerCase["$0"]], v]];
+cssSlot[subI[v_]] := With[{f = $cssFold}, Hold[StringContainsQ[f[#], v]]];
 cssSlot[checkedType] := Hold[StringMatchQ[#, "checkbox" | "radio", IgnoreCase -> True]];
-cssSlot[hasI[v_]] := Hold[MemberQ[StringReplace[#, RegularExpression["[A-Z]"] :> ToLowerCase["$0"]], v]];
+cssSlot[hasI[v_]] := With[{f = $cssFold}, Hold[MemberQ[f[#], v]]];
 
 (* =========================================================== *)
 (* HTMLTextContent                                             *)
