@@ -35,7 +35,7 @@ Cell[TextData[{"The following options can be given:
 | --- | --- | --- |
 | \"Roles\" | ", Cell[BoxData[RowBox[{"{", "}"}]], "InlineFormula"], " | rules that set the role of elements |
 | \"BlockSeparator\" | ", Cell[BoxData[StyleBox["\"\\n\"", "TR"]], "InlineFormula"], " | string inserted between blocks |
-| \"AttributeReadings\" | ", Cell[BoxData[StyleBox["<||>", "TR"]], "InlineFormula"], " | readings to add to ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"]], "InlineFormula"], " for the patterns in \"Roles\" |"}], "Notes"],
+| \"AttributeReadings\" | ", Cell[BoxData[StyleBox["<||>", "TR"]], "InlineFormula"], " | readings to add to ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"]], "InlineFormula"], " for this call |"}], "Notes"],
 
 Cell[TextData[{"Each rule of \"Roles\" has the form ", Cell[BoxData[RowBox[{StyleBox["pattern", "TI"], "\[Rule]", StyleBox["role", "TI"]}]], "InlineFormula"], " or ", Cell[BoxData[RowBox[{StyleBox["pattern", "TI"], "\[RuleDelayed]", StyleBox["role", "TI"]}]], "InlineFormula"], ", and the rules may also be given as an ", Cell[BoxData[ButtonBox["Association", BaseStyle -> "Link", ButtonData -> "paclet:ref/Association"]], "InlineFormula"], ". ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " may be a tag string, an ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"]], "InlineFormula"], ", alternatives of them, or either with a condition ", Cell[BoxData["pat$ /; test$"], "InlineFormula"], "."}], "Notes"],
 

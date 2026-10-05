@@ -19,8 +19,8 @@ Adjacent::usage = "Adjacent[beforePat, afterPat] is a combinator for XMLCases an
 Sibling::usage = "Sibling[beforePat, afterPat] is a combinator for XMLCases and XMLFirstCase that matches elements that match afterPat and follow a sibling that matches beforePat, at any distance. Each such element is given once. A name bound in beforePat, as used in a rule body, gives the first matching earlier sibling in document order. Sibling[pat1, pat2, pat3, ...] is Sibling[pat1, Sibling[pat2, pat3, ...]], so Sibling[a, b, c] matches each c that follows a b that follows an a. Each argument is a stage: an XMLPattern, alternatives of them, or another combinator. Stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements. A condition on a stage can use the names bound in that stage. A condition on the whole combinator can use the names bound in all its stages.";
 Descendant::usage = "Descendant[ancestorPat, descPat] is a combinator for XMLCases, XMLFirstCase and XMLDeleteCases that matches elements that match descPat and are nested at any depth inside an element that matches ancestorPat. Each such element is given once, however many of its ancestors match. A name bound in ancestorPat, as used in a rule body, gives the outermost matching ancestor. Descendant[pat1, pat2, pat3, ...] is Descendant[pat1, Descendant[pat2, pat3, ...]], so Descendant[a, b, c] matches each c inside a b inside an a. Each argument is a stage: an XMLPattern, alternatives of them, or another combinator. Stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements. A condition on a stage can use the names bound in that stage. A condition on the whole combinator can use the names bound in all its stages.";
 HTMLTextContent::usage = "HTMLTextContent[tree] gives the text of an XML tree: all the strings it contains, joined in document order. No whitespace is added or removed, so source indentation and the whitespace in <pre> are kept. tree can be an XMLElement, an XMLObject document, a list, or a string.";
-HTMLInnerText::usage = "HTMLInnerText[tree] gives the readable text of an XML tree. Runs of whitespace are collapsed, block-level elements go on their own lines, <br> becomes a newline, <pre> content is kept as written, tags such as script and style are dropped, and the result is trimmed. How each element is treated depends only on its tag, as given by the built-in user-agent stylesheet. HTMLInnerText[tree, \"Roles\" -> rules] changes this, with rules of the form pattern -> role, where pattern is an XMLPattern or a tag string and role is \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\" or \"Skip\". \"BlockSeparator\" -> sep sets the string inserted between blocks (default \"\\n\"). \"AttributeReadings\" -> readings adds readings to $AttributeReadings for the patterns in the rules. tree can be an XMLElement, an XMLObject document, a list, or a string.";
-HTMLToNotebook::usage = "HTMLToNotebook[tree] converts an HTML or XML tree to a Notebook expression, which can be displayed or exported with Export to Markdown, PDF, RTF, etc. Block-level tags become cells, such as headings -> Title, Chapter, Section, etc., p -> Text, li -> Item, Subitem, etc., blockquote -> a framed quote, pre -> a Program cell, and table -> a Dataset or Grid, with its caption as a Text cell before it. Inline tags become boxes in the surrounding cell, such as b -> bold, i -> italic, code -> inline code, a -> a hyperlink and img -> its alt text, linked to its src. How each element is treated depends only on its tag, as given by the built-in user-agent stylesheet. HTMLToNotebook[tree, \"Roles\" -> rules] changes the role of elements, such as block or inline. \"Constructs\" -> rules changes what an element becomes: an inline style such as \"Bold\", a cell style, or a function that is applied to the element and gives a Cell or boxes. The left-hand side of each rule is an XMLPattern or a tag string. \"AttributeReadings\" -> readings adds readings to $AttributeReadings for the patterns in the rules. tree can be an XMLElement, an XMLObject document, a list, or a string.";
+HTMLInnerText::usage = "HTMLInnerText[tree] gives the readable text of an XML tree. Runs of whitespace are collapsed, block-level elements go on their own lines, <br> becomes a newline, <pre> content is kept as written, tags such as script and style are dropped, and the result is trimmed. How each element is treated depends only on its tag, as given by the built-in user-agent stylesheet. HTMLInnerText[tree, \"Roles\" -> rules] changes this, with rules of the form pattern -> role, where pattern is an XMLPattern or a tag string and role is \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\" or \"Skip\". \"BlockSeparator\" -> sep sets the string inserted between blocks (default \"\\n\"). \"AttributeReadings\" -> readings adds readings to $AttributeReadings for this call. tree can be an XMLElement, an XMLObject document, a list, or a string.";
+HTMLToNotebook::usage = "HTMLToNotebook[tree] converts an HTML or XML tree to a Notebook expression, which can be displayed or exported with Export to Markdown, PDF, RTF, etc. Block-level tags become cells, such as headings -> Title, Chapter, Section, etc., p -> Text, li -> Item, Subitem, etc., blockquote -> a framed quote, pre -> a Program cell, and table -> a Dataset or Grid, with its caption as a Text cell before it. Inline tags become boxes in the surrounding cell, such as b -> bold, i -> italic, code -> inline code, a -> a hyperlink and img -> its alt text, linked to its src. How each element is treated depends only on its tag, as given by the built-in user-agent stylesheet. HTMLToNotebook[tree, \"Roles\" -> rules] changes the role of elements, such as block or inline. \"Constructs\" -> rules changes what an element becomes: an inline style such as \"Bold\", a cell style, or a function that is applied to the element and gives a Cell or boxes. The left-hand side of each rule is an XMLPattern or a tag string. \"AttributeReadings\" -> readings adds readings to $AttributeReadings for this call. tree can be an XMLElement, an XMLObject document, a list, or a string.";
 
 (* === Messages === *)
 
@@ -211,11 +211,22 @@ resolveReading[key_String -> spec_Association] :=
 
 resolveReadings[readings_Association] := Association[resolveReading /@ Normal[readings]];
 
-(* A consumer's AttributeReadings option adds to the global; an entry for a key
-   the global already has replaces that key's entry whole. A table that fails
-   validation has said why, and gives $Failed. *)
-readingsWith[extra_] :=
-  Catch[resolveReadings[validReadings[Join @@ (validTable /@ {$AttributeReadings, extra})]], $refusal];
+(* The readings table in force, $AttributeReadings, resolved. A table that
+   fails validation has said why, and gives $Failed. *)
+readingsInForce[] :=
+  Catch[resolveReadings[validReadings[validTable[$AttributeReadings]]], $refusal];
+
+(* A consumer's AttributeReadings option is shorthand for a Block of the global
+   over the whole call (#34), so a nested XML* call in a condition or a rule
+   body, and any function it calls, sees it. It adds to the global; an entry
+   for a key the global already has replaces that key's entry whole. Only the
+   two tables' shapes are checked here, as Join needs them; each query compiled
+   in the call validates the joined table. *)
+SetAttributes[withReadings, HoldRest];
+withReadings[opt_, call_] :=
+  Replace[Catch[Join @@ (validTable /@ {$AttributeReadings, opt}), $refusal], {
+    $Failed -> $Failed,
+    t_ :> Block[{$AttributeReadings = t}, call]}];
 
 validTable[t_Association] := t;
 validTable[t_] := refuse[$AttributeReadings::notassoc, t];
@@ -295,9 +306,9 @@ strip[x_] :=
 (* =========================================================== *)
 (* The query compiler                                           *)
 (*                                                              *)
-(* compileQuery[query, head, opt] -> the query's normal form,   *)
-(* opt being the consumer's "AttributeReadings" option: an      *)
-(* Association every decision about the query reads:           *)
+(* compileQuery[query, head] -> the query's normal form under  *)
+(* the readings in force: an Association every decision about  *)
+(* the query reads:                                             *)
 (*   "Stages"     the compiled element patterns, in chain order *)
 (*   "Links"      the combinator heads between them ({} for a   *)
 (*                plain query, which has one stage)             *)
@@ -325,7 +336,7 @@ strip[x_] :=
 (* it names one, again with the renaming on.                    *)
 (* =========================================================== *)
 
-compileQuery[q_, head_, opt_] := compileWith[q, head, readingsWith[opt]];
+compileQuery[q_, head_] := compileWith[q, head, readingsInForce[]];
 
 (* With the readings table resolved, for a caller that compiles several queries
    against one table. *)
@@ -1032,7 +1043,7 @@ Options[XMLCases] = {"AttributeReadings" -> <||>};
 (* The count n is a ceiling, as in StringCases (ADR 0019). A third argument
    that is not an option is a count, and one that is not valid gives innf. *)
 XMLCases[tree_, q_, n : Except[_?(optionQ[XMLCases])] : Infinity, opts : OptionsPattern[]] /; countQ[n] :=
-  queryCases[compileQuery[q, XMLCases, OptionValue["AttributeReadings"]], tree, n];
+  withReadings[OptionValue["AttributeReadings"], queryCases[compileQuery[q, XMLCases], tree, n]];
 
 XMLCases[tree_, q_, n : Except[_?(optionQ[XMLCases])], opts : OptionsPattern[]] /;
     (Message[XMLCases::innf, Unevaluated[XMLCases[tree, q, n, opts]], 3]; False) := Null;
@@ -1113,7 +1124,7 @@ Options[XMLFirstCase] = {"AttributeReadings" -> <||>};
 
 XMLFirstCase[tree_, q_, default : Except[_?(optionRuleQ[XMLFirstCase])] : Missing["NotFound"],
     opts : OptionsPattern[]] :=
-  queryFirst[compileQuery[q, XMLFirstCase, OptionValue["AttributeReadings"]], tree, default];
+  withReadings[OptionValue["AttributeReadings"], queryFirst[compileQuery[q, XMLFirstCase], tree, default]];
 
 XMLFirstCase[args___] /; (countMessage[XMLFirstCase, {args}, {2, 3}]; False) := Null;
 
@@ -1141,7 +1152,7 @@ firstMatchPosition[tree_, pat_] :=
 Options[XMLDeleteCases] = {"AttributeReadings" -> <||>};
 
 XMLDeleteCases[tree_, q_, opts : OptionsPattern[]] :=
-  queryDelete[compileQuery[q, XMLDeleteCases, OptionValue["AttributeReadings"]], tree];
+  withReadings[OptionValue["AttributeReadings"], queryDelete[compileQuery[q, XMLDeleteCases], tree]];
 
 XMLDeleteCases[args___] /; (countMessage[XMLDeleteCases, {args}, {2, 2}]; False) := Null;
 
@@ -1155,34 +1166,35 @@ deleteC[tree_, pat_] := DeleteCases[tree, pat, Infinity];
 
 Options[XMLMatchQ] = {"AttributeReadings" -> <||>};
 
-(* An option rule is never a pattern, so XMLMatchQ[pattern, opts] is the operator form. *)
+(* An option rule is never a pattern, so XMLMatchQ[pattern, opts] is the
+   operator form. Its option is a Block for each call of the operator. *)
 XMLMatchQ[q_, opts : Longest[__?(optionRuleQ[XMLMatchQ])]][el_] :=
-  matchWith[cachedMatcher[q, OptionValue[XMLMatchQ, {opts}, "AttributeReadings"]], el];
-XMLMatchQ[q_][el_] := matchWith[cachedMatcher[q, <||>], el];
+  withReadings[OptionValue[XMLMatchQ, {opts}, "AttributeReadings"], matchWith[cachedMatcher[q], el]];
+XMLMatchQ[q_][el_] := matchWith[cachedMatcher[q], el];
 
 XMLMatchQ[el_, q : Except[_?(optionRuleQ[XMLMatchQ])], opts : OptionsPattern[]] :=
-  matchWith[matcherOf[q, OptionValue["AttributeReadings"]], el];
+  withReadings[OptionValue["AttributeReadings"], matchWith[matcherOf[q], el]];
 
 XMLMatchQ[args___] /; (countMessage[XMLMatchQ, {args}, {1, 2}]; False) := Null;
 
 matchWith[$Failed, _] := $Failed;
 matchWith[m_, el_] := m[el];
 
-matcherOf[q_, opt_] := elementMatcher[compileQuery[q, XMLMatchQ, opt]];
+matcherOf[q_] := elementMatcher[compileQuery[q, XMLMatchQ]];
 
 (* The operator form stays unevaluated, as MatchQ[pattern] does, and is applied
    to each element in turn, so its matcher is kept, keyed on everything the
-   compiled query depends on: the pattern, the value of the "AttributeReadings"
-   option, and $AttributeReadings (issue #2). A refused pattern is not kept: it
+   compiled query depends on: the pattern and $AttributeReadings, which the
+   "AttributeReadings" option joins to (issue #2). A refused pattern is not kept: it
    gives its message on each call, as the two-argument form does. The cache is
    emptied when it is full. *)
 $matcherCache = <||>;
 $matcherCacheSize = 256;
 
-cachedMatcher[q_, opt_] :=
-  With[{key = {q, opt, $AttributeReadings}},
+cachedMatcher[q_] :=
+  With[{key = {q, $AttributeReadings}},
     Lookup[$matcherCache, Key[key],
-      With[{m = matcherOf[q, opt]},
+      With[{m = matcherOf[q]},
         If[m =!= $Failed,
           If[Length[$matcherCache] >= $matcherCacheSize, $matcherCache = <||>];
           $matcherCache[key] = m];
@@ -1276,14 +1288,14 @@ compileRule[rule_RuleDelayed, head_, readings_] :=
     c_Association :> {plainQuery[c], c["Readings"]}];
 compileRule[x_, head_, _] := With[{h = head}, Message[MessageName[h, "notrule"], x]; $Failed];
 
-(* ruleLookups[{rules1, rules2, ...}, head, opt, tree]: for each rule set, a
+(* ruleLookups[{rules1, rules2, ...}, head, tree]: for each rule set, a
    function from an element of tree to the value of the first rule that matches
    it, or noRule; $Failed if any set is refused. The readings table is resolved
    once for them all. A rule naming a list key is matched on the element with
    its token lists attached, each distinct raw value on the tree split once;
    the element itself is never changed, so a caller walks the tree as it is. *)
-ruleLookups[sets_List, head_, opt_, tree_] :=
-  With[{readings = readingsWith[opt]},
+ruleLookups[sets_List, head_, tree_] :=
+  With[{readings = readingsInForce[]},
     If[readings === $Failed, $Failed,
       With[{lookups = ruleLookup[#, head, readings, tree] & /@ sets},
         If[MemberQ[lookups, $Failed], $Failed, lookups]]]];
@@ -1374,9 +1386,10 @@ HTMLInnerText[XMLObject["Document"][_, root_, _], opts : OptionsPattern[]] :=
   HTMLInnerText[root, opts];
 
 HTMLInnerText[tree_, opts : OptionsPattern[]] :=
-  Replace[ruleLookups[{OptionValue["Roles"]}, HTMLInnerText, OptionValue["AttributeReadings"], tree], {
-    $Failed -> $Failed,
-    {roles_} :> itSerialize[Flatten[itToks[tree, False, roles]], OptionValue["BlockSeparator"]]}
+  withReadings[OptionValue["AttributeReadings"],
+    Replace[ruleLookups[{OptionValue["Roles"]}, HTMLInnerText, tree], {
+      $Failed -> $Failed,
+      {roles_} :> itSerialize[Flatten[itToks[tree, False, roles]], OptionValue["BlockSeparator"]]}]
   ] /; validTextInputQ[tree];
 
 HTMLInnerText[tree_, OptionsPattern[]] :=
@@ -1787,10 +1800,10 @@ HTMLToNotebook[XMLObject["Document"][_, root_, _], opts : OptionsPattern[]] :=
   HTMLToNotebook[root, opts];
 
 HTMLToNotebook[tree_, opts : OptionsPattern[]] :=
-  Replace[
-    ruleLookups[{OptionValue["Roles"], OptionValue["Constructs"]}, HTMLToNotebook, OptionValue["AttributeReadings"], tree], {
-    $Failed -> $Failed,
-    {roles_, cons_} :> Notebook[blockEmit[toChildList[tree], initCtx[roles, cons]]]}
+  withReadings[OptionValue["AttributeReadings"],
+    Replace[ruleLookups[{OptionValue["Roles"], OptionValue["Constructs"]}, HTMLToNotebook, tree], {
+      $Failed -> $Failed,
+      {roles_, cons_} :> Notebook[blockEmit[toChildList[tree], initCtx[roles, cons]]]}]
   ] /; validTextInputQ[tree];
 
 HTMLToNotebook[tree_, OptionsPattern[]] :=

@@ -63,6 +63,66 @@ TestCreate[
   TestID -> "readings-option-tonotebook-roles-and-constructs"
 ];
 
+(* === The option holds for the whole call (#34) === *)
+
+(* The option is Block[{$AttributeReadings = Join[$AttributeReadings, option]}, call],
+   so a nested XML* call in a condition sees it, as it would the global. *)
+$rel = XMLElement["div", {}, {XMLElement["a", {"rel" -> "x"}, {"1"}], XMLElement["a", {}, {"2"}]}];
+
+TestCreate[
+  XMLCases[$rel, e : XMLPattern["a"] /; !XMLMatchQ[e, XMLPattern["a", "relList" -> "x"]],
+    "AttributeReadings" -> <|"rel" -> <||>|>],
+  {XMLElement["a", {}, {"2"}]},
+  TestID -> "readings-option-reaches-nested-matchq"
+];
+
+(* The usual way to write "has a descendant matching ...". *)
+TestCreate[
+  XMLCases[XMLElement["body", {}, {XMLElement["p", {}, {$rel}], XMLElement["p", {}, {"3"}]}],
+    e : XMLPattern["p"] /; !MissingQ[XMLFirstCase[e, XMLPattern["a", "relList" -> "x"]]] :> "has",
+    "AttributeReadings" -> <|"rel" -> <||>|>],
+  {"has"},
+  TestID -> "readings-option-reaches-nested-firstcase"
+];
+
+(* A function called from a rule body sees it too, and the global is unchanged after. *)
+relsOf[e_] := XMLCases[e, XMLPattern["a", "relList" -> r_] :> r];
+TestCreate[
+  {XMLCases[XMLElement["body", {}, {$rel}], d : XMLPattern["div"] :> relsOf[d],
+     "AttributeReadings" -> <|"rel" -> <||>|>],
+   Keys[$AttributeReadings]},
+  {{{{"x"}, {}}}, {"class"}},
+  TestID -> "readings-option-reaches-function-called-from-body"
+];
+
+TestCreate[
+  {XMLDeleteCases[$rel, e : XMLPattern["a"] /; XMLMatchQ[e, XMLPattern["a", "relList" -> "x"]],
+     "AttributeReadings" -> <|"rel" -> <||>|>],
+   XMLFirstCase[$rel, e : XMLPattern["a"] /; XMLMatchQ[e, XMLPattern["a", "relList" -> {}]] :> e,
+     "AttributeReadings" -> <|"rel" -> <||>|>]},
+  {XMLElement["div", {}, {XMLElement["a", {}, {"2"}]}], XMLElement["a", {}, {"2"}]},
+  TestID -> "readings-option-reaches-nested-call-deletecases-firstcase"
+];
+
+(* In XMLMatchQ, both forms; in the operator form, for each call of the operator. *)
+TestCreate[
+  With[{q = e : XMLPattern["a"] /; XMLMatchQ[e, XMLPattern["a", "relList" -> "x"]]},
+    {XMLMatchQ[$rel[[3, 1]], q, "AttributeReadings" -> <|"rel" -> <||>|>],
+     XMLMatchQ[q, "AttributeReadings" -> <|"rel" -> <||>|>] /@ $rel[[3]],
+     XMLMatchQ[q] /@ $rel[[3]]}],
+  {True, {True, False}, {False, False}},
+  TestID -> "readings-option-reaches-nested-call-matchq"
+];
+
+(* A Constructs function is called inside the call. *)
+TestCreate[
+  HTMLToNotebook[XMLElement["p", {}, {XMLElement["a", {"rel" -> "tag"}, {"t"}]}],
+    "Constructs" -> {XMLPattern["a"] -> Function[e, If[XMLMatchQ[e, XMLPattern["a", "relList" -> "tag"]], "TAG", "none"]]},
+    "AttributeReadings" -> <|"rel" -> <||>|>],
+  Notebook[{Cell[TextData[{"TAG"}], "Text"]}],
+  TestID -> "readings-option-reaches-constructs-function"
+];
+
 (* === Merging with the global === *)
 
 $cls = XMLElement["div", {}, {XMLElement["p", {"class" -> "a b"}, {"1"}], XMLElement["p", {}, {"2"}]}];

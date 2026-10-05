@@ -10,7 +10,7 @@ A [[reading]] — a microsyntax fixed to an attribute key — makes a **new, syn
 >
 > **Amended again after implementation**: `Roles` and `Constructs` rules no longer run on a materialised tree. Written into "The emission is additive, not in-place" and "Materialisation is query-driven".
 >
-> **Amended for [ADR 0017](./0017-fromcssselector.md)** (2026-10-02, not yet implemented). The `"AttributeReadings"` option is a `Block` of `$AttributeReadings` for the whole call, so a nested `XMLMatchQ` or `XMLFirstCase` in a condition or a rule body sees it. Before, only the query's own patterns saw it, so `:not([rel~=x])` and `:has([rel~=x])` were wrong with a per-call reading (#34). Written into "The reading table".
+> **Amended for [ADR 0017](./0017-fromcssselector.md)** (2026-10-02, implemented 2026-10-05). The `"AttributeReadings"` option is a `Block` of `$AttributeReadings` for the whole call, so a nested `XMLMatchQ` or `XMLFirstCase` in a condition or a rule body sees it. Before, only the query's own patterns saw it, so `:not([rel~=x])` and `:has([rel~=x])` were wrong with a per-call reading (#34). Written into "The reading table".
 
 Supersedes ADR 0007 (`AttributeTest` and its `Condition` emission do not survive) and ADR 0008 (`TokenTest`/`ClassTest` do not survive; the options table does, renamed and rehomed below). Amends ADR 0009 on absence.
 

@@ -43,7 +43,7 @@ Cell[TextData[{"The following options can be given:
 | --- | --- | --- |
 | \"Roles\" | ", Cell[BoxData[RowBox[{"{", "}"}]], "InlineFormula"], " | rules that set the role of elements |
 | \"Constructs\" | ", Cell[BoxData[RowBox[{"{", "}"}]], "InlineFormula"], " | rules that set what elements become |
-| \"AttributeReadings\" | ", Cell[BoxData[StyleBox["<||>", "TR"]], "InlineFormula"], " | readings to add to ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"]], "InlineFormula"], " for the patterns in \"Roles\" and \"Constructs\" |"}], "Notes"],
+| \"AttributeReadings\" | ", Cell[BoxData[StyleBox["<||>", "TR"]], "InlineFormula"], " | readings to add to ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"]], "InlineFormula"], " for this call |"}], "Notes"],
 
 Cell[TextData[{"The role sets what an element becomes:
 
