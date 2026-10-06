@@ -34,6 +34,10 @@ Positions count the element children of one parent, with text left out, as list 
 
 Every other list stage runs on the general matcher: `ReplaceList` of the select rule over each parent's children.
 
+### Context entries are compiled once
+
+A context combinator entry of a list stage (ADR 0016) is compiled once, with the query, as a chain of its own in the compiled query's `"ContextEntries"`, with its stages, tuple test and two-step match built and any list stage in it given its method. A run tests a child against it from that child's site, at most once per child, and builds nothing for it. This is a property of the compiled query, not a recognised shape: a list stage with a context entry is in no shape above and runs on the general matcher. Its cost is then the general matcher's. `Child["body", {___, Child["div", "p"], "div.c3", ___}]` over 3,000 siblings takes about 70 ms (`perf-context-entry-3000-siblings`), but with `___` between the two entries it takes about 39 s, because `ReplaceList` enumerates every split of the list that places the two entries, and it is about as slow with the context entry's test replaced by `True`. Making that linear would mean recognising lists with context entries, which this decision leaves out.
+
 ## Consequences
 
 The `{___, s, ___}` shape is recognised in one place, the compiler, from the list stage as compiled, and the list matcher no longer re-matches the select rule's shape at run time. Recognition still reads the compiled list's entries, so a change to how list stages are compiled must keep the recognisers in step. Behaviour and timing are unchanged: the performance tests measured the same before and after.
