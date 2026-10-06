@@ -357,6 +357,21 @@ stripAll[xs___] := Sequence @@ (strip /@ {xs});
 (* "Method" (see List stage methods): a recognised shape with    *)
 (* its parameters, or the general matcher with its rule. The     *)
 (* runners read it and do not inspect the list's pattern.        *)
+(* How the rest runs is decided once too, and the runners read  *)
+(* it (see withPlan); the two-step match (solvable) is applied  *)
+(* here and never by a runner. A plain query, one stage and no  *)
+(* link, has                                                    *)
+(*   "Plain"      the pattern or rule it runs                    *)
+(* and a chain, each alternative of a query of "Alternatives"   *)
+(* and each normal form in "ContextEntries" has                  *)
+(*   "Chain"      the stages and links, alternating, as the      *)
+(*                chain runner reads them                        *)
+(*   "StagesDecide" whether the stages' own matches decide a     *)
+(*                tuple (see Chains)                             *)
+(*   "TupleTest"  the test a tuple of sites passes, or None when *)
+(*                the stages decide                              *)
+(*   "TupleRule"  the rule a tuple of elements is given to, or   *)
+(*                None when there is no body                     *)
 (* Refusals message under XMLPattern (an XML pattern's own      *)
 (* shape) or under head and give $Failed. Which query shapes an *)
 (* operation can run is the operation's to check, on the normal *)
@@ -387,8 +402,8 @@ compileWith[q_, head_, readings_Association] :=
     Module[{query, keys, contexts},
       {query, keys, contexts} = compilePass[q, head, readings, False];
       If[keys =!= {}, {query, contexts} = Delete[compilePass[q, head, readings, True], 2]];
-      Join[withMethods[query], <|"Readings" -> Lookup[readings, keys], "Head" -> head, "Query" -> q,
-        "ContextEntries" -> withMethods /@ contexts, "Recognition" -> $recogniseShapes|>]],
+      Join[withPlan[withMethods[query]], <|"Readings" -> Lookup[readings, keys], "Head" -> head, "Query" -> q,
+        "ContextEntries" -> chainPlan @* withMethods /@ contexts, "Recognition" -> $recogniseShapes|>]],
     $refusal];
 
 compilePass[q_, head_, readings_, mat_] :=
@@ -396,6 +411,18 @@ compilePass[q_, head_, readings_, mat_] :=
       $atStart = True, $firstOfLink = False},
     With[{r = Reap[First @ Reap[cQuery[q], $bindTag], {$listKeyTag, $contextTag}]},
       {First[r], Union @@ r[[2, 1]], contextEntries[First[r], Join @@ r[[2, 2]]]}]];
+
+(* How a normal form runs, decided once (see the header): a plain query's
+   pattern or rule, or for a chain, each alternative of one and each context
+   entry, its chain, tuple test and tuple rule, with the two-step match
+   (solvable) applied wherever it is needed. *)
+withPlan[q_] /; unionQ[q] := MapAt[chainPlan, q, {Key["Alternatives"], All}];
+withPlan[q_] /; chainQ[q] := chainPlan[q];
+withPlan[q_] := Append[q, "Plain" -> plainQuery[q]];
+
+chainPlan[q_] :=
+  Join[q, <|"Chain" -> chainOf[q], "StagesDecide" -> stagesDecideQ[q], "TupleTest" -> tupleTest[q],
+    "TupleRule" -> If[q["Body"] === None, None, tupleRule[q]]|>];
 
 (* Held, since a MessageName evaluates to its text. *)
 SetAttributes[refuse, HoldFirst];
@@ -869,12 +896,12 @@ restore[inverse_, xs__] := inverse[xs];
    body that can see it. A rule's body is evaluated once, for that match. Any
    other pattern is left as it is. *)
 solvable[r : Verbatim[RuleDelayed][lhs_, _]] /;
-    brokenConditionsQ[lhs] || overlappingKeysQ[lhs] || (laterNamesQ[lhs] && bodyConditionQ[Extract[r, {2}, Hold]]) :=
+    twoStepQ[lhs] || (laterNamesQ[lhs] && bodyConditionQ[Extract[r, {2}, Hold]]) :=
   Module[{v = freshSymbol[], n = copyCount[lhs]},
     Replace[copiedRule[lhs, Extract[r, {2}, Hold]],
       Hold[rule_] :> RuleDelayed @@ Join[Hold @@ {namedPattern[v, skeleton[lhs]]},
         Hold[With[{s = {Replace[copied[v, n], {rule, _ :> $unmatched}]}}, Sequence @@ s /; s =!= {$unmatched}]]]]];
-solvable[p_] /; brokenConditionsQ[p] || overlappingKeysQ[p] :=
+solvable[p_] /; twoStepQ[p] :=
   With[{v = freshSymbol[], n = copyCount[p], c = copiedPattern[p]},
     Condition @@ Join[Hold @@ {namedPattern[v, skeleton[p]]}, Hold[MatchQ[copied[v, n], c]]]];
 solvable[x_] := x;
@@ -1033,7 +1060,7 @@ elementMatcher[c_] :=
     Which[
       elementQuery[c, c["Query"], h, "combinator"] === $Failed, $Failed,
       c["Body"] =!= None, Message[MessageName[h, "badpat"], c["Query"]]; $Failed,
-      True, With[{p = plainQuery[c], r = c["Readings"]},
+      True, With[{p = c["Plain"], r = c["Readings"]},
         If[r === {}, MatchQ[p], Function[el, MatchQ[materialise[el, r, {0}], p]]]]]];
 
 treeRefusedQ[c_, tree_] :=
@@ -1055,12 +1082,12 @@ elementQuery[c_, q_, head_, tag_] :=
    name; strip once, at the output. A chain runner is given the normal form, a
    plain runner the pattern or rule it runs. *)
 runCompiled[run_, tree_, q_, rest___] :=
-  With[{p = If[unionQ[q] || chainQ[q], q, plainQuery[q]]},
+  With[{p = If[unionQ[q] || chainQ[q], q, q["Plain"]]},
     Block[{$kids = <||>, $contextMemo = <||>, $contexts = q["ContextEntries"]},
       If[q["Readings"] === {}, run[tree, p, rest],
         strip @ run[materialise[tree, q["Readings"]], p, rest]]]];
 
-(* The pattern a plain query runs, or its rule. *)
+(* The pattern a plain query runs, or its rule, in its two-step form. *)
 plainQuery[q_] :=
   solvable @ Replace[q["Body"], {None -> First[q["Stages"]],
     body_Hold :> RuleDelayed @@ Join[Hold @@ {First[q["Stages"]]}, body]}];
@@ -1092,7 +1119,8 @@ chainQ[q_] := q["Links"] =!= {};
 unionQ[q_] := KeyExistsQ[q, "Alternatives"];
 alternativesOf[q_] := If[unionQ[q], q["Alternatives"], {q}];
 
-(* The stages and links, alternating, as the chain runner reads them. *)
+(* The stages and links, alternating, as the chain runner reads them, each
+   element stage in its two-step form. *)
 chainOf[q_] := Riffle[runStage /@ q["Stages"], q["Links"]];
 
 runStage[ls_listStage] := ls;
@@ -1231,7 +1259,7 @@ contextQ[id_, par_, j_] :=
   With[{site = kidsAt[par][[1, j]]},
     Lookup[$contextMemo, Key[{id, site}], $contextMemo[{id, site}] = completesQ[$contexts[id], site]]];
 
-completesQ[q_, site_] := siteTuples[chainOf[q], tupleTest[q], {site}] =!= {};
+completesQ[q_, site_] := siteTuples[q["Chain"], q["TupleTest"], {site}] =!= {};
 
 (* The test a chain's tuples pass, None when its stages' own matches decide. *)
 tupleTest[q_] := If[stagesDecideQ[q], None, MatchQ[solvable[tuplePattern[q]]] @* tupleElements[q]];
@@ -1404,7 +1432,7 @@ elementsAt[tuples_] := Partition[atAll[Join @@ tuples], Length[First[tuples]]];
 (* The site tuples whose elements match the tuple pattern. The stages' own
    matches, which selected the sites, decide it unless a Condition wraps a
    combinator or a name is bound at two stages. *)
-matchedSites[q_] := siteTuples[chainOf[q], tupleTest[q]];
+matchedSites[q_] := siteTuples[q["Chain"], q["TupleTest"]];
 
 stagesDecideQ[q_] :=
   q["Conditions"] === {} && DuplicateFreeQ[Join @@ (stageNames /@ q["Stages"])];
@@ -1420,7 +1448,7 @@ namesIn[s_] :=
    tuple may hold a large element. *)
 chainCases[tree_, q_, n_] /; bodyRejectsQ[q] := Block[{$chainTree = tree}, Take[ruleValues[q], UpTo[n]]];
 chainCases[tree_, q_, n_] /; q["Body"] =!= None :=
-  Block[{$chainTree = tree}, Cases[tuplesElements[q, matchedSites[q]], tupleRule[q], {1}, n]];
+  Block[{$chainTree = tree}, Cases[tuplesElements[q, matchedSites[q]], q["TupleRule"], {1}, n]];
 chainCases[tree_, q_, n_] :=
   Block[{$chainTree = tree}, atAll[Last /@ Take[matchedSites[q], UpTo[n]]]];
 
@@ -1428,7 +1456,7 @@ chainFirst[tree_, q_, default_] /; bodyRejectsQ[q] :=
   Block[{$chainTree = tree}, Replace[ruleValues[q], {{v_, ___} :> v, {} -> default}]];
 chainFirst[tree_, q_, default_] /; q["Body"] =!= None :=
   Block[{$chainTree = tree},
-    FirstCase[tuplesElements[q, matchedSites[q]], tupleRule[q], default, {1}]];
+    FirstCase[tuplesElements[q, matchedSites[q]], q["TupleRule"], default, {1}]];
 chainFirst[tree_, q_, default_] :=
   Block[{$chainTree = tree},
     Replace[matchedSites[q], {{t_, ___} :> at[Last[t]], {} -> default}]];
@@ -1439,8 +1467,8 @@ chainFirst[tree_, q_, default_] :=
    it one. The value is kept, so the body is not evaluated again once the tuple
    is chosen. *)
 ruleValues[q_] :=
-  Module[{rule = tupleRule[q], elements = tupleElements[q], values = <||>, tuples},
-    tuples = siteTuples[chainOf[q],
+  Module[{rule = q["TupleRule"], elements = tupleElements[q], values = <||>, tuples},
+    tuples = siteTuples[q["Chain"],
       Function[t, With[{v = Replace[elements[t], {rule, _ :> $unmatched}]},
         v =!= $unmatched && (values[t] = v; True)]]];
     Lookup[values, Key /@ tuples]];
@@ -1469,25 +1497,25 @@ chainDelete[tree_, q_] :=
 (* The site tuples of alternative a that test accepts, test None when its
    stages decide, in document order of their last sites. *)
 alternativeSites[a_, test_] /; a["Links"] === {} :=
-  With[{ts = List /@ elementSites[First[a["Stages"]]]}, If[test === None, ts, Select[ts, test]]];
-alternativeSites[a_, test_] := siteTuples[chainOf[a], test];
+  With[{ts = List /@ elementSites[First[a["Chain"]]]}, If[test === None, ts, Select[ts, test]]];
+alternativeSites[a_, test_] := siteTuples[a["Chain"], test];
 
 (* The sites below the root that s matches, in document order. *)
 elementSites[s_] :=
-  Replace[Position[$chainTree, solvable[s], Infinity, Heads -> False], {{} -> {}, ps_ :> fromCasesOrder[ps]}];
+  Replace[Position[$chainTree, s, Infinity, Heads -> False], {{} -> {}, ps_ :> fromCasesOrder[ps]}];
 
 (* The accepted tuples of alternative a whose last site keep accepts, each
    {tuple}, or {tuple, value} when the body can reject and so is evaluated in
    choosing one. keep is tested first, so a site an earlier alternative took is
    not tried again, and its body not evaluated. *)
 acceptedTuples[a_, keep_] /; bodyRejectsQ[a] :=
-  Module[{rule = tupleRule[a], elements = tupleElements[a], values = <||>, tuples},
+  Module[{rule = a["TupleRule"], elements = tupleElements[a], values = <||>, tuples},
     tuples = alternativeSites[a,
       Function[t, keep[Last[t]] && With[{v = Replace[elements[t], {rule, _ :> $unmatched}]},
         v =!= $unmatched && (values[t] = v; True)]]];
     {#, values[#]} & /@ tuples];
 acceptedTuples[a_, keep_] :=
-  With[{test = tupleTest[a]},
+  With[{test = a["TupleTest"]},
     List /@ Select[alternativeSites[a, If[test === None, None, keep[Last[#]] && test[#] &]], keep @* Last]];
 
 (* For each alternative in order, its accepted entries {k, tuple} or {k, tuple,
@@ -1508,7 +1536,7 @@ entryResult[_, _][{_, _, v_}] := v;
 
 inSiteOrder[es_] := es[[documentOrdering[es[[All, 2, -1]]]]];
 
-entryRules[q_] := If[q["Body"] === None, None, tupleRule /@ q["Alternatives"]];
+entryRules[q_] := If[q["Body"] === None, None, #["TupleRule"] & /@ q["Alternatives"]];
 
 unionCases[tree_, q_, n_] :=
   Block[{$chainTree = tree},
@@ -1529,8 +1557,8 @@ unionFirst[tree_, q_, default_] :=
 
 (* An element pattern's first match in document order is found without the
    others; it is a candidate only if keep takes it, and no later match is. *)
-firstAcceptedTuple[a_, keep_] /; a["Links"] === {} && stagesDecideQ[a] && !bodyRejectsQ[a] :=
-  Select[{{#}} & /@ firstMatchPositions[$chainTree, solvable[First[a["Stages"]]], 1], keep[#[[1, -1]]] &];
+firstAcceptedTuple[a_, keep_] /; a["Links"] === {} && a["StagesDecide"] && !bodyRejectsQ[a] :=
+  Select[{{#}} & /@ firstMatchPositions[$chainTree, First[a["Chain"]], 1], keep[#[[1, -1]]] &];
 firstAcceptedTuple[a_, keep_] := Take[acceptedTuples[a, keep], UpTo[1]];
 
 (* Whether site p comes before site s in document order. *)
@@ -2700,13 +2728,13 @@ validRoleQ[r_] := MemberQ[$displayRoles, r];
    $Failed for an entry that is refused, a non-rule among them. *)
 compileRule[Verbatim[Rule][lhs_, r_], head_, readings_] :=
   Replace[elementQuery[compileWith[lhs, head, readings], lhs, head, "badpat"],
-    c_Association :> {plainQuery[c] -> r, c["Readings"]}];
+    c_Association :> {c["Plain"] -> r, c["Readings"]}];
 compileRule[rule_RuleDelayed, head_, readings_] :=
   Replace[
     elementQuery[
       compileWith[RuleDelayed @@ Join[Hold @@ {rule[[1]]}, Extract[rule, {2}, Hold]], head, readings],
       rule[[1]], head, "badpat"],
-    c_Association :> {plainQuery[c], c["Readings"]}];
+    c_Association :> {c["Plain"], c["Readings"]}];
 compileRule[x_, head_, _] := With[{h = head}, Message[MessageName[h, "notrule"], x]; $Failed];
 
 (* ruleLookups[{rules1, rules2, ...}, head, tree]: for each rule set, a
