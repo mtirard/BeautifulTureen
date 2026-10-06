@@ -216,6 +216,50 @@ TestCreate[
   TestID -> "list-combinator-entry-sibling-link"
 ];
 
+(* A context entry anywhere before the selected entry: d3 has a p, so the c3s
+   after it are selected, and d3 itself is not, as no sibling with a p comes
+   before it. Each runner runs the context entry, which is compiled once. *)
+$divs = XMLElement["body", {}, {
+  XMLElement["div", {"class" -> "c3", "id" -> "d1"}, {"t"}],
+  XMLElement["div", {"class" -> "c1", "id" -> "d2"}, {"t"}], "x",
+  XMLElement["div", {"class" -> "c3", "id" -> "d3"}, {XMLElement["p", {}, {"x"}]}],
+  XMLElement["div", {"class" -> "c2", "id" -> "d4"}, {"t"}],
+  XMLElement["div", {"class" -> "c3", "id" -> "d5"}, {"t"}], "y",
+  XMLElement["div", {"class" -> "c3", "id" -> "d6"}, {XMLElement["p", {}, {"x"}]}]}];
+
+TestCreate[
+  With[{q = Child["body", {___, Child["div", "p"], ___, "div.c3", ___}]},
+    {ids @ XMLCases[$divs, q],
+     ids @ XMLCases[$divs, q, 1],
+     Lookup[XMLFirstCase[$divs, q, None][[2]], "id"],
+     ids @ Cases[XMLDeleteCases[$divs, q], _XMLElement, {2}],
+     XMLCases[$divs, Child["body", {___, Child["div", "p"], ___, c : "div.c3", ___}] :> Lookup[c[[2]], "id"]],
+     ids @ XMLCases[$divs, Child["body", {___, Child["div", "p"], "div", ___}]],
+     ids @ XMLCases[$divs, Child["body", {___, Descendant["div", "p"], ___, Child["div.c3", "p"]}]]}],
+  {{"d5", "d6"}, {"d5"}, "d5", {"d1", "d2", "d3", "d4"}, {"d5", "d6"}, {"d4"}, {None}},
+  TestID -> "list-context-entry-anywhere-before"
+];
+
+(* On random trees, a context combinator entry selects as the same list with
+   the entry written as a :has test on its first stage, which runs as a held
+   XMLMatchQ inside the element pattern, not as a context entry. *)
+$contextTrees = randomTrees[20261007, 12];
+
+TestCreate[
+  With[{
+      viaContext = Map[Join[
+        XMLCases[#, Child[any, {___, Child[XMLPattern["div"], p], ___, li, ___}]],
+        XMLCases[#, Descendant[any, {___, Descendant[XMLPattern["div" | "li"], XMLPattern["span"]], XMLPattern[_, "classList" -> "a"], ___}]],
+        XMLCases[#, Child[any, {Child[li, XMLPattern[_, "classList" -> "b"]], ___, Child[p, any], ___}]]] &, $contextTrees],
+      viaHas = Map[Join[
+        XMLCases[#, Child[any, {___, "div:has(> p)", ___, li, ___}]],
+        XMLCases[#, Descendant[any, {___, ":is(div, li):has(span)", XMLPattern[_, "classList" -> "a"], ___}]],
+        XMLCases[#, Child[any, {"li:has(> .b)", ___, Child[p, any], ___}]]] &, $contextTrees]},
+    {viaContext === viaHas, Length[Union[viaContext]] > 3}],
+  {True, True},
+  TestID -> "list-context-entry-random-trees"
+];
+
 (* === Alternatives of lists === *)
 
 TestCreate[

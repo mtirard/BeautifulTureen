@@ -99,3 +99,34 @@ TestCreate[
   True,
   TestID -> "shape-anywhere-attribute-readings"
 ];
+
+(* === Context entries ===
+
+   A list stage with a context entry is no shape and runs on the general
+   matcher, but each context entry is compiled once, as a chain of its own, and
+   a list stage inside it, or after it in the selected entry's chain, is
+   recognised as any other is. *)
+
+TestCreate[
+  sameEitherWay[Map[Join[
+    XMLCases[#, Child[any, {___, Child[XMLPattern["div"], {___, XMLPattern["p"], ___}], ___, li, ___}]],
+    XMLCases[#, Child[any, {___, Child[XMLPattern["div"], XMLPattern["span"]], Child[li, {___, any, ___}]}]],
+    XMLCases[#, Descendant[any, {___, Descendant[XMLPattern["div"], {___, XMLPattern["span", "classList" -> "a"], ___}], ___, XMLPattern["p"], ___}], 4],
+    {XMLFirstCase[#, Child[any, {___, Child[XMLPattern["div"], {___, li, ___}], ___, XMLPattern[_], ___}], None]},
+    {deleted[#, Child[any, {___, Child[XMLPattern["div"], {___, XMLPattern["p"], ___}], ___, li, ___}]]},
+    XMLCases[#, Child[any, {___, Child[XMLPattern["div"], {___, XMLPattern["p"], ___}], ___, c : li, ___}] :> Lookup[c[[2]], "id"]]] &, $trees]],
+  True,
+  TestID -> "context-entry-recognised-inside"
+];
+
+(* Below the document, and with a reading added by the option, inside the
+   context entry. *)
+TestCreate[
+  sameEitherWay[Join[
+    Map[XMLCases[#, Child[XMLDocument[], {___, Child[XMLPattern["div"], {___, XMLPattern["p"], ___}], ___, li, ___}]] &, $lists],
+    Map[XMLCases[# /. ("class" -> v_) :> ("rel" -> v),
+      Child[any, {___, Child[XMLPattern["div" | "li"], {___, XMLPattern[_, "relList" -> "a"], ___}], ___, XMLPattern[_, "relList" -> "b"], ___}],
+      "AttributeReadings" -> <|"rel" -> <||>|>] &, $trees]]],
+  True,
+  TestID -> "context-entry-recognised-inside-document-readings"
+];
