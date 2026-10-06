@@ -601,6 +601,10 @@ refuseEntry[reason_, e_] := refuseAtHead["listentry", e, $listReasons[reason]];
 stageNames[listStage[a_]] := namesIn[a["Pattern"]];
 stageNames[s_] := namesIn[s];
 
+(* The names a pattern, or a list of stages, binds, outside the tests in it,
+   which bind nothing the pattern sees. *)
+boundNames[x_] := namesIn[x //. {listStage[a_] :> a["Pattern"], Verbatim[PatternTest][p_, _] :> p, Verbatim[Condition][p_, _] :> p}];
+
 $listReasons = <|
   "query" -> "It can only follow Child or Descendant, as in Child[XMLPattern[_], {XMLPattern[\"li\"], ___}], and is not a pattern on its own. For alternatives, use p1 | p2.",
   "first" -> "It can only follow Child or Descendant, as in Child[XMLPattern[_], {XMLPattern[\"li\"], ___}], and cannot be the first stage, which has no parent whose children it would list.",
@@ -762,11 +766,11 @@ listMethod[listStage[a_]] /; $recogniseShapes :=
    Length[{g}] and MatchQ[{g}, {___, X, ___, Y}]. The translator writes it for
    the counted positions it cannot write with plain entries: .x:nth-of-type(2)
    is {g___, c : XMLPattern[_, "classList" -> "x"], h___} /; Count[{g},
-   XMLElement[First[c], _, _]] + 1 == 2. A list that needs the two-step match
-   is left to the general matcher, which runs the list's Condition on copied
-   children (solvable). *)
-listMethod[listStage[a_]] /; $recogniseShapes && a["Checks"] === {} && !twoStepQ[a["Pattern"]] :=
-  With[{split = splitAround[a]}, measured[Sequence @@ split, selectedEntry[a], None] /; split =!= None];
+   XMLElement[First[c], _, _]] + 1 == 2. The selected entry may need the
+   two-step match (solvable), which the method applies to it alone, as in the
+   other shapes. *)
+listMethod[listStage[a_]] /; $recogniseShapes && a["Checks"] === {} :=
+  With[{split = splitAround[a]}, measured[Sequence @@ split, Sequence @@ twoStep[selectedEntry[a]]] /; split =!= None];
 listMethod[ls_] := generalMatcher @@ listMatcher[ls];
 
 (* The heads of the recognised shapes' methods, and whether a list stage runs
@@ -825,10 +829,6 @@ splitParts[___] := None;
 (* The stages but the first that is ls: an identical stage elsewhere in the
    chain is another stage, whose names the list's would have to equal. *)
 otherStages[stages_, ls_] := Delete[stages, FirstPosition[stages, Verbatim[ls], {}, {1}, Heads -> False]];
-
-(* The names the stages bind, outside the tests in them, which bind nothing
-   the stages see. *)
-boundNames[stages_] := namesIn[stages //. {listStage[a_] :> a["Pattern"], Verbatim[PatternTest][p_, _] :> p, Verbatim[Condition][p_, _] :> p}];
 
 namesPattern[names_] := Alternatives @@ (HoldPattern @@@ DeleteCases[names, None]);
 
@@ -1296,11 +1296,18 @@ copiedRule[lhs_, body_Hold] :=
 (* Each name that binds an element is renamed, and is the uncopied element in
    each test and body that can see it. When the query names a list key, the
    name was already renamed for materialisation; see wrapBinds for how the two
-   compose. *)
+   compose.
+
+   A test or body is restored for every renamed name its left-hand side binds.
+   Whether a name binds elements is decided once, over the whole pattern: a
+   name on a list stage's entry, g in {g___, c, ___} /; Length[{g}] == 1,
+   binds them only as an entry of the listSlot it is in, which the list's own
+   Condition does not see, so deciding again from the Condition's left-hand
+   side would leave g renamed in the copy and unbound in the test (issue #39). *)
 renaming[p_] := Association[# -> freshSymbol[] & /@ elementNames[p]];
 
 restored[l_, held_Hold] :=
-  wrapBinds[{#, $renamed[#], uncopied} & /@ Select[elementNames[l], KeyExistsQ[$renamed, #] &], held];
+  wrapBinds[{#, $renamed[#], uncopied} & /@ Select[boundNames[l], KeyExistsQ[$renamed, #] &], held];
 
 copiedIn[Verbatim[Pattern][s_, p_]] /; KeyExistsQ[$renamed, Hold[s]] :=
   With[{f = $renamed[Hold[s]]}, namedPattern[f, copiedIn[p]]];

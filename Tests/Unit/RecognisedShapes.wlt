@@ -765,11 +765,27 @@ TestCreate[
   TestID -> "shape-split-named-entry-in-body"
 ];
 
-(* A list that needs the two-step match runs on the general matcher. *)
+(* A list that needs the two-step match: the selected entry names two
+   attribute values, with or without a Condition that sees the later one, or
+   has overlapping keys. The test seeing one of the entry's attribute values,
+   k == "a", is outside the shape. The general matcher is the reference here,
+   checked against WL alone in ListStages.wlt. *)
+twoValues = XMLPattern[_, {"class" -> k_, "id" -> i_}];
+$twoStepSplitLists = {
+  {g___, c : twoValues /; StringLength[k] < StringLength[i] + 2, ___} /; Length[{g}] == 1,
+  {g___, c : twoValues, h___} /; Count[{g}, XMLElement[First[c], _, _]] + 1 == 2,
+  {g___, c : twoValues, h___} /; Length[{h}] < Length[{g}] && MatchQ[{g}, {___, XMLElement["p", _, _]}],
+  {g___, c : twoValues, ___} /; Length[{g}] == 1 && k == "a",
+  {g___, c : XMLPattern[_, {("class" | "id") -> _, "id" -> i_}], h___} /; Mod[Length[{h}], 2] == 1};
+
 TestCreate[
-  sameEitherWay[Map[XMLCases[#,
-    Child[any, {g___, c : XMLPattern[_, {"class" -> k_, "id" -> i_}] /; StringLength[k] < StringLength[i] + 2, ___} /;
-      Length[{g}] == 1] :> Lookup[c[[2]], "id"]] &, $trees]],
+  sameEitherWay[Map[Function[t, Join @@ Table[Join[
+      XMLCases[t, Child[any, l] :> {i, Lookup[c[[2]], "id"]}],
+      {XMLFirstCase[t, Child[any, l], None]},
+      {deleted[t, Child[any, l]]},
+      XMLCases[t, Child[any, l], 2],
+      XMLCases[t, Child[any, l], "AttributeReadings" -> <|"rel" -> <||>|>]],
+    {l, $twoStepSplitLists}]], $smallTrees]],
   True,
   TestID -> "shape-split-two-step-match"
 ];
