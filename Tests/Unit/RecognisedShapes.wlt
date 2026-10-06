@@ -1,0 +1,97 @@
+(* Recognised shapes (ADR 0020): a list stage in a shape the compiler
+   recognises runs by a dedicated method, with the same results as WL's matcher
+   on the pattern as written. Each test runs a query with recognition on and
+   off, on seeded random trees (Support/RandomTrees.wl), and checks that the
+   two agree on every tree and that the query selects something on some tree,
+   so that the comparison is not of empty results. *)
+
+(* Recognition off, for one evaluation: every list stage runs on the general
+   matcher. *)
+SetAttributes[unrecognised, HoldFirst];
+unrecognised[expr_] := Block[{MaximilienTirard`BeautifulTureen`Private`$recogniseShapes = False}, expr];
+
+SetAttributes[sameEitherWay, HoldFirst];
+sameEitherWay[expr_] := With[{on = expr}, on === unrecognised[expr] && !FreeQ[on, _XMLElement | _String] && FreeQ[on, $Failed]];
+
+$trees = randomTrees[20261006, 12];
+
+(* The top elements of a list are siblings below the document (ADR 0018). *)
+$lists = Select[Last /@ $trees, MemberQ[#, _XMLElement] &];
+
+li = XMLPattern["li"];
+any = XMLPattern[_];
+
+(* === Shape 1: anywhere, {___, C, ___} === *)
+
+TestCreate[
+  sameEitherWay[Map[Join[
+    XMLCases[#, Child[any, {___, li, ___}]],
+    XMLCases[#, Descendant[XMLPattern["div"], {___, XMLPattern["p", "classList" -> "a"], ___}]],
+    XMLCases[#, Child[Child[any, {___, XMLPattern["span"], ___}], XMLPattern[_]]]] &, $trees]],
+  True,
+  TestID -> "shape-anywhere-cases"
+];
+
+TestCreate[
+  sameEitherWay[Map[{
+    XMLFirstCase[#, Child[any, {___, li, ___}], None],
+    XMLFirstCase[#, Descendant[XMLPattern["div"], {___, XMLPattern[_, "classList" -> "b"], ___}], None]} &, $trees]],
+  True,
+  TestID -> "shape-anywhere-first-case"
+];
+
+TestCreate[
+  sameEitherWay[Map[{
+    XMLDeleteCases[#, Child[any, {___, li, ___}]],
+    XMLDeleteCases[#, Descendant[XMLPattern["div"], {___, XMLPattern["p", "classList" -> "c"], ___}]]} &, $trees]],
+  True,
+  TestID -> "shape-anywhere-delete-cases"
+];
+
+(* The count stops early (ADR 0019). *)
+TestCreate[
+  sameEitherWay[Map[Join[
+    XMLCases[#, Child[any, {___, li, ___}], 3],
+    XMLCases[#, Descendant[any, {___, XMLPattern["span", "classList" -> "a"], ___}], 1]] &, $trees]],
+  True,
+  TestID -> "shape-anywhere-count"
+];
+
+(* A named selected entry seen by a rule body, with and without a list key,
+   which renames the element (ADR 0012). *)
+TestCreate[
+  sameEitherWay[Map[Join[
+    XMLCases[#, Child[XMLPattern["div"], {___, c : li, ___}] :> Lookup[c[[2]], "id"]],
+    XMLCases[#, Descendant[any, {___, c : XMLPattern["p", "classList" -> "a" | "b"], ___}] :> {c[[1]], c[[2]]}]] &, $trees]],
+  True,
+  TestID -> "shape-anywhere-named-entry-in-body"
+];
+
+(* The two-step match (solvable): a Condition that sees a name after the
+   first rule of a KeyValuePattern. *)
+TestCreate[
+  sameEitherWay[Map[XMLCases[#,
+    Child[any, {___, c : XMLPattern[_, {"class" -> k_, "id" -> i_}] /; StringLength[k] < StringLength[i] + 2, ___}] :> Lookup[c[[2]], "id"]] &, $trees]],
+  True,
+  TestID -> "shape-anywhere-two-step-match"
+];
+
+(* The top elements of a list input, listed below the document (ADR 0018). *)
+TestCreate[
+  sameEitherWay[Map[Join[
+    XMLCases[#, Child[XMLDocument[], {___, c : XMLPattern["div" | "p"], ___}] :> Lookup[c[[2]], "id"]],
+    XMLCases[#, Child[XMLDocument[], {___, XMLPattern[_, "classList" -> "a"], ___}], 2],
+    {XMLFirstCase[#, Child[XMLDocument[], {___, li, ___}], None]},
+    XMLDeleteCases[#, Child[XMLDocument[], {___, li, ___}]]] &, $lists]],
+  True,
+  TestID -> "shape-anywhere-below-document"
+];
+
+(* A reading added by the option is materialised as the default one is. *)
+TestCreate[
+  sameEitherWay[Map[XMLCases[# /. ("class" -> v_) :> ("rel" -> v),
+    Descendant[any, {___, XMLPattern["li" | "p", "relList" -> "a"], ___}],
+    "AttributeReadings" -> <|"rel" -> <||>|>] &, $trees]],
+  True,
+  TestID -> "shape-anywhere-attribute-readings"
+];
