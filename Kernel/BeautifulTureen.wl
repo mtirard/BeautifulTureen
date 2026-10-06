@@ -351,6 +351,12 @@ stripAll[xs___] := Sequence @@ (strip /@ {xs});
 (*   "Query"      the query as written, for messages            *)
 (*   "ContextEntries" the normal forms of the context combinator *)
 (*                entries of its list stages, by key            *)
+(*   "Recognition" whether shapes were recognised when it was    *)
+(*                compiled ($recogniseShapes)                    *)
+(* Each list stage in "Stages" also carries how it runs, its     *)
+(* "Method" (see List stage methods): a recognised shape with    *)
+(* its parameters, or the general matcher with its rule. The     *)
+(* runners read it and do not inspect the list's pattern.        *)
 (* Refusals message under XMLPattern (an XML pattern's own      *)
 (* shape) or under head and give $Failed. Which query shapes an *)
 (* operation can run is the operation's to check, on the normal *)
@@ -368,6 +374,11 @@ stripAll[xs___] := Sequence @@ (strip /@ {xs});
 
 compileQuery[q_, head_] := compileWith[q, head, readingsInForce[]];
 
+(* Whether the compiler recognises shapes (ADR 0020). Block it to False to run
+   every list stage on the general matcher, as WL's matcher runs the pattern as
+   written, to check a recognised method against it. *)
+$recogniseShapes = True;
+
 (* With the readings table resolved, for a caller that compiles several queries
    against one table. *)
 compileWith[_, _, $Failed] := $Failed;
@@ -376,8 +387,8 @@ compileWith[q_, head_, readings_Association] :=
     Module[{query, keys, contexts},
       {query, keys, contexts} = compilePass[q, head, readings, False];
       If[keys =!= {}, {query, contexts} = Delete[compilePass[q, head, readings, True], 2]];
-      Join[query, <|"Readings" -> Lookup[readings, keys], "Head" -> head, "Query" -> q,
-        "ContextEntries" -> contexts|>]],
+      Join[withMethods[query], <|"Readings" -> Lookup[readings, keys], "Head" -> head, "Query" -> q,
+        "ContextEntries" -> withMethods /@ contexts, "Recognition" -> $recogniseShapes|>]],
     $refusal];
 
 compilePass[q_, head_, readings_, mat_] :=
@@ -646,6 +657,40 @@ contextEntries[query_, sown_] :=
   With[{outer = Union @@ (Union @@ (stageNames /@ #["Stages"]) & /@ alternativesOf[query])},
     Scan[If[IntersectingQ[#[[3]], outer], refuseEntry["contextname", #[[4]]]] &, sown];
     Association[#[[1]] -> #[[2]] & /@ sown]];
+
+(* ---- List stage methods (ADR 0020) ---- *)
+
+(* How each list stage of a normal form runs, decided once, from the list stage
+   alone: its "Method" is
+     anywhere[s, n]        {___, s, ___} with no other entry: each child s
+                           matches
+     generalMatcher[r, n]  any other list: the children r's matches select
+   where n is the number of copies of each child's attributes the two-step
+   match needs (solvable), or None. *)
+withMethods[q_] /; KeyExistsQ[q, "Alternatives"] := MapAt[withMethods, q, {Key["Alternatives"], All}];
+withMethods[q_] /; KeyExistsQ[q, "Stages"] :=
+  MapAt[Replace[#, listStage[a_] :> listStage[Append[a, "Method" -> listMethod[listStage[a]]]], {1}] &, q, Key["Stages"]];
+withMethods[q_] := q;
+
+(* Shape 1, anywhere: the selected entry between two ___, with no context
+   entry, name, Condition or test on the list. *)
+listMethod[listStage[a_]] /; $recogniseShapes && a["Checks"] === {} &&
+    MatchQ[a["Pattern"], {Verbatim[Pattern][a["Index"], Verbatim[PatternSequence][Verbatim[___]]], _, Verbatim[___]}] :=
+  anywhere @@ twoStep[a["Pattern"][[2]]];
+listMethod[ls_] := generalMatcher @@ listMatcher[ls];
+
+(* The select rule, or, when a Condition would see a KeyValuePattern's later
+   names unbound, its two-step form (solvable) over copied children, with the
+   number of copies. *)
+listMatcher[ls_] :=
+  With[{r = selectRule[ls]},
+    If[twoStepQ[First[r]],
+      {First @ copiedRule[First[r], Extract[r, {2}, Hold]], copyCount[First[r]]},
+      {r, None}]];
+
+twoStep[p_] := If[twoStepQ[p], {copiedPattern[p], copyCount[p]}, {p, None}];
+
+twoStepQ[p_] := brokenConditionsQ[p] || overlappingKeysQ[p];
 
 (* An entry that is not an XML pattern is a WL pattern over the children:
    blanks, and the pattern heads over entries. A name on it binds a sequence of
@@ -1140,31 +1185,32 @@ kidsOf[par_] :=
 
 kidsList[sites_, els_] := {sites, els, AssociationThread[sites, Range[Length[sites]]]};
 
-(* The one list matcher (ADR 0016): the indices of the children a list selects,
-   each once, from the rule's matches in WL's order. The list {___, s, ___},
-   with no other entry, selects each child s matches, which Position finds
-   without building the sequence before each one: over 5,000 siblings that is
-   1 ms against 300 ms. *)
-listIndices[els_, Verbatim[RuleDelayed][{Verbatim[Pattern][_, Verbatim[PatternSequence][Verbatim[___]]], s_, Verbatim[___]}, _]] :=
-  Flatten @ Position[els, s, {1}, Heads -> False];
-listIndices[listSlot[_, _, els_], Verbatim[RuleDelayed][listSlot[_, _, {Verbatim[Pattern][_, Verbatim[PatternSequence][Verbatim[___]]], s_, Verbatim[___]}], _]] :=
-  Flatten @ Position[els, s, {1}, Heads -> False];
-listIndices[els_, rule_] := Union @ ReplaceList[els, rule];
+(* The one list matcher (ADR 0016): the indices of the children els of par that
+   a list stage selects, each once, by the stage's method. The general matcher
+   takes them from its rule's matches. Anywhere selects each child s matches,
+   which Position finds without building the sequence before each one: over
+   5,000 siblings that is 1 ms against 300 ms. *)
+listIndices[anywhere[s_, n_], _, els_] := anywhereIndices[copiedBy[els, n], s];
+listIndices[generalMatcher[rule_, n_], par_, els_] := Union @ ReplaceList[copiedBy[listSlot[par, 0, els], n], rule];
 
-(* The sites a list stage selects below site p: among the children of p, or
-   for Descendant of p and of every element inside it, one parent at a time.
-   Below the document, that is the document and every element. *)
-listSelected[Child, p_, rule_] := childrenSelected[p, rule];
-listSelected[Descendant, {0}, rule_] :=
-  Join @@ (childrenSelected[#, rule] & /@
+anywhereIndices[els_, s_] := Flatten @ Position[els, s, {1}, Heads -> False];
+
+copiedBy[x_, None] := x;
+copiedBy[x_, n_] := copied[x, n];
+
+(* The sites a list stage selects below site p, by its method: among the
+   children of p, or for Descendant of p and of every element inside it, one
+   parent at a time. Below the document, that is the document and every
+   element. *)
+listSelected[Child, p_, method_] := childrenSelected[p, method];
+listSelected[Descendant, {0}, method_] :=
+  Join @@ (childrenSelected[#, method] & /@
     Prepend[Position[$chainTree, XMLElement[_, _, {___, _XMLElement, ___}], {0, Infinity}, Heads -> False], $documentSite]);
-listSelected[Descendant, p_, rule_] :=
-  Join @@ (childrenSelected[Join[p, #], rule] & /@ Position[at[p], XMLElement[_, _, {___, _XMLElement, ___}], {0, Infinity}, Heads -> False]);
+listSelected[Descendant, p_, method_] :=
+  Join @@ (childrenSelected[Join[p, #], method] & /@ Position[at[p], XMLElement[_, _, {___, _XMLElement, ___}], {0, Infinity}, Heads -> False]);
 
-childrenSelected[par_, {rule_, n_}] :=
-  With[{k = kidsAt[par]},
-    If[k[[2]] === {}, {},
-      k[[1, listIndices[If[n === None, Identity, copied[#, n] &] @ listSlot[par, 0, k[[2]]], rule]]]]];
+childrenSelected[par_, method_] :=
+  With[{k = kidsAt[par]}, If[k[[2]] === {}, {}, k[[1, listIndices[method, par, k[[2]]]]]]];
 
 (* The tuple's elements, a list stage's slot as listSlot[parent, index,
    children]. *)
@@ -1203,7 +1249,7 @@ siblingSiteQ[p_] := p =!= $documentSite;
 followingSelected[p_, s_] /; siblingSiteQ[p] :=
   With[{k = kidsAt[parentOf[p]]},
     With[{i = k[[3]][p]},
-      k[[1, i + listIndices[Drop[k[[2]], i], {earlier : PatternSequence[___], s, ___} :> Length[{earlier}] + 1]]]]];
+      k[[1, i + anywhereIndices[Drop[k[[2]], i], s]]]]];
 followingSelected[_, _] := {};
 
 (* Adjacent extends the tuples whose last sites are children of one parent
@@ -1244,17 +1290,8 @@ extend[tuples_, {r_, s_, _}] := related[r, tuples, s];
 related[Adjacent, tuples_, s_] := Join @@ (adjacentSelected[#, s] & /@ GatherBy[tuples, parentOf @* Last]);
 related[r_, tuples_, s_] := Join @@ (Function[t, Append[t, #] & /@ selected[r, Last[t], s]] /@ tuples);
 
-listRelated[r_, tuples_, ls_] :=
-  With[{m = listMatcher[ls]}, Join @@ (Function[t, Append[t, #] & /@ listSelected[r, Last[t], m]] /@ tuples)];
-
-(* The select rule, or, when a Condition would see a KeyValuePattern's later
-   names unbound, its two-step form (solvable) over copied children, with the
-   number of copies. *)
-listMatcher[ls_] :=
-  With[{r = selectRule[ls]},
-    If[brokenConditionsQ[First[r]] || overlappingKeysQ[First[r]],
-      {First @ copiedRule[First[r], Extract[r, {2}, Hold]], copyCount[First[r]]},
-      {r, None}]];
+listRelated[r_, tuples_, listStage[a_]] :=
+  With[{m = a["Method"]}, Join @@ (Function[t, Append[t, #] & /@ listSelected[r, Last[t], m]] /@ tuples)];
 
 (* Descendant[ancestor, desc] gives each element once, as querySelectorAll and
    soupsieve's select do. When the stages' own matches decide, any ancestor
@@ -1696,15 +1733,17 @@ matcherOf[q_] := elementMatcher[compileQuery[q, XMLMatchQ]];
 
 (* The operator form stays unevaluated, as MatchQ[pattern] does, and is applied
    to each element in turn, so its matcher is kept, keyed on everything the
-   compiled query depends on: the pattern and $AttributeReadings, which the
-   "AttributeReadings" option joins to (issue #2). A refused pattern is not
+   compiled query depends on: the pattern, $AttributeReadings, which the
+   "AttributeReadings" option joins to (issue #2), and whether shapes are
+   recognised, so that a test turning recognition off gets a matcher compiled
+   with it off (ADR 0020). A refused pattern is not
    kept: it gives its message on each call, as the two-argument form does. The
    cache is emptied when it is full. *)
 $matcherCache = <||>;
 $matcherCacheSize = 256;
 
 cachedMatcher[q_] :=
-  With[{key = {q, $AttributeReadings}},
+  With[{key = {q, $AttributeReadings, $recogniseShapes}},
     Lookup[$matcherCache, Key[key],
       With[{m = matcherOf[q]},
         If[m =!= $Failed,
