@@ -9,13 +9,13 @@ $threeThousand = XMLElement["body", {}, Table[
   XMLElement["div", {"class" -> "c" <> ToString[Mod[i, 7]]}, If[Mod[i, 5] == 0, {XMLElement["p", {}, {"x"}]}, {"t"}]],
   {i, 3000}]];
 
-(* The context entry is next to the selected entry, so the general matcher
-   tries one split per c3 and the time goes to the context entry. Measured at
-   about 70 ms on a 2026 laptop. The same list with ___ between the two,
-   {___, Child["div", "p"], ___, "div.c3", ___}, takes about 39 s: ReplaceList
-   enumerates every split of the list, about as fast with the context entry
-   replaced by True, and a list stage with a context entry is no recognised
-   shape. *)
+(* The context entry is next to the selected entry, and the time goes to the
+   context entry. Measured at about 70 ms on a 2026 laptop on the general
+   matcher, which tries one split per c3; the list is recognised shape 6 now.
+   The same list with ___ between the two, {___, Child["div", "p"], ___,
+   "div.c3", ___}, took about 39 s on the general matcher, which enumerates
+   every split of the list; as shape 6 it has a performance test of its own,
+   perf-shape-ordered-context-entry-3000-siblings. *)
 TestCreate[
   Length @ XMLCases[$threeThousand, Child["body", {___, Child["div", "p"], "div.c3", ___}]],
   85,

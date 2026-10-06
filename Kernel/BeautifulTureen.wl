@@ -699,6 +699,14 @@ contextEntries[query_, sown_] :=
                            child s matches with as many children that match
                            t1 before it, and t2 after it, as the lengths
                            allow (t = _ counts all children)
+     ordered[before, {left, right}, after, s, n]
+                           {___, e1, ___, e2, e3, ___, s, ___} where each
+                           entry e matches one child and the gaps are ___:
+                           each child s matches with the entries next to it
+                           (left, right) matching around it and the blocks
+                           of adjacent entries before and after it placed in
+                           order, each side as placed[anchored, blocks], the
+                           blocks after s mirrored
      generalMatcher[r, n]  any other list: the children r's matches select
    where n is the number of copies of each child's attributes the two-step
    match needs (solvable), or None. *)
@@ -727,7 +735,55 @@ listMethod[listStage[a_]] /; $recogniseShapes && a["Checks"] === {} :=
    s, ___} and :only-of-type {Except[t] ..., s, Except[t] ...}. *)
 listMethod[listStage[a_]] /; $recogniseShapes && a["Checks"] === {} :=
   With[{around = countsAround[a]}, amongMatching[Sequence @@ around, Sequence @@ twoStep[a["Pattern"][[2]]]] /; FreeQ[around, None]];
+(* Shape 6, ordered entries: the selected entry among entries that each match
+   one child, element patterns or context combinator entries, with ___ or
+   nothing between two of them, and a ___ or nothing at each end; no entry but
+   the selected one names anything, and there is no Condition or test on the
+   list. Sibling[a, b] is {___, a, ___, b, ___}, Adjacent[a, b] {___, a, b,
+   ___}. *)
+listMethod[listStage[a_]] /; $recogniseShapes :=
+  With[{around = orderedAround[a]}, ordered[Sequence @@ around, Sequence @@ twoStep[a["Pattern"][[2]]]] /; around =!= None];
 listMethod[ls_] := generalMatcher @@ listMatcher[ls];
+
+(* The entries on each side of the selected one, as {before, {left, right},
+   after}: left and right are the entries next to it, before and after are
+   placed[anchored, blocks], the blocks of adjacent entries beyond them, from
+   the far end of the list inwards, with anchored saying there is no ___ at
+   that end. The side after the selected entry is mirrored, each block
+   reversed, to be placed on the children in reverse. Each entry is tested[p,
+   id], with id the key of a context combinator entry's test or None. None
+   when the list is not of that form. *)
+orderedAround[a_] :=
+  Replace[entriesAround[a], {
+    {b_List, f_List} :> With[{
+        before = orderedSide[Reverse @ entryTests @ unmarked[b, Association[#2 -> #1 & @@@ a["Checks"]]]],
+        after = orderedSide[entryTests @ spliced[f]]},
+      {First[before], {Reverse @ Last[before], Last[after]}, First[after]} /; FreeQ[{before, after}, untested]],
+    _ -> None}];
+
+(* The entries with the PatternSequence before each context combinator entry,
+   named by its mark, spliced in, and checkedBy[id] in front of that entry. *)
+unmarked[es_List, ids_] :=
+  Join @@ Replace[spliced[es], {
+    Verbatim[Pattern][m_Symbol, Verbatim[PatternSequence][ps___]] /; KeyExistsQ[ids, m] :> Append[unmarked[{ps}, ids], checkedBy[ids[m]]],
+    e_ :> {e}}, {1}];
+
+(* Each entry as ___, as tested[p, id] when it is tested on one child alone,
+   or as untested. *)
+entryTests[es_List] :=
+  Replace[SequenceReplace[es, {checkedBy[id_], p_} :> tested[p, id]], {
+    g : Verbatim[___] :> g,
+    tested[p_, id_] :> If[countableQ[p], tested[p, id], untested],
+    p_ :> If[countableQ[p], tested[p, None], untested]}, {1}];
+
+(* One side of the selected entry, read outwards from it, as {placed[anchored,
+   blocks], next}: the entries next to it, then the blocks beyond them. *)
+orderedSide[es_List] :=
+  With[{runs = SplitBy[es, MatchQ[Verbatim[___]]]},
+    With[{next = If[runs =!= {} && !gapsQ[First[runs]], First[runs], {}]},
+      {placed[runs === {} || !gapsQ[Last[runs]], Reverse[Reverse /@ Select[If[next === {}, runs, Rest[runs]], !gapsQ[#] &]]], next}]];
+
+gapsQ[run_] := MatchQ[run, {Verbatim[___] ..}];
 
 (* The children each side counts, and how many of them it allows, as
    counted[t, lengths], with t = _ for all children; None when a side is not
@@ -1345,6 +1401,7 @@ kidsList[sites_, els_] := {sites, els, AssociationThread[sites, Range[Length[sit
 listIndices[anywhere[s_, n_], _, els_] := anywhereIndices[copiedBy[els, n], s];
 listIndices[amongChildren[before_, after_, s_, n_], _, els_] := matchedAt[amongIndices[before, after, Length[els]], els, s, n];
 listIndices[amongMatching[before_, after_, s_, n_], _, els_] := matchedAt[matchingIndices[before, after, els], els, s, n];
+listIndices[ordered[before_, around_, after_, s_, n_], par_, els_] := matchedAt[orderedIndices[before, around, after, par, els], els, s, n];
 listIndices[generalMatcher[rule_, n_], par_, els_] := Union @ ReplaceList[copiedBy[listSlot[par, 0, els], n], rule];
 
 anywhereIndices[els_, s_] := Flatten @ Position[els, s, {1}, Heads -> False];
@@ -1375,6 +1432,45 @@ allowedCounts[$anyLength, counts_] := ConstantArray[1, Length[counts]];
 allowedCounts[lengths_, counts_] :=
   Normal[SparseArray[Thread[(lengthsUpTo[lengths, Length[counts] - 1] + 1) -> 1], Length[counts]]][[counts + 1]];
 
+(* The indices among the children els where the entries next to the selected
+   one match around it, and the blocks before and after it fit in order
+   between it and the ends: each entry is tested once on each child. *)
+orderedIndices[before_, {left_, right_}, after_, par_, els_] :=
+  With[{len = Length[els], l = Length[left], r = Length[right],
+      marks = AssociationMap[testMarks[#, par, els] &, Union @@ Cases[{before, left, right, after}, {__tested}, Infinity]]},
+    With[{b = startBounds[before, marks, len], a = startBounds[after, Reverse /@ marks, len]},
+      With[{lo = Max[1, First[b] + l, len + 1 - r - Last[a]], hi = Min[len, Last[b] + l, len + 1 - r - First[a]]},
+        Fold[Intersection,
+          If[lo <= hi, Range[lo, hi], {}],
+          {If[l == 0, Nothing, blockStarts[left, marks, len] + l], If[r == 0, Nothing, blockStarts[right, marks, len] - 1]}]]]];
+
+(* 1 at each child that an entry matches, and 0 elsewhere. The rest of a
+   context combinator entry's chain runs only from a child its first stage
+   matches. *)
+testMarks[tested[p_, None], _, els_] := Boole[MatchQ[p] /@ els];
+testMarks[tested[p_, id_], par_, els_] := MapIndexed[Boole[MatchQ[#1, p] && contextQ[id, par, First[#2]]] &, els];
+
+(* The indices where each entry of a block matches the child at its offset. *)
+blockStarts[block_, marks_, len_] :=
+  With[{k = Length[block]},
+    If[k > len, {}, Flatten @ Position[Times @@ MapIndexed[marks[#1][[First[#2] ;; len - k + First[#2]]] &, block], 1, {1}]]];
+
+(* Where the entries next to the selected one may start, counted from one end
+   of the children, as {lo, hi}: after the blocks of that side, each placed at
+   its earliest after the one before it, and the first at the end itself when
+   the side is anchored. With no blocks, an anchored side starts at the end.
+   {Infinity, Infinity} when the blocks do not fit. *)
+startBounds[placed[True, {}], _, _] := {1, 1};
+startBounds[placed[False, {}], _, _] := {1, Infinity};
+startBounds[placed[anchored_, {first_, rest___}], marks_, len_] :=
+  {Fold[placedAfter[marks, len], If[anchored, anchoredEnd[first, marks, len], placedAfter[marks, len][0, first]], {rest}] + 1, Infinity};
+
+(* The last index a block takes at its earliest after index end, Infinity when
+   it does not fit. *)
+placedAfter[marks_, len_][end_, block_] := SelectFirst[blockStarts[block, marks, len], # > end &, Infinity] + Length[block] - 1;
+
+anchoredEnd[block_, marks_, len_] := If[MemberQ[Take[blockStarts[block, marks, len], UpTo[1]], 1], Length[block], Infinity];
+
 copiedBy[x_, None] := x;
 copiedBy[x_, n_] := copied[x, n];
 
@@ -1392,7 +1488,7 @@ listSelected[Descendant, p_, method_] :=
 (* A recognised shape selects only children that its selected entry matches,
    so an element with none of them is passed over without listing its children:
    most elements, below an any-element parent stage as in li:first-child. *)
-childrenSelected[par_, (anywhere | amongChildren | amongMatching)[___, s_, None]] /; par =!= $documentSite && FreeQ[Last[at[par]], s, {1}] := {};
+childrenSelected[par_, (anywhere | amongChildren | amongMatching | ordered)[___, s_, None]] /; par =!= $documentSite && FreeQ[Last[at[par]], s, {1}] := {};
 childrenSelected[par_, method_] :=
   With[{k = kidsAt[par]}, If[k[[2]] === {}, {}, k[[1, listIndices[method, par, k[[2]]]]]]];
 
