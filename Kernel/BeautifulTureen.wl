@@ -358,20 +358,20 @@ stripAll[xs___] := Sequence @@ (strip /@ {xs});
 (* its parameters, or the general matcher with its rule. The     *)
 (* runners read it and do not inspect the list's pattern.        *)
 (* How the rest runs is decided once too, and the runners read  *)
-(* it (see withPlan); the two-step match (solvable) is applied  *)
+(* it (see runnable); the two-step match (solvable) is applied  *)
 (* here and never by a runner. A plain query, one stage and no  *)
 (* link, has                                                    *)
-(*   "Plain"      the pattern or rule it runs                    *)
+(*   "Plain"      the pattern or rule it runs                   *)
 (* and a chain, each alternative of a query of "Alternatives"   *)
-(* and each normal form in "ContextEntries" has                  *)
-(*   "Chain"      the stages and links, alternating, as the      *)
-(*                chain runner reads them                        *)
-(*   "StagesDecide" whether the stages' own matches decide a     *)
-(*                tuple (see Chains)                             *)
-(*   "TupleTest"  the test a tuple of sites passes, or None when *)
-(*                the stages decide                              *)
-(*   "TupleRule"  the rule a tuple of elements is given to, or   *)
-(*                None when there is no body                     *)
+(* and each compiled query in "ContextEntries" has              *)
+(*   "Chain"      the stages and links, alternating, as the     *)
+(*                chain runner reads them                       *)
+(*   "StagesDecide" whether the stages' own matches decide a    *)
+(*                tuple (see Chains)                            *)
+(*   "TupleTest"  the test a tuple of sites passes, or None     *)
+(*                when the stages decide                        *)
+(*   "TupleRule"  the rule a tuple of elements is given to, or  *)
+(*                None when there is no body                    *)
 (* Refusals message under XMLPattern (an XML pattern's own      *)
 (* shape) or under head and give $Failed. Which query shapes an *)
 (* operation can run is the operation's to check, on the normal *)
@@ -402,8 +402,8 @@ compileWith[q_, head_, readings_Association] :=
     Module[{query, keys, contexts},
       {query, keys, contexts} = compilePass[q, head, readings, False];
       If[keys =!= {}, {query, contexts} = Delete[compilePass[q, head, readings, True], 2]];
-      Join[withPlan[withMethods[query]], <|"Readings" -> Lookup[readings, keys], "Head" -> head, "Query" -> q,
-        "ContextEntries" -> chainPlan @* withMethods /@ contexts, "Recognition" -> $recogniseShapes|>]],
+      Join[runnable[withMethods[query]], <|"Readings" -> Lookup[readings, keys], "Head" -> head, "Query" -> q,
+        "ContextEntries" -> runnableChain @* withMethods /@ contexts, "Recognition" -> $recogniseShapes|>]],
     $refusal];
 
 compilePass[q_, head_, readings_, mat_] :=
@@ -412,15 +412,12 @@ compilePass[q_, head_, readings_, mat_] :=
     With[{r = Reap[First @ Reap[cQuery[q], $bindTag], {$listKeyTag, $contextTag}]},
       {First[r], Union @@ r[[2, 1]], contextEntries[First[r], Join @@ r[[2, 2]]]}]];
 
-(* How a normal form runs, decided once (see the header): a plain query's
-   pattern or rule, or for a chain, each alternative of one and each context
-   entry, its chain, tuple test and tuple rule, with the two-step match
-   (solvable) applied wherever it is needed. *)
-withPlan[q_] /; unionQ[q] := MapAt[chainPlan, q, {Key["Alternatives"], All}];
-withPlan[q_] /; chainQ[q] := chainPlan[q];
-withPlan[q_] := Append[q, "Plain" -> plainQuery[q]];
+(* The compiled query with the fields that say how it runs (see the header). *)
+runnable[q_] /; unionQ[q] := MapAt[runnableChain, q, {Key["Alternatives"], All}];
+runnable[q_] /; chainQ[q] := runnableChain[q];
+runnable[q_] := Append[q, "Plain" -> plainQuery[q]];
 
-chainPlan[q_] :=
+runnableChain[q_] :=
   Join[q, <|"Chain" -> chainOf[q], "StagesDecide" -> stagesDecideQ[q], "TupleTest" -> tupleTest[q],
     "TupleRule" -> If[q["Body"] === None, None, tupleRule[q]]|>];
 
@@ -1082,7 +1079,7 @@ elementQuery[c_, q_, head_, tag_] :=
    name; strip once, at the output. A chain runner is given the normal form, a
    plain runner the pattern or rule it runs. *)
 runCompiled[run_, tree_, q_, rest___] :=
-  With[{p = If[unionQ[q] || chainQ[q], q, q["Plain"]]},
+  With[{p = Lookup[q, "Plain", q]},
     Block[{$kids = <||>, $contextMemo = <||>, $contexts = q["ContextEntries"]},
       If[q["Readings"] === {}, run[tree, p, rest],
         strip @ run[materialise[tree, q["Readings"]], p, rest]]]];
@@ -1536,7 +1533,7 @@ entryResult[_, _][{_, _, v_}] := v;
 
 inSiteOrder[es_] := es[[documentOrdering[es[[All, 2, -1]]]]];
 
-entryRules[q_] := If[q["Body"] === None, None, #["TupleRule"] & /@ q["Alternatives"]];
+entryRules[q_] := Lookup[q["Alternatives"], "TupleRule"];
 
 unionCases[tree_, q_, n_] :=
   Block[{$chainTree = tree},

@@ -1,10 +1,11 @@
 (* The compiled query says how it runs (ADR 0020): the two-step matching
    rewrite, the tuple pattern and test of each chain, and whether its stages
    decide are built when the query is compiled, and running it builds none of
-   them. This is the one test that reaches inside: it compiles each query once
-   and counts the calls of the rewrite (solvable) while the compiled query runs
-   several times, under each runner. Every result is checked against the public
-   function, so that the count is not of a run that did nothing. *)
+   them. These tests reach inside, as no public function keeps a compiled query:
+   each query is compiled once, and the calls of the rewrite (solvable) are
+   counted while the compiled query runs several times, under each runner.
+   Every result is checked against the public function, so that the count is
+   not of a run that did nothing. *)
 
 $compiledTree = XMLElement["body", {}, {
   XMLElement["div", {"class" -> "c3", "href" -> "xay", "data-id" -> "a"}, {XMLElement["p", {}, {"1"}]}],
@@ -23,8 +24,8 @@ $compiledQueries = {
   (Child[XMLPattern["div"], p : XMLPattern["p"]] | Child[XMLPattern["div"], p : XMLPattern["span"]]) :> p[[3]],
   Child[XMLPattern["body"], {___, Child["div", "p"], ___, "div.c3", ___}]};
 
-SetAttributes[rewritesWhile, HoldFirst];
-rewritesWhile[expr_] :=
+SetAttributes[withRewriteCount, HoldFirst];
+withRewriteCount[expr_] :=
   Module[{n = 0},
     Internal`InheritedBlock[{MaximilienTirard`BeautifulTureen`Private`solvable},
       PrependTo[DownValues[MaximilienTirard`BeautifulTureen`Private`solvable],
@@ -34,7 +35,7 @@ rewritesWhile[expr_] :=
 TestCreate[
   Module[{compiled, runs},
     compiled = MaximilienTirard`BeautifulTureen`Private`compileQuery[#, XMLCases] & /@ $compiledQueries;
-    runs = rewritesWhile @ Table[
+    runs = withRewriteCount @ Table[
       MapThread[
         {MaximilienTirard`BeautifulTureen`Private`queryCases[#2, $compiledTree, Infinity],
          MaximilienTirard`BeautifulTureen`Private`queryFirst[#2, $compiledTree, None],
@@ -53,7 +54,7 @@ TestCreate[
 (* The per-element matcher behind XMLMatchQ, from a query compiled once. *)
 TestCreate[
   With[{c = MaximilienTirard`BeautifulTureen`Private`compileQuery[First[$compiledQueries], XMLMatchQ]},
-    rewritesWhile[
+    withRewriteCount[
       MaximilienTirard`BeautifulTureen`Private`elementMatcher[c] /@ Table[$compiledTree[[3, 1]], 3]]],
   {{True, True, True}, 0},
   TestID -> "compiled-query-element-matcher-without-rewriting"
