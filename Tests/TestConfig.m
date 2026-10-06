@@ -30,10 +30,12 @@ $TestConfig = <|
 	"PacletContexts" -> {"MaximilienTirard`BeautifulTureen`", "BeautifulTureenTests`"},
 	"PacletDirectory" -> Automatic,
 
-	(* Load the paclet, then the shared fixtures used across several test files. *)
+	(* Load the paclet, then the shared fixtures used across several test files,
+	   and the seeded random-tree generator. *)
 	"PacletInitialization" -> Function[cfg,
 		Get["MaximilienTirard`BeautifulTureen`"];
-		Get[FileNameJoin[{cfg["TestDirectory"], "Support", "Fixtures.wl"}]]
+		Get[FileNameJoin[{cfg["TestDirectory"], "Support", "Fixtures.wl"}]];
+		Get[FileNameJoin[{cfg["TestDirectory"], "Support", "RandomTrees.wl"}]]
 	],
 
 	(* --- Test discovery --- *)
