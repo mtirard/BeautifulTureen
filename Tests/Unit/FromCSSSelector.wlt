@@ -355,6 +355,37 @@ TestCreate[
   TestID -> "css-child-indexed-general-form"
 ];
 
+(* A position of a compound joined to the first of its run by + alone, with no
+   position of its own on that side, moves to the first, less the compounds
+   between, and is written with plain entries; the same from the end. *)
+TestCreate[
+  FromCSSSelector /@ {".b + .a:nth-child(5)", ".b + .a:nth-child(2n+1)", "a:nth-last-child(2) + b", "a + b + c:nth-child(n+4)",
+    "div > .b + .a:nth-child(-n+3)", "a + b:nth-child(2):nth-last-child(2)", "a:nth-last-child(odd) + b + c",
+    "a + b:nth-child(1)", "a + b:nth-child(-n+1)", "a:nth-child(3) + b:nth-last-child(2) + c", "a + b:nth-child(2n+1) ~ c"},
+  {Child[XMLDocument[] | XMLPattern[_], {Repeated[_, {3}], XMLPattern[_, "classList" -> "b"], XMLPattern[_, "classList" -> "a"], ___}],
+    Child[XMLDocument[] | XMLPattern[_], {_, PatternSequence[_, _] ..., XMLPattern[_, "classList" -> "b"], XMLPattern[_, "classList" -> "a"], ___}],
+    Child[XMLDocument[] | XMLPattern[_], {___, XMLPattern["a"], XMLPattern["b"]}],
+    Child[XMLDocument[] | XMLPattern[_], {_, _ ..., XMLPattern["a"], XMLPattern["b"], XMLPattern["c"], ___}],
+    Child[XMLPattern["div"], {Repeated[_, {0, 1}], XMLPattern[_, "classList" -> "b"], XMLPattern[_, "classList" -> "a"], ___}],
+    Child[XMLDocument[] | XMLPattern[_], {XMLPattern["a"], XMLPattern["b"], _}],
+    Child[XMLDocument[] | XMLPattern[_], {___, XMLPattern["a"], XMLPattern["b"], XMLPattern["c"], PatternSequence[_, _] ...}],
+    Child[XMLDocument[] | XMLPattern[_], {Except[_], XMLPattern["a"], XMLPattern["b"], ___}],
+    Child[XMLDocument[] | XMLPattern[_], {Except[_], XMLPattern["a"], XMLPattern["b"], ___}],
+    Child[XMLDocument[] | XMLPattern[_], {Repeated[_, {2}], XMLPattern["a"], XMLPattern["b"], XMLPattern["c"]}],
+    Child[XMLDocument[] | XMLPattern[_], {_, PatternSequence[_, _] ..., XMLPattern["a"], XMLPattern["b"], ___, XMLPattern["c"], ___}]},
+  TestID -> "css-child-indexed-shifted-exact"
+];
+
+(* A position reached across ~, one counted among a type or a selector, and two
+   positions landing on one end keep the general form. *)
+TestCreate[
+  MatchQ[FromCSSSelector[#], Child[_, _Condition]] & /@ {"a ~ b:nth-child(3)", "a ~ b + c:nth-child(3)", "a + b:nth-of-type(2)",
+    "a + b:first-of-type", "a + b:nth-child(2 of .x)", "a:first-child + b:nth-child(2)", "a:nth-last-child(2) + b:last-child",
+    "a + b:nth-child(odd) + c:nth-child(3)"},
+  ConstantArray[True, 8],
+  TestID -> "css-child-indexed-shifted-general"
+];
+
 TestCreate[
   {Lookup[XMLDeleteCases[$kids, ":nth-child(odd)"][[3, All, 2]], "id"], ids[$kids, "b:has(> i:last-child)"],
     ids[$kids, "div:has(b:first-child)"], XMLMatchQ[XMLElement["li", {}, {}], "li:first-child"]},
