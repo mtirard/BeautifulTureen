@@ -664,6 +664,11 @@ contextEntries[query_, sown_] :=
    alone: its "Method" is
      anywhere[s, n]        {___, s, ___} with no other entry: each child s
                            matches
+     amongChildren[before, after, s, n]
+                           {e1, ..., s, f1, ...} where the entries e and f
+                           are blanks, repeats of them and Except[_]: each
+                           child s matches with as many children before and
+                           after it as the lengths before and after allow
      generalMatcher[r, n]  any other list: the children r's matches select
    where n is the number of copies of each child's attributes the two-step
    match needs (solvable), or None. *)
@@ -677,7 +682,60 @@ withMethods[q_] := q;
 listMethod[listStage[a_]] /; $recogniseShapes && a["Checks"] === {} &&
     MatchQ[a["Pattern"], {Verbatim[Pattern][a["Index"], Verbatim[PatternSequence][Verbatim[___]]], _, Verbatim[___]}] :=
   anywhere @@ twoStep[a["Pattern"][[2]]];
+(* Shapes 2 and 3, a position among all children from the start, the end or
+   both: the selected entry with only blanks, repeats of them and Except[_]
+   around it, unnamed, and no context entry, name, Condition or test on the
+   list. :first-child is {s, ___}, :nth-child(2n+1) {PatternSequence[_, _]...,
+   s, ___}, :nth-last-child(2) {___, s, _} and :only-child {s}. *)
+listMethod[listStage[a_]] /; $recogniseShapes && a["Checks"] === {} && FreeQ[lengthsAround[a], None] :=
+  amongChildren[Sequence @@ lengthsAround[a], Sequence @@ twoStep[a["Pattern"][[2]]]];
 listMethod[ls_] := generalMatcher @@ listMatcher[ls];
+
+(* The lengths of the entries before and after the selected one. *)
+lengthsAround[a_] :=
+  Replace[a["Pattern"], {
+    {Verbatim[Pattern][a["Index"], before_], _, after___} :> {lengthsOf[before], lengthsOf[PatternSequence[after]]},
+    _ -> None}];
+
+(* The numbers of children a sequence of entries matches, as lengths[lo, a,
+   hi]: lo, lo + a, lo + 2 a, ... up to hi, which may be Infinity and is less
+   than lo when there are none. None when they are not of that form, or an
+   entry is not a blank, a repeat of blanks or Except[_]. A sequence's lengths
+   are the sums of its entries': a fixed length shifts the others, and two
+   with the same step add their bounds; other sums are not of the form. *)
+lengthsOf[Verbatim[PatternSequence][es___]] := Fold[addLengths, lengths[0, 1, 0], lengthsOf /@ {es}];
+lengthsOf[Verbatim[_]] := lengths[1, 1, 1];
+lengthsOf[Verbatim[__]] := lengths[1, 1, Infinity];
+lengthsOf[Verbatim[___]] := $anyLength;
+lengthsOf[Verbatim[Except][Verbatim[_]]] := $noLength;
+lengthsOf[Verbatim[Repeated][p_]] := repeatedLengths[lengthsOf[p], 1, Infinity];
+lengthsOf[Verbatim[Repeated][p_, {k_Integer}]] /; k >= 0 := repeatedLengths[lengthsOf[p], k, k];
+lengthsOf[Verbatim[Repeated][p_, {lo_Integer, hi : (_Integer | Infinity)}]] /; 0 <= lo <= hi :=
+  repeatedLengths[lengthsOf[p], lo, hi];
+lengthsOf[Verbatim[Repeated][p_, hi_Integer]] /; hi >= 1 := repeatedLengths[lengthsOf[p], 1, hi];
+lengthsOf[Verbatim[RepeatedNull][p_]] := repeatedLengths[lengthsOf[p], 0, Infinity];
+lengthsOf[_] := None;
+
+$anyLength = lengths[0, 1, Infinity];
+$noLength = lengths[0, 1, -1];
+
+(* lo to hi repeats of a sequence of one length k > 0. *)
+repeatedLengths[lengths[k_, _, k_], lo_, hi_] /; k > 0 := lengths[k lo, k, k hi];
+repeatedLengths[_, _, _] := None;
+
+addLengths[None, _] := None;
+addLengths[_, None] := None;
+addLengths[lengths[lo_, _, hi_], _] /; hi < lo := $noLength;
+addLengths[_, lengths[lo_, _, hi_]] /; hi < lo := $noLength;
+addLengths[lengths[k_, _, k_], lengths[lo_, a_, hi_]] := lengths[k + lo, a, k + hi];
+addLengths[lengths[lo_, a_, hi_], lengths[k_, _, k_]] := lengths[lo + k, a, hi + k];
+addLengths[lengths[lo1_, a_, hi1_], lengths[lo2_, a_, hi2_]] := lengths[lo1 + lo2, a, hi1 + hi2];
+addLengths[_, _] := None;
+
+(* An+B membership, the one place it is decided: the lengths up to m, in
+   increasing order. *)
+lengthsUpTo[lengths[k_, _, k_], m_] := If[k <= m, {k}, {}];
+lengthsUpTo[lengths[lo_, a_, hi_], m_] := Range[lo, Min[m, hi], a];
 
 (* The select rule, or, when a Condition would see a KeyValuePattern's later
    names unbound, its two-step form (solvable) over copied children, with the
@@ -1189,11 +1247,22 @@ kidsList[sites_, els_] := {sites, els, AssociationThread[sites, Range[Length[sit
    a list stage selects, each once, by the stage's method. The general matcher
    takes them from its rule's matches. Anywhere selects each child s matches,
    which Position finds without building the sequence before each one: over
-   5,000 siblings that is 1 ms against 300 ms. *)
+   5,000 siblings that is 1 ms against 300 ms. A position among all children
+   tests only the children at the indices its lengths allow. *)
 listIndices[anywhere[s_, n_], _, els_] := anywhereIndices[copiedBy[els, n], s];
+listIndices[amongChildren[before_, after_, s_, None], _, els_] :=
+  Select[amongIndices[before, after, Length[els]], MatchQ[els[[#]], s] &];
+listIndices[amongChildren[before_, after_, s_, n_], _, els_] :=
+  With[{is = amongIndices[before, after, Length[els]]}, Pick[is, MatchQ[s] /@ copied[els[[is]], n]]];
 listIndices[generalMatcher[rule_, n_], par_, els_] := Union @ ReplaceList[copiedBy[listSlot[par, 0, els], n], rule];
 
 anywhereIndices[els_, s_] := Flatten @ Position[els, s, {1}, Heads -> False];
+
+(* The indices among len children with as many children before and after as
+   the lengths before and after allow. *)
+amongIndices[before_, $anyLength, len_] := lengthsUpTo[before, len - 1] + 1;
+amongIndices[$anyLength, after_, len_] := Reverse[len - lengthsUpTo[after, len - 1]];
+amongIndices[before_, after_, len_] := Intersection[lengthsUpTo[before, len - 1] + 1, len - lengthsUpTo[after, len - 1]];
 
 copiedBy[x_, None] := x;
 copiedBy[x_, n_] := copied[x, n];
@@ -1209,6 +1278,10 @@ listSelected[Descendant, {0}, method_] :=
 listSelected[Descendant, p_, method_] :=
   Join @@ (childrenSelected[Join[p, #], method] & /@ Position[at[p], XMLElement[_, _, {___, _XMLElement, ___}], {0, Infinity}, Heads -> False]);
 
+(* A recognised shape selects only children that its selected entry matches,
+   so an element with none of them is passed over without listing its children:
+   most elements, below an any-element parent stage as in li:first-child. *)
+childrenSelected[par_, (anywhere | amongChildren)[___, s_, None]] /; par =!= $documentSite && FreeQ[Last[at[par]], s, {1}] := {};
 childrenSelected[par_, method_] :=
   With[{k = kidsAt[par]}, If[k[[2]] === {}, {}, k[[1, listIndices[method, par, k[[2]]]]]]];
 
