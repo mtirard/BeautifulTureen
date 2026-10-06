@@ -687,8 +687,8 @@ listMethod[listStage[a_]] /; $recogniseShapes && a["Checks"] === {} &&
    around it, unnamed, and no context entry, name, Condition or test on the
    list. :first-child is {s, ___}, :nth-child(2n+1) {PatternSequence[_, _]...,
    s, ___}, :nth-last-child(2) {___, s, _} and :only-child {s}. *)
-listMethod[listStage[a_]] /; $recogniseShapes && a["Checks"] === {} && FreeQ[lengthsAround[a], None] :=
-  amongChildren[Sequence @@ lengthsAround[a], Sequence @@ twoStep[a["Pattern"][[2]]]];
+listMethod[listStage[a_]] /; $recogniseShapes && a["Checks"] === {} :=
+  With[{around = lengthsAround[a]}, amongChildren[Sequence @@ around, Sequence @@ twoStep[a["Pattern"][[2]]]] /; FreeQ[around, None]];
 listMethod[ls_] := generalMatcher @@ listMatcher[ls];
 
 (* The lengths of the entries before and after the selected one. *)
@@ -697,17 +697,18 @@ lengthsAround[a_] :=
     {Verbatim[Pattern][a["Index"], before_], _, after___} :> {lengthsOf[before], lengthsOf[PatternSequence[after]]},
     _ -> None}];
 
-(* The numbers of children a sequence of entries matches, as lengths[lo, a,
-   hi]: lo, lo + a, lo + 2 a, ... up to hi, which may be Infinity and is less
-   than lo when there are none. None when they are not of that form, or an
-   entry is not a blank, a repeat of blanks or Except[_]. A sequence's lengths
-   are the sums of its entries': a fixed length shifts the others, and two
-   with the same step add their bounds; other sums are not of the form. *)
-lengthsOf[Verbatim[PatternSequence][es___]] := Fold[addLengths, lengths[0, 1, 0], lengthsOf /@ {es}];
+(* The numbers of children a sequence of entries matches, as lengths[lo,
+   step, hi]: lo, lo + step, lo + 2 step, ... up to hi, which may be Infinity
+   and is less than lo when there are none. None when they are not of that
+   form, or an entry is not a blank, a repeat of blanks or Except[_]. A
+   sequence's lengths are the sums of its entries': a fixed length shifts the
+   others, and two with the same step add their bounds; other sums are not of
+   the form. *)
+lengthsOf[Verbatim[PatternSequence][es___]] := Fold[addLengths, $zeroLength, lengthsOf /@ {es}];
 lengthsOf[Verbatim[_]] := lengths[1, 1, 1];
 lengthsOf[Verbatim[__]] := lengths[1, 1, Infinity];
 lengthsOf[Verbatim[___]] := $anyLength;
-lengthsOf[Verbatim[Except][Verbatim[_]]] := $noLength;
+lengthsOf[Verbatim[Except][Verbatim[_]]] := $noLengths;
 lengthsOf[Verbatim[Repeated][p_]] := repeatedLengths[lengthsOf[p], 1, Infinity];
 lengthsOf[Verbatim[Repeated][p_, {k_Integer}]] /; k >= 0 := repeatedLengths[lengthsOf[p], k, k];
 lengthsOf[Verbatim[Repeated][p_, {lo_Integer, hi : (_Integer | Infinity)}]] /; 0 <= lo <= hi :=
@@ -717,7 +718,8 @@ lengthsOf[Verbatim[RepeatedNull][p_]] := repeatedLengths[lengthsOf[p], 0, Infini
 lengthsOf[_] := None;
 
 $anyLength = lengths[0, 1, Infinity];
-$noLength = lengths[0, 1, -1];
+$zeroLength = lengths[0, 1, 0];
+$noLengths = lengths[0, 1, -1];
 
 (* lo to hi repeats of a sequence of one length k > 0. *)
 repeatedLengths[lengths[k_, _, k_], lo_, hi_] /; k > 0 := lengths[k lo, k, k hi];
@@ -725,17 +727,17 @@ repeatedLengths[_, _, _] := None;
 
 addLengths[None, _] := None;
 addLengths[_, None] := None;
-addLengths[lengths[lo_, _, hi_], _] /; hi < lo := $noLength;
-addLengths[_, lengths[lo_, _, hi_]] /; hi < lo := $noLength;
-addLengths[lengths[k_, _, k_], lengths[lo_, a_, hi_]] := lengths[k + lo, a, k + hi];
-addLengths[lengths[lo_, a_, hi_], lengths[k_, _, k_]] := lengths[lo + k, a, hi + k];
-addLengths[lengths[lo1_, a_, hi1_], lengths[lo2_, a_, hi2_]] := lengths[lo1 + lo2, a, hi1 + hi2];
+addLengths[lengths[lo_, _, hi_], _] /; hi < lo := $noLengths;
+addLengths[_, lengths[lo_, _, hi_]] /; hi < lo := $noLengths;
+addLengths[lengths[k_, _, k_], lengths[lo_, step_, hi_]] := lengths[k + lo, step, k + hi];
+addLengths[lengths[lo_, step_, hi_], lengths[k_, _, k_]] := lengths[lo + k, step, hi + k];
+addLengths[lengths[lo1_, step_, hi1_], lengths[lo2_, step_, hi2_]] := lengths[lo1 + lo2, step, hi1 + hi2];
 addLengths[_, _] := None;
 
 (* An+B membership, the one place it is decided: the lengths up to m, in
    increasing order. *)
 lengthsUpTo[lengths[k_, _, k_], m_] := If[k <= m, {k}, {}];
-lengthsUpTo[lengths[lo_, a_, hi_], m_] := Range[lo, Min[m, hi], a];
+lengthsUpTo[lengths[lo_, step_, hi_], m_] := Range[lo, Min[m, hi], step];
 
 (* The select rule, or, when a Condition would see a KeyValuePattern's later
    names unbound, its two-step form (solvable) over copied children, with the
@@ -1248,7 +1250,9 @@ kidsList[sites_, els_] := {sites, els, AssociationThread[sites, Range[Length[sit
    takes them from its rule's matches. Anywhere selects each child s matches,
    which Position finds without building the sequence before each one: over
    5,000 siblings that is 1 ms against 300 ms. A position among all children
-   tests only the children at the indices its lengths allow. *)
+   tests only the children at the indices its lengths allow, one at a time
+   when no copies are needed, which is cheaper per parent than mapping over
+   them. *)
 listIndices[anywhere[s_, n_], _, els_] := anywhereIndices[copiedBy[els, n], s];
 listIndices[amongChildren[before_, after_, s_, None], _, els_] :=
   Select[amongIndices[before, after, Length[els]], MatchQ[els[[#]], s] &];

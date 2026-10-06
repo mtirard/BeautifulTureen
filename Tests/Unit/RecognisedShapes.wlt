@@ -113,7 +113,7 @@ $fromStart = {
   {Repeated[_, {0, 2}]},                                (* :nth-child(-n+3) *)
   {PatternSequence[_, _]...},                           (* :nth-child(2n+1) *)
   {_, PatternSequence[_, _]...},                        (* :nth-child(2n) *)
-  {Repeated[_, {2}], RepeatedNull[_]},                             (* :nth-child(n+3) *)
+  {Repeated[_, {2}], RepeatedNull[_]},                  (* :nth-child(n+3) *)
   {_, PatternSequence[_, _, _]...},                     (* :nth-child(3n-1) *)
   {_, Repeated[PatternSequence[_, _], {0, 1}]},         (* :nth-child(-2n+4) *)
   {Except[_]},                                          (* :nth-child(0n+0), :nth-child(-n) *)
@@ -267,19 +267,21 @@ TestCreate[
 
 (* Just outside the shapes, by a name on an entry, a Condition on the list, a
    second XML pattern entry, or repeats of two different lengths: the same
-   results as a recognised spelling of the same positions. *)
+   results as a recognised spelling of the same positions, which select
+   something on some tree. *)
 TestCreate[
-  Map[Function[t, {
+  With[{r = Map[Function[t, {
     XMLCases[t, Child[any, {x_, li, ___}]],
     XMLCases[t, Child[any, {_, li, ___} /; True]],
     XMLCases[t, Child[any, {_, any, li, ___}]],
     XMLCases[t, Child[any, {___, li, y : PatternSequence[_, _]...}]],
-    XMLCases[t, Child[any, {Repeated[_, {0, 1}], PatternSequence[_, _]..., li, ___}]]}], $trees],
-  Map[Function[t, {
+    XMLCases[t, Child[any, {Repeated[_, {0, 1}], PatternSequence[_, _]..., li, ___}]]}], $trees]},
+    r === Map[Function[t, {
     XMLCases[t, Child[any, {_, li, ___}]],
     XMLCases[t, Child[any, {_, li, ___}]],
     XMLCases[t, Child[any, {Repeated[_, {2}], li, ___}]],
     XMLCases[t, Child[any, {___, li, PatternSequence[_, _]...}]],
-    XMLCases[t, Child[any, {___, li, ___}]]}], $trees],
+    XMLCases[t, Child[any, {___, li, ___}]]}], $trees] && AllTrue[Transpose[r], !FreeQ[#, _XMLElement] &]],
+  True,
   TestID -> "shape-positions-unrecognised-still-correct"
 ];
