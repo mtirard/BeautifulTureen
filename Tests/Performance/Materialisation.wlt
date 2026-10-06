@@ -103,6 +103,22 @@ TestCreate[
   TestID -> "perf-condition-on-six-attribute-names"
 ];
 
+(* A condition on a list stage is tested once for each way the list splits, so
+   it restores, when the query names a list key, only the names it sees: here
+   neither g1 nor g2, whose restoring made each test linear in the 1000
+   siblings. Measured at about 10 ms on a 2026 laptop, against about 2.3 s
+   restoring every name. *)
+$trs = XMLElement["tbody", {}, Table[
+  XMLElement["tr", If[OddQ[i], {"class" -> "a"}, {}], {XMLElement["td", {}, {ToString[i]}]}], {i, 1000}]];
+
+TestCreate[
+  Length @ XMLCases[$trs,
+    Child[XMLPattern["tbody"], {g1___, c : XMLPattern["tr", "classList" -> "a"], g2___} /; c[[3, 1, 3, 1]] === "501"]],
+  1,
+  TimeConstraint -> 0.5,
+  TestID -> "perf-list-condition-unused-names-1000-siblings"
+];
+
 (* A "Roles" or "Constructs" rule naming a list key splits each distinct raw
    value on the tree once, not once for each element a rule is tried on:
    HTMLToNotebook asks for an element's role up to three times. Here every
