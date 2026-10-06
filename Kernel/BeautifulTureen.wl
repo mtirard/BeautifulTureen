@@ -762,11 +762,11 @@ listMethod[listStage[a_]] /; $recogniseShapes :=
    Length[{g}] and MatchQ[{g}, {___, X, ___, Y}]. The translator writes it for
    the counted positions it cannot write with plain entries: .x:nth-of-type(2)
    is {g___, c : XMLPattern[_, "classList" -> "x"], h___} /; Count[{g},
-   XMLElement[First[c], _, _]] + 1 == 2. A list that needs the two-step match
-   is left to the general matcher, which runs the list's Condition on copied
-   children (solvable). *)
-listMethod[listStage[a_]] /; $recogniseShapes && a["Checks"] === {} && !twoStepQ[a["Pattern"]] :=
-  With[{split = splitAround[a]}, measured[Sequence @@ split, selectedEntry[a], None] /; split =!= None];
+   XMLElement[First[c], _, _]] + 1 == 2. The selected entry may need the
+   two-step match (solvable), which the method applies to it alone, as in the
+   other shapes. *)
+listMethod[listStage[a_]] /; $recogniseShapes && a["Checks"] === {} :=
+  With[{split = splitAround[a]}, measured[Sequence @@ split, Sequence @@ twoStep[selectedEntry[a]]] /; split =!= None];
 listMethod[ls_] := generalMatcher @@ listMatcher[ls];
 
 (* The heads of the recognised shapes' methods, and whether a list stage runs

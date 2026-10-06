@@ -138,6 +138,20 @@ TestCreate[
   TestID -> "perf-shape-split-adjacent-5000-siblings"
 ];
 
+(* A list that needs the two-step match, its selected entry naming two
+   attribute values. Measured at about 22 ms on a 2026 laptop, against 84 ms
+   at 1,000 siblings on the general matcher. *)
+TestCreate[
+  MemoryConstrained[
+    XMLCases[Replace[$fiveThousandClassed, XMLElement[t_, a_, c_] :> XMLElement[t, Append[a, "id" -> "i"], c], {4}],
+      Child[XMLPattern["ul"], {g___, c : XMLPattern[_, {"class" -> k_, "id" -> i_}], ___} /;
+        Count[{g}, XMLElement[First[c], _, _]] + 1 == 2] :> First[c]],
+    2*^9, $Failed],
+  {"li"},
+  TimeConstraint -> 0.25,
+  TestID -> "perf-shape-split-two-step-5000-siblings"
+];
+
 (* Each other form the translator writes as a split condition is recognised,
    so that a translator change that stops it being recognised fails here.
    Each was measured at 20 to 55 ms on a 2026 laptop, against 20 to 45 ms at
