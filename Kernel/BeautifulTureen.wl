@@ -601,6 +601,10 @@ refuseEntry[reason_, e_] := refuseAtHead["listentry", e, $listReasons[reason]];
 stageNames[listStage[a_]] := namesIn[a["Pattern"]];
 stageNames[s_] := namesIn[s];
 
+(* The names a pattern, or a list of stages, binds, outside the tests in it,
+   which bind nothing the pattern sees. *)
+boundNames[x_] := namesIn[x //. {listStage[a_] :> a["Pattern"], Verbatim[PatternTest][p_, _] :> p, Verbatim[Condition][p_, _] :> p}];
+
 $listReasons = <|
   "query" -> "It can only follow Child or Descendant, as in Child[XMLPattern[_], {XMLPattern[\"li\"], ___}], and is not a pattern on its own. For alternatives, use p1 | p2.",
   "first" -> "It can only follow Child or Descendant, as in Child[XMLPattern[_], {XMLPattern[\"li\"], ___}], and cannot be the first stage, which has no parent whose children it would list.",
@@ -825,10 +829,6 @@ splitParts[___] := None;
 (* The stages but the first that is ls: an identical stage elsewhere in the
    chain is another stage, whose names the list's would have to equal. *)
 otherStages[stages_, ls_] := Delete[stages, FirstPosition[stages, Verbatim[ls], {}, {1}, Heads -> False]];
-
-(* The names the stages, or a pattern, bind, outside the tests in them, which
-   bind nothing the stages see. *)
-boundNames[stages_] := namesIn[stages //. {listStage[a_] :> a["Pattern"], Verbatim[PatternTest][p_, _] :> p, Verbatim[Condition][p_, _] :> p}];
 
 namesPattern[names_] := Alternatives @@ (HoldPattern @@@ DeleteCases[names, None]);
 

@@ -313,30 +313,32 @@ $smallTrees = Replace[#, XMLElement[tag_, as_, c_] :> XMLElement[tag, as, Take[c
   randomTrees[20261006, 12];
 
 twoNamedAny = XMLPattern[_, {"class" -> k_, "id" -> i_}];
+(* twoNamedAny over a plain element: the attributes in any order. *)
+plainTwo = XMLElement[_, {OrderlessPatternSequence["class" -> k_, "id" -> i_, ___]}, _];
 SetAttributes[atIndex, HoldAll];
 atIndex[l_, test_] := Function[j, l /; Length[{g}] + 1 == j && test];
 
 $plainCases = {
   {{g___, twoNamedAny, ___} /; Length[{g}] == 1,
-   atIndex[{g___, XMLElement[_, {OrderlessPatternSequence["class" -> k_, "id" -> i_, ___]}, _], ___}, Length[{g}] == 1]},
+   atIndex[{g___, plainTwo, ___}, Length[{g}] == 1]},
   {{g___, twoNamedAny, ___} /; OddQ[Length[{g}]] && StringContainsQ[k, "a"],
-   atIndex[{g___, XMLElement[_, {OrderlessPatternSequence["class" -> k_, "id" -> i_, ___]}, _], ___},
+   atIndex[{g___, plainTwo, ___},
      OddQ[Length[{g}]] && StringContainsQ[k, "a"]]},
   {{g___, twoNamedAny, h___} /; Length[{h}] < Length[{g}],
-   atIndex[{g___, XMLElement[_, {OrderlessPatternSequence["class" -> k_, "id" -> i_, ___]}, _], h___}, Length[{h}] < Length[{g}]]},
+   atIndex[{g___, plainTwo, h___}, Length[{h}] < Length[{g}]]},
   {{g___, twoNamedAny, ___} /; MatchQ[{g}, {___, XMLElement["p", {___, "class" -> _, ___}, _], ___}],
-   atIndex[{g___, XMLElement[_, {OrderlessPatternSequence["class" -> k_, "id" -> i_, ___]}, _], ___},
+   atIndex[{g___, plainTwo, ___},
      MatchQ[{g}, {___, XMLElement["p", {___, "class" -> _, ___}, _], ___}]]},
   {{g___, twoNamedAny /; StringLength[i] > 1, ___} /; EvenQ[Length[{g}]],
-   atIndex[{g___, XMLElement[_, {OrderlessPatternSequence["class" -> k_, "id" -> i_, ___]}, _] /; StringLength[i] > 1, ___},
+   atIndex[{g___, plainTwo /; StringLength[i] > 1, ___},
      EvenQ[Length[{g}]]]},
   {{g___, c : twoNamedAny, ___} /; Count[{g}, XMLElement[First[c], _, _]] + 1 == 2,
-   atIndex[{g___, c : XMLElement[_, {OrderlessPatternSequence["class" -> k_, "id" -> i_, ___]}, _], ___},
+   atIndex[{g___, c : plainTwo, ___},
      Count[{g}, XMLElement[First[c], _, _]] + 1 == 2]}};
 
 plainSelected[tree_, plain_] :=
   Sort @ ids[Join @@ Cases[tree, XMLElement[_, _, c_] :>
-    With[{els = Cases[c, _XMLElement]}, els[[Select[Range[Length[els]], MatchQ[els, plain[#]] &]]]], {0, Infinity}]];
+    With[{els = Cases[c, _XMLElement]}, Pick[els, MatchQ[els, plain[#]] & /@ Range[Length[els]]]], {0, Infinity}]];
 
 TestCreate[
   MemoryConstrained[TimeConstrained[
