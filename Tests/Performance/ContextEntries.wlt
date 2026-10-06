@@ -9,16 +9,24 @@ $threeThousand = XMLElement["body", {}, Table[
   XMLElement["div", {"class" -> "c" <> ToString[Mod[i, 7]]}, If[Mod[i, 5] == 0, {XMLElement["p", {}, {"x"}]}, {"t"}]],
   {i, 3000}]];
 
-(* The context entry is next to the selected entry, so the general matcher
-   tries one split per c3 and the time goes to the context entry. Measured at
-   about 70 ms on a 2026 laptop. The same list with ___ between the two,
-   {___, Child["div", "p"], ___, "div.c3", ___}, takes about 39 s: ReplaceList
-   enumerates every split of the list, about as fast with the context entry
-   replaced by True, and a list stage with a context entry is no recognised
-   shape. *)
+(* The context entry is next to the selected entry. The list is recognised
+   shape 6 and measured at about 78 ms on a 2026 laptop, most of it in the
+   context entry; on the general matcher, which tries one split per c3, it
+   took about 70 ms. *)
 TestCreate[
   Length @ XMLCases[$threeThousand, Child["body", {___, Child["div", "p"], "div.c3", ___}]],
   85,
   TimeConstraint -> 1,
   TestID -> "perf-context-entry-3000-siblings"
+];
+
+(* The same list with ___ between the two entries: shape 6, ordered entries,
+   with a context combinator entry. Measured at about 78 ms on a 2026 laptop,
+   against about 39 s on the general matcher, which enumerates every split of
+   the list that places the two entries, and whose memory grows as fast. *)
+TestCreate[
+  Length @ XMLCases[$threeThousand, Child["body", {___, Child["div", "p"], ___, "div.c3", ___}]],
+  428,
+  TimeConstraint -> 1,
+  TestID -> "perf-shape-ordered-context-entry-3000-siblings"
 ];

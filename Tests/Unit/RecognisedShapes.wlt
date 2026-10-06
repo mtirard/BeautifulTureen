@@ -520,3 +520,160 @@ TestCreate[
   True,
   TestID -> "shape-counted-sequence-not-counted"
 ];
+
+(* === Shape 6: ordered entries, {___, e1, ___, e2, e3, ___, C, ___} ===
+
+   Entries that each match one child, element patterns or context combinator
+   entries, with ___ or nothing between them and at each end. With recognition
+   off, WL's matcher tries every placement of the entries, so these too use
+   the trees with each list of children cut to its first 12. *)
+
+para = XMLPattern["p"];
+dv = XMLPattern["div"];
+spn = XMLPattern["span"];
+
+(* Element-pattern entries before and after the selected one, in blocks of
+   adjacent entries, anchored at either end or both, alternatives of element
+   patterns, several entries that match one child, blocks that hold the
+   selected entry, and entries that are not XML patterns but match one
+   child. *)
+$ordered = {
+  {___, para, ___, li, ___},
+  {___, para | spn, ___, li | dv, ___},
+  {___, para, li, ___, dv, ___},
+  {___, any, ___, any, ___, li, ___},
+  {___, li, ___, li, ___},
+  {___, li, li, ___, li},
+  {para, ___, li, ___},
+  {para, ___, li},
+  {___, dv, ___, li},
+  {li, li, ___, li, ___, li, li},
+  {___, para, ___, li, _, ___},
+  {___, li, ___, Except[para], ___},
+  {___, li, _, ___, Except[spn], Except[para], ___},
+  {_, ___, li, ___, XMLPattern[_, "classList" -> "a"], ___},
+  {___, XMLPattern[_, "classList" -> "a"], ___, XMLPattern[_, "classList" -> "b"], any, ___, XMLPattern[_, "classList" -> "c"]},
+  {___, para, ___, _?(XMLMatchQ[XMLPattern[_, "classList" -> "a"]]), ___, li, ___}};
+
+TestCreate[
+  sameEitherWay[Map[Function[t, Join @@ Table[Join[
+      XMLCases[t, Child[any, l]],
+      XMLCases[t, Descendant[dv, l /. li -> XMLPattern["li" | "p", "classList" -> "a" | "b"]]]],
+    {l, $ordered}]], $smallTrees]],
+  True,
+  TestID -> "shape-ordered-cases"
+];
+
+(* Context combinator entries: alone, beside an element pattern, next to the
+   selected entry, at an anchored end, two of them, and with a list stage of
+   their own. *)
+TestCreate[
+  With[{divWithSpan = Child[dv, spn], pInDiv = Descendant[dv, para]},
+  sameEitherWay[Map[Function[t, Join[
+      XMLCases[t, Child[any, {___, divWithSpan, ___, li, ___}]],
+      XMLCases[t, Child[any, {___, divWithSpan, ___, pInDiv, ___, any, ___}]],
+      XMLCases[t, Child[any, {___, para, ___, divWithSpan, li, ___}]],
+      XMLCases[t, Child[any, {divWithSpan, ___, li | para}]],
+      XMLCases[t, Child[any, {___, Child[dv, {___, spn, ___}], ___, li, _, ___}]],
+      XMLCases[t, Descendant[any, {___, divWithSpan, ___, Child[li | para, spn], ___}]]]], $smallTrees]]],
+  True,
+  TestID -> "shape-ordered-context-entries"
+];
+
+TestCreate[
+  sameEitherWay[Map[{
+    XMLFirstCase[#, Child[any, {___, para, ___, li, ___}], None],
+    XMLFirstCase[#, Descendant[dv, {___, Child[dv, spn], ___, XMLPattern[_, "classList" -> "b"], ___}], None],
+    XMLFirstCase[#, Child[any, {para, ___, li}], None]} &, $smallTrees]],
+  True,
+  TestID -> "shape-ordered-first-case"
+];
+
+TestCreate[
+  sameEitherWay[Map[{
+    deleted[#, Child[any, {___, para, ___, li, ___}]],
+    deleted[#, Child[any, {___, Child[dv, spn], ___, li, ___}]],
+    deleted[#, Descendant[dv, {___, spn, para, ___, XMLPattern[_, "classList" -> "c"]}]]} &, $smallTrees]],
+  True,
+  TestID -> "shape-ordered-delete-cases"
+];
+
+TestCreate[
+  sameEitherWay[Map[Join[
+    XMLCases[#, Child[any, {___, para, ___, li, ___}], 3],
+    XMLCases[#, Descendant[any, {___, Child[dv, spn], ___, any, ___}], 1]] &, $smallTrees]],
+  True,
+  TestID -> "shape-ordered-count"
+];
+
+TestCreate[
+  sameEitherWay[Map[Join[
+    XMLCases[#, Child[dv, {___, para, ___, c : li, ___}] :> Lookup[c[[2]], "id"]],
+    XMLCases[#, Descendant[any, {___, Child[dv, spn], ___, c : XMLPattern["p", "classList" -> "a" | "b"], ___}] :> {c[[1]], c[[2]]}],
+    XMLCases[#, Child[any, {para, ___, c : any, li, ___}] :> Lookup[c[[2]], "id"]]] &, $smallTrees]],
+  True,
+  TestID -> "shape-ordered-named-entry-in-body"
+];
+
+TestCreate[
+  sameEitherWay[Map[XMLCases[#,
+    Child[any, {___, para, ___, c : XMLPattern[_, {"class" -> k_, "id" -> i_}] /; StringLength[k] < StringLength[i] + 2, ___}] :> Lookup[c[[2]], "id"]] &, $smallTrees]],
+  True,
+  TestID -> "shape-ordered-two-step-match"
+];
+
+TestCreate[
+  sameEitherWay[Map[Join[
+    XMLCases[#, Child[XMLDocument[], {___, para, ___, c : XMLPattern["div" | "li"], ___}] :> Lookup[c[[2]], "id"]],
+    XMLCases[#, Child[XMLDocument[], {___, Child[dv, spn], ___, any, ___}], 2],
+    {XMLFirstCase[#, Child[XMLDocument[], {___, li, li, ___}], None]},
+    {deleted[#, Child[XMLDocument[], {___, para, ___, li}]]}] &, $smallLists]],
+  True,
+  TestID -> "shape-ordered-below-document"
+];
+
+(* A reading added by the option, in an element-pattern entry, a context
+   combinator entry and the selected entry. *)
+TestCreate[
+  sameEitherWay[Map[XMLCases[# /. ("class" -> v_) :> ("rel" -> v),
+    Descendant[any, {___, XMLPattern[_, "relList" -> "a"], ___, Child[dv, XMLPattern[_, "relList" -> "b"]], ___, XMLPattern["li" | "p", "relList" -> "c"], ___}],
+    "AttributeReadings" -> <|"rel" -> <||>|>] &, $smallTrees]],
+  True,
+  TestID -> "shape-ordered-attribute-readings"
+];
+
+(* The CSS selectors whose translations are ordered entries, positions moved
+   along a + or ~ run (ADR 0017), mean their translations, with recognition on
+   and off. *)
+$orderedSelectors = {"li:first-child + p", "p + li:last-child", "li:first-child ~ p", "p ~ li:last-child",
+  "li + li + li:first-child", "p:nth-child(2) + li"};
+
+TestCreate[
+  sameEitherWay[Map[Function[css, With[{r = XMLCases[#, css] & /@ $smallTrees},
+      If[r === (XMLCases[#, FromCSSSelector[css]] & /@ $smallTrees), r, $Failed]]],
+    $orderedSelectors]],
+  True,
+  TestID -> "shape-ordered-css-means-translation"
+];
+
+(* Just outside the shape, by a name on a context entry or inside a context
+   combinator entry, a Condition on the list, __ as a gap, or a position among
+   all children before the entries: the same results as a recognised spelling
+   of the same meaning, which select something on some tree. *)
+TestCreate[
+  With[{r = Map[Function[t, {
+    XMLCases[t, Child[any, {___, x : para, ___, li, ___}]],
+    XMLCases[t, Child[any, {___, para, ___, li, ___} /; True]],
+    XMLCases[t, Child[any, {___, para, __, li, ___}]],
+    XMLCases[t, Child[any, {PatternSequence[_, _]..., ___, para, ___, li, ___}]],
+    XMLCases[t, Child[any, {___, Child[x : dv, spn], ___, li, ___}]]}], $smallTrees]},
+    r === Map[Function[t, {
+    XMLCases[t, Child[any, {___, para, ___, li, ___}]],
+    XMLCases[t, Child[any, {___, para, ___, li, ___}]],
+    XMLCases[t, Child[any, {___, para, _, ___, li, ___}]],
+    XMLCases[t, Child[any, {___, para, ___, li, ___}]],
+    XMLCases[t, Child[any, {___, Child[dv, spn], ___, li, ___}]]}], $smallTrees] &&
+      AllTrue[Transpose[r], !FreeQ[#, _XMLElement] &]],
+  True,
+  TestID -> "shape-ordered-unrecognised-still-correct"
+];

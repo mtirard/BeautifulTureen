@@ -66,3 +66,17 @@ TestCreate[
   TimeConstraint -> 0.2,
   TestID -> "perf-shape-counted-from-end-5000-siblings"
 ];
+
+(* 5,000 siblings, h2, p and div in turn. *)
+$fiveThousandSections = XMLElement["body", {}, {XMLElement["section", {},
+  Table[XMLElement[{"h2", "p", "div"}[[Mod[i - 1, 3] + 1]], {}, {"x"}], {i, 5000}]]}];
+
+(* Shape 6, ordered element-pattern entries: each p after the first h2.
+   Measured at about 10 ms on a 2026 laptop, against about 1.2 s at 1,000
+   siblings and 9.9 s at 2,000 on the general matcher. *)
+TestCreate[
+  Length @ XMLCases[$fiveThousandSections, Child[XMLPattern["section"], {___, XMLPattern["h2"], ___, XMLPattern["p"], ___}]],
+  1667,
+  TimeConstraint -> 0.2,
+  TestID -> "perf-shape-ordered-5000-siblings"
+];
