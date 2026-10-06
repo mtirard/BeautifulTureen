@@ -736,7 +736,7 @@ listMethod[listStage[a_]] /; $recogniseShapes && a["Checks"] === {} :=
 listMethod[listStage[a_]] /; $recogniseShapes && a["Checks"] === {} :=
   With[{around = countsAround[a]}, amongMatching[Sequence @@ around, Sequence @@ twoStep[a["Pattern"][[2]]]] /; FreeQ[around, None]];
 (* Shape 6, ordered entries: the selected entry among entries that each match
-   one child, element patterns or context combinator entries, with ___ or
+   one child, by a pattern or as a context combinator entry, with ___ or
    nothing between two of them, and a ___ or nothing at each end; no entry but
    the selected one names anything, and there is no Condition or test on the
    list. Sibling[a, b] is {___, a, ___, b, ___}, Adjacent[a, b] {___, a, b,
@@ -783,6 +783,7 @@ orderedSide[es_List] :=
     With[{next = If[runs =!= {} && !gapsQ[First[runs]], First[runs], {}]},
       {placed[runs === {} || !gapsQ[Last[runs]], Reverse[Reverse /@ Select[If[next === {}, runs, Rest[runs]], !gapsQ[#] &]]], next}]];
 
+(* A run of ___ entries, a gap. *)
 gapsQ[run_] := MatchQ[run, {Verbatim[___] ..}];
 
 (* The children each side counts, and how many of them it allows, as
@@ -1436,18 +1437,18 @@ allowedCounts[lengths_, counts_] :=
    one match around it, and the blocks before and after it fit in order
    between it and the ends: each entry is tested once on each child. *)
 orderedIndices[before_, {left_, right_}, after_, par_, els_] :=
-  With[{len = Length[els], l = Length[left], r = Length[right],
+  With[{len = Length[els], nl = Length[left], nr = Length[right],
       marks = AssociationMap[testMarks[#, par, els] &, Union @@ Cases[{before, left, right, after}, {__tested}, Infinity]]},
-    With[{b = startBounds[before, marks, len], a = startBounds[after, Reverse /@ marks, len]},
-      With[{lo = Max[1, First[b] + l, len + 1 - r - Last[a]], hi = Min[len, Last[b] + l, len + 1 - r - First[a]]},
+    With[{fromStart = startBounds[before, marks, len], fromEnd = startBounds[after, Reverse /@ marks, len]},
+      With[{lo = Max[1, First[fromStart] + nl, len + 1 - nr - Last[fromEnd]], hi = Min[len, Last[fromStart] + nl, len + 1 - nr - First[fromEnd]]},
         Fold[Intersection,
           If[lo <= hi, Range[lo, hi], {}],
-          {If[l == 0, Nothing, blockStarts[left, marks, len] + l], If[r == 0, Nothing, blockStarts[right, marks, len] - 1]}]]]];
+          {If[nl == 0, Nothing, blockStarts[left, marks, len] + nl], If[nr == 0, Nothing, blockStarts[right, marks, len] - 1]}]]]];
 
 (* 1 at each child that an entry matches, and 0 elsewhere. The rest of a
    context combinator entry's chain runs only from a child its first stage
    matches. *)
-testMarks[tested[p_, None], _, els_] := Boole[MatchQ[p] /@ els];
+testMarks[tested[p_, None], _, els_] := matchMarks[p, els];
 testMarks[tested[p_, id_], par_, els_] := MapIndexed[Boole[MatchQ[#1, p] && contextQ[id, par, First[#2]]] &, els];
 
 (* The indices where each entry of a block matches the child at its offset. *)
@@ -1469,7 +1470,9 @@ startBounds[placed[anchored_, {first_, rest___}], marks_, len_] :=
    it does not fit. *)
 placedAfter[marks_, len_][end_, block_] := SelectFirst[blockStarts[block, marks, len], # > end &, Infinity] + Length[block] - 1;
 
-anchoredEnd[block_, marks_, len_] := If[MemberQ[Take[blockStarts[block, marks, len], UpTo[1]], 1], Length[block], Infinity];
+(* The last index a block takes at index 1, Infinity when it does not match
+   there. *)
+anchoredEnd[block_, marks_, len_] := If[First[blockStarts[block, marks, len], 0] == 1, Length[block], Infinity];
 
 copiedBy[x_, None] := x;
 copiedBy[x_, n_] := copied[x, n];

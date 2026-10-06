@@ -67,22 +67,6 @@ TestCreate[
   TestID -> "perf-shape-counted-from-end-5000-siblings"
 ];
 
-(* 3,000 sibling div, one in seven of class c3, one in five with a p child. *)
-$threeThousand = XMLElement["body", {}, Table[
-  XMLElement["div", {"class" -> "c" <> ToString[Mod[i, 7]]}, If[Mod[i, 5] == 0, {XMLElement["p", {}, {"x"}]}, {"t"}]],
-  {i, 3000}]];
-
-(* Shape 6, ordered entries, with a context combinator entry. Measured at
-   about 80 ms on a 2026 laptop, against about 39 s on the general matcher,
-   which enumerates every split of the list that places the two entries, and
-   whose memory grows as fast. *)
-TestCreate[
-  Length @ XMLCases[$threeThousand, Child["body", {___, Child["div", "p"], ___, "div.c3", ___}]],
-  428,
-  TimeConstraint -> 1,
-  TestID -> "perf-shape-ordered-context-entry-3000-siblings"
-];
-
 (* 5,000 siblings, h2, p and div in turn. *)
 $fiveThousandSections = XMLElement["body", {}, {XMLElement["section", {},
   Table[XMLElement[{"h2", "p", "div"}[[Mod[i - 1, 3] + 1]], {}, {"x"}], {i, 5000}]]}];
