@@ -80,3 +80,28 @@ TestCreate[
   TimeConstraint -> 0.2,
   TestID -> "perf-shape-ordered-5000-siblings"
 ];
+
+(* A rule body using the selected entry's name binds it from the selected
+   child, so it costs about what the query without a body does. Each test is
+   bounded in memory too: matching such a list again on WL's matcher, as the
+   body did before, grows about as the cube of the number of siblings, and a
+   time limit does not stop it. Before, the body with ordered entries took
+   0.26 s at 200 siblings and more than 30 s at 1,000, and with a position
+   among all children 1.1 s at 1,000. *)
+TestCreate[
+  MemoryConstrained[
+    Length @ XMLCases[$fiveThousandSections, Child[XMLPattern["section"], {___, XMLPattern["h2"], ___, c : XMLPattern["p"], ___}] :> c[[1]]],
+    2*^9, $Failed],
+  1667,
+  TimeConstraint -> 0.3,
+  TestID -> "perf-shape-ordered-body-5000-siblings"
+];
+
+TestCreate[
+  MemoryConstrained[
+    Length @ XMLCases[$fiveThousandSections, Child[XMLPattern["section"], {_, PatternSequence[_, _, _]..., c : XMLPattern["p"], ___}] :> c[[1]] /; True],
+    2*^9, $Failed],
+  1667,
+  TimeConstraint -> 0.3,
+  TestID -> "perf-shape-from-start-body-5000-siblings"
+];
