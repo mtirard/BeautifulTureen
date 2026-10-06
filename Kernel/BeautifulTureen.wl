@@ -711,10 +711,12 @@ contextEntries[query_, sown_] :=
      measured[block, view, measures, test, s, n]
                            {g___, b1, ..., s, h___} /; test where the
                            entries b each match one child and test is
-                           arithmetic over measures of the runs of children
-                           the names stand for: each child s matches after
-                           the block whose measures, each read from running
-                           totals and seen through view, pass test
+                           arithmetic over measures (counts, lengths,
+                           matches) of runs of the list's names: each child
+                           s matches that follows the block and whose
+                           measures, read from running totals over the
+                           children as view gives them to the test, pass
+                           test
      generalMatcher[r, n]  any other list: the children r's matches select
    where n is the number of copies of each child's attributes the two-step
    match needs (solvable), or None. *)
@@ -816,9 +818,13 @@ splitParts[a_, seq_, block_, s_] :=
   With[{own = DeleteCases[Delete[seq, -2], None]},
     With[{test = restoredTest[Extract[a["Pattern"], {2}, Hold]]},
       splitTest[seq, block, test, namesPattern[Join[seq, boundNames[$methodQuery["Stages"]]]]] /;
-        test =!= None && FreeQ[{block, s, DeleteCases[$methodQuery["Stages"], Verbatim[listStage[a]]], $methodQuery["Body"], $methodQuery["Conditions"]},
+        test =!= None && FreeQ[{block, s, otherStages[$methodQuery["Stages"], listStage[a]], $methodQuery["Body"], $methodQuery["Conditions"]},
           namesPattern[own]]]];
 splitParts[___] := None;
+
+(* The stages but the first that is ls: an identical stage elsewhere in the
+   chain is another stage, whose names the list's would have to equal. *)
+otherStages[stages_, ls_] := Delete[stages, FirstPosition[stages, Verbatim[ls], {}, {1}, Heads -> False]];
 
 (* The names the stages bind, outside the tests in them, which bind nothing
    the stages see. *)
@@ -859,8 +865,9 @@ testFunction[vars_, held_Hold] := Function @@ Join[Hold[vars], held];
 
 $measureForms = HoldPattern[Count[{___Symbol}, _]] | HoldPattern[Length[{___Symbol}]] | HoldPattern[MatchQ[{___Symbol}, _List]];
 
-(* Integers, the variables, and the heads of arithmetic, comparison and logic;
-   a Mod by a nonzero integer, so that no message differs. *)
+(* Integers, the variables, and the heads of arithmetic, comparison and logic,
+   with Hold, which holds the test; a Mod by a nonzero integer, so that no
+   message differs. *)
 arithmeticQ[rest_, vars_] :=
   Complement[Cases[rest, s_Symbol :> Hold[s], {0, Infinity}, Heads -> True], Hold /@ Join[$arithmeticHeads, vars]] === {} &&
     FreeQ[rest, x_ /; AtomQ[Unevaluated[x]] && !MatchQ[Unevaluated[x], _Symbol | _Integer]] &&
@@ -1639,8 +1646,14 @@ anchoredEnd[block_, marks_, len_] := If[First[blockStarts[block, marks, len], 0]
 measuredIndices[block_, view_, measures_, test_, els_] :=
   With[{js = blockEnds[block, els]},
     Which[js === {}, {}, measures === {}, If[TrueQ[test[]], js, {}], True,
-      With[{seen = If[FreeQ[measures, _countIn | _matchIn], els, view /@ els]},
-        Pick[js, TrueQ /@ MapThread[test, measureValues[#, js, els, seen] & /@ measures]]]]];
+      With[{marks = measureMarks[measures, view, els]},
+        Pick[js, TrueQ /@ MapThread[test, measureValues[#, js, els, marks] & /@ measures]]]]];
+
+(* 1 at each child that a pattern a measure tests matches, as the test sees
+   the child, and 0 elsewhere, by pattern: each tested once on each child. *)
+measureMarks[measures_, view_, els_] :=
+  With[{ps = Union[Cases[measures, countIn[_, t_] :> t], Join @@ Cases[measures, matchIn[_, es_] :> DeleteCases[es, Verbatim[___]]]]},
+    If[ps === {}, <||>, With[{seen = view /@ els}, AssociationMap[matchMarks[#, seen] &, ps]]]];
 
 (* The indices j such that the block matches the children just before j. *)
 blockEnds[{}, els_] := Range[Length[els]];
@@ -1658,8 +1671,8 @@ spanLast[c_, js_, _] := js + c;
 
 (* The values of a measure for each index js of the selected child. *)
 measureValues[lengthIn[{lo_, hi_}], js_, els_, _] := spanLast[hi, js, Length[els]] - spanFirst[lo, js] + 1;
-measureValues[countIn[{lo_, hi_}, t_], js_, els_, seen_] :=
-  With[{totals = Prepend[Accumulate[matchMarks[t, seen]], 0]},
+measureValues[countIn[{lo_, hi_}, t_], js_, els_, marks_] :=
+  With[{totals = Prepend[Accumulate[marks[t]], 0]},
     totals[[spanLast[hi, js, Length[els]] + 1]] - totals[[spanFirst[lo, js]]]];
 measureValues[tagCountIn[{lo_, hi_}, c_], js_, els_, _] :=
   With[{tags = First /@ els},
@@ -1667,9 +1680,9 @@ measureValues[tagCountIn[{lo_, hi_}, c_], js_, els_, _] :=
       With[{ranks = Normal @ SparseArray[Flatten[Thread[# -> Range[0, Length[#] - 1]] & /@ groups], len],
           sizes = Normal @ SparseArray[Flatten[Thread[# -> Length[#]] & /@ groups], len]},
         tagsUpTo[hi, c, js, tags, ranks, sizes] - If[lo === None, 0, tagsUpTo[lo - 1, c, js, tags, ranks, sizes]]]]];
-measureValues[matchIn[{None, hi_}, es_], js_, els_, seen_] := runFlags[es, seen][[spanLast[hi, js, Length[els]] + 1]];
-measureValues[matchIn[{lo_, None}, es_], js_, els_, seen_] :=
-  runFlags[Reverse[es], Reverse[seen]][[Length[els] - spanFirst[lo, js] + 2]];
+measureValues[matchIn[{None, hi_}, es_], js_, els_, marks_] := runFlags[es, marks, Length[els]][[spanLast[hi, js, Length[els]] + 1]];
+measureValues[matchIn[{lo_, None}, es_], js_, els_, marks_] :=
+  runFlags[Reverse[es], Reverse /@ marks, Length[els]][[Length[els] - spanFirst[lo, js] + 2]];
 
 (* The number of children up to index j + e (or all of them, for None) with
    the tag of the child at j + c: ranks counts those before a child, sizes all
@@ -1680,19 +1693,18 @@ tagsUpTo[e_, c_, js_, tags_, ranks_, _] :=
   With[{m = js + c, d = e - c},
     ranks[[m]] + If[d >= 0, 1, -1] Total[Table[Boole[MapThread[SameQ, {tags[[m]], tags[[m + t]]}]], {t, If[d >= 0, Range[0, d], Range[d + 1, -1]]}]]];
 
-(* For each L from 0 to the number of children, whether the first L of them,
-   as the test sees them, match {es}, where each entry is ___ or matches one
+(* For each L from 0 to len, whether the first L of len children match {es},
+   from each entry's marks on them, where each entry is ___ or matches one
    child: the blocks between the ___ are placed at their earliest, as for
    shape 6, and a last block with no ___ after it ends at L. *)
-runFlags[{}, seen_] := Thread[Range[0, Length[seen]] == 0];
-runFlags[es_, seen_] :=
-  With[{len = Length[seen], blocks = Select[SplitBy[es, MatchQ[Verbatim[___]]], !gapsQ[#] &],
+runFlags[{}, _, len_] := Thread[Range[0, len] == 0];
+runFlags[es_, marks_, len_] :=
+  With[{blocks = Select[SplitBy[es, MatchQ[Verbatim[___]]], !gapsQ[#] &],
       atStart = !MatchQ[First[es], Verbatim[___]], atEnd = !MatchQ[Last[es], Verbatim[___]]},
-    With[{marks = AssociationMap[matchMarks[#, seen] &, Union @@ blocks]},
-      If[!atEnd,
-        Thread[Range[0, len] >= First[startBounds[placed[atStart, blocks], marks, len]] - 1],
-        With[{last = Last[blocks], bounds = startBounds[placed[atStart, Most[blocks]], marks, len]},
-          Normal @ SparseArray[Thread[(Select[blockStarts[last, marks, len], Between[bounds]] + Length[last]) -> True], len + 1, False]]]]];
+    If[!atEnd,
+      Thread[Range[0, len] >= First[startBounds[placed[atStart, blocks], marks, len]] - 1],
+      With[{last = Last[blocks], bounds = startBounds[placed[atStart, Most[blocks]], marks, len]},
+        Normal @ SparseArray[Thread[(Select[blockStarts[last, marks, len], Between[bounds]] + Length[last]) -> True], len + 1, False]]]];
 
 copiedBy[x_, None] := x;
 copiedBy[x_, n_] := copied[x, n];

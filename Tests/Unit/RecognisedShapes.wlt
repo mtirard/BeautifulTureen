@@ -714,25 +714,19 @@ TestCreate[
 ];
 
 TestCreate[
-  sameEitherWay[Map[Function[t, {
-    XMLFirstCase[t, ".a:nth-of-type(2)", None], XMLFirstCase[t, ":nth-last-of-type(2)", None],
-    XMLFirstCase[t, "p + li:nth-of-type(2)", None], XMLFirstCase[t, "li:nth-last-of-type(2) + p", None]}], $trees]],
+  sameEitherWay[Map[Function[t, XMLFirstCase[t, #, None] & /@ $splitSelectors], $trees]],
   True,
   TestID -> "shape-split-first-case"
 ];
 
 TestCreate[
-  sameEitherWay[Map[Function[t, {
-    deleted[t, ".a:nth-of-type(2)"], deleted[t, "*:last-of-type"], deleted[t, "p ~ li:nth-child(3)"],
-    deleted[t, ".a:nth-last-of-type(2) + p"]}], $trees]],
+  sameEitherWay[Map[Function[t, deleted[t, #] & /@ $splitSelectors], $trees]],
   True,
   TestID -> "shape-split-delete-cases"
 ];
 
 TestCreate[
-  sameEitherWay[Map[Function[t, Join[
-    XMLCases[t, ":nth-of-type(2)", 3], XMLCases[t, ":nth-last-child(1 of .a):nth-last-child(2)", 1],
-    XMLCases[t, "p + li:nth-last-of-type(2)", 2]]], $trees]],
+  sameEitherWay[Map[Function[t, Join @@ (Join[XMLCases[t, #, 1], XMLCases[t, #, 3]] & /@ $splitSelectors)], $trees]],
   True,
   TestID -> "shape-split-count"
 ];
@@ -783,19 +777,22 @@ TestCreate[
 TestCreate[
   sameEitherWay[Map[Join[
     XMLCases[#, Child[XMLDocument[], {g___, c : XMLPattern["div" | "p"], h___} /; Count[{h}, XMLElement[First[c], _, _]] + 1 == 2] :> Lookup[c[[2]], "id"]],
-    XMLCases[#, ":nth-of-type(2)"], XMLCases[#, "li:nth-last-of-type(2) + p"],
+    Join @@ Function[css, XMLCases[#, css]] /@ $splitSelectors,
     {XMLFirstCase[#, "*:last-of-type", None]}, {deleted[#, ".a:nth-of-type(2)"]}] &, $lists]],
   True,
   TestID -> "shape-split-below-document"
 ];
 
 (* A reading added by the option, in the selected entry and in a test inside
-   the Condition, which sees the original elements. *)
+   the Condition, which sees the original elements, and the selectors with
+   the option given. *)
 TestCreate[
-  sameEitherWay[Map[XMLCases[# /. ("class" -> v_) :> ("rel" -> v),
-    Descendant[any, {g___, c : XMLPattern["li" | "p", "relList" -> "a"], h___} /;
-      Count[{g}, XMLElement[First[c], _, _]] + 1 == 2 || Count[{h}, _?(XMLMatchQ[XMLPattern[_, "relList" -> "b"]])] == 1],
-    "AttributeReadings" -> <|"rel" -> <||>|>] &, $trees]],
+  sameEitherWay[Map[Join[
+    XMLCases[# /. ("class" -> v_) :> ("rel" -> v),
+      Descendant[any, {g___, c : XMLPattern["li" | "p", "relList" -> "a"], h___} /;
+        Count[{g}, XMLElement[First[c], _, _]] + 1 == 2 || Count[{h}, _?(XMLMatchQ[XMLPattern[_, "relList" -> "b"]])] == 1],
+      "AttributeReadings" -> <|"rel" -> <||>|>],
+    Join @@ Function[css, XMLCases[#, css, "AttributeReadings" -> <|"rel" -> <||>|>]] /@ $splitSelectors] &, $trees]],
   True,
   TestID -> "shape-split-attribute-readings"
 ];
