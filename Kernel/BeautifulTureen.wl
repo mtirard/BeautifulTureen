@@ -826,8 +826,8 @@ splitParts[___] := None;
    chain is another stage, whose names the list's would have to equal. *)
 otherStages[stages_, ls_] := Delete[stages, FirstPosition[stages, Verbatim[ls], {}, {1}, Heads -> False]];
 
-(* The names the stages bind, outside the tests in them, which bind nothing
-   the stages see. *)
+(* The names the stages, or a pattern, bind, outside the tests in them, which
+   bind nothing the stages see. *)
 boundNames[stages_] := namesIn[stages //. {listStage[a_] :> a["Pattern"], Verbatim[PatternTest][p_, _] :> p, Verbatim[Condition][p_, _] :> p}];
 
 namesPattern[names_] := Alternatives @@ (HoldPattern @@@ DeleteCases[names, None]);
@@ -1296,11 +1296,18 @@ copiedRule[lhs_, body_Hold] :=
 (* Each name that binds an element is renamed, and is the uncopied element in
    each test and body that can see it. When the query names a list key, the
    name was already renamed for materialisation; see wrapBinds for how the two
-   compose. *)
+   compose.
+
+   A test or body is restored for every renamed name its left-hand side binds.
+   Whether a name binds elements is decided once, over the whole pattern: a
+   name on a list stage's entry, g in {g___, c, ___} /; Length[{g}] == 1,
+   binds them only as an entry of the listSlot it is in, which the list's own
+   Condition does not see, so deciding again from the Condition's left-hand
+   side would leave g renamed in the copy and unbound in the test (issue #39). *)
 renaming[p_] := Association[# -> freshSymbol[] & /@ elementNames[p]];
 
 restored[l_, held_Hold] :=
-  wrapBinds[{#, $renamed[#], uncopied} & /@ Select[elementNames[l], KeyExistsQ[$renamed, #] &], held];
+  wrapBinds[{#, $renamed[#], uncopied} & /@ Select[boundNames[l], KeyExistsQ[$renamed, #] &], held];
 
 copiedIn[Verbatim[Pattern][s_, p_]] /; KeyExistsQ[$renamed, Hold[s]] :=
   With[{f = $renamed[Hold[s]]}, namedPattern[f, copiedIn[p]]];

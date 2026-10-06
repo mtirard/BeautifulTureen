@@ -281,6 +281,74 @@ TestCreate[
   TestID -> "list-conditions"
 ];
 
+(* A condition on the list sees its names when the selected entry names two
+   attribute values, which the two-step match binds over copied children
+   (issue #39). *)
+$classed = XMLElement["ul", {}, Function[{c, i}, XMLElement["li", {"class" -> c, "id" -> i}, {}]] @@@
+  {{"a", "1"}, {"b", "2"}, {"a", "3"}, {"b", "4"}}];
+twoNamed = XMLPattern["li", {"class" -> k_, "id" -> i_}];
+
+TestCreate[
+  {XMLCases[$classed, Child[ul, {g___, twoNamed, ___} /; Length[{g}] == 1] :> i],
+   XMLCases[$classed, Child[ul, {g___, twoNamed, ___} /; Length[{g}] == 1 && k == "a"] :> i],
+   XMLCases[$classed, Child[ul, {g___, twoNamed, ___} /; Length[{g}] >= 1 && k == "a"] :> i],
+   XMLCases[$classed, Child[ul, {g___, twoNamed, h___} /; Length[{h}] == 1] :> i],
+   XMLCases[$classed, Child[ul, {g___, twoNamed /; k == "b", ___} /; Length[{g}] > 1] :> i],
+   XMLCases[$classed, Child[ul, {g___, twoNamed, ___} /; MatchQ[{g}, {___, XMLElement[_, {"class" -> "b", ___}, _]}]] :> i],
+   XMLCases[$classed, Child[ul, {g___, twoNamed, ___} /; Length[{g}] == 1] :> i, 1],
+   XMLCases[$classed, Child[ul, {g___, twoNamed, ___} /; Length[{g}] == 1] :> i, "AttributeReadings" -> <|"rel" -> <||>|>],
+   XMLFirstCase[$classed, Child[ul, {g___, twoNamed, ___} /; Length[{g}] == 2] :> i],
+   XMLFirstCase[$classed, Child[ul, {g___, twoNamed, ___} /; Length[{g}] == 1 && k == "a"] :> i, None],
+   Lookup[#[[2]], "id"] & /@ Last @ XMLDeleteCases[$classed, Child[ul, {g___, twoNamed, ___} /; Length[{g}] == 1]]},
+  {{"2"}, {}, {"3"}, {"3"}, {"4"}, {"3"}, {"2"}, {"2"}, "3", None, {"1", "3", "4"}},
+  TestID -> "list-condition-two-named-values"
+];
+
+(* The same against WL alone, on small random trees: a child is selected
+   where MatchQ holds for its parent's element children and the list written
+   over plain XMLElement patterns, with the selected entry at the child's
+   index. Each case is {list, plain}, plain[j] the plain list at index j, and
+   each selects something on some tree. *)
+$smallTrees = Replace[#, XMLElement[tag_, as_, c_] :> XMLElement[tag, as, Take[c, UpTo[12]]], {0, Infinity}] & /@
+  randomTrees[20261006, 12];
+
+twoNamedAny = XMLPattern[_, {"class" -> k_, "id" -> i_}];
+SetAttributes[atIndex, HoldAll];
+atIndex[l_, test_] := Function[j, l /; Length[{g}] + 1 == j && test];
+
+$plainCases = {
+  {{g___, twoNamedAny, ___} /; Length[{g}] == 1,
+   atIndex[{g___, XMLElement[_, {OrderlessPatternSequence["class" -> k_, "id" -> i_, ___]}, _], ___}, Length[{g}] == 1]},
+  {{g___, twoNamedAny, ___} /; OddQ[Length[{g}]] && StringContainsQ[k, "a"],
+   atIndex[{g___, XMLElement[_, {OrderlessPatternSequence["class" -> k_, "id" -> i_, ___]}, _], ___},
+     OddQ[Length[{g}]] && StringContainsQ[k, "a"]]},
+  {{g___, twoNamedAny, h___} /; Length[{h}] < Length[{g}],
+   atIndex[{g___, XMLElement[_, {OrderlessPatternSequence["class" -> k_, "id" -> i_, ___]}, _], h___}, Length[{h}] < Length[{g}]]},
+  {{g___, twoNamedAny, ___} /; MatchQ[{g}, {___, XMLElement["p", {___, "class" -> _, ___}, _], ___}],
+   atIndex[{g___, XMLElement[_, {OrderlessPatternSequence["class" -> k_, "id" -> i_, ___]}, _], ___},
+     MatchQ[{g}, {___, XMLElement["p", {___, "class" -> _, ___}, _], ___}]]},
+  {{g___, twoNamedAny /; StringLength[i] > 1, ___} /; EvenQ[Length[{g}]],
+   atIndex[{g___, XMLElement[_, {OrderlessPatternSequence["class" -> k_, "id" -> i_, ___]}, _] /; StringLength[i] > 1, ___},
+     EvenQ[Length[{g}]]]},
+  {{g___, c : twoNamedAny, ___} /; Count[{g}, XMLElement[First[c], _, _]] + 1 == 2,
+   atIndex[{g___, c : XMLElement[_, {OrderlessPatternSequence["class" -> k_, "id" -> i_, ___]}, _], ___},
+     Count[{g}, XMLElement[First[c], _, _]] + 1 == 2]}};
+
+plainSelected[tree_, plain_] :=
+  Sort @ ids[Join @@ Cases[tree, XMLElement[_, _, c_] :>
+    With[{els = Cases[c, _XMLElement]}, els[[Select[Range[Length[els]], MatchQ[els, plain[#]] &]]]], {0, Infinity}]];
+
+TestCreate[
+  MemoryConstrained[TimeConstrained[
+    Map[Function[case, With[{l = case[[1]]},
+        With[{xml = Sort @ ids @ XMLCases[#, Child[any, l]] & /@ $smallTrees},
+          {xml === (plainSelected[#, case[[2]]] & /@ $smallTrees), xml =!= ConstantArray[{}, Length[$smallTrees]]}]]],
+      $plainCases],
+    120], 2*^9],
+  ConstantArray[{True, True}, Length[$plainCases]],
+  TestID -> "list-condition-two-named-values-plain-wl"
+];
+
 (* === Names === *)
 
 TestCreate[
