@@ -316,6 +316,18 @@ TestCreate[
   TestID -> "cond-cross-field-list-key-and-element-name"
 ];
 
+(* The same, with each name seen by only one of the test and the body, or only
+   inside held code. *)
+TestCreate[
+  With[{t = XMLElement["div", {}, {
+      XMLElement["p", {"class" -> "a b", "id" -> "b"}, {"1"}],
+      XMLElement["p", {"class" -> "a b", "id" -> "c"}, {"2"}]}]},
+    {XMLCases[t, (e : XMLPattern["p", {"classList" -> c_, "id" -> i_}]) /; MemberQ[c, i] :> e],
+     XMLCases[t, (e : XMLPattern["p", {"classList" -> c_, "id" -> i_}]) /; ReleaseHold[Hold[e]][[2, 2]] === ("id" -> "c") :> i]}],
+  {{XMLElement["p", {"class" -> "a b", "id" -> "b"}, {"1"}]}, {"c"}},
+  TestID -> "cond-cross-field-names-used-apart"
+];
+
 TestCreate[
   XMLCases[$cross, Child[XMLPattern["div"], $crossPattern] /; StringContainsQ[h, d]][[All, 3]],
   {{"x"}},

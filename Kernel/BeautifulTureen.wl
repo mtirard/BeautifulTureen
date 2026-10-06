@@ -779,9 +779,19 @@ reapBinds[expr_] :=
    With[{e$ = uncopied[e$$]}, With[{e = strip[e$]}, body]]. The order is
    required: strip removes token lists from an attribute list, not from a list
    of copies of one, so an element is uncopied before it is stripped. Issue #3
-   proposes one module for both renamings. *)
-wrapBinds[{}, held_Hold] := held;
+   proposes one module for both renamings.
+
+   Only the names written in held are restored, also those inside held code
+   within it: strip is linear in an element's subtree, and a list stage's test
+   runs once per split of the list, often seeing none of the siblings after the
+   selected one. With replaces a name only where it is written, so a name
+   reached otherwise, as Symbol["e"], never saw the restored value, and leaving
+   it out changes nothing. *)
 wrapBinds[binds_, held_Hold] :=
+  withBinds[Select[binds, !FreeQ[held, Replace[First[#], Hold[s_] :> HoldPattern[s]]] &], held];
+
+withBinds[{}, held_Hold] := held;
+withBinds[binds_, held_Hold] :=
   With[{spec = Replace[
       Join @@ (Replace[#, {Hold[s_], fresh_, inverse_} :> Hold[s = restore[inverse, fresh]]] & /@ binds),
       Hold[sets___] :> Hold[{sets}]]},

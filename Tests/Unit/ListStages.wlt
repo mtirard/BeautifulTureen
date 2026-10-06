@@ -210,6 +210,23 @@ TestCreate[
   TestID -> "list-name-at-two-entries"
 ];
 
+(* A test or a body that sees only some of the names, with a list key named:
+   each name it sees is the original elements, also inside held code, and the
+   names it does not see change nothing. *)
+TestCreate[
+  {ids @ XMLCases[$five, Child[ul, {g1___, c : XMLPattern["li", "classList" -> "a"], g2___} /;
+      {g1} === {XMLElement["li", {"id" -> "1"}, {"a"}], XMLElement["li", {"class" -> "a", "id" -> "2"}, {"b"}],
+        XMLElement["li", {"id" -> "3"}, {"c"}]}]],
+   ids @ XMLCases[$five, Child[ul, {g1___, c : XMLPattern["li", "classList" -> "a"], g2___} /; c[[2]] === {"class" -> "a", "id" -> "4"}]],
+   ids @ XMLCases[$five, Child[ul, {g1___, c : XMLPattern["li", "classList" -> "a"], g2___} /; True]],
+   ids @ XMLCases[$five, Child[ul, {g1___, c : XMLPattern["li", "classList" -> "a"], g2___} /;
+      ReleaseHold[Hold[c]] === XMLElement["li", {"class" -> "a", "id" -> "2"}, {"b"}]]],
+   XMLCases[$five, Child[ul, {g1___, c : XMLPattern["li", "classList" -> "a"], g2___} /; Length[{g1}] == 3] :> ids[{g2}]],
+   XMLCases[$five, Child[ul, {g1___, XMLPattern["li", "classList" -> "a"], g2___}] :> ids[{g2}] /; Length[{g2}] == 3]},
+  {{"4"}, {"4"}, {"2", "4"}, {"2"}, {{"5"}}, {{"3", "4", "5"}}},
+  TestID -> "list-names-a-test-does-not-see"
+];
+
 (* === Which match binds === *)
 
 TestCreate[

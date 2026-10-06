@@ -148,6 +148,20 @@ TestCreate[
   TestID -> "alts-unbound-attribute-condition"
 ];
 
+(* A Condition that sees only the bound name, or only the unbound one *)
+TestCreate[
+  {XMLCases[$treeUnbound,
+     ((e : XMLPattern["p", "classList" -> "x"]) | s : XMLPattern["section"]) /; {e} === {XMLElement["p", {"class" -> "x"}, {"a"}]}],
+   XMLCases[$treeUnbound,
+     ((e : XMLPattern["p", "classList" -> "x"]) | s : XMLPattern["section"]) /; {s} === {} :> {e}],
+   XMLCases[$treeUnbound,
+     (Child[XMLPattern["body"], e : XMLPattern["p", "classList" -> "x"]] | Child[XMLPattern["body"], s : XMLPattern["section"]]) /;
+       Length[{s}] == 0]},
+  {{XMLElement["p", {"class" -> "x"}, {"a"}]}, {{XMLElement["p", {"class" -> "x"}, {"a"}]}},
+   {XMLElement["p", {"class" -> "x"}, {"a"}]}},
+  TestID -> "alts-unbound-condition-sees-one-name"
+];
+
 TestCreate[
   XMLCases[$treeUnbound,
     (XMLPattern["p", "classList" -> "x"] | s : XMLPattern["section"]) :> {s} /; Length[{s}] == 0],
