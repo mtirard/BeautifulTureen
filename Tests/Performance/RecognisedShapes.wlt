@@ -106,3 +106,56 @@ TestCreate[
   TimeConstraint -> 0.3,
   TestID -> "perf-shape-from-start-body-5000-siblings"
 ];
+
+(* 5,000 siblings, li and p in turn, one in three of class x. *)
+$fiveThousandClassed = XMLElement["body", {}, {XMLElement["ul", {},
+  Table[XMLElement[If[OddQ[i], "li", "p"], If[Mod[i, 3] == 0, {"class" -> "x"}, {}], {"x"}], {i, 5000}]]}];
+
+(* Shape 7, split conditions: the counted positions the translator writes as
+   a Condition on the list. Measured at about 25 to 40 ms on a 2026 laptop.
+   The general matcher tests the Condition at each child, building the
+   siblings before it each time, and grows as the square of the number of
+   siblings: about 740 ms for :nth-last-of-type(2) at 5,000, and at 1,000
+   0.54 s for .x:nth-of-type(2) and 30 ms for p + li:nth-of-type(2). *)
+TestCreate[
+  MemoryConstrained[Length @ XMLCases[$fiveThousandClassed, ".x:nth-of-type(2)"], 2*^9, $Failed],
+  1,
+  TimeConstraint -> 0.25,
+  TestID -> "perf-shape-split-of-type-5000-siblings"
+];
+
+TestCreate[
+  MemoryConstrained[Length @ XMLCases[$fiveThousandClassed, ":nth-last-of-type(2)"], 2*^9, $Failed],
+  2,
+  TimeConstraint -> 0.25,
+  TestID -> "perf-shape-split-last-of-type-5000-siblings"
+];
+
+TestCreate[
+  MemoryConstrained[Length @ XMLCases[$fiveThousandClassed, "p + li:nth-of-type(2)"], 2*^9, $Failed],
+  1,
+  TimeConstraint -> 0.25,
+  TestID -> "perf-shape-split-adjacent-5000-siblings"
+];
+
+(* Each other form the translator writes as a split condition is recognised,
+   so that a translator change that stops it being recognised fails here.
+   Each was measured at 20 to 55 ms on a 2026 laptop, against 20 to 45 ms at
+   1,000 siblings on the general matcher, so about 0.5 to 1.1 s at 5,000;
+   :nth-child(1 of .x):nth-child(3), which tests .x with XMLMatchQ, at about
+   120 ms, against 2.4 s at 1,000 siblings on the general matcher. *)
+$splitForms = {
+  {"*:first-of-type", 3},                       (* typeless -of-type *)
+  {":nth-child(1 of .x):nth-child(3)", 1},      (* two positions on one side *)
+  {"p:nth-of-type(2):nth-child(4)", 1},
+  {"p ~ li:nth-child(3)", 1},                   (* a position in a ~ run *)
+  {"p + li + p:nth-of-type(2)", 1},             (* in a longer + run *)
+  {"li:nth-of-type(2) + p", 1},                 (* on a compound before the last *)
+  {"li:nth-last-of-type(2) + p", 1},
+  {".x:nth-of-type(2) + p", 1}};
+
+Function[{css, n, id}, TestCreate[
+  MemoryConstrained[Length @ XMLCases[$fiveThousandClassed, css], 2*^9, $Failed],
+  n,
+  TimeConstraint -> If[StringContainsQ[css, " of "], 0.4, 0.25],
+  TestID -> id]] @@@ MapIndexed[Append[#1, "perf-shape-split-form-" <> ToString[First[#2]] <> "-5000-siblings"] &, $splitForms];
