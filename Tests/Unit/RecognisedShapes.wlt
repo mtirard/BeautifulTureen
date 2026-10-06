@@ -508,3 +508,15 @@ TestCreate[
   True,
   TestID -> "shape-counted-unrecognised-still-correct"
 ];
+
+(* A t that can match a sequence of children is not counted once per child:
+   these lists run on the general matcher, with the results it gives. *)
+TestCreate[
+  With[{p = XMLPattern["p"]},
+  sameEitherWay[Map[Function[t, Join[
+    XMLCases[t, Child[any, {Except[__]..., PatternSequence[__, Except[__]...], li, ___}]],
+    XMLCases[t, Child[any, {Except[p | __]..., PatternSequence[p | __, Except[p | __]...], li, ___}]],
+    XMLCases[t, Child[any, {Except[p..]..., PatternSequence[p.., Except[p..]...], li, ___}]]]], $smallTrees]]],
+  True,
+  TestID -> "shape-counted-sequence-not-counted"
+];

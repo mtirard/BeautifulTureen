@@ -695,7 +695,7 @@ contextEntries[query_, sown_] :=
                            after it as the lengths before and after allow
      amongMatching[counted[t1, before], counted[t2, after], s, n]
                            {Except[t1] ..., PatternSequence[t1, Except[t1]
-                           ...] ..., s, ...} and the mirror after s: each
+                           ...] ..., s, ___} and the mirror after s: each
                            child s matches with as many children that match
                            t1 before it, and t2 after it, as the lengths
                            allow (t = _ counts all children)
@@ -732,30 +732,38 @@ listMethod[ls_] := generalMatcher @@ listMatcher[ls];
 (* The children each side counts, and how many of them it allows, as
    counted[t, lengths], with t = _ for all children; None when a side is not
    of that form. *)
-countsAround[a_] :=
-  Replace[a["Pattern"], {
-    {Verbatim[Pattern][a["Index"], before_], _, after___} :> {countedOf[spliced[{before}]], countedOf[spliced[mirrored[{after}]]]},
-    _ -> None}];
+countsAround[a_] := Replace[entriesAround[a], {b_List, f_List} :> {countedOf[b], countedOf[spliced[mirrored[f]]]}];
 
 countedOf[es_] := With[{l = lengthsOf[PatternSequence @@ es]}, counted[_, l] /; l =!= None];
 countedOf[{Verbatim[RepeatedNull][Verbatim[Except][t_]], es___}] /; countableQ[t] :=
-  With[{l = lengthsOf[PatternSequence @@ countedUnits[{es}, t]]}, counted[t, l] /; l =!= None];
+  With[{l = lengthsOf[PatternSequence @@ unitsAsBlanks[{es}, t]]}, counted[t, l] /; l =!= None];
 countedOf[_] := None;
 
 (* The entries after the leading Except[t] ..., with each unit t, Except[t] ...
    as a _, so that lengthsOf counts the children that match t; a None in place
    of an entry of another form. *)
-countedUnits[{}, _] := {};
-countedUnits[{t_, Verbatim[RepeatedNull][Verbatim[Except][t_]], es___}, t_] := Prepend[countedUnits[{es}, t], _];
-countedUnits[{Verbatim[Except][Verbatim[_]], es___}, t_] := Prepend[countedUnits[{es}, t], Except[_]];
-countedUnits[{(h : Repeated | RepeatedNull)[Verbatim[PatternSequence][ps__], r___], es___}, t_] :=
-  Prepend[countedUnits[{es}, t], h[PatternSequence @@ countedUnits[{ps}, t], r]];
-countedUnits[_, _] := {None};
+unitsAsBlanks[{}, _] := {};
+unitsAsBlanks[{t_, Verbatim[RepeatedNull][Verbatim[Except][t_]], es___}, t_] := Prepend[unitsAsBlanks[{es}, t], _];
+unitsAsBlanks[{Verbatim[Except][Verbatim[_]], es___}, t_] := Prepend[unitsAsBlanks[{es}, t], Except[_]];
+unitsAsBlanks[{(h : Repeated | RepeatedNull)[Verbatim[PatternSequence][ps__], r___], es___}, t_] :=
+  Prepend[unitsAsBlanks[{es}, t], h[PatternSequence @@ unitsAsBlanks[{ps}, t], r]];
+unitsAsBlanks[_, _] := {None};
 
-(* A pattern counted on its own, once per child: it binds no name, has no
-   Condition that could see one, and needs no two-step match. A test's
-   function is not a pattern, so names in it bind nothing. *)
-countableQ[t_] := FreeQ[t //. Verbatim[PatternTest][p_, f_ /; f =!= None] :> PatternTest[p, None], Verbatim[Pattern] | Verbatim[Condition]] && !twoStepQ[t];
+(* A pattern counted on its own, once per child: it matches one child, not a
+   sequence of them, binds no name, has no Condition that could see one, and
+   needs no two-step match. A test's function is not a pattern, so names in
+   it bind nothing. *)
+countableQ[t_] :=
+  oneChildQ[t] && FreeQ[t //. Verbatim[PatternTest][p_, _] :> p, Verbatim[Pattern] | Verbatim[Condition]] && !twoStepQ[t];
+
+(* Whether a pattern matches one element of a list, not a sequence: the
+   sequence heads count at its top, outside an element pattern's parts. *)
+oneChildQ[Verbatim[Alternatives][ps___]] := AllTrue[{ps}, oneChildQ];
+oneChildQ[Verbatim[PatternTest][p_, _]] := oneChildQ[p];
+oneChildQ[Verbatim[Except][_, p_]] := oneChildQ[p];
+oneChildQ[_BlankSequence | _BlankNullSequence | Verbatim[Repeated][___] | Verbatim[RepeatedNull][___] | Verbatim[PatternSequence][___] |
+    Verbatim[OrderlessPatternSequence][___] | Verbatim[Longest][___] | Verbatim[Shortest][___] | Verbatim[Optional][___]] := False;
+oneChildQ[_] := True;
 
 (* The entries with each PatternSequence among them spliced in. *)
 spliced[es_List] := Replace[es, Verbatim[PatternSequence][ps___] :> Sequence @@ spliced[{ps}], {1}];
@@ -769,10 +777,13 @@ mirroredEntry[(h : Repeated | RepeatedNull)[p_, r___]] := h[mirroredEntry[p], r]
 mirroredEntry[e_] := e;
 
 (* The lengths of the entries before and after the selected one. *)
-lengthsAround[a_] :=
-  Replace[a["Pattern"], {
-    {Verbatim[Pattern][a["Index"], before_], _, after___} :> {lengthsOf[before], lengthsOf[PatternSequence[after]]},
-    _ -> None}];
+lengthsAround[a_] := Replace[entriesAround[a], {b_List, f_List} :> {lengthsOf[PatternSequence @@ b], lengthsOf[PatternSequence @@ f]}];
+
+(* The entries before the selected one, each PatternSequence among them
+   spliced in, and the entries after it; None when the list has another
+   form. *)
+entriesAround[a_] :=
+  Replace[a["Pattern"], {{Verbatim[Pattern][a["Index"], before_], _, after___} :> {spliced[{before}], {after}}, _ -> None}];
 
 (* The numbers of children a sequence of entries matches, as lengths[lo,
    step, hi]: lo, lo + step, lo + 2 step, ... up to hi, which may be Infinity
@@ -1362,9 +1373,7 @@ matchMarks[t_, els_] := Boole[MatchQ[t] /@ els];
 (* 1 where a count is one the lengths allow, and 0 where not. *)
 allowedCounts[$anyLength, counts_] := ConstantArray[1, Length[counts]];
 allowedCounts[lengths_, counts_] :=
-  Module[{allowed = ConstantArray[0, Length[counts]]},
-    allowed[[lengthsUpTo[lengths, Length[counts] - 1] + 1]] = 1;
-    allowed[[counts + 1]]];
+  Normal[SparseArray[Thread[(lengthsUpTo[lengths, Length[counts] - 1] + 1) -> 1], Length[counts]]][[counts + 1]];
 
 copiedBy[x_, None] := x;
 copiedBy[x_, n_] := copied[x, n];
