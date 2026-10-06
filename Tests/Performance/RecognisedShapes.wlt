@@ -86,7 +86,7 @@ TestCreate[
    bounded in memory too: matching such a list again on WL's matcher, as the
    body did before, grows about as the cube of the number of siblings, and a
    time limit does not stop it. Before, the body with ordered entries took
-   0.26 s at 200 siblings and more than 30 s at 1,000, and with a position
+   0.26 s at 200 siblings and more than 60 s at 1,000, and with a position
    among all children 1.1 s at 1,000. *)
 TestCreate[
   MemoryConstrained[
@@ -97,6 +97,7 @@ TestCreate[
   TestID -> "perf-shape-ordered-body-5000-siblings"
 ];
 
+(* With a Condition in the body, which takes part in choosing (ADR 0014). *)
 TestCreate[
   MemoryConstrained[
     Length @ XMLCases[$fiveThousandSections, Child[XMLPattern["section"], {_, PatternSequence[_, _, _]..., c : XMLPattern["p"], ___}] :> c[[1]] /; True],

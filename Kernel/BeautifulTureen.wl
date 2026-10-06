@@ -746,11 +746,13 @@ listMethod[listStage[a_]] /; $recogniseShapes :=
   With[{around = orderedAround[a]}, ordered[Sequence @@ around, Sequence @@ twoStep[selectedEntry[a]]] /; around =!= None];
 listMethod[ls_] := generalMatcher @@ listMatcher[ls];
 
-(* Whether a list stage runs as a recognised shape. *)
-recognisedQ[listStage[a_]] := !MatchQ[a["Method"], _generalMatcher];
+(* The heads of the recognised shapes' methods, and whether a list stage runs
+   by one. Defined before childrenSelected, whose definition reads it. *)
+$recognisedMethods = anywhere | amongChildren | amongMatching | ordered;
+recognisedQ[listStage[a_]] := MatchQ[a["Method"], $recognisedMethods[___]];
 
-(* The selected entry of a list stage in the form every shape has, {pre :
-   PatternSequence[...], s, ...}. *)
+(* The selected entry of a list stage run as a recognised shape, whose list
+   has the form {pre : PatternSequence[...], s, ...}. *)
 selectedEntry[a_] := a["Pattern"][[2]];
 
 (* The entries on each side of the selected one, as {before, {left, right},
@@ -1506,7 +1508,7 @@ listSelected[Descendant, p_, method_] :=
 (* A recognised shape selects only children that its selected entry matches,
    so an element with none of them is passed over without listing its children:
    most elements, below an any-element parent stage as in li:first-child. *)
-childrenSelected[par_, (anywhere | amongChildren | amongMatching | ordered)[___, s_, None]] /; par =!= $documentSite && FreeQ[Last[at[par]], s, {1}] := {};
+childrenSelected[par_, $recognisedMethods[___, s_, None]] /; par =!= $documentSite && FreeQ[Last[at[par]], s, {1}] := {};
 childrenSelected[par_, method_] :=
   With[{k = kidsAt[par]}, If[k[[2]] === {}, {}, k[[1, listIndices[method, par, k[[2]]]]]]];
 
