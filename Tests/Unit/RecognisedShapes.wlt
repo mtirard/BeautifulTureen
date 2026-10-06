@@ -678,9 +678,170 @@ TestCreate[
   TestID -> "shape-ordered-unrecognised-still-correct"
 ];
 
+(* === Shape 7: split conditions, {g___, b1, ..., C, h___} /; test ===
+
+   A Condition on the list over measures of the runs of children its names
+   stand for: Count, Length and MatchQ. The translator writes it for the
+   counted positions it cannot write with plain entries. WL's matcher tests
+   the Condition once per child that C matches, so these use the full trees. *)
+
+(* The selectors that translate to shape 7 (FromCSSSelector gives a Condition
+   on a list for each, css-split-forms), each with its mirror from the end:
+   typeless -of-type, two positions on one side, a counted position in a +
+   or ~ run, and one on a compound before the last of its run. *)
+$splitSelectors = {".a:nth-of-type(2)", ".a:nth-last-of-type(2)", ":nth-of-type(2)", ":nth-last-of-type(2)",
+  "*:first-of-type", "*:last-of-type", "*:only-of-type", ":nth-of-type(2n+1)", ":nth-last-of-type(-n+2)",
+  ":nth-child(1 of .a):nth-child(2)", ":nth-last-child(1 of .a):nth-last-child(2)",
+  "p:nth-of-type(2):nth-child(3)", "p:nth-last-of-type(2):nth-last-child(3)",
+  "p + li:nth-of-type(2)", "p + li:nth-last-of-type(2)", "p ~ li:nth-child(3)", "p ~ li:nth-last-of-type(2)",
+  "li:nth-of-type(2) + p", "li:nth-last-of-type(2) + p", ".a:nth-of-type(2) + p", ".a:nth-last-of-type(2) + p",
+  "p + span + li:nth-of-type(2)", "p + span + li:nth-last-of-type(2)", "p ~ span + li:nth-child(3)",
+  "p + li:nth-child(2 of .a)", "p + li:nth-last-child(2 of .a)", "li:nth-of-type(2) + p + span"};
+
+TestCreate[
+  MatchQ[FromCSSSelector[#], Child[Verbatim[XMLDocument[] | XMLPattern[_]], _Condition]] & /@ $splitSelectors,
+  ConstantArray[True, Length[$splitSelectors]],
+  TestID -> "css-split-forms"
+];
+
+(* Each selector selects something on some tree, and the same with
+   recognition on and off. *)
+TestCreate[
+  With[{r = Map[Function[css, XMLCases[#, css] & /@ $trees], $splitSelectors]},
+    AllTrue[r, !FreeQ[#, _XMLElement] &] && r === unrecognised[Map[Function[css, XMLCases[#, css] & /@ $trees], $splitSelectors]]],
+  True,
+  TestID -> "shape-split-css-cases"
+];
+
+TestCreate[
+  sameEitherWay[Map[Function[t, XMLFirstCase[t, #, None] & /@ $splitSelectors], $trees]],
+  True,
+  TestID -> "shape-split-first-case"
+];
+
+TestCreate[
+  sameEitherWay[Map[Function[t, deleted[t, #] & /@ $splitSelectors], $trees]],
+  True,
+  TestID -> "shape-split-delete-cases"
+];
+
+TestCreate[
+  sameEitherWay[Map[Function[t, Join @@ (Join[XMLCases[t, #, 1], XMLCases[t, #, 3]] & /@ $splitSelectors)], $trees]],
+  True,
+  TestID -> "shape-split-count"
+];
+
+(* Written by hand: other comparisons and logic, an unnamed run, a named and
+   an unnamed entry before the selected one, a run of names over the
+   selected entry, the tag of an entry before it, and ordered entries in
+   MatchQ, anchored at either end. *)
+$splitLists = {
+  {g___, c : li, h___} /; Count[{g}, XMLElement[First[c], _, _]] + 1 == 2,
+  {g___, c : any, ___} /; Length[{g}] >= 2 && Count[{g}, XMLElement["p", _, _]] < 3,
+  {___, c : XMLPattern["p" | "li"], h___} /; Mod[Length[{h}], 3] == 1 || MatchQ[{h}, {XMLElement["span", _, _], ___}],
+  {g___, x : para, c : li, h___} /; Count[{x, c, h}, XMLElement["p", _, _]] == 1 && !MatchQ[{g}, {___, XMLElement["div", _, _], ___}],
+  {g___, any, c : li, h___} /; Count[{g}, XMLElement[First[c], _, _]] == Count[{h}, XMLElement[First[c], _, _]],
+  {g___, b : any, c : any, h___} /; Count[{b, c, h}, XMLElement[First[b], _, _]] >= 2 && Count[{g, b}, _?(XMLMatchQ[XMLPattern[_, "classList" -> "a"]])] == 1,
+  {g___, c : XMLPattern[_, "classList" -> "a" | "b"], h___} /; MatchQ[{g}, {XMLElement["p", _, _], ___, XMLElement["li", _, _], _}] || MatchQ[{c, h}, {___, XMLElement["div", _, _]}],
+  {g___, c : li, h___} /; True};
+
+TestCreate[
+  sameEitherWay[Map[Function[t, Join @@ Table[Join[
+      XMLCases[t, Child[any, l]],
+      XMLCases[t, Descendant[dv, l]],
+      {XMLFirstCase[t, Child[any, l], None]},
+      XMLCases[t, Child[any, l], 2]],
+    {l, $splitLists}]], $trees]],
+  True,
+  TestID -> "shape-split-hand-written"
+];
+
+TestCreate[
+  sameEitherWay[Map[Function[t, Join @@ Table[Join[
+      XMLCases[t, Child[any, l] :> Lookup[c[[2]], "id"]],
+      XMLCases[t, Child[XMLPattern["div"], l] :> {c[[1]], c[[2]]}]],
+    {l, $splitLists}]], $trees]],
+  True,
+  TestID -> "shape-split-named-entry-in-body"
+];
+
+(* A list that needs the two-step match runs on the general matcher. *)
+TestCreate[
+  sameEitherWay[Map[XMLCases[#,
+    Child[any, {g___, c : XMLPattern[_, {"class" -> k_, "id" -> i_}] /; StringLength[k] < StringLength[i] + 2, ___} /;
+      Length[{g}] == 1] :> Lookup[c[[2]], "id"]] &, $trees]],
+  True,
+  TestID -> "shape-split-two-step-match"
+];
+
+TestCreate[
+  sameEitherWay[Map[Join[
+    XMLCases[#, Child[XMLDocument[], {g___, c : XMLPattern["div" | "p"], h___} /; Count[{h}, XMLElement[First[c], _, _]] + 1 == 2] :> Lookup[c[[2]], "id"]],
+    Join @@ Function[css, XMLCases[#, css]] /@ $splitSelectors,
+    {XMLFirstCase[#, "*:last-of-type", None]}, {deleted[#, ".a:nth-of-type(2)"]}] &, $lists]],
+  True,
+  TestID -> "shape-split-below-document"
+];
+
+(* A reading added by the option, in the selected entry and in a test inside
+   the Condition, which sees the original elements, and the selectors with
+   the option given. *)
+TestCreate[
+  sameEitherWay[Map[Join[
+    XMLCases[# /. ("class" -> v_) :> ("rel" -> v),
+      Descendant[any, {g___, c : XMLPattern["li" | "p", "relList" -> "a"], h___} /;
+        Count[{g}, XMLElement[First[c], _, _]] + 1 == 2 || Count[{h}, _?(XMLMatchQ[XMLPattern[_, "relList" -> "b"]])] == 1],
+      "AttributeReadings" -> <|"rel" -> <||>|>],
+    Join @@ Function[css, XMLCases[#, css, "AttributeReadings" -> <|"rel" -> <||>|>]] /@ $splitSelectors] &, $trees]],
+  True,
+  TestID -> "shape-split-attribute-readings"
+];
+
+(* Laws: .x:nth-of-type(k) is .x among the union over the tags T of
+   T:nth-of-type(k), on lists of the random trees' tags, and
+   *:first-of-type is *:nth-of-type(1), and the same from the end. *)
+TestCreate[
+  AllTrue[$siblings, Function[t,
+    AllTrue[Range[4], Function[k, With[{n = ToString[k]},
+      ids[XMLCases[t, "ol > .a:nth-of-type(" <> n <> ")"]] ===
+        ids[Intersection[XMLCases[t, "ol > .a"], Join @@ (XMLCases[t, "ol > " <> # <> ":nth-of-type(" <> n <> ")"] & /@ $randomTags)]] &&
+      ids[XMLCases[t, "ol > .a:nth-last-of-type(" <> n <> ")"]] ===
+        ids[Intersection[XMLCases[t, "ol > .a"], Join @@ (XMLCases[t, "ol > " <> # <> ":nth-last-of-type(" <> n <> ")"] & /@ $randomTags)]]]]] &&
+    ids[XMLCases[t, "ol > *:first-of-type"]] === ids[XMLCases[t, "ol > *:nth-of-type(1)"]] &&
+    ids[XMLCases[t, "ol > *:last-of-type"]] === ids[XMLCases[t, "ol > *:nth-last-of-type(1)"]]]],
+  True,
+  TestID -> "shape-split-laws"
+];
+
+(* Just outside the shape, so on the general matcher: a run's name used in a
+   rule body, a test that is not arithmetic, a counted pattern that binds a
+   name, a name seen by the selected entry, a name twice, an entry apart from
+   the selected one, and __ as a run. The same results either way, and the
+   same as a recognised spelling of the same meaning, where there is one. *)
+TestCreate[
+  With[{outside = Function[t, {
+      XMLCases[t, Child[any, {g___, c : li, ___} /; Length[{g}] < 3] :> Length[{g}]],
+      XMLCases[t, Child[any, {g___, c : li, ___} /; EvenQ[Length[{g}]]]],
+      XMLCases[t, Child[any, {g___, c : li, ___} /; Count[{g}, x : XMLElement["li", _, _]] == 1]],
+      XMLCases[t, Child[any, {g___, c : li /; Length[{g}] > 1, h___} /; Length[{h}] < 4]],
+      XMLCases[t, Child[any, {g___, c : li, g___} /; Length[{g}] < 3]],
+      XMLCases[t, Child[any, {g___, para, ___, c : li, ___} /; Length[{g}] == 1]],
+      XMLCases[t, Child[any, {g__, c : li, ___} /; Length[{g}] == 2]]}],
+    inside = Function[t, {
+      XMLCases[t, Child[any, {g___, c : li, ___} /; Mod[Length[{g}], 2] == 0]],
+      XMLCases[t, Child[any, {g___, c : li, ___} /; Count[{g}, XMLElement["li", _, _]] == 1]],
+      XMLCases[t, Child[any, {g___, c : li, ___} /; Length[{g}] == 2]]}]},
+    With[{r = Map[outside, $trees]},
+      r === unrecognised[Map[outside, $trees]] && r[[All, {2, 3, 7}]] === Map[inside, $trees] &&
+        AllTrue[Transpose[r][[{1, 2, 3, 6, 7}]], !FreeQ[#, _XMLElement | _Integer] &]]],
+  True,
+  TestID -> "shape-split-unrecognised-still-correct"
+];
+
 (* === Rule bodies over a recognised shape ===
 
-   In a recognised shape only the selected entry can be named, so a rule body,
+   In a recognised shape only the selected entry can be named (in shape 7,
+   other names are seen only by the list's own Condition), so a rule body,
    a Condition in it and a Condition on the combinator see the selected child
    and the other stages, and are evaluated from them, not by matching the list
    again. Shapes 4 to 6 are slow on WL's matcher, so these use the trees with
@@ -700,7 +861,9 @@ $namedShapes = {
   {Except[li]..., PatternSequence[li, Except[li]...], c : li, ___},   (* 4 *)
   {___, c : any, PatternSequence[Except[para]..., para], Except[para]...}, (* 5 *)
   {___, para, ___, c : li, ___},                                      (* 6 *)
-  {___, Child[dv, spn], ___, c : any, ___}};                          (* 6, a context combinator entry *)
+  {___, Child[dv, spn], ___, c : any, ___},                           (* 6, a context combinator entry *)
+  {g___, c : li, h___} /; Count[{g}, XMLElement[First[c], _, _]] + 1 == 2 || Length[{h}] == 1,  (* 7 *)
+  {g___, x : para, c : any, h___} /; Count[{x, h}, XMLElement["p", _, _]] <= 2 && !MatchQ[{g}, {___, XMLElement["div", _, _], ___}]}; (* 7, an entry before *)
 
 TestCreate[
   sameEitherWay[Map[Function[t, Join @@ Table[Join[
