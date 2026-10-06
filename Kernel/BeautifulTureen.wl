@@ -1190,8 +1190,10 @@ kidsList[sites_, els_] := {sites, els, AssociationThread[sites, Range[Length[sit
    takes them from its rule's matches. Anywhere selects each child s matches,
    which Position finds without building the sequence before each one: over
    5,000 siblings that is 1 ms against 300 ms. *)
-listIndices[anywhere[s_, n_], _, els_] := Flatten @ Position[copiedBy[els, n], s, {1}, Heads -> False];
+listIndices[anywhere[s_, n_], _, els_] := anywhereIndices[copiedBy[els, n], s];
 listIndices[generalMatcher[rule_, n_], par_, els_] := Union @ ReplaceList[copiedBy[listSlot[par, 0, els], n], rule];
+
+anywhereIndices[els_, s_] := Flatten @ Position[els, s, {1}, Heads -> False];
 
 copiedBy[x_, None] := x;
 copiedBy[x_, n_] := copied[x, n];
@@ -1247,7 +1249,7 @@ siblingSiteQ[p_] := p =!= $documentSite;
 followingSelected[p_, s_] /; siblingSiteQ[p] :=
   With[{k = kidsAt[parentOf[p]]},
     With[{i = k[[3]][p]},
-      k[[1, i + listIndices[anywhere[s, None], None, Drop[k[[2]], i]]]]]];
+      k[[1, i + anywhereIndices[Drop[k[[2]], i], s]]]]];
 followingSelected[_, _] := {};
 
 (* Adjacent extends the tuples whose last sites are children of one parent

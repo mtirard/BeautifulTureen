@@ -30,9 +30,9 @@ randomTree[seed_Integer] := First @ randomTrees[seed, 1];
 randomTrees[seed_Integer, n_Integer] :=
   BlockRandom[SeedRandom[seed]; Table[Block[{$id = 0}, element["div", 4, True]], n]];
 
-(* The root always has children, so that every tree has a list to match. *)
-element[tag_, depth_, full_] :=
-  XMLElement[tag, attributes[], If[depth == 0 || !full && RandomReal[] > 0.1, {}, children[depth - 1]]];
+(* The root always gets a list of children, and one element in ten below it. *)
+element[tag_, depth_, rootQ_] :=
+  XMLElement[tag, attributes[], If[depth == 0 || !rootQ && RandomReal[] > 0.1, {}, children[depth - 1]]];
 
 attributes[] :=
   Append[

@@ -13,6 +13,10 @@ unrecognised[expr_] := Block[{MaximilienTirard`BeautifulTureen`Private`$recognis
 SetAttributes[sameEitherWay, HoldFirst];
 sameEitherWay[expr_] := With[{on = expr}, on === unrecognised[expr] && !FreeQ[on, _XMLElement | _String] && FreeQ[on, $Failed]];
 
+(* The tree after deletion, or Nothing when nothing was deleted, so that a
+   deletion that never deletes gives no results. *)
+deleted[t_, p_] := With[{d = XMLDeleteCases[t, p]}, If[d === t, Nothing, d]];
+
 $trees = randomTrees[20261006, 12];
 
 (* The top elements of a list are siblings below the document (ADR 0018). *)
@@ -42,8 +46,8 @@ TestCreate[
 
 TestCreate[
   sameEitherWay[Map[{
-    XMLDeleteCases[#, Child[any, {___, li, ___}]],
-    XMLDeleteCases[#, Descendant[XMLPattern["div"], {___, XMLPattern["p", "classList" -> "c"], ___}]]} &, $trees]],
+    deleted[#, Child[any, {___, li, ___}]],
+    deleted[#, Descendant[XMLPattern["div"], {___, XMLPattern["p", "classList" -> "c"], ___}]]} &, $trees]],
   True,
   TestID -> "shape-anywhere-delete-cases"
 ];
@@ -82,7 +86,7 @@ TestCreate[
     XMLCases[#, Child[XMLDocument[], {___, c : XMLPattern["div" | "p"], ___}] :> Lookup[c[[2]], "id"]],
     XMLCases[#, Child[XMLDocument[], {___, XMLPattern[_, "classList" -> "a"], ___}], 2],
     {XMLFirstCase[#, Child[XMLDocument[], {___, li, ___}], None]},
-    XMLDeleteCases[#, Child[XMLDocument[], {___, li, ___}]]] &, $lists]],
+    {deleted[#, Child[XMLDocument[], {___, li, ___}]]}] &, $lists]],
   True,
   TestID -> "shape-anywhere-below-document"
 ];

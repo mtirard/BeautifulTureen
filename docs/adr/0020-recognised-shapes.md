@@ -36,6 +36,6 @@ Every other list stage runs on the general matcher: `ReplaceList` of the select 
 
 ## Consequences
 
-The `{___, s, ___}` path no longer depends on the select-rule builder and the list matcher agreeing on a pattern shape written in two places. Behaviour and timing are unchanged: the performance tests measured the same before and after.
+The `{___, s, ___}` shape is recognised in one place, the compiler, from the list stage as compiled, and the list matcher no longer re-matches the select rule's shape at run time. Recognition still reads the compiled list's entries, so a change to how list stages are compiled must keep the recognisers in step. Behaviour and timing are unchanged: the performance tests measured the same before and after.
 
 Later shapes (positions among all children, and counted positions with `of S` and `-of-type`) are added to the list with their tests, as the spec's later steps land.
