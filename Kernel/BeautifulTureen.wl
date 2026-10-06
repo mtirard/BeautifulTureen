@@ -693,6 +693,12 @@ contextEntries[query_, sown_] :=
                            are blanks, repeats of them and Except[_]: each
                            child s matches with as many children before and
                            after it as the lengths before and after allow
+     amongMatching[counted[t1, before], counted[t2, after], s, n]
+                           {Except[t1] ..., PatternSequence[t1, Except[t1]
+                           ...] ..., s, ___} and the mirror after s: each
+                           child s matches with as many children that match
+                           t1 before it, and t2 after it, as the lengths
+                           allow (t = _ counts all children)
      generalMatcher[r, n]  any other list: the children r's matches select
    where n is the number of copies of each child's attributes the two-step
    match needs (solvable), or None. *)
@@ -713,13 +719,71 @@ listMethod[listStage[a_]] /; $recogniseShapes && a["Checks"] === {} &&
    s, ___}, :nth-last-child(2) {___, s, _} and :only-child {s}. *)
 listMethod[listStage[a_]] /; $recogniseShapes && a["Checks"] === {} :=
   With[{around = lengthsAround[a]}, amongChildren[Sequence @@ around, Sequence @@ twoStep[a["Pattern"][[2]]]] /; FreeQ[around, None]];
+(* Shapes 4 and 5, a position among the children that match a pattern t, from
+   the start, the end or both, or among all children on one side: the
+   selected entry with, before it, Except[t] ... then units PatternSequence[t,
+   Except[t] ...] or repeats of them, and the mirror after it, t binding no
+   name. :nth-of-type(2) is {Except[t] ..., PatternSequence[t, Except[t] ...],
+   s, ___} and :only-of-type {Except[t] ..., s, Except[t] ...}. *)
+listMethod[listStage[a_]] /; $recogniseShapes && a["Checks"] === {} :=
+  With[{around = countsAround[a]}, amongMatching[Sequence @@ around, Sequence @@ twoStep[a["Pattern"][[2]]]] /; FreeQ[around, None]];
 listMethod[ls_] := generalMatcher @@ listMatcher[ls];
 
+(* The children each side counts, and how many of them it allows, as
+   counted[t, lengths], with t = _ for all children; None when a side is not
+   of that form. *)
+countsAround[a_] := Replace[entriesAround[a], {b_List, f_List} :> {countedOf[b], countedOf[spliced[mirrored[f]]]}];
+
+countedOf[es_] := With[{l = lengthsOf[PatternSequence @@ es]}, counted[_, l] /; l =!= None];
+countedOf[{Verbatim[RepeatedNull][Verbatim[Except][t_]], es___}] /; countableQ[t] :=
+  With[{l = lengthsOf[PatternSequence @@ unitsAsBlanks[{es}, t]]}, counted[t, l] /; l =!= None];
+countedOf[_] := None;
+
+(* The entries after the leading Except[t] ..., with each unit t, Except[t] ...
+   as a _, so that lengthsOf counts the children that match t; a None in place
+   of an entry of another form. *)
+unitsAsBlanks[{}, _] := {};
+unitsAsBlanks[{t_, Verbatim[RepeatedNull][Verbatim[Except][t_]], es___}, t_] := Prepend[unitsAsBlanks[{es}, t], _];
+unitsAsBlanks[{Verbatim[Except][Verbatim[_]], es___}, t_] := Prepend[unitsAsBlanks[{es}, t], Except[_]];
+unitsAsBlanks[{(h : Repeated | RepeatedNull)[Verbatim[PatternSequence][ps__], r___], es___}, t_] :=
+  Prepend[unitsAsBlanks[{es}, t], h[PatternSequence @@ unitsAsBlanks[{ps}, t], r]];
+unitsAsBlanks[_, _] := {None};
+
+(* A pattern counted on its own, once per child: it matches one child, not a
+   sequence of them, binds no name, has no Condition that could see one, and
+   needs no two-step match. A test's function is not a pattern, so names in
+   it bind nothing. *)
+countableQ[t_] :=
+  oneChildQ[t] && FreeQ[t //. Verbatim[PatternTest][p_, _] :> p, Verbatim[Pattern] | Verbatim[Condition]] && !twoStepQ[t];
+
+(* Whether a pattern matches one element of a list, not a sequence: the
+   sequence heads count at its top, outside an element pattern's parts. *)
+oneChildQ[Verbatim[Alternatives][ps___]] := AllTrue[{ps}, oneChildQ];
+oneChildQ[Verbatim[PatternTest][p_, _]] := oneChildQ[p];
+oneChildQ[Verbatim[Except][_, p_]] := oneChildQ[p];
+oneChildQ[_BlankSequence | _BlankNullSequence | Verbatim[Repeated][___] | Verbatim[RepeatedNull][___] | Verbatim[PatternSequence][___] |
+    Verbatim[OrderlessPatternSequence][___] | Verbatim[Longest][___] | Verbatim[Shortest][___] | Verbatim[Optional][___]] := False;
+oneChildQ[_] := True;
+
+(* The entries with each PatternSequence among them spliced in. *)
+spliced[es_List] := Replace[es, Verbatim[PatternSequence][ps___] :> Sequence @@ spliced[{ps}], {1}];
+
+(* The entries in reverse order, each PatternSequence in them reversed too,
+   so that the entries after the selected one read as the entries before it
+   do. *)
+mirrored[es_List] := Reverse[mirroredEntry /@ es];
+mirroredEntry[Verbatim[PatternSequence][ps___]] := PatternSequence @@ mirrored[{ps}];
+mirroredEntry[(h : Repeated | RepeatedNull)[p_, r___]] := h[mirroredEntry[p], r];
+mirroredEntry[e_] := e;
+
 (* The lengths of the entries before and after the selected one. *)
-lengthsAround[a_] :=
-  Replace[a["Pattern"], {
-    {Verbatim[Pattern][a["Index"], before_], _, after___} :> {lengthsOf[before], lengthsOf[PatternSequence[after]]},
-    _ -> None}];
+lengthsAround[a_] := Replace[entriesAround[a], {b_List, f_List} :> {lengthsOf[PatternSequence @@ b], lengthsOf[PatternSequence @@ f]}];
+
+(* The entries before the selected one, each PatternSequence among them
+   spliced in, and the entries after it; None when the list has another
+   form. *)
+entriesAround[a_] :=
+  Replace[a["Pattern"], {{Verbatim[Pattern][a["Index"], before_], _, after___} :> {spliced[{before}], {after}}, _ -> None}];
 
 (* The numbers of children a sequence of entries matches, as lengths[lo,
    step, hi]: lo, lo + step, lo + 2 step, ... up to hi, which may be Infinity
@@ -1279,19 +1343,37 @@ kidsList[sites_, els_] := {sites, els, AssociationThread[sites, Range[Length[sit
    when no copies are needed, which is cheaper per parent than mapping over
    them. *)
 listIndices[anywhere[s_, n_], _, els_] := anywhereIndices[copiedBy[els, n], s];
-listIndices[amongChildren[before_, after_, s_, None], _, els_] :=
-  Select[amongIndices[before, after, Length[els]], MatchQ[els[[#]], s] &];
-listIndices[amongChildren[before_, after_, s_, n_], _, els_] :=
-  With[{is = amongIndices[before, after, Length[els]]}, Pick[is, MatchQ[s] /@ copied[els[[is]], n]]];
+listIndices[amongChildren[before_, after_, s_, n_], _, els_] := matchedAt[amongIndices[before, after, Length[els]], els, s, n];
+listIndices[amongMatching[before_, after_, s_, n_], _, els_] := matchedAt[matchingIndices[before, after, els], els, s, n];
 listIndices[generalMatcher[rule_, n_], par_, els_] := Union @ ReplaceList[copiedBy[listSlot[par, 0, els], n], rule];
 
 anywhereIndices[els_, s_] := Flatten @ Position[els, s, {1}, Heads -> False];
+
+(* The indices is of the children els that s matches. *)
+matchedAt[is_, els_, s_, None] := Select[is, MatchQ[els[[#]], s] &];
+matchedAt[is_, els_, s_, n_] := Pick[is, MatchQ[s] /@ copied[els[[is]], n]];
 
 (* The indices among len children with as many children before and after as
    the lengths before and after allow. *)
 amongIndices[before_, $anyLength, len_] := lengthsUpTo[before, len - 1] + 1;
 amongIndices[$anyLength, after_, len_] := Reverse[len - lengthsUpTo[after, len - 1]];
 amongIndices[before_, after_, len_] := Intersection[lengthsUpTo[before, len - 1] + 1, len - lengthsUpTo[after, len - 1]];
+
+(* The indices among the children els with as many children that match t1
+   before them, and t2 after them, as the lengths before and after allow: each
+   pattern is tested once per child, and the counts are running totals. *)
+matchingIndices[counted[t1_, before_], counted[t2_, after_], els_] :=
+  With[{marks = AssociationMap[matchMarks[#, els] &, Union[{t1, t2}]]},
+    Pick[Range[Length[els]],
+      allowedCounts[before, Accumulate[marks[t1]] - marks[t1]] allowedCounts[after, Total[marks[t2]] - Accumulate[marks[t2]]], 1]];
+
+matchMarks[Verbatim[_], els_] := ConstantArray[1, Length[els]];
+matchMarks[t_, els_] := Boole[MatchQ[t] /@ els];
+
+(* 1 where a count is one the lengths allow, and 0 where not. *)
+allowedCounts[$anyLength, counts_] := ConstantArray[1, Length[counts]];
+allowedCounts[lengths_, counts_] :=
+  Normal[SparseArray[Thread[(lengthsUpTo[lengths, Length[counts] - 1] + 1) -> 1], Length[counts]]][[counts + 1]];
 
 copiedBy[x_, None] := x;
 copiedBy[x_, n_] := copied[x, n];
@@ -1310,7 +1392,7 @@ listSelected[Descendant, p_, method_] :=
 (* A recognised shape selects only children that its selected entry matches,
    so an element with none of them is passed over without listing its children:
    most elements, below an any-element parent stage as in li:first-child. *)
-childrenSelected[par_, (anywhere | amongChildren)[___, s_, None]] /; par =!= $documentSite && FreeQ[Last[at[par]], s, {1}] := {};
+childrenSelected[par_, (anywhere | amongChildren | amongMatching)[___, s_, None]] /; par =!= $documentSite && FreeQ[Last[at[par]], s, {1}] := {};
 childrenSelected[par_, method_] :=
   With[{k = kidsAt[par]}, If[k[[2]] === {}, {}, k[[1, listIndices[method, par, k[[2]]]]]]];
 
@@ -2380,17 +2462,21 @@ cssAddRun[{stages_, links_}, run_] :=
    less the compounds between (.b + .a:nth-child(5) is .b at 4), and the same
    from the end. Where positions need more than that, the general form names
    every gap and compound, and tests the positions in a condition on the list.
-   So does a position among the siblings of a type or that match a selector,
-   other than the first or the last: repeats of Except[s] ..., s backtrack
-   without bound (over 20 s for tr:nth-of-type(50) among 1,000 rows, against
-   0.06 s as a condition). *)
+   A position among the siblings of a type or that match a selector is
+   written with plain entries too, in a run of one compound, where the
+   compiler recognises the list (ADR 0020, shapes 4 and 5); in a longer run
+   only the first or the last is, as WL's matcher backtracks without bound on
+   repeats of Except[s] ..., s beside other XML patterns (over 20 s for
+   tr:nth-of-type(50) among 1,000 rows, against 0.06 s as a condition). The
+   siblings of the element's own type, for a compound with no type, are not a
+   pattern, and are counted in a condition. *)
 cssRunList[parts_, within_] :=
   With[{k = Length[parts]},
     With[{
         forward = Join @@ MapIndexed[cssShifted[#1, First[#2] - 1, Take[within, First[#2] - 1]] &, Select[#[[3]], !First[#] &] & /@ parts],
         backward = Join @@ MapIndexed[cssShifted[#1, k - First[#2], Drop[within, First[#2] - 1]] &, Select[#[[3]], First] & /@ parts]},
       If[Length[forward] <= 1 && Length[backward] <= 1 && FreeQ[{forward, backward}, None, {2}] &&
-          FreeQ[{forward, backward}, cssOwnType | (cssPos[_, a_, b_, Except[None], _] /; !(a == 0 && b == 1))],
+          FreeQ[{forward, backward}, cssOwnType | (cssPos[_, a_, b_, Except[None], _] /; k > 1 && !(a == 0 && b == 1))],
         Join[cssPositionEntries[forward, False], cssRunEntries[First /@ parts, within], cssPositionEntries[backward, True]],
         cssGeneralList[parts, within]]]];
 
@@ -2408,21 +2494,30 @@ cssRunEntries[ps_, within_] := Append[Join @@ MapThread[Prepend[cssGap[#2], #1] 
 cssGap[Adjacent] := {};
 cssGap[Sibling] := {___};
 
-(* The entries before a compound at index a k + b, k >= 0 among all its
-   siblings, or after it when counted from the end. An index that no k gives
-   never matches. The first or last among the siblings of a type or that match
-   a selector has only those that do not before or after it. *)
+(* The entries before a compound at index a k + b, k >= 0 among its siblings,
+   or after it, as their mirror, when counted from the end. Among all the
+   siblings, each one before it is a unit _. Among those that match a
+   selector s, which the compound matches too, the siblings before it are
+   those that do not, Except[s] ..., then a unit PatternSequence[s, Except[s]
+   ...] for each that does (ADR 0020, shapes 4 and 5). An index that no k
+   gives never matches. *)
 cssPositionEntries[{}, _] := {___};
-cssPositionEntries[{cssPos[_, 0, 1, of_, _]}, _] /; of =!= None := {Except[cssUnnamed[of]] ...};
-cssPositionEntries[{cssPos[_, a_, b_, None, _]}, fromEnd_] :=
-  If[fromEnd, Reverse, Identity] @ Which[
-    a == 0, If[b < 1, {Except[_]}, cssRepeat[_, b - 1]],
-    a > 0, Append[cssRepeat[_, If[b >= 1, b - 1, Mod[b - 1, a]]], RepeatedNull[cssUnits[a]]],
-    b < 1, {Except[_]},
-    True, Append[cssRepeat[_, Mod[b - 1, -a]], Repeated[cssUnits[-a], {0, Floor[(b - 1)/-a]}]]];
+cssPositionEntries[{cssPos[_, a_, b_, of_, _]}, fromEnd_] :=
+  If[fromEnd, mirrored, Identity] @ If[a <= 0 && b < 1, {Except[_]},
+    Join[cssLead[of], With[{u = cssUnit[of]}, Which[
+      a == 0, cssRepeat[u, b - 1],
+      a > 0, Append[cssRepeat[u, If[b >= 1, b - 1, Mod[b - 1, a]]], RepeatedNull[cssUnits[u, a]]],
+      True, Append[cssRepeat[u, Mod[b - 1, -a]], Repeated[cssUnits[u, -a], {0, Floor[(b - 1)/-a]}]]]]]];
 
-cssUnits[1] := _;
-cssUnits[n_] := PatternSequence @@ ConstantArray[_, n];
+cssLead[None] := {};
+cssLead[of_] := {Except[cssUnnamed[of]] ...};
+
+cssUnit[None] := _;
+cssUnit[of_] := With[{s = cssUnnamed[of]}, PatternSequence[s, Except[s] ...]];
+
+(* n units in one PatternSequence. *)
+cssUnits[u_, 1] := u;
+cssUnits[u_, n_] := PatternSequence @@ Join @@ ConstantArray[spliced[{u}], n];
 
 (* A name inside Except is never bound, so a selector with names is tested whole. *)
 cssUnnamed[of_] := If[FreeQ[of, Verbatim[Pattern]], of, With[{m = XMLMatchQ[of]}, _?m]];

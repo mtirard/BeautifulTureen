@@ -317,3 +317,206 @@ TestCreate[
   True,
   TestID -> "shape-positions-unrecognised-still-correct"
 ];
+
+(* === Shapes 4 and 5: a position among the children that match a pattern t,
+   from the start, from the end, or both === *)
+
+(* With recognition off, WL's matcher backtracks on these plain entries when t
+   is not a literal: a repeat of units over the random trees' lists of up to 40
+   children takes seconds per spelling. The comparisons use the same trees
+   with each list of children cut to its first 12. *)
+$smallTrees = Replace[#, XMLElement[tag_, as_, c_] :> XMLElement[tag, as, Take[c, UpTo[12]]], {0, Infinity}] & /@ $trees;
+$smallLists = Select[Last /@ $smallTrees, MemberQ[#, _XMLElement] &];
+
+(* The entries before the selected one, counting the children that match t,
+   in each spelling the translator emits (FromCSSSelector of the selector in
+   the comment, with t the type) and in some written by hand. *)
+counting[t_] := {
+  {Except[t]...},                                                     (* :first-of-type *)
+  {Except[t]..., PatternSequence[t, Except[t]...]},                   (* :nth-of-type(2) *)
+  {Except[t]..., Repeated[PatternSequence[t, Except[t]...], {2}]},    (* :nth-of-type(3) *)
+  {Except[t]..., Repeated[PatternSequence[t, Except[t]...], {0, 2}]}, (* :nth-of-type(-n+3) *)
+  {Except[t]..., PatternSequence[t, Except[t]..., t, Except[t]...]...},                                  (* :nth-of-type(2n+1) *)
+  {Except[t]..., PatternSequence[t, Except[t]...], PatternSequence[t, Except[t]..., t, Except[t]...]...}, (* :nth-of-type(2n) *)
+  {Except[t]..., t, Except[t]...},
+  {Except[t]..., t, Except[t]..., PatternSequence[t, Except[t]...]...},
+  {Except[t]..., Repeated[PatternSequence[t, Except[t]...], {1, 2}]},
+  {Except[t]..., Except[_]}};
+
+(* As the translator writes them: an XML pattern, a selector list, and a
+   selector tested whole. *)
+$counted = {XMLPattern["p"], XMLPattern[_, "classList" -> "a"], XMLPattern["li"] | XMLPattern[_, "classList" -> "b"],
+  _?(XMLMatchQ[XMLPattern[_, "classList" -> "c"]])};
+
+TestCreate[
+  sameEitherWay[Map[Function[t, Join @@ Table[Join[
+      XMLCases[t, Child[any, Join[pre, {li, ___}]]],
+      XMLCases[t, Descendant[XMLPattern["div"], Join[pre, {XMLPattern["p", "classList" -> "a"], ___}]]]],
+    {pre, Join @@ (counting /@ $counted)}]], $smallTrees]],
+  True,
+  TestID -> "shape-counted-from-start-cases"
+];
+
+(* The mirror after the selected one: each PatternSequence reversed too. *)
+mirror[es_List] := Reverse[Replace[es, Verbatim[PatternSequence][ps___] :> PatternSequence @@ Reverse[{ps}], {1, Infinity}]];
+
+TestCreate[
+  sameEitherWay[Map[Function[t, Join @@ Table[Join[
+      XMLCases[t, Child[any, Join[{___, li}, post]]],
+      XMLCases[t, Descendant[XMLPattern["div"], Join[{___, XMLPattern["p", "classList" -> "a"]}, post]]]],
+    {post, mirror /@ Join @@ (counting /@ $counted)}]], $smallTrees]],
+  True,
+  TestID -> "shape-counted-from-end-cases"
+];
+
+(* :only-of-type, counted positions at both ends, a different t at each, and
+   one end among all children. *)
+TestCreate[
+  With[{p = XMLPattern["p"], a = XMLPattern[_, "classList" -> "a"]},
+  sameEitherWay[Map[Function[t, Join[
+      XMLCases[t, Child[any, {Except[p]..., p, Except[p]...}]],
+      XMLCases[t, Child[any, {Except[p]..., PatternSequence[p, Except[p]...], any, PatternSequence[Except[a]..., a]..., Except[a]...}]],
+      XMLCases[t, Child[any, {Except[a]..., Repeated[PatternSequence[a, Except[a]...], {0, 1}], li, Except[a]...}]],
+      XMLCases[t, Child[any, {_, any, PatternSequence[Except[p]..., p], Except[p]...}]],
+      XMLCases[t, Child[any, {Except[p]..., PatternSequence[p, Except[p]..., p, Except[p]...]..., p, PatternSequence[_, _]...}]]]], $smallTrees]]],
+  True,
+  TestID -> "shape-counted-from-both-ends-cases"
+];
+
+TestCreate[
+  sameEitherWay[Map[{
+    XMLFirstCase[#, Child[any, {Except[li]..., PatternSequence[li, Except[li]...], li, ___}], None],
+    XMLFirstCase[#, Descendant[XMLPattern["div"], {___, XMLPattern["p"], PatternSequence[Except[XMLPattern["p"]]..., XMLPattern["p"]], Except[XMLPattern["p"]]...}], None]} &, $smallTrees]],
+  True,
+  TestID -> "shape-counted-first-case"
+];
+
+TestCreate[
+  sameEitherWay[Map[{
+    deleted[#, Child[any, {Except[li]..., PatternSequence[li, Except[li]...], li, ___}]],
+    deleted[#, Descendant[XMLPattern["div"], {___, XMLPattern["span"], PatternSequence[Except[XMLPattern["span"]]..., XMLPattern["span"]]..., Except[XMLPattern["span"]]...}]]} &, $smallTrees]],
+  True,
+  TestID -> "shape-counted-delete-cases"
+];
+
+TestCreate[
+  sameEitherWay[Map[Join[
+    XMLCases[#, Child[any, {Except[li]..., PatternSequence[li, Except[li]..., li, Except[li]...]..., li, ___}], 3],
+    XMLCases[#, Descendant[any, {___, XMLPattern["span"], Except[XMLPattern["span"]]...}], 1]] &, $smallTrees]],
+  True,
+  TestID -> "shape-counted-count"
+];
+
+TestCreate[
+  With[{a = XMLPattern[_, "classList" -> "a"]},
+  sameEitherWay[Map[Join[
+    XMLCases[#, Child[XMLPattern["div"], {Except[li]..., PatternSequence[li, Except[li]...], c : li, ___}] :> Lookup[c[[2]], "id"]],
+    XMLCases[#, Descendant[any, {___, c : XMLPattern["p", "classList" -> "a" | "b"], Repeated[PatternSequence[Except[a]..., a], {0, 1}], Except[a]...}] :> {c[[1]], c[[2]]}]] &, $smallTrees]]],
+  True,
+  TestID -> "shape-counted-named-entry-in-body"
+];
+
+TestCreate[
+  sameEitherWay[Map[XMLCases[#,
+    Child[any, {Except[li]..., PatternSequence[li, Except[li]...]..., c : XMLPattern[_, {"class" -> k_, "id" -> i_}] /; StringLength[k] < StringLength[i] + 2, ___}] :> Lookup[c[[2]], "id"]] &, $smallTrees]],
+  True,
+  TestID -> "shape-counted-two-step-match"
+];
+
+TestCreate[
+  sameEitherWay[Map[Join[
+    XMLCases[#, Child[XMLDocument[], {Except[li]..., PatternSequence[li, Except[li]...], c : li, ___}] :> Lookup[c[[2]], "id"]],
+    XMLCases[#, Child[XMLDocument[], {___, XMLPattern["div"], PatternSequence[Except[XMLPattern["div"]]..., XMLPattern["div"]]..., Except[XMLPattern["div"]]...}], 2],
+    {XMLFirstCase[#, Child[XMLDocument[], {Except[XMLPattern["p"]]..., Repeated[PatternSequence[XMLPattern["p"], Except[XMLPattern["p"]]...], {0, 2}], XMLPattern["p"], ___}], None]},
+    {deleted[#, Child[XMLDocument[], {Except[li]..., li, Except[li]...}]]}] &, $smallLists]],
+  True,
+  TestID -> "shape-counted-below-document"
+];
+
+(* t names a list key, which is materialised for t as for the selected entry. *)
+TestCreate[
+  With[{t = XMLPattern[_, "relList" -> "a"]},
+  sameEitherWay[Map[XMLCases[# /. ("class" -> v_) :> ("rel" -> v),
+    Descendant[any, {Except[t]..., PatternSequence[t, Except[t]...]..., XMLPattern["li" | "p", "relList" -> "a"], ___}],
+    "AttributeReadings" -> <|"rel" -> <||>|>] &, $smallTrees]]],
+  True,
+  TestID -> "shape-counted-attribute-readings"
+];
+
+(* The CSS selectors that translate to shapes 4 and 5 mean their
+   translations, with recognition on and off. *)
+$countedSelectors = {"li:first-of-type", "p:last-of-type", "span:only-of-type", "li:nth-of-type(2)", "p:nth-of-type(2n+1)",
+  "div > li:nth-of-type(-n+2)", "li:nth-last-of-type(2)", "span:nth-last-of-type(2n)", ":nth-child(2 of .a)",
+  "p:nth-child(2n+1 of .a)", ":nth-last-child(-n+2 of li, .b)", ":nth-child(2 of :has(span))", "p:nth-of-type(2):last-child",
+  "li:nth-child(2 of *)"};
+
+TestCreate[
+  sameEitherWay[Map[Function[css, With[{r = XMLCases[#, css] & /@ $smallTrees},
+      If[r === (XMLCases[#, FromCSSSelector[css]] & /@ $smallTrees), r, $Failed]]],
+    $countedSelectors]],
+  True,
+  TestID -> "shape-counted-css-means-translation"
+];
+
+(* The translation as it was, a Count in a condition on the list, means what
+   the plain entries do, both on WL's matcher. *)
+TestCreate[
+  With[{a = XMLPattern[_, "classList" -> "a"], small = $smallTrees},
+    unrecognised @ Map[Function[t, {
+      XMLCases[t, Child[any, {g___, c : li, ___} /; Count[{g}, XMLElement["li", _, _]] + 1 == 2]],
+      XMLCases[t, Child[any, {g___, c : XMLPattern["p", "classList" -> "a"], ___} /; With[{i = Count[{g}, _?(XMLMatchQ[a])] + 1}, i >= 1 && Mod[i - 1, 2] == 0]]],
+      XMLCases[t, Child[any, {___, c : XMLPattern["span"], g___} /; Count[{g}, XMLElement["span", _, _]] + 1 <= 2]]}], small] ===
+    unrecognised @ Map[Function[t, {
+      XMLCases[t, Child[any, {Except[li]..., PatternSequence[li, Except[li]...], li, ___}]],
+      XMLCases[t, Child[any, {Except[a]..., PatternSequence[a, Except[a]..., a, Except[a]...]..., XMLPattern["p", "classList" -> "a"], ___}]],
+      XMLCases[t, Child[any, {___, XMLPattern["span"], Repeated[PatternSequence[Except[XMLPattern["span"]]..., XMLPattern["span"]], {0, 1}], Except[XMLPattern["span"]]...}]]}], small]],
+  True,
+  TestID -> "shape-counted-count-form-is-plain-form"
+];
+
+(* Position-set laws: :nth-child(k of S) is :nth-child(k) when S is the
+   universal selector, and :nth-of-type(k) is :nth-child(k of T) for the type
+   T, and the same from the end. *)
+TestCreate[
+  AllTrue[$siblings, Function[t,
+    AllTrue[Range[6], Function[k, With[{n = ToString[k]},
+      ids[XMLCases[t, "ol > :nth-child(" <> n <> " of *)"]] === ids[XMLCases[t, "ol > :nth-child(" <> n <> ")"]] &&
+      ids[XMLCases[t, "ol > :nth-last-child(" <> n <> " of *)"]] === ids[XMLCases[t, "ol > :nth-last-child(" <> n <> ")"]] &&
+      AllTrue[$randomTags, Function[T,
+        ids[XMLCases[t, "ol > " <> T <> ":nth-of-type(" <> n <> ")"]] === ids[XMLCases[t, "ol > :nth-child(" <> n <> " of " <> T <> ")"]] &&
+        ids[XMLCases[t, "ol > " <> T <> ":nth-last-of-type(" <> n <> ")"]] === ids[XMLCases[t, "ol > :nth-last-child(" <> n <> " of " <> T <> ")"]]]]]]]]],
+  True,
+  TestID -> "shape-counted-laws"
+];
+
+(* Just outside the shapes, by a name on t, a Condition on the list, or the
+   two-argument Except: the same results as a recognised spelling of the same
+   positions, which select something on some tree. *)
+TestCreate[
+  With[{p = XMLPattern["p"]},
+  With[{r = Map[Function[t, {
+    XMLCases[t, Child[any, {Except[p]..., x : p, Except[p]..., li, ___}]],
+    XMLCases[t, Child[any, {Except[p]..., PatternSequence[x : p, Except[p]...], li, ___}]],
+    XMLCases[t, Child[any, {Except[p]..., PatternSequence[p, Except[p]...], li, ___} /; True]],
+    XMLCases[t, Child[any, {___, li, PatternSequence[Except[p, _]..., p], Except[p, _]...}]]}], $smallTrees]},
+    r === Map[Function[t, {
+    XMLCases[t, Child[any, {Except[p]..., PatternSequence[p, Except[p]...], li, ___}]],
+    XMLCases[t, Child[any, {Except[p]..., PatternSequence[p, Except[p]...], li, ___}]],
+    XMLCases[t, Child[any, {Except[p]..., PatternSequence[p, Except[p]...], li, ___}]],
+    XMLCases[t, Child[any, {___, li, PatternSequence[Except[p]..., p], Except[p]...}]]}], $smallTrees] &&
+      AllTrue[Transpose[r], !FreeQ[#, _XMLElement] &]]],
+  True,
+  TestID -> "shape-counted-unrecognised-still-correct"
+];
+
+(* A t that can match a sequence of children is not counted once per child:
+   these lists run on the general matcher, with the results it gives. *)
+TestCreate[
+  With[{p = XMLPattern["p"]},
+  sameEitherWay[Map[Function[t, Join[
+    XMLCases[t, Child[any, {Except[__]..., PatternSequence[__, Except[__]...], li, ___}]],
+    XMLCases[t, Child[any, {Except[p | __]..., PatternSequence[p | __, Except[p | __]...], li, ___}]],
+    XMLCases[t, Child[any, {Except[p..]..., PatternSequence[p.., Except[p..]...], li, ___}]]]], $smallTrees]]],
+  True,
+  TestID -> "shape-counted-sequence-not-counted"
+];

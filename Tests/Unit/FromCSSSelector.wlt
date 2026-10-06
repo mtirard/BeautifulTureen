@@ -303,8 +303,7 @@ $kids = element["<div id='root'><p id='p1'>1</p><span id='s1'></span><p id='p2'>
 TestCreate[
   {FromCSSSelector["li:first-child"], FromCSSSelector["li:last-child"], FromCSSSelector["div > p:nth-child(3)"],
     FromCSSSelector["tr:nth-child(2n+1)"], FromCSSSelector["tr:nth-child(odd)"], FromCSSSelector["tr:nth-last-child(-n+3)"],
-    MatchQ[FromCSSSelector["p:nth-of-type(2)"], Child[Verbatim[XMLDocument[] | XMLPattern[_]], Verbatim[Condition][{Verbatim[Pattern][_Symbol, Verbatim[___]],
-      Verbatim[Pattern][_Symbol, XMLPattern["p"]], Verbatim[Pattern][_Symbol, Verbatim[___]]}, _]]],
+    FromCSSSelector["p:nth-of-type(2)"],
     FromCSSSelector["p:last-of-type"], FromCSSSelector["a + b:last-child"],
     FromCSSSelector["a:first-child ~ b"], FromCSSSelector["p:nth-child(0)"]},
   {Child[XMLDocument[] | XMLPattern[_], {XMLPattern["li"], ___}], Child[XMLDocument[] | XMLPattern[_], {___, XMLPattern["li"]}],
@@ -312,7 +311,7 @@ TestCreate[
     Child[XMLDocument[] | XMLPattern[_], {PatternSequence[_, _] ..., XMLPattern["tr"], ___}],
     Child[XMLDocument[] | XMLPattern[_], {PatternSequence[_, _] ..., XMLPattern["tr"], ___}],
     Child[XMLDocument[] | XMLPattern[_], {___, XMLPattern["tr"], Repeated[_, {0, 2}]}],
-    True,
+    Child[XMLDocument[] | XMLPattern[_], {Except[XMLPattern["p"]] ..., PatternSequence[XMLPattern["p"], Except[XMLPattern["p"]] ...], XMLPattern["p"], ___}],
     Child[XMLDocument[] | XMLPattern[_], {___, XMLPattern["p"], Except[XMLPattern["p"]] ...}],
     Child[XMLDocument[] | XMLPattern[_], {___, XMLPattern["a"], XMLPattern["b"]}],
     Child[XMLDocument[] | XMLPattern[_], {XMLPattern["a"], ___, XMLPattern["b"], ___}],
@@ -355,6 +354,44 @@ TestCreate[
   TestID -> "css-child-indexed-general-form"
 ];
 
+(* A position among the siblings that match S, of a compound alone in its run,
+   is written with plain entries (ADR 0017, shapes 4 and 5 of ADR 0020): the
+   siblings that do not match S, then one group for each earlier sibling that
+   does, PatternSequence[S, Except[S] ...], and the mirror from the end. The
+   compound already matches S: of S is intersected into it, and -of-type
+   counts its own type. *)
+With[{p = XMLPattern["p"], a = XMLPattern[_, "classList" -> "a"], any = XMLDocument[] | XMLPattern[_]},
+  TestCreate[
+    FromCSSSelector /@ {"p:nth-of-type(3)", "p:nth-of-type(2n+1)", "p:nth-of-type(2n)", "p:nth-of-type(-n+3)",
+      "p:nth-of-type(0)", "p:nth-last-of-type(2)", "p:nth-last-of-type(-n+2)", "tr:nth-child(2n+1 of .a)",
+      ":nth-last-child(n+2 of .a)", "p:nth-of-type(2):last-child", "p:only-of-type", ":nth-child(1 of *)", "div > p:nth-of-type(2)"},
+    {Child[any, {Except[p] ..., Repeated[PatternSequence[p, Except[p] ...], {2}], p, ___}],
+      Child[any, {Except[p] ..., PatternSequence[p, Except[p] ..., p, Except[p] ...] ..., p, ___}],
+      Child[any, {Except[p] ..., PatternSequence[p, Except[p] ...], PatternSequence[p, Except[p] ..., p, Except[p] ...] ..., p, ___}],
+      Child[any, {Except[p] ..., Repeated[PatternSequence[p, Except[p] ...], {0, 2}], p, ___}],
+      Child[any, {Except[_], p, ___}],
+      Child[any, {___, p, PatternSequence[Except[p] ..., p], Except[p] ...}],
+      Child[any, {___, p, Repeated[PatternSequence[Except[p] ..., p], {0, 1}], Except[p] ...}],
+      Child[any, {Except[a] ..., PatternSequence[a, Except[a] ..., a, Except[a] ...] ..., XMLPattern["tr", "classList" -> "a"], ___}],
+      Child[any, {___, a, PatternSequence[Except[a] ..., a] ..., PatternSequence[Except[a] ..., a], Except[a] ...}],
+      Child[any, {Except[p] ..., PatternSequence[p, Except[p] ...], p}],
+      Child[any, {Except[p] ..., p, Except[p] ...}],
+      Child[any, {Except[XMLPattern[_]] ..., XMLPattern[_], ___}],
+      Child[XMLPattern["div"], {Except[p] ..., PatternSequence[p, Except[p] ...], p, ___}]},
+    TestID -> "css-child-indexed-counted-exact"
+  ]
+];
+
+(* A selector S that names its element is tested whole, so that the entries
+   bind no name. *)
+TestCreate[
+  MatchQ[FromCSSSelector[":nth-child(2 of :has(i))"],
+    Child[Verbatim[XMLDocument[] | XMLPattern[_]], {Verbatim[RepeatedNull][Verbatim[Except][s : Verbatim[PatternTest][Verbatim[_], _XMLMatchQ]]],
+      Verbatim[PatternSequence][s_, Verbatim[RepeatedNull][Verbatim[Except][s_]]], Verbatim[Condition][Verbatim[Pattern][_Symbol, XMLPattern[_]], _], Verbatim[___]}]],
+  True,
+  TestID -> "css-child-indexed-counted-named-selector"
+];
+
 (* A position of a compound joined to the first of its run by + alone, with no
    position of its own on that side, moves to the first, less the compounds
    between, and is written with plain entries; the same from the end. *)
@@ -376,13 +413,17 @@ TestCreate[
   TestID -> "css-child-indexed-shifted-exact"
 ];
 
-(* A position reached across ~, one counted among a type or a selector, and two
-   positions landing on one end keep the general form. *)
+(* A position reached across ~, one counted among a type or a selector in a run
+   of more than one compound, one among the element's own type, and two
+   positions landing on one end keep the general form. A counted position of a
+   compound alone in its run is written with plain entries
+   (css-child-indexed-counted-exact). *)
 TestCreate[
   MatchQ[FromCSSSelector[#], Child[_, _Condition]] & /@ {"a ~ b:nth-child(3)", "a ~ b + c:nth-child(3)", "a + b:nth-of-type(2)",
-    "a + b:first-of-type", "a + b:nth-child(2 of .x)", "a:first-child + b:nth-child(2)", "a:nth-last-child(2) + b:last-child",
-    "a + b:nth-child(odd) + c:nth-child(3)"},
-  ConstantArray[True, 8],
+    "a + b:first-of-type", "a + b:nth-child(2 of .x)", "a:nth-of-type(2) + b", "a:nth-last-child(2 of .x) ~ b",
+    ".x:nth-of-type(2)", "a:first-child + b:nth-child(2)", "a:nth-last-child(2) + b:last-child",
+    "a + b:nth-child(odd) + c:nth-child(3)", "b:nth-of-type(2)", "b:nth-child(2 of .x)", "b:nth-last-of-type(odd)"},
+  Join[ConstantArray[True, 11], ConstantArray[False, 3]],
   TestID -> "css-child-indexed-shifted-general"
 ];
 

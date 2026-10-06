@@ -37,3 +37,32 @@ TestCreate[
   TimeConstraint -> 0.15,
   TestID -> "perf-shape-from-end-5000-siblings"
 ];
+
+(* 1,000 sibling tr, two in three of class a. *)
+$thousandRows = XMLElement["table", {}, {XMLElement["tbody", {},
+  Table[XMLElement["tr", If[Mod[i, 3] != 0, {"class" -> "a"}, {}], {"x"}], {i, 1000}]]}];
+
+(* Shape 4, a position from the start among the children that match S.
+   Measured at about 12 ms on a 2026 laptop, against about 8.3 s as a
+   Count in a condition on the list, as it was translated before, and more
+   than 60 s on the general matcher. *)
+TestCreate[
+  Length @ XMLCases[$thousandRows, "tr:nth-child(2n+1 of .a)"],
+  334,
+  TimeConstraint -> 0.2,
+  TestID -> "perf-shape-counted-from-start-1000-siblings"
+];
+
+(* 5,000 siblings, li and p in turn. *)
+$fiveThousandMixed = XMLElement["body", {}, {XMLElement["ul", {},
+  Table[XMLElement[If[OddQ[i], "li", "p"], {}, {"x"}], {i, 5000}]]}];
+
+(* Shape 5, a position from the end among the children of a type. Measured
+   at about 18 ms on a 2026 laptop, against about 440 ms as a Count in a
+   condition on the list, and more than 60 s on the general matcher. *)
+TestCreate[
+  Length @ XMLCases[$fiveThousandMixed, "li:nth-last-of-type(2)"],
+  1,
+  TimeConstraint -> 0.2,
+  TestID -> "perf-shape-counted-from-end-5000-siblings"
+];
