@@ -108,15 +108,16 @@ TestCreate[
    recognised as any other is. *)
 
 TestCreate[
+  With[{divWithP = Child[XMLPattern["div"], {___, XMLPattern["p"], ___}]},
   sameEitherWay[Map[Join[
-    XMLCases[#, Child[any, {___, Child[XMLPattern["div"], {___, XMLPattern["p"], ___}], ___, li, ___}]],
+    XMLCases[#, Child[any, {___, divWithP, ___, li, ___}]],
     XMLCases[#, Child[any, {___, Child[XMLPattern["div"], XMLPattern["span"]], Child[li, {___, any, ___}]}]],
     XMLCases[#, Descendant[any, {___, Descendant[XMLPattern["div"], {___, XMLPattern["span", "classList" -> "a"], ___}], ___, XMLPattern["p"], ___}], 4],
     {XMLFirstCase[#, Child[any, {___, Child[XMLPattern["div"], {___, li, ___}], ___, XMLPattern[_], ___}], None]},
-    {deleted[#, Child[any, {___, Child[XMLPattern["div"], {___, XMLPattern["p"], ___}], ___, li, ___}]]},
-    XMLCases[#, Child[any, {___, Child[XMLPattern["div"], {___, XMLPattern["p"], ___}], ___, c : li, ___}] :> Lookup[c[[2]], "id"]]] &, $trees]],
+    {deleted[#, Child[any, {___, divWithP, ___, li, ___}]]},
+    XMLCases[#, Child[any, {___, divWithP, ___, c : li, ___}] :> Lookup[c[[2]], "id"]]] &, $trees]]],
   True,
-  TestID -> "context-entry-recognised-inside"
+  TestID -> "shape-context-entry-inside"
 ];
 
 (* Below the document, and with a reading added by the option, inside the
@@ -128,5 +129,5 @@ TestCreate[
       Child[any, {___, Child[XMLPattern["div" | "li"], {___, XMLPattern[_, "relList" -> "a"], ___}], ___, XMLPattern[_, "relList" -> "b"], ___}],
       "AttributeReadings" -> <|"rel" -> <||>|>] &, $trees]]],
   True,
-  TestID -> "context-entry-recognised-inside-document-readings"
+  TestID -> "shape-context-entry-inside-document-readings"
 ];

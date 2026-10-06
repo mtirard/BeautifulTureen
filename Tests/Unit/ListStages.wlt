@@ -218,7 +218,7 @@ TestCreate[
 
 (* A context entry anywhere before the selected entry: d3 has a p, so the c3s
    after it are selected, and d3 itself is not, as no sibling with a p comes
-   before it. Each runner runs the context entry, which is compiled once. *)
+   before it. Then an adjacent context entry, and a selected combinator entry. *)
 $divs = XMLElement["body", {}, {
   XMLElement["div", {"class" -> "c3", "id" -> "d1"}, {"t"}],
   XMLElement["div", {"class" -> "c1", "id" -> "d2"}, {"t"}], "x",
@@ -237,7 +237,7 @@ TestCreate[
      ids @ XMLCases[$divs, Child["body", {___, Child["div", "p"], "div", ___}]],
      ids @ XMLCases[$divs, Child["body", {___, Descendant["div", "p"], ___, Child["div.c3", "p"]}]]}],
   {{"d5", "d6"}, {"d5"}, "d5", {"d1", "d2", "d3", "d4"}, {"d5", "d6"}, {"d4"}, {None}},
-  TestID -> "list-context-entry-anywhere-before"
+  TestID -> "list-context-entry-hand-checked"
 ];
 
 (* On random trees, a context combinator entry selects as the same list with

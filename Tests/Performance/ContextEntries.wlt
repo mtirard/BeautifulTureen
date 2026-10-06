@@ -1,8 +1,8 @@
 (* Context entries are compiled once (ADR 0020): each is a chain of its own in
    the compiled query, run from each child at most once, and a run builds no
    chain, tuple test or two-step match for it (Tests/Unit/CompiledQuery.wlt
-   counts that). The bound is generous, to catch a context entry run from more
-   than its child, or more than once per child, not to benchmark. *)
+   counts that). The bound is generous, to catch quadratic behaviour, such as a
+   context entry run over the whole tree for each child, not to benchmark. *)
 
 (* 3,000 sibling div, one in seven of class c3, one in five with a p child. *)
 $threeThousand = XMLElement["body", {}, Table[
