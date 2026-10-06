@@ -588,8 +588,9 @@ cElem[q_] := badpat[q];
                chain is run from the child whose index is Length[{mark}] + 1
      "Parent", "At"  the names of the parent's position and the index in the
                tuple pattern
-   In a tuple the stage is listSlot[parent, index, children], the parent's
-   element children; its site is the selected child's. *)
+   Its site in a tuple is the selected child's. On the general matcher the
+   stage is listSlot[parent, index, children] in a tuple, the parent's element
+   children; in a recognised shape it is the selected child (tupleStage). *)
 listFormQ[p_] := ListQ[patternBase[p]];
 
 (* A refusal names the list or the entry as written. *)
@@ -719,14 +720,14 @@ withMethods[q_] := q;
    entry, name, Condition or test on the list. *)
 listMethod[listStage[a_]] /; $recogniseShapes && a["Checks"] === {} &&
     MatchQ[a["Pattern"], {Verbatim[Pattern][a["Index"], Verbatim[PatternSequence][Verbatim[___]]], _, Verbatim[___]}] :=
-  anywhere @@ twoStep[a["Pattern"][[2]]];
+  anywhere @@ twoStep[selectedEntry[a]];
 (* Shapes 2 and 3, a position among all children from the start, the end or
    both: the selected entry with only blanks, repeats of them and Except[_]
    around it, unnamed, and no context entry, name, Condition or test on the
    list. :first-child is {s, ___}, :nth-child(2n+1) {PatternSequence[_, _]...,
    s, ___}, :nth-last-child(2) {___, s, _} and :only-child {s}. *)
 listMethod[listStage[a_]] /; $recogniseShapes && a["Checks"] === {} :=
-  With[{around = lengthsAround[a]}, amongChildren[Sequence @@ around, Sequence @@ twoStep[a["Pattern"][[2]]]] /; FreeQ[around, None]];
+  With[{around = lengthsAround[a]}, amongChildren[Sequence @@ around, Sequence @@ twoStep[selectedEntry[a]]] /; FreeQ[around, None]];
 (* Shapes 4 and 5, a position among the children that match a pattern t, from
    the start, the end or both, or among all children on one side: the
    selected entry with, before it, Except[t] ... then units PatternSequence[t,
@@ -734,7 +735,7 @@ listMethod[listStage[a_]] /; $recogniseShapes && a["Checks"] === {} :=
    name. :nth-of-type(2) is {Except[t] ..., PatternSequence[t, Except[t] ...],
    s, ___} and :only-of-type {Except[t] ..., s, Except[t] ...}. *)
 listMethod[listStage[a_]] /; $recogniseShapes && a["Checks"] === {} :=
-  With[{around = countsAround[a]}, amongMatching[Sequence @@ around, Sequence @@ twoStep[a["Pattern"][[2]]]] /; FreeQ[around, None]];
+  With[{around = countsAround[a]}, amongMatching[Sequence @@ around, Sequence @@ twoStep[selectedEntry[a]]] /; FreeQ[around, None]];
 (* Shape 6, ordered entries: the selected entry among entries that each match
    one child, by a pattern or as a context combinator entry, with ___ or
    nothing between two of them, and a ___ or nothing at each end; no entry but
@@ -742,8 +743,17 @@ listMethod[listStage[a_]] /; $recogniseShapes && a["Checks"] === {} :=
    list. Sibling[a, b] is {___, a, ___, b, ___}, Adjacent[a, b] {___, a, b,
    ___}. *)
 listMethod[listStage[a_]] /; $recogniseShapes :=
-  With[{around = orderedAround[a]}, ordered[Sequence @@ around, Sequence @@ twoStep[a["Pattern"][[2]]]] /; around =!= None];
+  With[{around = orderedAround[a]}, ordered[Sequence @@ around, Sequence @@ twoStep[selectedEntry[a]]] /; around =!= None];
 listMethod[ls_] := generalMatcher @@ listMatcher[ls];
+
+(* The heads of the recognised shapes' methods, and whether a list stage runs
+   by one. Defined before childrenSelected, whose definition reads it. *)
+$recognisedMethods = anywhere | amongChildren | amongMatching | ordered;
+recognisedQ[listStage[a_]] := MatchQ[a["Method"], $recognisedMethods[___]];
+
+(* The selected entry of a list stage run as a recognised shape, whose list
+   has the form {pre : PatternSequence[...], s, ...}. *)
+selectedEntry[a_] := a["Pattern"][[2]];
 
 (* The entries on each side of the selected one, as {before, {left, right},
    after}: left and right are the entries next to it, before and after are
@@ -1286,8 +1296,9 @@ plainQuery[q_] :=
 (* is one value, and a rule body sees every name. A list stage   *)
 (* is matched against one parent's element children at a time,  *)
 (* by the one list matcher, which Adjacent and Sibling links     *)
-(* also run on (ADR 0016); in a tuple it is the list of those    *)
-(* children, and its site is the selected child's.               *)
+(* also run on (ADR 0016); its site is the selected child's, and *)
+(* in a tuple it is the list of those children, or in a          *)
+(* recognised shape the selected child.                          *)
 (* =========================================================== *)
 
 (* Every combinator query runs as a chain, nested or not, tested or not. *)
@@ -1324,8 +1335,14 @@ coverStages[items_, {{i_, j_}, test_}] :=
 
 tupleRule[q_] := solvable[RuleDelayed @@ Join[Hold @@ {tuplePattern[q]}, q["Body"]]];
 
-(* A list stage in a tuple: the list, with the selected entry at the child's
-   index, and each context combinator entry's chain completing from its child. *)
+(* A list stage in a tuple. In a recognised shape, the method that selected
+   the child has checked its place and its context entries, and only the
+   selected entry can name anything, so the stage is that entry, matched
+   against the selected child: the list is not matched again. On the general
+   matcher another entry may bind names, so the stage is the list, with the
+   selected entry at the child's index, and each context combinator entry's
+   chain completing from its child. *)
+tupleStage[ls : listStage[a_]] /; recognisedQ[ls] := selectedEntry[a];
 tupleStage[listStage[a_]] :=
   With[{par = a["Parent"], i = a["At"], pre = a["Index"]},
     Condition @@ Join[Hold @@ {listSlot[namedPattern[par, _], namedPattern[i, _], a["Pattern"]]},
@@ -1491,22 +1508,24 @@ listSelected[Descendant, p_, method_] :=
 (* A recognised shape selects only children that its selected entry matches,
    so an element with none of them is passed over without listing its children:
    most elements, below an any-element parent stage as in li:first-child. *)
-childrenSelected[par_, (anywhere | amongChildren | amongMatching | ordered)[___, s_, None]] /; par =!= $documentSite && FreeQ[Last[at[par]], s, {1}] := {};
+childrenSelected[par_, $recognisedMethods[___, s_, None]] /; par =!= $documentSite && FreeQ[Last[at[par]], s, {1}] := {};
 childrenSelected[par_, method_] :=
   With[{k = kidsAt[par]}, If[k[[2]] === {}, {}, k[[1, listIndices[method, par, k[[2]]]]]]];
 
-(* The tuple's elements, a list stage's slot as listSlot[parent, index,
-   children]. *)
+(* The tuple's elements, a list stage on the general matcher as listSlot[parent,
+   index, children], and one of a recognised shape as the selected child (see
+   tupleStage). *)
 tupleElements[q_] :=
-  With[{slots = Flatten @ Position[q["Stages"], _listStage, {1}, Heads -> False]},
-    If[slots === {}, atAll, withListSlots[slots]]];
+  With[{slots = listSlots[q]}, If[slots === {}, atAll, withListSlots[slots]]];
+
+listSlots[q_] := Flatten @ Position[q["Stages"], ls_listStage /; !recognisedQ[ls], {1}, Heads -> False];
 
 withListSlots[slots_][t_] := ReplacePart[atAll[t], Thread[slots -> (listSlotAt /@ t[[slots]])]];
 
 listSlotAt[site_] :=
   With[{par = parentOf[site]}, With[{k = kidsAt[par]}, listSlot[par, k[[3]][site], k[[2]]]]];
 
-tuplesElements[q_, tuples_] := If[MemberQ[q["Stages"], _listStage], tupleElements[q] /@ tuples, elementsAt[tuples]];
+tuplesElements[q_, tuples_] := If[listSlots[q] =!= {}, tupleElements[q] /@ tuples, elementsAt[tuples]];
 
 (* Whether the child at index j of par completes context combinator entry id:
    the rest of its chain run from that child alone, once per child in a run. *)

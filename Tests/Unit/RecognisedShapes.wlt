@@ -677,3 +677,99 @@ TestCreate[
   True,
   TestID -> "shape-ordered-unrecognised-still-correct"
 ];
+
+(* === Rule bodies over a recognised shape ===
+
+   In a recognised shape only the selected entry can be named, so a rule body,
+   a Condition in it and a Condition on the combinator see the selected child
+   and the other stages, and are evaluated from them, not by matching the list
+   again. Shapes 4 to 6 are slow on WL's matcher, so these use the trees with
+   each list of children cut to its first 12. *)
+
+idOf[e_] := Lookup[e[[2]], "id"];
+oddIdQ[e_] := OddQ[ToExpression[idOf[e]]];
+
+(* The list with its selected entry c : x made c : f[x]. *)
+selectedAs[l_, f_] := l /. Verbatim[Pattern][c, x_] :> With[{y = f[x]}, c : y];
+
+(* One spelling of each shape, the selected entry named c. *)
+$namedShapes = {
+  {___, c : li, ___},                                                 (* 1 *)
+  {_, PatternSequence[_, _]..., c : li, ___},                         (* 2 *)
+  {___, c : li, _},                                                   (* 3 *)
+  {Except[li]..., PatternSequence[li, Except[li]...], c : li, ___},   (* 4 *)
+  {___, c : any, PatternSequence[Except[para]..., para], Except[para]...}, (* 5 *)
+  {___, para, ___, c : li, ___},                                      (* 6 *)
+  {___, Child[dv, spn], ___, c : any, ___}};                          (* 6, a context combinator entry *)
+
+TestCreate[
+  sameEitherWay[Map[Function[t, Join @@ Table[Join[
+      XMLCases[t, Child[any, l] :> idOf[c]],
+      XMLCases[t, Child[any, l] :> idOf[c] /; oddIdQ[c]],
+      XMLCases[t, Child[any, l] :> idOf[c], 2],
+      XMLCases[t, Child[any, l] :> idOf[c] /; oddIdQ[c], 1],
+      {XMLFirstCase[t, Child[any, l] :> idOf[c], None]},
+      {XMLFirstCase[t, Child[any, l] :> idOf[c] /; oddIdQ[c], None]}],
+    {l, $namedShapes}]], $smallTrees]],
+  True,
+  TestID -> "shape-body-named-entry"
+];
+
+(* A rule body and a Condition in it that see the names of other stages, the
+   parent's and a later stage's, and a Condition on the combinator that spans
+   the list stage, with and without a body. *)
+TestCreate[
+  sameEitherWay[Map[Function[t, Join @@ Table[Join[
+      XMLCases[t, Child[p : any, l] :> {idOf[p], idOf[c]}],
+      XMLCases[t, Child[p : any, l] :> {idOf[p], idOf[c]} /; oddIdQ[p] =!= oddIdQ[c]],
+      XMLCases[t, Child[Child[any, l], d : any] :> {idOf[c], idOf[d]} /; oddIdQ[d]],
+      XMLCases[t, Child[p : any, l] /; oddIdQ[p] === oddIdQ[c]],
+      XMLCases[t, (Child[p : any, l] /; oddIdQ[p] === oddIdQ[c]) :> idOf[c]]],
+    {l, $namedShapes}]], $smallTrees]],
+  True,
+  TestID -> "shape-body-other-stages"
+];
+
+(* A body Condition takes part in choosing an ancestor (ADR 0014), in
+   XMLFirstCase as in XMLCases, and a name at two stages is one value. *)
+TestCreate[
+  sameEitherWay[Map[Function[t, Join @@ Table[Join[
+      XMLCases[t, Descendant[d : dv, l] :> {idOf[d], idOf[c]} /; oddIdQ[d]],
+      {XMLFirstCase[t, Descendant[d : dv, l] :> {idOf[d], idOf[c]} /; oddIdQ[d] && !oddIdQ[c], None]},
+      XMLCases[t, Child[XMLPattern[_, "class" -> k_], selectedAs[l, XMLPattern[#[[1]], "class" -> k_] &]] :> {k, idOf[c]}]],
+    {l, $namedShapes}]], $smallTrees]],
+  True,
+  TestID -> "shape-body-chooses"
+];
+
+(* Alternatives of chains, a name bound only in the other alternative being
+   Sequence[], below the document, the two-step match, and a reading added by
+   the option. *)
+TestCreate[
+  sameEitherWay[Join[
+    Map[Function[t, Join @@ Table[Join[
+        XMLCases[t, Child[dv, l] | Child[XMLPattern["p"], {e : any, ___}] :> {c, e}],
+        {XMLFirstCase[t, Child[dv, l] | Child[para, {e : any, ___}] :> {c, idOf[e]} /; oddIdQ[e], None]},
+        XMLCases[t, Child[any, selectedAs[l, XMLPattern[_, {"class" -> k_, "id" -> i_}] /; StringLength[k] < StringLength[i] + 2 &]] :> idOf[c]],
+        XMLCases[t /. ("class" -> v_) :> ("rel" -> v), Child[any, l /. li -> XMLPattern["li" | "p", "relList" -> "a"]] :> {c[[1]], c[[2]]} /; oddIdQ[c],
+          "AttributeReadings" -> <|"rel" -> <||>|>]],
+      {l, $namedShapes}]], $smallTrees],
+    Map[Function[t, Join @@ Table[Join[
+        XMLCases[t, Child[XMLDocument[], l] :> idOf[c] /; oddIdQ[c]],
+        {XMLFirstCase[t, Child[XMLDocument[], l] :> idOf[c], None]}],
+      {l, $namedShapes}]], $smallLists]]],
+  True,
+  TestID -> "shape-body-alternatives-document-two-step-readings"
+];
+
+(* A selected entry of named alternatives: the name bound only in the
+   alternative that did not match is Sequence[] (ADR 0015). *)
+TestCreate[
+  sameEitherWay[Map[Function[t, Join @@ Table[Join[
+      XMLCases[t, Child[any, l] :> {Length[{c}], Length[{d}]}],
+      XMLCases[t, Child[any, l] :> {c, d} /; Length[{d}] == 1],
+      {XMLFirstCase[t, Descendant[x : dv, l] :> {idOf[x], c, d} /; Length[{d}] == 1, None]}],
+    {l, Take[$namedShapes, 6] /. Verbatim[Pattern][c, x_] :> (c : x) | (d : para)}]], $smallTrees]],
+  True,
+  TestID -> "shape-body-selected-alternatives"
+];
