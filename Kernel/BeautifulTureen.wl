@@ -2234,19 +2234,32 @@ cssAddRun[{stages_, links_}, run_] :=
 
 (* A run as a list: its compounds in order, + adding nothing between two and ~
    a ___, with a position of the first compound written as the entries before
-   it and one of the last as the entries after it. Where positions need more
-   than that, the general form names every gap and compound, and tests the
-   positions in a condition on the list. So does a position among the
-   siblings of a type or that match a selector, other than the first or the
-   last: repeats of Except[s] ..., s backtrack without bound (over 20 s for
-   tr:nth-of-type(50) among 1,000 rows, against 0.06 s as a condition). *)
+   it and one of the last as the entries after it. A position among all the
+   siblings of a compound joined to the first by + alone is one of the first,
+   less the compounds between (.b + .a:nth-child(5) is .b at 4), and the same
+   from the end. Where positions need more than that, the general form names
+   every gap and compound, and tests the positions in a condition on the list.
+   So does a position among the siblings of a type or that match a selector,
+   other than the first or the last: repeats of Except[s] ..., s backtrack
+   without bound (over 20 s for tr:nth-of-type(50) among 1,000 rows, against
+   0.06 s as a condition). *)
 cssRunList[parts_, within_] :=
-  With[{forward = Select[#[[3]], !First[#] &] & /@ parts, backward = Select[#[[3]], First] & /@ parts},
-    If[Length[First[forward]] <= 1 && Length[Last[backward]] <= 1 && Flatten[{Rest[forward], Most[backward]}] === {} &&
-        FreeQ[{First[forward], Last[backward]}, cssOwnType | (cssPos[_, a_, b_, Except[None], _] /; !(a == 0 && b == 1))],
-      Join[cssPositionEntries[First[forward], False], cssRunEntries[First /@ parts, within],
-        cssPositionEntries[Last[backward], True]],
-      cssGeneralList[parts, within]]];
+  With[{k = Length[parts]},
+    With[{
+        forward = Join @@ MapIndexed[cssShifted[#1, First[#2] - 1, Take[within, First[#2] - 1]] &, Select[#[[3]], !First[#] &] & /@ parts],
+        backward = Join @@ MapIndexed[cssShifted[#1, k - First[#2], Drop[within, First[#2] - 1]] &, Select[#[[3]], First] & /@ parts]},
+      If[Length[forward] <= 1 && Length[backward] <= 1 && FreeQ[{forward, backward}, None, {2}] &&
+          FreeQ[{forward, backward}, cssOwnType | (cssPos[_, a_, b_, Except[None], _] /; !(a == 0 && b == 1))],
+        Join[cssPositionEntries[forward, False], cssRunEntries[First /@ parts, within], cssPositionEntries[backward, True]],
+        cssGeneralList[parts, within]]]];
+
+(* The positions of a compound s compounds from an end of its run, moved to
+   that end over the links between, or None when they cannot move. *)
+cssShifted[ps_, 0, _] := ps;
+cssShifted[{}, _, _] := {};
+cssShifted[ps_, s_, links_] /; MatchQ[links, {Adjacent ..}] && MatchQ[ps, {cssPos[_, _, _, None, _] ..}] :=
+  Replace[ps, cssPos[e_, a_, b_, None, t_] :> cssPos[e, a, b - s, None, t], {1}];
+cssShifted[_, _, _] := {None};
 
 (* Each compound but the last, with the gap after it. *)
 cssRunEntries[ps_, within_] := Append[Join @@ MapThread[Prepend[cssGap[#2], #1] &, {Most[ps], within}], Last[ps]];

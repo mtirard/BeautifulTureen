@@ -48,6 +48,55 @@ TestCreate[
   TestID -> "list-nth-child"
 ];
 
+(* === A position moved along a + run (ADR 0017) ===
+   FromCSSSelector writes a position of a compound joined to the end of its run
+   by + alone as plain entries before the first compound or after the last.
+   It selects what the condition form it replaced selects, written out here by
+   hand, on forty random lists of up to twelve rows of class a, b or neither. *)
+
+$runs = BlockRandom[SeedRandom[20261006];
+  XMLElement["body", {}, Table[
+    XMLElement["div", {}, Table[
+      XMLElement["tr", Append[Replace[RandomChoice[{"a", "b", None}], {None -> {}, c_ :> {"class" -> c}}], "id" -> ToString[{i, j}]], {}],
+      {j, RandomInteger[{0, 12}]}]],
+    {i, 40}]]];
+
+ca = XMLPattern[_, "classList" -> "a"];
+cb = XMLPattern[_, "classList" -> "b"];
+posQ[a_, b_, i_] := Which[a == 0, i == b, a > 0, i >= b && Mod[i - b, a] == 0, True, i <= b && Mod[b - i, -a] == 0];
+anb[{a_, b_}] := ToString[a] <> "n" <> If[b < 0, "", "+"] <> ToString[b];
+
+(* The condition forms: a position on the last compound counted from the
+   start, with the others tested on the siblings before it, and one on the
+   first counted from the end, with every compound named. *)
+oldForward[{a_, b_}, before_, last_] :=
+  With[{run = Join[{___}, (With[{m = XMLMatchQ[#]}, _?m] &) /@ before]},
+    Child[XMLDocument[] | XMLPattern[_], {g___, c : last, h___} /; posQ[a, b, Length[{g}] + 1] && MatchQ[{g}, run]]];
+oldBackward[{a_, b_}, {x_, y_}] := Child[XMLDocument[] | XMLPattern[_], {g___, c1 : x, c2 : y, h___} /; posQ[a, b, Length[{c2, h}] + 1]];
+oldBackward[{a_, b_}, {x_, y_, z_}] :=
+  Child[XMLDocument[] | XMLPattern[_], {g___, c1 : x, c2 : y, c3 : z, h___} /; posQ[a, b, Length[{c2, c3, h}] + 1]];
+oldBoth[{a_, b_}] :=
+  Child[XMLDocument[] | XMLPattern[_],
+    {g___, c : ca, h___} /; posQ[a, b, Length[{g}] + 1] && posQ[2, 1, Length[{h}] + 1] && MatchQ[{g}, {___, _?(XMLMatchQ[cb])}]];
+
+$anbs = {{0, 0}, {0, 1}, {0, 2}, {0, 5}, {0, -1}, {0, 13}, {1, 0}, {1, -3}, {1, 4}, {2, 1}, {2, 0}, {2, -3}, {3, 2},
+  {3, -1}, {4, -10}, {-1, 3}, {-1, 0}, {-1, 1}, {-2, 5}, {-2, 1}, {-3, 9}, {-1, -2}};
+
+$shiftCases = Join @@ Function[n, {
+    {".b + .a:nth-child(" <> anb[n] <> ")", oldForward[n, {cb}, ca]},
+    {".a + .b + .a:nth-child(" <> anb[n] <> ")", oldForward[n, {ca, cb}, ca]},
+    {".b:nth-last-child(" <> anb[n] <> ") + .a", oldBackward[n, {cb, ca}]},
+    {".a:nth-last-child(" <> anb[n] <> ") + .b + .a", oldBackward[n, {ca, cb, ca}]},
+    {".b + .a:nth-child(" <> anb[n] <> "):nth-last-child(odd)", oldBoth[n]}}] /@ $anbs;
+
+TestCreate[
+  {AllTrue[$shiftCases, FreeQ[FromCSSSelector[First[#]], Condition] &],
+   Select[$shiftCases, ids @ XMLCases[$runs, First[#]] =!= ids @ XMLCases[$runs, Last[#]] &][[All, 1]],
+   Total[Length[ids @ XMLCases[$runs, Last[#]]] & /@ $shiftCases] > 200},
+  {True, {}, True},
+  TestID -> "list-css-shifted-position"
+];
+
 (* === -of-type: Except[p] ... is context, not the selected entry === *)
 
 TestCreate[
