@@ -8,7 +8,7 @@ ids[tree_, sel_String, opts___] := Lookup[#[[2]], "id", None] & /@ XMLCases[tree
 
 (* The output holds no symbol of the paclet's private context. *)
 privateFreeQ[x_] :=
-  FreeQ[x, s_Symbol /; Context[s] === "MaximilienTirard`BeautifulTureen`Private`", {0, Infinity}, Heads -> True];
+  FreeQ[x, s_Symbol /; Context[s] === "MaximilienTirard`HTMLPatterns`Private`", {0, Infinity}, Heads -> True];
 
 element[html_String] := XMLFirstCase[ImportString[html, {"HTML", "XMLObject"}], XMLPattern["div"]];
 
@@ -204,8 +204,8 @@ TestCreate[
       Verbatim[Condition][Verbatim[Pattern][e_Symbol, XMLPattern["div"]], HoldPattern[AnyTrue[Last[e_], XMLMatchQ[XMLPattern["p"]]]]]],
     MatchQ[FromCSSSelector["div:has(a + b)"],
       Verbatim[Condition][Verbatim[Pattern][e_Symbol, XMLPattern["div"]],
-        HoldPattern[! MissingQ[XMLFirstCase[XMLElement[{"urn:x-beautifultureen:anchor", "anchor"}, {}, Last[e_]],
-          Descendant[XMLPattern[{"urn:x-beautifultureen:anchor", "anchor"}], Adjacent[XMLPattern["a"], XMLPattern["b"]]]]]]]]},
+        HoldPattern[! MissingQ[XMLFirstCase[XMLElement[{"urn:x-htmlpatterns:anchor", "anchor"}, {}, Last[e_]],
+          Descendant[XMLPattern[{"urn:x-htmlpatterns:anchor", "anchor"}], Adjacent[XMLPattern["a"], XMLPattern["b"]]]]]]]]},
   {True, True, True},
   TestID -> "css-has-shapes"
 ];

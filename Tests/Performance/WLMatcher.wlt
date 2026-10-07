@@ -4,7 +4,7 @@
    (ADR 0020) runs by a dedicated method, and fails when WL becomes fast on it.
    A failure here is not a paclet regression. It means the shapes the canary
    names may no longer be needed on that WL version: measure them against the
-   general matcher (Block[{MaximilienTirard`BeautifulTureen`Private`$recogniseShapes
+   general matcher (Block[{MaximilienTirard`HTMLPatterns`Private`$recogniseShapes
    = False}, ...]) and decide whether
    to keep them, or to let WL's matcher run them from that $VersionNumber on.
 

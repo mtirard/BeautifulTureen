@@ -1,5 +1,5 @@
 (*
-	Shared HTML/XML fixtures for the BeautifulTureen test suite.
+	Shared HTML/XML fixtures for the HTMLPatterns test suite.
 
 	These trees are used by more than one test file (Combinators, XMLFirstCase,
 	RealWorld), so they live here and are parsed once at PacletInitialization time
@@ -7,11 +7,11 @@
 	inline in that file, next to the tests that exercise them.
 
 	Loaded by Tests/TestConfig.m's "PacletInitialization". The symbols are exported
-	on the BeautifulTureenTests` context, which TestConfig.m adds to
+	on the HTMLPatternsTests` context, which TestConfig.m adds to
 	"PacletContexts" so tests can reference them unqualified.
 *)
 
-BeginPackage["BeautifulTureenTests`"];
+BeginPackage["HTMLPatternsTests`"];
 
 $tree::usage = "$tree is an imported HTML document with a .main div (two <p>, a <span>) and a .sidebar div.";
 $treeSiblings::usage = "$treeSiblings is an imported HTML document of an <h2> followed by mixed <p>/<span> siblings, for combinator tests.";

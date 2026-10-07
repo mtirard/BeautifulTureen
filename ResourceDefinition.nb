@@ -1,13 +1,13 @@
 Notebook[{
 
 Cell[CellGroupData[{
-Cell["MaximilienTirard/BeautifulTureen", "Title",
+Cell["MaximilienTirard/HTMLPatterns", "Title",
  Deletable->False,
  CellTags->{"Name", "TemplateCell", "Title"}],
 
 Cell["\<\
 Pattern-based HTML element selection with descendant, sibling, and class \
-combinators \[LongDash] BeautifulSoup ergonomics in Wolfram Language\
+combinators\
 \>", "Text",
  Deletable->False,
  CellTags->{"Description", "TemplateCell"}],
@@ -290,7 +290,7 @@ for your paclet."}], "MoreInfoText"], Background -> GrayLevel[0.95],
  DefaultNewCellStyle->"Text",
  CellTags->{"Primary Context", "PrimaryContext", "TemplateCellGroup"}],
 
-Cell["MaximilienTirard`BeautifulTureen`", "Text"]
+Cell["MaximilienTirard`HTMLPatterns`", "Text"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -418,7 +418,7 @@ Cell[BoxData[
 
 Cell[BoxData[
  RowBox[{
-  RowBox[{"Needs", "[", "\"\<MaximilienTirard`BeautifulTureen`\>\"", "]"}], 
+  RowBox[{"Needs", "[", "\"\<MaximilienTirard`HTMLPatterns`\>\"", "]"}], 
   ";"}]], "Input", "Excluded",
  InitializationCell->True]
 }, Open  ]],
@@ -5325,7 +5325,7 @@ Cell["Additional information about limitations, issues, etc.", "Text",
 }, Open  ]]
 }, Open  ]]
 },
-WindowTitle->"BeautifulTureen | Definition Notebook",
+WindowTitle->"HTMLPatterns | Definition Notebook",
 LightDark->"Light",
 TaggingRules->{
  "ResourceType" -> "Paclet", "ResourceCreateNotebook" -> True, 

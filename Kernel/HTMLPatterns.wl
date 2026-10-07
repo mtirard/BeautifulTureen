@@ -1,7 +1,7 @@
 (* ::Package:: *)
-(* BeautifulTureen: XML patterns + the XML* consumers *)
+(* HTMLPatterns: XML patterns + the XML* consumers *)
 
-BeginPackage["MaximilienTirard`BeautifulTureen`"];
+BeginPackage["MaximilienTirard`HTMLPatterns`"];
 
 (* === Public symbols === *)
 
@@ -2950,7 +2950,7 @@ cssOfType[_] := cssOwnType;
 
 (* The anchor wraps an element's children in :has(), so that they have a
    parent; its namespaced tag is in no document. *)
-$cssAnchor = {"urn:x-beautifultureen:anchor", "anchor"};
+$cssAnchor = {"urn:x-htmlpatterns:anchor", "anchor"};
 
 $cssAny = br[tg[All, {}], <||>, {}];
 
