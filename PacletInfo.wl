@@ -3,7 +3,7 @@ PacletObject[
     "Name" -> "MaximilienTirard/HTMLPatterns",
     "Description" -> "Pattern-based HTML element selection, text extraction, and notebook/Markdown conversion with CSS-like combinators, class-list matching, and document-order results",
     "Creator" -> "Maximilien Tirard",
-    "Version" -> "2.1.0",
+    "Version" -> "3.0.0",
     "WolframVersion" -> "12.3+",
     "PublisherID" -> "MaximilienTirard",
     "License" -> "MIT",
