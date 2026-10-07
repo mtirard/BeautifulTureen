@@ -160,14 +160,13 @@ TestCreate[
   TestID -> "cond-combinator-refused-for-an-element-pattern"
 ];
 
-(* An Alternatives of combinators, or a combinator inside an Alternatives, is not
-   a query, tested or not. *)
+(* Alternatives of combinators, or a combinator inside alternatives, are a
+   query, tested or not (ADR 0015). *)
 TestCreate[
-  {XMLCases[$treeCond, (Child[XMLPattern["div"], XMLPattern["span"]] | Child[XMLPattern["section"], XMLPattern["p"]]) /; True],
-   XMLCases[$treeCond, Child[XMLPattern["section"], XMLPattern["p"] | Child[XMLPattern["div"], XMLPattern["span"]]] /; True]},
-  {$Failed, $Failed},
-  {XMLCases::badpat, XMLCases::badpat},
-  TestID -> "cond-combinator-alternatives-refused"
+  {HTMLTextContent /@ XMLCases[$treeCond, (Child[XMLPattern["div"], XMLPattern["span"]] | Child[XMLPattern["section"], XMLPattern["p"]]) /; True],
+   HTMLTextContent /@ XMLCases[$treeCond, Child[XMLPattern["section"], XMLPattern["p"] | Child[XMLPattern["div"], XMLPattern["span"]]] /; True]},
+  {{"C", "x", "y"}, {"C", "x", "y"}},
+  TestID -> "cond-combinator-alternatives"
 ];
 
 (* === Named whole-element conditions (el : pat /; test) === *)
@@ -315,6 +314,18 @@ TestCreate[
   ][[All, 3]],
   {{"1"}},
   TestID -> "cond-cross-field-list-key-and-element-name"
+];
+
+(* The same, with each name seen by only one of the test and the body, or only
+   inside held code. *)
+TestCreate[
+  With[{t = XMLElement["div", {}, {
+      XMLElement["p", {"class" -> "a b", "id" -> "b"}, {"1"}],
+      XMLElement["p", {"class" -> "a b", "id" -> "c"}, {"2"}]}]},
+    {XMLCases[t, (e : XMLPattern["p", {"classList" -> c_, "id" -> i_}]) /; MemberQ[c, i] :> e],
+     XMLCases[t, (e : XMLPattern["p", {"classList" -> c_, "id" -> i_}]) /; ReleaseHold[Hold[e]][[2, 2]] === ("id" -> "c") :> i]}],
+  {{XMLElement["p", {"class" -> "a b", "id" -> "b"}, {"1"}]}, {"c"}},
+  TestID -> "cond-cross-field-names-used-apart"
 ];
 
 TestCreate[

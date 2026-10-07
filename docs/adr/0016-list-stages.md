@@ -1,10 +1,12 @@
 ---
-status: accepted (not yet implemented; amended by ADR-0018)
+status: accepted (amended by ADR-0018 and ADR-0020)
 ---
 
 # A list stage is a WL list pattern over a parent's element children, and `Adjacent` and `Sibling` are its shorthands
 
-> **Amended by [ADR 0018](./0018-the-document-above-the-top-elements.md)** (2026-10-02, not yet implemented). A list stage after `XMLDocument[]` lists the top elements, so `Child[XMLDocument[] | XMLPattern[_], {…}]` reaches the root, and "The root" below is reversed. In "`Adjacent` and `Sibling`", `_` as the parent stands for `XMLDocument[] | XMLPattern[_]`.
+> **Amended by [ADR 0018](./0018-the-document-above-the-top-elements.md)** (2026-10-02, implemented 2026-10-05). A list stage after `XMLDocument[]` lists the top elements, so `Child[XMLDocument[] | XMLPattern[_], {…}]` reaches the root, and "The root" below is reversed. In "`Adjacent` and `Sibling`", `_` as the parent stands for `XMLDocument[] | XMLPattern[_]`.
+
+> **Amended by [ADR 0020](./0020-recognised-shapes.md)** (2026-10-06). The list matcher below is the general matcher. The compiler recognises some shapes of list stage and runs them by a dedicated method with the same results, and ADR 0020 lists them, each with its performance test: `{___, c, ___}` (moved there from the Consequences below), positions among all children, positions among the children that match a pattern `t`, `{Except[t] ..., PatternSequence[t, Except[t] ...] ..., c, ___}` and its mirror, ordered entries, `{___, a, ___, b, c, ___}`, each matching one child, with `___` or nothing between them, and a list with a `Condition` over the counts, lengths and matches of the siblings before and after the selected one, `{g___, c, h___} /; Count[{g}, s] + 1 == 2`.
 
 A combinator relates elements by ancestry and by the next or a later sibling, but it cannot say where an element sits among its siblings. CSS's child-indexed pseudo-classes (`:first-child`, `:nth-child(2n+1)`, `:nth-last-of-type(-n+3)`) need that. Comparing an element by value with its parent's children cannot express it: identical siblings collapse, so Hacker News `tr:nth-child(2n+1)` gave 65 rows instead of 50. WL already has a language for position in a sequence, the list pattern, and a [[Stage]] that is one reads `:nth-child(n)` as `{Repeated[_, {n - 1}], c, ___}`. This ADR adds that stage. A prototype matched it against soupsieve on the CSS-Rosetta snapshots: 29 of 31 selectors agree, and the two misses are the root (`.scratch/css-selectors/issues/03-prototype-list-stage-matching-on-real-pages.md`).
 
@@ -77,12 +79,44 @@ A list stage never selects the root of the tree it is given. For an `XMLObject`,
 
 ## Consequences
 
-One list matcher runs every list stage and every `Adjacent` and `Sibling` link. The prototype found the time on real pages goes to finding parents and slicing their children: about 44 ms on the CSS page (6,275 elements) before any matching, against 35 ms for today's `Child`. List stages run 50–110 ms there, against soupsieve's 4–8 ms, which is the same ratio as today's combinators. The cost of `Adjacent` and `Sibling` after the change is to be measured during implementation and written here.
+One list matcher runs every list stage and every `Adjacent` and `Sibling` link. The prototype found the time on real pages goes to finding parents and slicing their children: about 44 ms on the CSS page (6,275 elements) before any matching, against 35 ms for today's `Child`. List stages run 50–110 ms there, against soupsieve's 4–8 ms, which is the same ratio as today's combinators.
+
+The matcher is `ReplaceList` over a parent's element children, with the entries before the selected one matched as one named `PatternSequence`, whose length is the selected child's index. Two shapes are matched without enumerating, as they select the same children: `{___, c, ___}` with no other entry is the children `c` matches, found by `Position`, since `ReplaceList` builds the sequence before each match and costs the square of the children (300 ms against 1 ms over 5,000 siblings); and an `Adjacent` link reads `{b, ___}` over the children after a site, which needs only the next one, so the sites under one parent are tested together. A `Sibling` link reads `{___, b, ___}` over the children after the earliest site under a parent when the stages decide, and after each choice otherwise, as before.
+
+Measured on a 2026 laptop (median of five), before and after:
+
+| Query | Before ms | After ms |
+|---|--:|--:|
+| 1,000 rows, `Adjacent[tr.a, tr.b]` (500 results) | 2.1 | 3.2 |
+| 1,000 rows, `Sibling[tr.a, tr.b]` | 2.8 | 3.1 |
+| 1,000 rows, `Adjacent` with a shared name, no pair | 6.0 | 7.4 |
+| 1,000 rows, `Sibling` with a shared name, no pair | 3,904 | 3,912 |
+| 1,000 rows, `Sibling[…] /; True` | 15.9 | 15.6 |
+| 5,000 sibling `div`s, `Adjacent[div, div]` | 13.0 | 13.6 |
+| 5,000 sibling `div`s, `Sibling[div, div]` | 15.9 | 15.0 |
+| CSS page, `div.mw-heading + p` | 21.8 | 22.8 |
+| CSS page, `div.mw-heading ~ table` | 23.0 | 21.8 |
+| 5,000 `div`s, `Child[div, p]` (no list) | 32.9 | 33.6 |
+| CSS page, `tr > th` (no list) | 3.7 | 3.8 |
+| 1,000 rows, `XMLDeleteCases` with `Adjacent` | refused | 2.3 |
+
+List stages on the 1,000-row table, as `Child[XMLPattern[_], {…}]`, matched in full: `{c, ___}` 25 ms, `{___, c}` 24 ms, `{Repeated[_, {499}], c, ___}` 25 ms, `{PatternSequence[_, _] ..., c, ___}` 40 ms (500 results), `{___, c, Repeated[_, {0, 2}]}` 26 ms, `{___, a, b, ___}` 34 ms, and `{___, a, ___, b, ___}` 2.3 s. Most of the 25 ms is finding the parents: every element matches `XMLPattern[_]` and has its children listed. `XMLDeleteCases` with `{PatternSequence[_, _] ..., c, ___}` takes 40 ms. On the CSS page, `Descendant[XMLPattern["div"], {XMLPattern["p"], ___}]` takes 45 ms and `p:nth-of-type(2)` as a list 93 ms.
+
+As built, three points are narrower than the decision above:
+
+- A context combinator entry's later stages bind names for its own test only. A name bound there and used elsewhere in the pattern is refused (`::listentry`), and a rule body does not see them. Running the test from a single child cannot return the names it bound, and the chain runner has one tuple per chain, not a branch for each context entry.
+- Alternatives that hold a combinator can be the selected entry, which makes one chain per alternative, but not a context entry, which is refused (`::listentry`).
+- A refused list gives `::liststage` (the list cannot stand there, or has no XML-pattern entry) or `::listentry` (an entry is a list, an `XMLElement` pattern, a combinator whose first stage is a list, or one of the two cases above), each with the reason, rather than `::badpat`.
+
+A raw `XMLElement` pattern is refused as an entry, though it is still accepted as an element pattern elsewhere. When raw `XMLElement` patterns are dropped everywhere (GitHub issue #31), this refusal becomes part of that one.
+
+`FromCSSSelector` writes the child-indexed pseudo-classes as list stages (ADR 0017).
 
 Possible Issues, for documentation:
 
-- A list stage does not select the root, though a browser's `:first-child` and `:only-child` match it.
+- A list stage after an element pattern does not select the root, though a browser's `:first-child` and `:only-child` match it. After `XMLDocument[] | XMLPattern[_]` it does (ADR 0018).
 - A list sees element children only. A named list or a named sequence entry gives the elements without the text between them.
-- A list with two unbounded gaps around context entries, such as `{___, a, ___, b, ___}` written out, is quadratic in the number of children when matched in full: 2.6 s at 1,000 children in the prototype.
+- A list with two unbounded gaps around context entries, such as `{___, a, ___, b, ___}` written out, is quadratic in the number of children when matched in full: 2.3 s at 1,000 children. _Amended by ADR 0020 (2026-10-06):_ such a list of ordered entries, each matching one child, with `___` or nothing between them, is recognised shape 6 and runs in one pass over each parent's children. A list of that meaning in another shape, such as one with `__` as a gap or a name on a context entry, still costs this.
 - A combinator as a context entry searches below every candidate sibling, as `:has` does.
 - A literal list as the whole query is refused, not read as alternatives.
+- There is no marker for selecting an entry that is not last, so `:has(+ b)` and `:has(~ b)` have no list form.

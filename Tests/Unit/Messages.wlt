@@ -32,15 +32,15 @@ TestCreate[
   TestID -> "message-names-the-pattern-as-written"
 ];
 
-(* An Alternatives holding a combinator is refused as a whole: the message names
-   the pattern the caller wrote, not the alternative that tripped it. *)
+(* Named alternatives holding a combinator are refused as a whole: the message
+   names the pattern the caller wrote, not the alternative that tripped it. *)
 TestCreate[
   StringReplace[capturedMessages[
     XMLCases[$msgTree,
-      Child[XMLPattern["article"], XMLPattern["p"]] | Child[XMLPattern["section"], XMLPattern["p"]]]],
+      u : (Child[XMLPattern["article"], XMLPattern["p"]] | Child[XMLPattern["section"], XMLPattern["p"]])]],
     StartOfString ~~ __ ~~ "Got " -> "Got "],
-  {"Got Child[XMLPattern[\"article\"], XMLPattern[\"p\"]] | Child[XMLPattern[\"section\"], XMLPattern[\"p\"]]."},
-  TestID -> "message-names-whole-alternatives-with-combinator"
+  {"Got u:Child[XMLPattern[\"article\"], XMLPattern[\"p\"]] | Child[XMLPattern[\"section\"], XMLPattern[\"p\"]]."},
+  TestID -> "message-names-whole-named-alternatives-with-combinator"
 ];
 
 (* A combinator with one stage is refused with a message that says it needs two. *)
@@ -209,4 +209,36 @@ TestCreate[
     {XMLFirstCase, {$msgTree, XMLPattern["p"], "AttributeReadings" -> <||>, 4}}},
   {XMLCases::argt, XMLDeleteCases::argrx, XMLFirstCase::argt},
   TestID -> "count-no-arguments-and-option-before-extra"
+];
+
+(* FromCSSSelector: one message per kind, naming the selector, the part that
+   caused it and, where there is one, the workaround. *)
+TestCreate[
+  Join @@ (capturedMessages[FromCSSSelector[#]] & /@ {"a > > b", ":foo", ":matches(a)"}),
+  {"\"a > > b\" is not a valid CSS selector: \"two combinators in a row at character 5\".",
+   "\":foo\" is not a valid CSS selector: \"unknown pseudo-class :foo at character 1\".",
+   "\":matches(a)\" is not a valid CSS selector: \"unknown pseudo-class :matches() at character 1; write :is() instead\"."},
+  TestID -> "message-css-invalid"
+];
+
+TestCreate[
+  Join @@ (capturedMessages[FromCSSSelector[#]] & /@ {"body :root", "x :is(a b)"}),
+  {"\"body :root\" is valid CSS, but \":root\" cannot be translated to an XML pattern. \"It matches the only top element, which has no parent or sibling in the tree, so it can only be in the first compound of a selector, followed by > or a descendant combinator, as in :root > body.\"",
+   "\"x :is(a b)\" is valid CSS, but \":is(a b)\" cannot be translated to an XML pattern. \"Its arguments can hold a combinator only when its compound is the whole selector, as in p:is(div p, section > p), and not inside :not() or :has().\""},
+  TestID -> "message-css-unsupported"
+];
+
+TestCreate[
+  Join @@ (capturedMessages[FromCSSSelector[#]] & /@ {"a:target", "p::first-letter"}),
+  {"\":target\" in \"a:target\" depends on a browser, such as user input, layout or the page's URL, and cannot be matched in a static document. \"To match the element that a fragment names, use XMLPattern[_, \\\"id\\\" -> fragment].\"",
+   "\"::first-letter\" in \"p::first-letter\" depends on a browser, such as user input, layout or the page's URL, and cannot be matched in a static document. \"To get the first letter of each match, use StringTake[HTMLInnerText[e], UpTo[1]].\""},
+  TestID -> "message-css-impossible"
+];
+
+(* A string that gives a combinator, where an element pattern goes, is named
+   as written. *)
+TestCreate[
+  capturedMessages[XMLMatchQ[XMLElement["p", {}, {}], "div > p"]],
+  {"\"div > p\" relates an element to its parent or siblings, which a lone element does not have. Use XMLCases or XMLFirstCase to search a tree with it."},
+  TestID -> "message-css-string-combinator-names-the-string"
 ];

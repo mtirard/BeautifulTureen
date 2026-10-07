@@ -1,6 +1,8 @@
 (* XMLFirstCase: first-match semantics across base patterns, combinators, and
    defaults. Fixtures $tree, $treeSiblings, $treeProducts, $realTree come from
-   Tests/Support/Fixtures.wl. *)
+   Tests/Support/Fixtures.wl.
+   A test whose TestID ends in -as-list repeats the one before it with Adjacent
+   and Sibling written as the list stages they are shorthands for (ADR 0016). *)
 
 (* Base: returns first match *)
 TestCreate[
@@ -86,6 +88,12 @@ TestCreate[
   TestID -> "firstcase-adjacent"
 ];
 
+TestCreate[
+  HTMLTextContent[XMLFirstCase[$treeSiblings, Child[XMLPattern[_], {___, XMLPattern["h2"], XMLPattern["p"], ___}]]],
+  "First",
+  TestID -> "firstcase-adjacent-as-list"
+];
+
 (* Adjacent with rule \[LongDash] both bindings *)
 TestCreate[
   XMLFirstCase[$treeSiblings,
@@ -93,6 +101,12 @@ TestCreate[
   ],
   {"Title", "First"},
   TestID -> "firstcase-adjacent-rule-both"
+];
+
+TestCreate[
+  XMLFirstCase[$treeSiblings, Child[XMLPattern[_], {___, h:XMLPattern["h2"], p:XMLPattern["p"], ___}] :> {HTMLTextContent[h], HTMLTextContent[p]}],
+  {"Title", "First"},
+  TestID -> "firstcase-adjacent-rule-both-as-list"
 ];
 
 (* Sibling *)
@@ -104,6 +118,12 @@ TestCreate[
   TestID -> "firstcase-sibling"
 ];
 
+TestCreate[
+  HTMLTextContent[XMLFirstCase[$treeSiblings, Child[XMLPattern[_], {___, XMLPattern["h2"], ___, XMLPattern["p"], ___}]]],
+  "First",
+  TestID -> "firstcase-sibling-as-list"
+];
+
 (* Sibling miss *)
 TestCreate[
   XMLFirstCase[$treeSiblings,
@@ -111,6 +131,12 @@ TestCreate[
   ],
   Missing["NotFound"],
   TestID -> "firstcase-sibling-miss"
+];
+
+TestCreate[
+  XMLFirstCase[$treeSiblings, Child[XMLPattern[_], {___, XMLPattern["p"], ___, XMLPattern["h2"], ___}]],
+  Missing["NotFound"],
+  TestID -> "firstcase-sibling-miss-as-list"
 ];
 
 (* Real-world: OG title via rule + base *)
@@ -133,6 +159,12 @@ TestCreate[
   HTMLTextContent @ XMLFirstCase[$treeSiblings, Adjacent[XMLPattern["h2"], p : XMLPattern["p"]] -> p],
   "First",
   TestID -> "firstcase-rule-combinator"
+];
+
+TestCreate[
+  HTMLTextContent[XMLFirstCase[$treeSiblings, Child[XMLPattern[_], {___, XMLPattern["h2"], p:XMLPattern["p"], ___}] -> p]],
+  "First",
+  TestID -> "firstcase-rule-combinator-as-list"
 ];
 
 TestCreate[

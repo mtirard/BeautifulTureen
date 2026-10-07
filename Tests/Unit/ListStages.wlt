@@ -1,0 +1,494 @@
+(* List stages (ADR 0016): a WL list pattern after a Child or Descendant link,
+   matched against one parent's element children. The selected entry is the
+   last top-level entry that is an XML pattern, and names scope as the list
+   nested in ADR 0014's tuple pattern. Fixtures are local to this file, and most
+   have text between sibling elements, which a list does not see. *)
+
+html[s_] := ImportString["<html><body>" <> s <> "</body></html>", {"HTML", "XMLObject"}];
+ids[es_] := Lookup[#[[2]], "id", None] & /@ es;
+
+li = XMLPattern["li"];
+p = XMLPattern["p"];
+tr = XMLPattern["tr"];
+ul = XMLPattern["ul"];
+any = XMLPattern[_];
+
+(* Five li, the second and fourth of class a, with text between them. Built
+   as an expression, since the HTML importer moves text out of a ul. *)
+$five = XMLObject["Document"][{}, XMLElement["html", {}, {XMLElement["body", {}, {
+    XMLElement["ul", {"id" -> "u"}, {"x",
+      XMLElement["li", {"id" -> "1"}, {"a"}], "x",
+      XMLElement["li", {"class" -> "a", "id" -> "2"}, {"b"}], "y",
+      XMLElement["li", {"id" -> "3"}, {"c"}],
+      XMLElement["li", {"class" -> "a", "id" -> "4"}, {"d"}], "z",
+      XMLElement["li", {"id" -> "5"}, {"e"}], "w"}],
+    XMLElement["ol", {}, {"o", XMLElement["li", {"id" -> "only"}, {"o"}]}]}]}], {}];
+
+(* Seven rows. *)
+$rows = html["<table>" <> StringJoin[Table["<tr id=\"r" <> ToString[k] <> "\"><td>" <> ToString[k] <> "</td></tr>", {k, 7}]] <> "</table>"];
+
+(* === First, last, only === *)
+
+TestCreate[
+  {ids @ XMLCases[$five, Child[ul, {x : li, ___}]],
+   ids @ XMLCases[$five, Child[ul, {___, li}]],
+   ids @ XMLCases[$five, Child[any, {li}]]},
+  {{"1"}, {"5"}, {"only"}},
+  TestID -> "list-first-last-only"
+];
+
+(* === :nth-child(An+B) === *)
+
+TestCreate[
+  {ids @ XMLCases[$rows, Child[any, {PatternSequence[_, _] ..., tr, ___}]],
+   ids @ XMLCases[$rows, Child[any, {___, tr, Repeated[_, {0, 2}]}]],
+   ids @ XMLCases[$rows, Child[any, {Repeated[_, {4}], tr, ___}]],
+   ids @ XMLCases[$rows, Child[any, {Repeated[_, {9}], tr, ___}]]},
+  {{"r1", "r3", "r5", "r7"}, {"r5", "r6", "r7"}, {"r5"}, {}},
+  TestID -> "list-nth-child"
+];
+
+(* === A position moved along a + run (ADR 0017) ===
+   FromCSSSelector writes a position of a compound joined to the end of its run
+   by + alone as plain entries before the first compound or after the last.
+   It selects what the condition form it replaced selects, written out here by
+   hand, on forty random lists of up to twelve rows of class a, b or neither. *)
+
+$runs = BlockRandom[SeedRandom[20261006];
+  XMLElement["body", {}, Table[
+    XMLElement["div", {}, Table[
+      XMLElement["tr", Append[Replace[RandomChoice[{"a", "b", None}], {None -> {}, c_ :> {"class" -> c}}], "id" -> ToString[{i, j}]], {}],
+      {j, RandomInteger[{0, 12}]}]],
+    {i, 40}]]];
+
+ca = XMLPattern[_, "classList" -> "a"];
+cb = XMLPattern[_, "classList" -> "b"];
+posQ[a_, b_, i_] := Which[a == 0, i == b, a > 0, i >= b && Mod[i - b, a] == 0, True, i <= b && Mod[b - i, -a] == 0];
+anb[{a_, b_}] := ToString[a] <> "n" <> If[b < 0, "", "+"] <> ToString[b];
+
+(* The condition forms: a position on the last compound counted from the
+   start, with the others tested on the siblings before it, and one on the
+   first counted from the end, with every compound named. *)
+oldForward[{a_, b_}, before_, last_] :=
+  With[{run = Join[{___}, (With[{m = XMLMatchQ[#]}, _?m] &) /@ before]},
+    Child[XMLDocument[] | XMLPattern[_], {g___, c : last, h___} /; posQ[a, b, Length[{g}] + 1] && MatchQ[{g}, run]]];
+oldBackward[{a_, b_}, {x_, y_}] := Child[XMLDocument[] | XMLPattern[_], {g___, c1 : x, c2 : y, h___} /; posQ[a, b, Length[{c2, h}] + 1]];
+oldBackward[{a_, b_}, {x_, y_, z_}] :=
+  Child[XMLDocument[] | XMLPattern[_], {g___, c1 : x, c2 : y, c3 : z, h___} /; posQ[a, b, Length[{c2, c3, h}] + 1]];
+oldBoth[{a_, b_}] :=
+  Child[XMLDocument[] | XMLPattern[_],
+    {g___, c : ca, h___} /; posQ[a, b, Length[{g}] + 1] && posQ[2, 1, Length[{h}] + 1] && MatchQ[{g}, {___, _?(XMLMatchQ[cb])}]];
+
+$anbs = {{0, 0}, {0, 1}, {0, 2}, {0, 5}, {0, -1}, {0, 13}, {1, 0}, {1, -3}, {1, 4}, {2, 1}, {2, 0}, {2, -3}, {3, 2},
+  {3, -1}, {4, -10}, {-1, 3}, {-1, 0}, {-1, 1}, {-2, 5}, {-2, 1}, {-3, 9}, {-1, -2}};
+
+$shiftCases = Join @@ Function[n, {
+    {".b + .a:nth-child(" <> anb[n] <> ")", oldForward[n, {cb}, ca]},
+    {".a + .b + .a:nth-child(" <> anb[n] <> ")", oldForward[n, {ca, cb}, ca]},
+    {".b:nth-last-child(" <> anb[n] <> ") + .a", oldBackward[n, {cb, ca}]},
+    {".a:nth-last-child(" <> anb[n] <> ") + .b + .a", oldBackward[n, {ca, cb, ca}]},
+    {".b + .a:nth-child(" <> anb[n] <> "):nth-last-child(odd)", oldBoth[n]}}] /@ $anbs;
+
+TestCreate[
+  {AllTrue[$shiftCases, FreeQ[FromCSSSelector[First[#]], Condition] &],
+   Select[$shiftCases, ids @ XMLCases[$runs, First[#]] =!= ids @ XMLCases[$runs, Last[#]] &][[All, 1]],
+   Total[Length[ids @ XMLCases[$runs, Last[#]]] & /@ $shiftCases] > 200},
+  {True, {}, True},
+  TestID -> "list-css-shifted-position"
+];
+
+(* === -of-type: Except[p] ... is context, not the selected entry === *)
+
+TestCreate[
+  ids @ XMLCases[html["<div><span></span><p id=\"p1\"></p> t <span></span><p id=\"p2\"></p><p id=\"p3\"></p></div>"],
+    Child[any, {Except[p] ..., p, Except[p] ..., x : p, ___}]],
+  {"p2"},
+  TestID -> "list-nth-of-type"
+];
+
+(* === Identical siblings stay distinct === *)
+
+$same = XMLElement["table", {}, {"a", XMLElement["tr", {}, {XMLElement["td", {}, {"x"}]}], "b",
+   XMLElement["tr", {}, {XMLElement["td", {}, {"x"}]}], "c", XMLElement["tr", {}, {XMLElement["td", {}, {"x"}]}], "d"}];
+
+TestCreate[
+  {Length @ XMLCases[{$same}, Child[any, {___, tr}]],
+   Length @ XMLCases[{$same}, Child[any, {tr, ___}]],
+   XMLDeleteCases[$same, Child[any, {___, tr}]][[3]],
+   XMLDeleteCases[$same, Child[any, {tr, ___}]][[3]]},
+  {1, 1,
+   {"a", XMLElement["tr", {}, {XMLElement["td", {}, {"x"}]}], "b", XMLElement["tr", {}, {XMLElement["td", {}, {"x"}]}], "c", "d"},
+   {"a", "b", XMLElement["tr", {}, {XMLElement["td", {}, {"x"}]}], "c", XMLElement["tr", {}, {XMLElement["td", {}, {"x"}]}], "d"}},
+  TestID -> "list-identical-siblings-distinct"
+];
+
+(* === Descendant lists each parent's children === *)
+
+TestCreate[
+  ids @ XMLCases[html["<div><p id=\"a\"></p><section><p id=\"b\"></p><p id=\"c\"></p></section></div>"],
+    Descendant[XMLPattern["div"], {x : p, ___}]],
+  {"a", "b"},
+  TestID -> "list-descendant-each-parent"
+];
+
+(* === Chaining after a list stage === *)
+
+$links = html["<ul><li><a id=\"x1\"></a></li><li><a id=\"x2\"></a></li></ul><ol><li><a id=\"x3\"></a></li></ol>"];
+
+TestCreate[
+  {ids @ XMLCases[$links, Descendant[Child[any, {li, ___}], XMLPattern["a"]]],
+   ids @ XMLCases[$links, Child[ul, {li, ___}, XMLPattern["a"]]],
+   ids @ XMLCases[$links, Child[ul, Child[{li, ___}, XMLPattern["a"]]]]},
+  {{"x1", "x3"}, {"x1"}, {"x1"}},
+  TestID -> "list-chaining"
+];
+
+(* === Small fixtures with the traps of the soupsieve rows ===
+   Hacker News: identical rows, where tr:nth-child(2n+1) and
+   tr:nth-last-child(-n+3) count rows by position; Selectors 4: div
+   p:first-child over nested parents; CSS: p:nth-of-type(2) with text and other
+   tags between. Counts as soupsieve gives them on these fixtures. *)
+
+$hn = html["<table>" <> StringJoin[ConstantArray["<tr class=\"athing\"><td>t</td></tr><tr><td>s</td></tr><tr class=\"spacer\"></tr>", 3]] <>
+  "<tr class=\"more\"><td>m</td></tr></table>"];
+$nested = html["<div><p>1</p><div><p>2</p><p>3</p><div>t<p>4</p></div></div><span></span><p>5</p></div>"];
+
+TestCreate[
+  {Length @ XMLCases[$hn, Child[any, {PatternSequence[_, _] ..., tr, ___}]],
+   Length @ XMLCases[$hn, Child[any, {___, tr, Repeated[_, {0, 2}]}]],
+   HTMLTextContent /@ XMLCases[$nested, Descendant[XMLPattern["div"], {x : p, ___}]],
+   HTMLTextContent /@ XMLCases[$nested, Child[any, {Except[p] ..., p, Except[p] ..., x : p, ___}]]},
+  {5, 3, {"1", "2", "4"}, {"3", "5"}},
+  TestID -> "list-soupsieve-traps"
+];
+
+(* === The selected entry === *)
+
+TestCreate[
+  {ids @ XMLCases[$five, Child[ul, {___, XMLPattern[_]}]],
+   ids @ XMLCases[$five, Child[ul, {li, XMLPattern[_, "id" -> "2"], ___}]],
+   ids @ XMLCases[$five, Child[ul, {XMLPattern[_, "id" -> "1"], li ...}]],
+   ids @ XMLCases[$five, Child[ul, {___, XMLPattern["li", "classList" -> "a"] | XMLPattern["li", "id" -> "1"], ___}]],
+   ids @ XMLCases[$five, Child[ul, {___, x : li /; Length[x[[2]]] == 2, ___}]]},
+  {{"5"}, {"2"}, {"1"}, {"1", "2", "4"}, {"2", "4"}},
+  TestID -> "list-selected-entry"
+];
+
+TestCreate[
+  {XMLCases[$five, Child[ul, {___, _}]],
+   XMLCases[$five, Child[ul, {}]],
+   XMLCases[$five, Child[ul, {___}]],
+   XMLCases[$five, Child[ul, {_, _}]],
+   XMLCases[$five, Child[ul, {___, li | _}]]},
+  ConstantArray[$Failed, 5],
+  {XMLCases::liststage, XMLCases::liststage, XMLCases::liststage, General::stop},
+  TestID -> "list-no-xml-pattern-entry"
+];
+
+(* === A combinator entry stands for its first stage === *)
+
+$cards = html["<div id=\"d\"><section><a id=\"a1\"></a></section><p></p><section><b><a id=\"a2\"></a></b></section></div>"];
+
+TestCreate[
+  {ids @ XMLCases[$cards, Child[XMLPattern["div"], {___, Descendant[XMLPattern["section"], XMLPattern["a"]], ___}]],
+   ids @ XMLCases[$cards, Child[XMLPattern["div"], Descendant[XMLPattern["section"], XMLPattern["a"]]]],
+   ids @ XMLCases[$links, Child[ul, {___, li, Child[li, XMLPattern["a"]], ___}]]},
+  {{"a1", "a2"}, {"a1", "a2"}, {"x2"}},
+  TestID -> "list-combinator-entry-selected"
+];
+
+$heads = html["<div><h2><span>s</span></h2> t <p id=\"after-span\"></p><h2>plain</h2><p id=\"after-plain\"></p></div>"];
+
+TestCreate[
+  {ids @ XMLCases[$heads, Child[any, {___, Descendant[XMLPattern["h2"], XMLPattern["span"]], p, ___}]],
+   ids @ XMLCases[$heads, Child[any, {___, Child[XMLPattern["h2"], XMLPattern["span"]] /; True, p, ___}]],
+   ids @ XMLCases[$heads, Child[any, {___, Descendant[XMLPattern["h2"], XMLPattern["em"]], p, ___}]]},
+  {{"after-span"}, {"after-span"}, {}},
+  TestID -> "list-combinator-entry-context"
+];
+
+(* The first stage of an entry Adjacent[a, b] is a child of the parent, so a is
+   the first child and the result is the sibling after it. *)
+TestCreate[
+  {ids @ XMLCases[$five, Child[any, {Adjacent[li, li], ___}]],
+   ids @ XMLCases[$five, Child[any, {Sibling[li, XMLPattern["li", "classList" -> "a"]], ___}]]},
+  {{"2"}, {"2", "4"}},
+  TestID -> "list-combinator-entry-sibling-link"
+];
+
+(* A context entry anywhere before the selected entry: d3 has a p, so the c3s
+   after it are selected, and d3 itself is not, as no sibling with a p comes
+   before it. Then an adjacent context entry, and a selected combinator entry. *)
+$divs = XMLElement["body", {}, {
+  XMLElement["div", {"class" -> "c3", "id" -> "d1"}, {"t"}],
+  XMLElement["div", {"class" -> "c1", "id" -> "d2"}, {"t"}], "x",
+  XMLElement["div", {"class" -> "c3", "id" -> "d3"}, {XMLElement["p", {}, {"x"}]}],
+  XMLElement["div", {"class" -> "c2", "id" -> "d4"}, {"t"}],
+  XMLElement["div", {"class" -> "c3", "id" -> "d5"}, {"t"}], "y",
+  XMLElement["div", {"class" -> "c3", "id" -> "d6"}, {XMLElement["p", {}, {"x"}]}]}];
+
+TestCreate[
+  With[{q = Child["body", {___, Child["div", "p"], ___, "div.c3", ___}]},
+    {ids @ XMLCases[$divs, q],
+     ids @ XMLCases[$divs, q, 1],
+     Lookup[XMLFirstCase[$divs, q, None][[2]], "id"],
+     ids @ Cases[XMLDeleteCases[$divs, q], _XMLElement, {2}],
+     XMLCases[$divs, Child["body", {___, Child["div", "p"], ___, c : "div.c3", ___}] :> Lookup[c[[2]], "id"]],
+     ids @ XMLCases[$divs, Child["body", {___, Child["div", "p"], "div", ___}]],
+     ids @ XMLCases[$divs, Child["body", {___, Descendant["div", "p"], ___, Child["div.c3", "p"]}]]}],
+  {{"d5", "d6"}, {"d5"}, "d5", {"d1", "d2", "d3", "d4"}, {"d5", "d6"}, {"d4"}, {None}},
+  TestID -> "list-context-entry-hand-checked"
+];
+
+(* On random trees, a context combinator entry selects as the same list with
+   the entry written as a :has test on its first stage, which runs as a held
+   XMLMatchQ inside the element pattern, not as a context entry. *)
+$contextTrees = randomTrees[20261007, 12];
+
+TestCreate[
+  With[{
+      viaContext = Map[Join[
+        XMLCases[#, Child[any, {___, Child[XMLPattern["div"], p], ___, li, ___}]],
+        XMLCases[#, Descendant[any, {___, Descendant[XMLPattern["div" | "li"], XMLPattern["span"]], XMLPattern[_, "classList" -> "a"], ___}]],
+        XMLCases[#, Child[any, {Child[li, XMLPattern[_, "classList" -> "b"]], ___, Child[p, any], ___}]]] &, $contextTrees],
+      viaHas = Map[Join[
+        XMLCases[#, Child[any, {___, "div:has(> p)", ___, li, ___}]],
+        XMLCases[#, Descendant[any, {___, ":is(div, li):has(span)", XMLPattern[_, "classList" -> "a"], ___}]],
+        XMLCases[#, Child[any, {"li:has(> .b)", ___, Child[p, any], ___}]]] &, $contextTrees]},
+    {viaContext === viaHas, Length[Union[viaContext]] > 3}],
+  {True, True},
+  TestID -> "list-context-entry-random-trees"
+];
+
+(* === Alternatives of lists === *)
+
+TestCreate[
+  {ids @ XMLCases[$five, Child[any, {x : li, ___} | {___, x : li}]],
+   XMLCases[$five, Child[any, {x : li, ___} | {___, y : li}] :> {x, y}][[All, All, 2, 1, 2]],
+   ids @ XMLCases[$five, Child[any, s : ({li, ___} | {___, li})]],
+   XMLCases[$five, Child[any, s : ({li, ___} | {___, li})] :> Length[s]]},
+  {{"1", "5", "only"}, {{"1"}, {"5"}, {"only"}}, {"1", "5", "only"}, {5, 5, 1}},
+  TestID -> "list-alternatives-of-lists"
+];
+
+(* === Conditions === *)
+
+TestCreate[
+  {ids @ XMLCases[$five, Child[any, {x : li, y : li, ___} /; First[x] === First[y]]],
+   ids @ XMLCases[$five, Child[any, {x : li, y : li /; x === y, ___}]],
+   ids @ XMLCases[$five, Child[XMLPattern[_, "id" -> u_], {___, x : li}] /; u === "u"]},
+  {{"2"}, {}, {"5"}},
+  TestID -> "list-conditions"
+];
+
+(* A condition on the list sees its names when the selected entry names two
+   attribute values, which the two-step match binds over copied children
+   (issue #39). *)
+$classed = XMLElement["ul", {}, Function[{c, i}, XMLElement["li", {"class" -> c, "id" -> i}, {}]] @@@
+  {{"a", "1"}, {"b", "2"}, {"a", "3"}, {"b", "4"}}];
+twoNamed = XMLPattern["li", {"class" -> k_, "id" -> i_}];
+
+TestCreate[
+  {XMLCases[$classed, Child[ul, {g___, twoNamed, ___} /; Length[{g}] == 1] :> i],
+   XMLCases[$classed, Child[ul, {g___, twoNamed, ___} /; Length[{g}] == 1 && k == "a"] :> i],
+   XMLCases[$classed, Child[ul, {g___, twoNamed, ___} /; Length[{g}] >= 1 && k == "a"] :> i],
+   XMLCases[$classed, Child[ul, {g___, twoNamed, h___} /; Length[{h}] == 1] :> i],
+   XMLCases[$classed, Child[ul, {g___, twoNamed /; k == "b", ___} /; Length[{g}] > 1] :> i],
+   XMLCases[$classed, Child[ul, {g___, twoNamed, ___} /; MatchQ[{g}, {___, XMLElement[_, {"class" -> "b", ___}, _]}]] :> i],
+   XMLCases[$classed, Child[ul, {g___, twoNamed, ___} /; Length[{g}] == 1] :> i, 1],
+   XMLCases[$classed, Child[ul, {g___, twoNamed, ___} /; Length[{g}] == 1] :> i, "AttributeReadings" -> <|"rel" -> <||>|>],
+   XMLFirstCase[$classed, Child[ul, {g___, twoNamed, ___} /; Length[{g}] == 2] :> i],
+   XMLFirstCase[$classed, Child[ul, {g___, twoNamed, ___} /; Length[{g}] == 1 && k == "a"] :> i, None],
+   Lookup[#[[2]], "id"] & /@ Last @ XMLDeleteCases[$classed, Child[ul, {g___, twoNamed, ___} /; Length[{g}] == 1]]},
+  {{"2"}, {}, {"3"}, {"3"}, {"4"}, {"3"}, {"2"}, {"2"}, "3", None, {"1", "3", "4"}},
+  TestID -> "list-condition-two-named-values"
+];
+
+(* The same against WL alone, on small random trees: a child is selected
+   where MatchQ holds for its parent's element children and the list written
+   over plain XMLElement patterns, with the selected entry at the child's
+   index. Each case is {list, plain}, plain[j] the plain list at index j, and
+   each selects something on some tree. *)
+$smallTrees = Replace[#, XMLElement[tag_, as_, c_] :> XMLElement[tag, as, Take[c, UpTo[12]]], {0, Infinity}] & /@
+  randomTrees[20261006, 12];
+
+twoNamedAny = XMLPattern[_, {"class" -> k_, "id" -> i_}];
+(* twoNamedAny over a plain element: the attributes in any order. *)
+plainTwo = XMLElement[_, {OrderlessPatternSequence["class" -> k_, "id" -> i_, ___]}, _];
+SetAttributes[atIndex, HoldAll];
+atIndex[l_, test_] := Function[j, l /; Length[{g}] + 1 == j && test];
+
+$plainCases = {
+  {{g___, twoNamedAny, ___} /; Length[{g}] == 1,
+   atIndex[{g___, plainTwo, ___}, Length[{g}] == 1]},
+  {{g___, twoNamedAny, ___} /; OddQ[Length[{g}]] && StringContainsQ[k, "a"],
+   atIndex[{g___, plainTwo, ___},
+     OddQ[Length[{g}]] && StringContainsQ[k, "a"]]},
+  {{g___, twoNamedAny, h___} /; Length[{h}] < Length[{g}],
+   atIndex[{g___, plainTwo, h___}, Length[{h}] < Length[{g}]]},
+  {{g___, twoNamedAny, ___} /; MatchQ[{g}, {___, XMLElement["p", {___, "class" -> _, ___}, _], ___}],
+   atIndex[{g___, plainTwo, ___},
+     MatchQ[{g}, {___, XMLElement["p", {___, "class" -> _, ___}, _], ___}]]},
+  {{g___, twoNamedAny /; StringLength[i] > 1, ___} /; EvenQ[Length[{g}]],
+   atIndex[{g___, plainTwo /; StringLength[i] > 1, ___},
+     EvenQ[Length[{g}]]]},
+  {{g___, c : twoNamedAny, ___} /; Count[{g}, XMLElement[First[c], _, _]] + 1 == 2,
+   atIndex[{g___, c : plainTwo, ___},
+     Count[{g}, XMLElement[First[c], _, _]] + 1 == 2]}};
+
+plainSelected[tree_, plain_] :=
+  Sort @ ids[Join @@ Cases[tree, XMLElement[_, _, c_] :>
+    With[{els = Cases[c, _XMLElement]}, Pick[els, MatchQ[els, plain[#]] & /@ Range[Length[els]]]], {0, Infinity}]];
+
+TestCreate[
+  MemoryConstrained[TimeConstrained[
+    Map[Function[case, With[{l = case[[1]]},
+        With[{xml = Sort @ ids @ XMLCases[#, Child[any, l]] & /@ $smallTrees},
+          {xml === (plainSelected[#, case[[2]]] & /@ $smallTrees), xml =!= ConstantArray[{}, Length[$smallTrees]]}]]],
+      $plainCases],
+    120], 2*^9],
+  ConstantArray[{True, True}, Length[$plainCases]],
+  TestID -> "list-condition-two-named-values-plain-wl"
+];
+
+(* === Names === *)
+
+TestCreate[
+  {ids @ XMLCases[html["<div id=\"k\"><p data-p=\"z\" id=\"no\"></p><p data-p=\"k\" id=\"yes\"></p></div>"],
+     Child[XMLPattern[_, "id" -> i_], {___, XMLPattern[_, "data-p" -> i_]}]],
+   XMLCases[$five, Child[ul, {pre___, XMLPattern["li", "classList" -> "a"], ___}] :> ids[{pre}]],
+   XMLCases[$five, Child[ul, s : {___, li}] :> Length[s]],
+   XMLCases[$five, Child[ul, {___, e : XMLPattern["li", "classList" -> "a"], ___, f : li}] :> {e, f}]},
+  {{"yes"}, {{"1"}, {"1", "2", "3"}}, {5},
+   {{XMLElement["li", {"class" -> "a", "id" -> "2"}, {"b"}], XMLElement["li", {"id" -> "5"}, {"e"}]}}},
+  TestID -> "list-names"
+];
+
+(* The same name at two entries is one value, compared as the original
+   elements, though the query names a list key. *)
+TestCreate[
+  ids @ XMLCases[html["<div><p class=\"a\">1</p><p>2</p><p class=\"a\">1</p></div>"],
+    Child[any, {___, e : XMLPattern["p", "classList" -> "a"], ___, e : p}]],
+  {None},
+  TestID -> "list-name-at-two-entries"
+];
+
+(* A test or a body that sees only some of the names, with a list key named:
+   each name it sees is the original elements, also inside held code, and the
+   names it does not see change nothing. *)
+TestCreate[
+  {ids @ XMLCases[$five, Child[ul, {g1___, c : XMLPattern["li", "classList" -> "a"], g2___} /;
+      {g1} === {XMLElement["li", {"id" -> "1"}, {"a"}], XMLElement["li", {"class" -> "a", "id" -> "2"}, {"b"}],
+        XMLElement["li", {"id" -> "3"}, {"c"}]}]],
+   ids @ XMLCases[$five, Child[ul, {g1___, c : XMLPattern["li", "classList" -> "a"], g2___} /; c[[2]] === {"class" -> "a", "id" -> "4"}]],
+   ids @ XMLCases[$five, Child[ul, {g1___, c : XMLPattern["li", "classList" -> "a"], g2___} /; True]],
+   ids @ XMLCases[$five, Child[ul, {g1___, c : XMLPattern["li", "classList" -> "a"], g2___} /;
+      ReleaseHold[Hold[c]] === XMLElement["li", {"class" -> "a", "id" -> "2"}, {"b"}]]],
+   XMLCases[$five, Child[ul, {g1___, c : XMLPattern["li", "classList" -> "a"], g2___} /; Length[{g1}] == 3] :> ids[{g2}]],
+   XMLCases[$five, Child[ul, {g1___, XMLPattern["li", "classList" -> "a"], g2___}] :> ids[{g2}] /; Length[{g2}] == 3]},
+  {{"4"}, {"4"}, {"2", "4"}, {"2"}, {{"5"}}, {{"3", "4", "5"}}},
+  TestID -> "list-names-a-test-does-not-see"
+];
+
+(* === Which match binds === *)
+
+TestCreate[
+  {XMLCases[$five, Child[any, {___, x : XMLPattern["li", "classList" -> "a"], ___, y : li, ___}] :> ids[{x, y}]],
+   XMLCases[$five, Child[any, {___, x : XMLPattern["li", "classList" -> "a"], ___, y : li, ___}] :>
+     ids[{x, y}] /; x[[2]] =!= {"class" -> "a", "id" -> "2"}]},
+  {{{"2", "3"}, {"2", "4"}, {"2", "5"}}, {{"4", "5"}}},
+  TestID -> "list-which-match-binds"
+];
+
+(* The list's match is chosen before the div's, which is the outermost that
+   qualifies (ADR 0014). *)
+TestCreate[
+  XMLCases[html["<div id=\"o\"><div id=\"i\"><p id=\"p\"></p></div></div>"],
+    Descendant[XMLPattern["div", "id" -> i_], {___, x : XMLPattern["p", "id" -> j_]}] :> {i, j}],
+  {{"o", "p"}},
+  TestID -> "list-latest-stage-first"
+];
+
+(* === Rules, XMLFirstCase and XMLDeleteCases === *)
+
+TestCreate[
+  {XMLCases[$five, Child[ul, {XMLPattern["li", "id" -> i_], ___}] -> i],
+   XMLFirstCase[$five, Child[any, {___, XMLPattern["li", {"classList" -> "a", "id" -> i_}], ___}] :> i],
+   ids @ {XMLFirstCase[$five, Child[any, {___, li}]]},
+   XMLFirstCase[$five, Child[any, {___, XMLPattern["li", "id" -> "none"]}], "none"]},
+  {{"1"}, "2", {"5"}, "none"},
+  TestID -> "list-rule-and-firstcase"
+];
+
+TestCreate[
+  {ids @ XMLCases[XMLDeleteCases[$five, Child[ul, {li, ___}]], li],
+   ids @ XMLCases[XMLDeleteCases[$links, Descendant[XMLPattern["body"], Child[ul, {___, li}, XMLPattern["a"]]]], XMLPattern["a"]],
+   ids @ XMLCases[XMLDeleteCases[$five, Descendant[XMLPattern["body"], {___, x : XMLPattern["li", "classList" -> "a"], ___}]], li],
+   XMLDeleteCases[$five, Child[ul, {li, ___}] :> 1]},
+  {{"2", "3", "4", "5", "only"}, {"x1", "x3"}, {"1", "3", "5", "only"}, $Failed},
+  {XMLDeleteCases::badpat},
+  TestID -> "list-deletecases"
+];
+
+(* === Refusals === *)
+
+TestCreate[
+  {XMLCases[$five, {li, ___}],
+   XMLCases[$five, {li, ___} /; True],
+   XMLFirstCase[$five, {li, ___} :> 1],
+   XMLDeleteCases[$five, {li}]},
+  ConstantArray[$Failed, 4],
+  {XMLCases::liststage, XMLCases::liststage, XMLFirstCase::liststage, XMLDeleteCases::liststage},
+  TestID -> "list-refused-as-query"
+];
+
+TestCreate[
+  {XMLCases[$five, Child[{li, ___}, XMLPattern["a"]]],
+   XMLCases[$five, Adjacent[li, {li, ___}]],
+   XMLFirstCase[$five, Sibling[li, s : {li}]]},
+  ConstantArray[$Failed, 3],
+  {XMLCases::liststage, XMLCases::liststage, XMLFirstCase::liststage},
+  TestID -> "list-refused-first-or-after-sibling"
+];
+
+TestCreate[
+  {XMLCases[$five, Child[ul, {___, {li}}]],
+   XMLCases[$five, Child[ul, {___, XMLElement["li", _, _]}]],
+   XMLCases[$five, Child[ul, {___, Child[{li}, XMLPattern["a"]]}]],
+   XMLDeleteCases[$five, Child[ul, {___, li, 3}]]},
+  ConstantArray[$Failed, 4],
+  {XMLCases::listentry, XMLCases::listentry, XMLCases::listentry, General::stop, XMLDeleteCases::listentry},
+  TestID -> "list-refused-entries"
+];
+
+(* A context combinator entry is a test, and the names of its later stages are
+   its own: one used elsewhere is refused, and alternatives holding a combinator
+   can only be the selected entry. *)
+TestCreate[
+  {XMLCases[$heads, Child[any, {___, Descendant[XMLPattern["h2"], XMLPattern["span", "id" -> i_]], XMLPattern["p", "id" -> i_], ___}]],
+   XMLCases[$heads, Child[any, {___, Descendant[XMLPattern["h2"], XMLPattern["span"]] | XMLPattern["h2"], p, ___}]]},
+  {$Failed, $Failed},
+  {XMLCases::listentry, XMLCases::listentry},
+  TestID -> "list-refused-context-combinator"
+];
+
+TestCreate[
+  {XMLMatchQ[XMLElement["li", {}, {}], Child[any, {li}]],
+   XMLMatchQ[XMLElement["li", {}, {}], {li}],
+   HTMLInnerText[$five, "Roles" -> {Child[any, {li}] -> "Skip"}]},
+  {$Failed, $Failed, $Failed},
+  {XMLMatchQ::combinator, XMLMatchQ::liststage, HTMLInnerText::badpat},
+  TestID -> "list-refused-one-element"
+];
+
+(* === The root (ADR 0016, "The root") ===
+   After an element pattern, a list stage never selects the root: on an
+   XMLObject the root element is no element's child, and a bare XMLElement
+   input is a parent, not a result. After XMLDocument[] it does (ADR 0018,
+   XMLDocument.wlt). *)
+TestCreate[
+  {XMLCases[$five, Child[any, {x : XMLPattern["html"], ___}]],
+   HTMLTextContent /@ XMLCases[XMLElement["body", {}, {"t", XMLElement["p", {}, {"1"}], XMLElement["p", {}, {"2"}]}], Child[any, {p, ___}]]},
+  {{}, {"1"}},
+  TestID -> "list-root"
+];

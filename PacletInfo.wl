@@ -3,7 +3,7 @@ PacletObject[
     "Name" -> "MaximilienTirard/BeautifulTureen",
     "Description" -> "Pattern-based HTML element selection, text extraction, and notebook/Markdown conversion with CSS-like combinators, class-list matching, and document-order results \[LongDash] BeautifulSoup ergonomics in Wolfram Language",
     "Creator" -> "Maximilien Tirard",
-    "Version" -> "2.0.0",
+    "Version" -> "2.1.0",
     "WolframVersion" -> "12.3+",
     "PublisherID" -> "MaximilienTirard",
     "License" -> "MIT",

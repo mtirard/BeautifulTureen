@@ -1,0 +1,474 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 12.0' *)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["FromCSSSelector", "ObjectName"],
+
+Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["FromCSSSelector", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/FromCSSSelector"], "[", "\"\<\!\(\*StyleBox[\"selector\", \"TI\"]\)\>\"", "]"}]], "InlineFormula"], " \[LineSeparator]gives the XML pattern that the CSS selector ", Cell[BoxData[StyleBox["selector", "TI"]], "InlineFormula"], " describes."}], "Usage"],
+
+Cell[TextData[{Cell[BoxData[ButtonBox["FromCSSSelector", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/FromCSSSelector"]], "InlineFormula"], " gives an ordinary XML pattern, for ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["XMLFirstCase", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["XMLDeleteCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDeleteCases"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["XMLMatchQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLMatchQ"]], "InlineFormula"], ", or as a stage of ", Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["Adjacent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Adjacent"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"]], "InlineFormula"], "."}], "Notes"],
+
+Cell[TextData[{"A CSS selector string can be given directly wherever these take a pattern, including the left-hand side of a rule and of a rule in the ", Cell[BoxData[StyleBox["\"Roles\"", "TR"]], "InlineFormula"], " and ", Cell[BoxData[StyleBox["\"Constructs\"", "TR"]], "InlineFormula"], " options of ", Cell[BoxData[ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLInnerText"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["HTMLToNotebook", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLToNotebook"]], "InlineFormula"], ". It means its translation."}], "Notes"],
+
+Cell[TextData[{"The selector is matched as written, against the tree the importer gives: letter case matters in tag names, attribute names and attribute values, and attributes that the importer adds, such as ", Cell[BoxData["rowspan=\"1\""], "InlineFormula"], ", count as present."}], "Notes"],
+
+Cell[TextData[{"The following parts of a selector are translated:
+
+| selector | elements described |
+| --- | --- |
+| ", Cell[BoxData[ButtonBox["E", BaseStyle -> "Link", ButtonData -> "paclet:ref/E"]], "InlineFormula"], ", ", Cell[BoxData["*"], "InlineFormula"], " | elements with the tag ", Cell[BoxData[ButtonBox["E", BaseStyle -> "Link", ButtonData -> "paclet:ref/E"]], "InlineFormula"], ", or any element |
+| ", Cell[BoxData[".c"], "InlineFormula"], ", ", Cell[BoxData[StyleBox["#x", "TR"]], "InlineFormula"], " | elements with the class ", Cell[BoxData[StyleBox["c", "TR"]], "InlineFormula"], ", or with the id ", Cell[BoxData[StyleBox["x", "TR"]], "InlineFormula"], " |
+| ", Cell[BoxData["[a]"], "InlineFormula"], ", ", Cell[BoxData["[a=v]"], "InlineFormula"], " | elements with the attribute ", Cell[BoxData[StyleBox["a", "TR"]], "InlineFormula"], ", or with ", Cell[BoxData[StyleBox["a", "TR"]], "InlineFormula"], " equal to ", Cell[BoxData[StyleBox["v", "TR"]], "InlineFormula"], " |
+| ", Cell[BoxData["[a~=v]"], "InlineFormula"], " | elements whose ", Cell[BoxData[StyleBox["a", "TR"]], "InlineFormula"], " holds the token ", Cell[BoxData[StyleBox["v", "TR"]], "InlineFormula"], ", tested with the list key ", Cell[BoxData[StyleBox["\"aList\"", "TR"]], "InlineFormula"], " |
+| ", Cell[BoxData["[a|=v]"], "InlineFormula"], " | elements whose ", Cell[BoxData[StyleBox["a", "TR"]], "InlineFormula"], " is ", Cell[BoxData[StyleBox["v", "TR"]], "InlineFormula"], " or starts with ", Cell[BoxData["v-"], "InlineFormula"], " |
+| ", Cell[BoxData["[a^=v]"], "InlineFormula"], ", ", Cell[BoxData["[a$=v]"], "InlineFormula"], ", ", Cell[BoxData["[a*=v]"], "InlineFormula"], " | elements whose ", Cell[BoxData[StyleBox["a", "TR"]], "InlineFormula"], " starts with, ends with or contains ", Cell[BoxData[StyleBox["v", "TR"]], "InlineFormula"], " |
+| ", Cell[BoxData["[a=v i]"], "InlineFormula"], ", ", Cell[BoxData["[a=v s]"], "InlineFormula"], " | the same, with the letters A to Z matched in either case, or as written |
+| ", Cell[BoxData["E F"], "InlineFormula"], ", ", Cell[BoxData["E > F"], "InlineFormula"], " | ", Cell[BoxData[ButtonBox["F", BaseStyle -> "Link", ButtonData -> "paclet:ref/F"]], "InlineFormula"], " elements inside an ", Cell[BoxData[ButtonBox["E", BaseStyle -> "Link", ButtonData -> "paclet:ref/E"]], "InlineFormula"], " element, or children of one, as ", Cell[BoxData[ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"]], "InlineFormula"], " give |
+| ", Cell[BoxData["E + F"], "InlineFormula"], ", ", Cell[BoxData["E ~ F"], "InlineFormula"], " | ", Cell[BoxData[ButtonBox["F", BaseStyle -> "Link", ButtonData -> "paclet:ref/F"]], "InlineFormula"], " elements right after an ", Cell[BoxData[ButtonBox["E", BaseStyle -> "Link", ButtonData -> "paclet:ref/E"]], "InlineFormula"], " sibling, or after one, as ", Cell[BoxData[ButtonBox["Adjacent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Adjacent"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"]], "InlineFormula"], " give |
+| ", Cell[BoxData[":not(s$1, s$2, $$)"], "InlineFormula"], " | elements that match none of the ", Cell[BoxData[StyleBox[SubscriptBox["s", StyleBox["i", "TI"]], "TI"]], "InlineFormula"], " |
+| ", Cell[BoxData[":is(s$1, s$2, $$)"], "InlineFormula"], ", ", Cell[BoxData[":where(s$1, s$2, $$)"], "InlineFormula"], " | elements that match any of the ", Cell[BoxData[StyleBox[SubscriptBox["s", StyleBox["i", "TI"]], "TI"]], "InlineFormula"], " |
+| ", Cell[BoxData[":has(r$1, r$2, $$)"], "InlineFormula"], " | elements with a descendant that an ", Cell[BoxData[StyleBox[SubscriptBox["r", StyleBox["i", "TI"]], "TI"]], "InlineFormula"], " describes, or a child for an ", Cell[BoxData[StyleBox[SubscriptBox["r", StyleBox["i", "TI"]], "TI"]], "InlineFormula"], " that starts with ", Cell[BoxData[">"], "InlineFormula"], " |
+| ", Cell[BoxData[":empty"], "InlineFormula"], " | elements with no element and no text other than whitespace |
+| ", Cell[BoxData[":link"], "InlineFormula"], ", ", Cell[BoxData[":any-link"], "InlineFormula"], " | ", Cell[BoxData[StyleBox["a", "TR"]], "InlineFormula"], " and ", Cell[BoxData[StyleBox["area", "TR"]], "InlineFormula"], " elements with an ", Cell[BoxData[StyleBox["href", "TR"]], "InlineFormula"], " attribute |
+| ", Cell[BoxData[":checked"], "InlineFormula"], " | checked checkboxes and radio buttons, and selected options |
+| ", Cell[BoxData[":first-child"], "InlineFormula"], ", ", Cell[BoxData[":last-child"], "InlineFormula"], ", ", Cell[BoxData[":only-child"], "InlineFormula"], " | elements that are the first, the last or the only element child of their parent |
+| ", Cell[BoxData[":nth-child(An+B)"], "InlineFormula"], ", ", Cell[BoxData[":nth-last-child(An+B)"], "InlineFormula"], " | elements at a position a k + b among the element children of their parent, for some k \[GreaterEqual] 0, counted from the first or from the last; with ", Cell[BoxData["of s$1, s$2, $$"], "InlineFormula"], ", among the children that match one of the ", Cell[BoxData[StyleBox[SubscriptBox["s", StyleBox["i", "TI"]], "TI"]], "InlineFormula"], " |
+| ", Cell[BoxData[":first-of-type"], "InlineFormula"], ", ", Cell[BoxData[":last-of-type"], "InlineFormula"], ", ", Cell[BoxData[":only-of-type"], "InlineFormula"], ", ", Cell[BoxData[":nth-of-type(An+B)"], "InlineFormula"], ", ", Cell[BoxData[":nth-last-of-type(An+B)"], "InlineFormula"], " | the same, among the children with the element's tag |
+| ", Cell[BoxData["s$1, s$2, $$"], "InlineFormula"], " | elements that any of the selectors describes |"}], "Notes"],
+
+Cell[TextData[{"The arguments of ", Cell[BoxData[":not"], "InlineFormula"], " must be selectors with no combinator. The arguments of ", Cell[BoxData[":is"], "InlineFormula"], " and ", Cell[BoxData[":where"], "InlineFormula"], " can have combinators only when their part is the whole selector, as in ", Cell[BoxData[StyleBox["\":is(nav a, ul > li)\"", "TR"]], "InlineFormula"], " or ", Cell[BoxData[StyleBox["\"a:is(nav a, li > a)\"", "TR"]], "InlineFormula"], ". Each argument of ", Cell[BoxData[":has"], "InlineFormula"], " starts with a descendant combinator or ", Cell[BoxData[">"], "InlineFormula"], "."}], "Notes"],
+
+Cell[TextData[{"A pseudo-class of position, such as ", Cell[BoxData[":first-child"], "InlineFormula"], " or ", Cell[BoxData[":nth-child(2n+1)"], "InlineFormula"], ", gives a list pattern over the element children of the parent, as a stage after ", Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"]], "InlineFormula"], " or ", Cell[BoxData[ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"]], "InlineFormula"], ". At the start of a selector, the parent can be ", Cell[BoxData[RowBox[{ButtonBox["XMLDocument", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDocument"], "[", "]"}]], "InlineFormula"], ", so it reaches the root element. It can be used in any part of a selector, but not inside ", Cell[BoxData[":not"], "InlineFormula"], ", ", Cell[BoxData[":is"], "InlineFormula"], " or ", Cell[BoxData[":where"], "InlineFormula"], ". A list of selectors that have the same combinators and differ in one part gives alternatives in that part. Any other list gives the alternatives of its selectors, in the order written."}], "Notes"],
+
+Cell[TextData[{Cell[BoxData["[a~=v]"], "InlineFormula"], " needs a reading for ", Cell[BoxData[StyleBox["a", "TR"]], "InlineFormula"], ", given with ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"]], "InlineFormula"], " or with the ", Cell[BoxData[StyleBox["\"AttributeReadings\"", "TR"]], "InlineFormula"], " option of the function that runs the query. The reading for ", Cell[BoxData[StyleBox["class", "TR"]], "InlineFormula"], " is in ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"]], "InlineFormula"], " by default."}], "Notes"],
+
+Cell[TextData[{Cell[BoxData[":root"], "InlineFormula"], " and ", Cell[BoxData[":scope"], "InlineFormula"], " describe the top-level element of the tree when there is only one, as a child of ", Cell[BoxData[RowBox[{ButtonBox["XMLDocument", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDocument"], "[", "]"}]], "InlineFormula"], ". They can be used only in the first part of a selector, followed by ", Cell[BoxData[">"], "InlineFormula"], " or a descendant combinator, as in ", Cell[BoxData[StyleBox["\":root > body\"", "TR"]], "InlineFormula"], "."}], "Notes"],
+
+Cell[TextData[{Cell[BoxData[ButtonBox["FromCSSSelector", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/FromCSSSelector"]], "InlineFormula"], " issues a message and returns ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], " for a string that is not a valid CSS selector, for a valid selector that it cannot translate, such as ", Cell[BoxData[":lang(fr)"], "InlineFormula"], ", and for one that only a browser can match, such as ", Cell[BoxData[":hover"], "InlineFormula"], " or ", Cell[BoxData["::before"], "InlineFormula"], ". The message names a workaround where there is one."}], "Notes"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "See Also",
+ Cell[BoxData[
+  TemplateBox[{"SeeAlso", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell[
+       "Insert links to any related reference (function) pages.", 
+        "MoreInfoText"], BaseStyle -> "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "SeeAlsoSection"],
+
+Cell[TextData[{Cell[BoxData[TemplateBox[{Cell[TextData["XMLPattern"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLCases"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLMatchQ"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLMatchQ"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["Child"]], "paclet:MaximilienTirard/BeautifulTureen/ref/Child"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["Descendant"]], "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["$AttributeReadings"]], "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["HTMLInnerText"]], "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLInnerText"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLDocument"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDocument"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}]}], "SeeAlso"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Tech Notes",
+ Cell[BoxData[
+  TemplateBox[{"TechNotes", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell["Insert links to related tech notes.", "MoreInfoText"], BaseStyle -> 
+       "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "TechNotesSection"],
+
+Cell[TextData[ButtonBox["Scraping HTML with BeautifulTureen", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/tutorial/ScrapingHTMLWithBeautifulTureen"]], "Tutorials"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Related Guides", "MoreAboutSection"],
+
+Cell[TextData[ButtonBox["BeautifulTureen", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/guide/BeautifulTureen"]], "MoreAbout"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Related Links",
+ Cell[BoxData[
+  TemplateBox[{"RelatedLinks", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell[
+       "Insert links to any related page, including web pages.", 
+        "MoreInfoText"], BaseStyle -> "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "RelatedLinksSection"],
+
+Cell["XXXX", "RelatedLinks"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Examples Initialization",
+ Cell[BoxData[
+  TemplateBox[{"ExamplesInitialization", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell[
+       "Input that is to be evaluated before any examples are run, e.g. \
+Needs[\[Ellipsis]].", "MoreInfoText"], BaseStyle -> "IFrameBox"]], 
+     "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "ExamplesInitializationSection"],
+
+Cell[BoxData[RowBox[{"Needs", "[", "\"MaximilienTirard`BeautifulTureen`\"", "]"}]], "ExampleInitialization"]
+}, Open  ]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[GridBox[{
+    {
+     StyleBox[
+      RowBox[{"Basic", " ", "Examples"}], "PrimaryExamplesSection"], 
+     ButtonBox[
+      RowBox[{
+       RowBox[{"More", " ", "Examples"}], " ", "\[RightTriangle]"}],
+      BaseStyle->"ExtendedExamplesLink",
+      ButtonData:>"ExtendedExamples"]}
+   }],
+  $Line = 0; Null]], "PrimaryExamplesSection"],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Translate a CSS selector:", "ExampleText"], Cell[BoxData["FromCSSSelector[\"div.note > p\"]"], "Input"],
+
+Cell[BoxData[RowBox[{"Child", "[", RowBox[{RowBox[{"XMLPattern", "[", RowBox[{"\"div\"", ",", RowBox[{"\"classList\"", "\[Rule]", "\"note\""}]}], "]"}], ",", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "]"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Give a CSS selector directly to ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["notes=ImportString[\"<div class=\\\"note\\\"><p>Read this.</p></div><div><p>Not this.</p></div>\",{\"HTML\",\"XMLObject\"}];
+XMLCases[notes,\"div.note > p\"]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Read this.\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Use a CSS selector as a stage, next to a named XML pattern:", "ExampleText"], Cell[BoxData["notes=ImportString[\"<div class=\\\"note\\\"><p>Read <b>this</b>.</p></div><div><p><b>Not</b> this.</p></div>\",{\"HTML\",\"XMLObject\"}];
+XMLCases[notes,Child[\"div.note p\",bold:XMLPattern[\"b\"]]:>HTMLTextContent[bold]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", "\"this\"", "}"}]], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "More Examples",
+ Cell[BoxData[
+  TemplateBox[{"MoreExamples", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell["Extended examples in standardized sections.", "MoreInfoText"], 
+       BaseStyle -> "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "ExtendedExamplesSection",
+ CellTags->"ExtendedExamples"],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Scope", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["Simple Selectors", "ExampleSubsection"], $Line = 0; Null]], "ExampleSubsection"], Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Classes, ids and attributes merge into one ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["FromCSSSelector[\"a.external#home[href][title=\\\"Home\\\"]\"]"], "Input"],
+
+Cell[BoxData[RowBox[{"XMLPattern", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{RowBox[{"\"classList\"", "\[Rule]", "\"external\""}], ",", RowBox[{"\"id\"", "\[Rule]", "\"home\""}], ",", "\"href\"", ",", RowBox[{"\"title\"", "\[Rule]", "\"Home\""}]}], "}"}]}], "]"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Test the start, end or content of an attribute value:", "ExampleText"], Cell[BoxData["FromCSSSelector[\"a[href^=\\\"https://\\\"][href$=\\\".pdf\\\"]\"]"], "Input"],
+
+Cell[BoxData[RowBox[{"XMLPattern", "[", RowBox[{"\"a\"", ",", RowBox[{"\"href\"", "\[Rule]", RowBox[{"_", "?", RowBox[{"(", RowBox[{RowBox[{RowBox[{"StringStartsQ", "[", RowBox[{"#1", ",", "\"https://\""}], "]"}], "&&", RowBox[{"StringEndsQ", "[", RowBox[{"#1", ",", "\".pdf\""}], "]"}]}], "&"}], ")"}]}]}]}], "]"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"With the ", Cell[BoxData[StyleBox["i", "TR"]], "InlineFormula"], " flag, the letters A to Z match in either case:"}], "ExampleText"], Cell[BoxData["XMLCases[ImportString[\"<input type=\\\"CHECKBOX\\\"><input type=\\\"text\\\">\",{\"HTML\",\"XMLObject\"}],\"input[type=checkbox i]\"]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"input\"", ",", RowBox[{"{", RowBox[{"\"type\"", "\[Rule]", "\"CHECKBOX\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Match a token of a space-separated attribute, with a reading for it:", "ExampleText"], Cell[BoxData["XMLCases[ImportString[\"<a rel=\\\"nofollow noopener\\\" href=\\\"/ad\\\">Ad</a><a href=\\\"/\\\">Home</a>\",{\"HTML\",\"XMLObject\"}],\"a[rel~=nofollow]\",\"AttributeReadings\"-> <|\"rel\"-> <||>|>]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{RowBox[{"\"shape\"", "\[Rule]", "\"rect\""}], ",", RowBox[{"\"rel\"", "\[Rule]", "\"nofollow noopener\""}], ",", RowBox[{"\"href\"", "\[Rule]", "\"/ad\""}]}], "}"}], ",", RowBox[{"{", "\"Ad\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["Combinators", "ExampleSubsection"], $Line = 0; Null]], "ExampleSubsection"], Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The four combinators become ", Cell[BoxData[ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Descendant"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Child"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["Adjacent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Adjacent"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/Sibling"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["FromCSSSelector[\"nav > ul li + li ~ li\"]"], "Input"],
+
+Cell[BoxData[RowBox[{"Child", "[", RowBox[{RowBox[{"XMLPattern", "[", "\"nav\"", "]"}], ",", RowBox[{"Descendant", "[", RowBox[{RowBox[{"XMLPattern", "[", "\"ul\"", "]"}], ",", RowBox[{"Adjacent", "[", RowBox[{RowBox[{"XMLPattern", "[", "\"li\"", "]"}], ",", RowBox[{"Sibling", "[", RowBox[{RowBox[{"XMLPattern", "[", "\"li\"", "]"}], ",", RowBox[{"XMLPattern", "[", "\"li\"", "]"}]}], "]"}]}], "]"}]}], "]"}]}], "]"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A selector given as a stage is spliced into the chain:", "ExampleText"], Cell[BoxData["page=ImportString[\"<html><body><article><p><span>In.</span></p></article><p><span>Out.</span></p></body></html>\",{\"HTML\",\"XMLObject\"}];
+XMLCases[page,Child[\"article p\",XMLPattern[\"span\"]]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"span\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"In.\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A list of selectors that differ in one part gives alternatives in that stage:", "ExampleText"], Cell[BoxData["FromCSSSelector[\"article > h2, article > h3\"]"], "Input"],
+
+Cell[BoxData[RowBox[{"Child", "[", RowBox[{RowBox[{"XMLPattern", "[", "\"article\"", "]"}], ",", RowBox[{RowBox[{"XMLPattern", "[", "\"h2\"", "]"}], "|", RowBox[{"XMLPattern", "[", "\"h3\"", "]"}]}]}], "]"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A list of selectors of different shapes gives alternatives of their translations:", "ExampleText"], Cell[BoxData["page=ImportString[\"<h2>A</h2><p>x</p><ul><li><a href=\\\"/\\\">y</a></li></ul>\",{\"HTML\",\"XMLObject\"}];
+{FromCSSSelector[\"h2 + p, li > a\"],XMLCases[page,\"h2 + p, li > a\"]}"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{RowBox[{"Adjacent", "[", RowBox[{RowBox[{"XMLPattern", "[", "\"h2\"", "]"}], ",", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "]"}], "|", RowBox[{"Child", "[", RowBox[{RowBox[{"XMLPattern", "[", "\"li\"", "]"}], ",", RowBox[{"XMLPattern", "[", "\"a\"", "]"}]}], "]"}]}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"x\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{RowBox[{"\"shape\"", "\[Rule]", "\"rect\""}], ",", RowBox[{"\"href\"", "\[Rule]", "\"/\""}]}], "}"}], ",", RowBox[{"{", "\"y\"", "}"}]}], "]"}]}], "}"}]}], "}"}]], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["Pseudo-Classes", "ExampleSubsection"], $Line = 0; Null]], "ExampleSubsection"], Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[":not"], "InlineFormula"], " of one class keeps the elements that have no class:"}], "ExampleText"], Cell[BoxData["XMLCases[ImportString[\"<p class=\\\"ad\\\">Ad.</p><p class=\\\"lead\\\">Lead.</p><p>Body.</p>\",{\"HTML\",\"XMLObject\"}],\"p:not(.ad)\"]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "\[Rule]", "\"lead\""}], "}"}], ",", RowBox[{"{", "\"Lead.\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Body.\"", "}"}]}], "]"}]}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[":not"], "InlineFormula"], " of other selectors gives a condition, which keeps the links that have no ", Cell[BoxData[StyleBox["href", "TR"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["FromCSSSelector[\"a:not([href^=\\\"#\\\"])\"]"], "Input"],
+
+Cell[BoxData[RowBox[{RowBox[{"e$4603", ":", RowBox[{"XMLPattern", "[", "\"a\"", "]"}]}], "/;", RowBox[{"!", RowBox[{RowBox[{"XMLMatchQ", "[", RowBox[{"XMLPattern", "[", RowBox[{"_", ",", RowBox[{"\"href\"", "\[Rule]", RowBox[{"_", "?", RowBox[{"(", RowBox[{"StringStartsQ", "[", "\"#\"", "]"}], ")"}]}]}]}], "]"}], "]"}], "[", "e$4603", "]"}]}]}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[":is"], "InlineFormula"], " gives alternatives:"}], "ExampleText"], Cell[BoxData["FromCSSSelector[\"h2:is(.new, .updated)\"]"], "Input"],
+
+Cell[BoxData[RowBox[{RowBox[{"XMLPattern", "[", RowBox[{"\"h2\"", ",", RowBox[{"\"classList\"", "\[Rule]", "\"new\""}]}], "]"}], "|", RowBox[{"XMLPattern", "[", RowBox[{"\"h2\"", ",", RowBox[{"\"classList\"", "\[Rule]", "\"updated\""}]}], "]"}]}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[":has"], "InlineFormula"], " tests the descendants of the element, or with ", Cell[BoxData[">"], "InlineFormula"], " its children:"}], "ExampleText"], Cell[BoxData["page=ImportString[\"<section><h2>Title</h2><p>Text.</p></section><section><div><h2>Inner</h2></div></section>\",{\"HTML\",\"XMLObject\"}];
+{Length[XMLCases[page,\"section:has(h2)\"]],Length[XMLCases[page,\"section:has(> h2)\"]]}"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"2", ",", "1"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[":has"], "InlineFormula"], " takes a selector with combinators, here a paragraph right after a heading:"}], "ExampleText"], Cell[BoxData["XMLCases[ImportString[\"<div id=\\\"a\\\"><h2>T</h2><p>x</p></div><div id=\\\"b\\\"><p>x</p><h2>T</h2></div>\",{\"HTML\",\"XMLObject\"}],\"div:has(> h2 + p)\"]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", RowBox[{"\"id\"", "\[Rule]", "\"a\""}], "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"h2\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"T\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"x\"", "}"}]}], "]"}]}], "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[":empty"], "InlineFormula"], " allows whitespace:"}], "ExampleText"], Cell[BoxData["XMLCases[ImportString[\"<td> </td><td>0</td><td></td>\",{\"HTML\",\"XMLObject\"}],\"td:empty\"]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"td\"", ",", RowBox[{"{", RowBox[{RowBox[{"\"colspan\"", "\[Rule]", "\"1\""}], ",", RowBox[{"\"rowspan\"", "\[Rule]", "\"1\""}]}], "}"}], ",", RowBox[{"{", "\" \"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"td\"", ",", RowBox[{"{", RowBox[{RowBox[{"\"colspan\"", "\[Rule]", "\"1\""}], ",", RowBox[{"\"rowspan\"", "\[Rule]", "\"1\""}]}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}]}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[":checked"], "InlineFormula"], " matches checked checkboxes and radio buttons, and selected options:"}], "ExampleText"], Cell[BoxData["FromCSSSelector[\":checked\"]"], "Input"],
+
+Cell[BoxData[RowBox[{RowBox[{"XMLPattern", "[", RowBox[{"\"input\"", ",", RowBox[{"{", RowBox[{RowBox[{"\"type\"", "\[Rule]", RowBox[{"_", "?", RowBox[{"(", RowBox[{"StringMatchQ", "[", RowBox[{RowBox[{"\"checkbox\"", "|", "\"radio\""}], ",", RowBox[{"IgnoreCase", "\[Rule]", "True"}]}], "]"}], ")"}]}]}], ",", "\"checked\""}], "}"}]}], "]"}], "|", RowBox[{"XMLPattern", "[", RowBox[{"\"option\"", ",", "\"selected\""}], "]"}]}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A pseudo-class of position gives a list pattern over the element children of the parent:", "ExampleText"], Cell[BoxData["FromCSSSelector[\"ul > li:nth-child(odd)\"]"], "Input"],
+
+Cell[BoxData[RowBox[{"Child", "[", RowBox[{RowBox[{"XMLPattern", "[", "\"ul\"", "]"}], ",", RowBox[{"{", RowBox[{RowBox[{RowBox[{"PatternSequence", "[", RowBox[{"_", ",", "_"}], "]"}], "..."}], ",", RowBox[{"XMLPattern", "[", "\"li\"", "]"}], ",", "___"}], "}"}]}], "]"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[":is"], "InlineFormula"], " with combinators inside, as the whole selector, reads as a list of selectors:"}], "ExampleText"], Cell[BoxData["FromCSSSelector[\"a:is(nav a, li > a)\"]"], "Input"],
+
+Cell[BoxData[RowBox[{RowBox[{"Descendant", "[", RowBox[{RowBox[{"XMLPattern", "[", "\"nav\"", "]"}], ",", RowBox[{"XMLPattern", "[", "\"a\"", "]"}]}], "]"}], "|", RowBox[{"Child", "[", RowBox[{RowBox[{"XMLPattern", "[", "\"li\"", "]"}], ",", RowBox[{"XMLPattern", "[", "\"a\"", "]"}]}], "]"}]}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[":only-child"], "InlineFormula"], " can follow any combinator:"}], "ExampleText"], Cell[BoxData["XMLCases[ImportString[\"<div><ul><li>One</li></ul><ul><li>A</li><li>B</li></ul></div>\",{\"HTML\",\"XMLObject\"}],\"div li:only-child\"]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"One\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[":root"], "InlineFormula"], " and ", Cell[BoxData[":scope"], "InlineFormula"], " give a list pattern below ", Cell[BoxData[RowBox[{ButtonBox["XMLDocument", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDocument"], "[", "]"}]], "InlineFormula"], ", which selects the top-level element when there is only one:"}], "ExampleText"], Cell[BoxData["page=ImportString[\"<html><head></head><body><p>Text</p></body></html>\",{\"HTML\",\"XMLObject\"}];
+{FromCSSSelector[\":root > body\"],XMLCases[page,\":scope > *\"]//Map[First]}"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"Child", "[", RowBox[{RowBox[{"XMLDocument", "[", "]"}], ",", RowBox[{"{", RowBox[{"XMLPattern", "[", "_", "]"}], "}"}], ",", RowBox[{"XMLPattern", "[", "\"body\"", "]"}]}], "]"}], ",", RowBox[{"{", RowBox[{"\"head\"", ",", "\"body\""}], "}"}]}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["At the start of a selector, a pseudo-class of position reaches the root element:", "ExampleText"], Cell[BoxData["XMLCases[ImportString[\"<p>One</p>\",{\"HTML\",\"XMLObject\"}],\"html:first-child\"]//Map[First]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", "\"html\"", "}"}]], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["Workflow", "ExampleSubsection"], $Line = 0; Null]], "ExampleSubsection"], Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Give a CSS selector in a ", Cell[BoxData[StyleBox["\"Roles\"", "TR"]], "InlineFormula"], " rule of ", Cell[BoxData[ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLInnerText"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["HTMLInnerText[ImportString[\"<div class=\\\"ad\\\">Buy now!</div><p>The article.</p>\",{\"HTML\",\"XMLObject\"}],\"Roles\"->{\"div.ad\"->\"Skip\"}]"], "Input"],
+
+Cell[BoxData["\"The article.\""], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Translate a selector to start from, and add a test that CSS cannot write:", "ExampleText"], Cell[BoxData["links=ImportString[\"<a href=\\\"/a\\\">About us</a><a href=\\\"/b\\\">Go</a>\",{\"HTML\",\"XMLObject\"}];
+XMLCases[links,link:FromCSSSelector[\"a[href]\"]/;StringLength[HTMLTextContent[link]]>2]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{RowBox[{"\"shape\"", "\[Rule]", "\"rect\""}], ",", RowBox[{"\"href\"", "\[Rule]", "\"/a\""}]}], "}"}], ",", RowBox[{"{", "\"About us\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Generalizations & Extensions", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"]}, Open]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "Options", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "XXXX", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "XXXX", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"]
+}, Open  ]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Applications", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Properties & Relations", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A CSS selector string gives the same elements as its translation:", "ExampleText"], Cell[BoxData["page=ImportString[\"<ul><li class=\\\"done\\\">a</li><li>b</li></ul>\",{\"HTML\",\"XMLObject\"}];
+XMLCases[page,\"li:not(.done)\"]===XMLCases[page,FromCSSSelector[\"li:not(.done)\"]]"], "Input"],
+
+Cell[BoxData["True"], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A selector that describes one element can be given to ", Cell[BoxData[ButtonBox["XMLMatchQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLMatchQ"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["XMLMatchQ[XMLElement[\"a\",{\"class\"->\"external\",\"href\"->\"https://example.com\"},{\"Example\"}],\"a.external[href]\"]"], "Input"],
+
+Cell[BoxData["True"], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Possible Issues", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The importer adds attributes such as ", Cell[BoxData["rowspan=\"1\""], "InlineFormula"], ", which count as present:"}], "ExampleText"], Cell[BoxData["XMLCases[ImportString[\"<table><tr><td>a</td><td rowspan=\\\"2\\\">b</td></tr></table>\",{\"HTML\",\"XMLObject\"}],\"td[rowspan]\"]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"td\"", ",", RowBox[{"{", RowBox[{RowBox[{"\"colspan\"", "\[Rule]", "\"1\""}], ",", RowBox[{"\"rowspan\"", "\[Rule]", "\"1\""}]}], "}"}], ",", RowBox[{"{", "\"a\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"td\"", ",", RowBox[{"{", RowBox[{RowBox[{"\"colspan\"", "\[Rule]", "\"1\""}], ",", RowBox[{"\"rowspan\"", "\[Rule]", "\"2\""}]}], "}"}], ",", RowBox[{"{", "\"b\"", "}"}]}], "]"}]}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Letter case matters in tag names, attribute names and values. The HTML importer gives tag and attribute names in lowercase:", "ExampleText"], Cell[BoxData["XMLCases[ImportString[\"<DIV CLASS=\\\"Note\\\">x</DIV>\",{\"HTML\",\"XMLObject\"}],#]& /@{\"DIV.Note\",\"div.Note\",\"div.note\"}"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", RowBox[{"\"class\"", "\[Rule]", "\"Note\""}], "}"}], ",", RowBox[{"{", "\"x\"", "}"}]}], "]"}], "}"}], ",", RowBox[{"{", "}"}]}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData["[a~=v]"], "InlineFormula"], " needs a reading for ", Cell[BoxData[StyleBox["a", "TR"]], "InlineFormula"], ". Without one, the list key ", Cell[BoxData[StyleBox["\"relList\"", "TR"]], "InlineFormula"], " is an ordinary attribute name:"}], "ExampleText"], Cell[BoxData["page=ImportString[\"<a rel=\\\"nofollow\\\" href=\\\"/ad\\\">Ad</a>\",{\"HTML\",\"XMLObject\"}];
+{XMLCases[page,\"a[rel~=nofollow]\"],Length[XMLCases[page,\"a[rel~=nofollow]\",\"AttributeReadings\"-> <|\"rel\"-> <||>|>]]}"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", "}"}], ",", "1"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The ", Cell[BoxData[StyleBox["i", "TR"]], "InlineFormula"], " flag matches only the letters A to Z in either case, so ", Cell[BoxData["é"], "InlineFormula"], " does not match ", Cell[BoxData["É"], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["XMLMatchQ[XMLElement[\"span\",{\"title\"->\"\\[CapitalEAcute]t\\[EAcute]\"},{}],#]& /@{\"[title=\\\"\\[EAcute]t\\[EAcute]\\\" i]\",\"[title=\\\"\\[CapitalEAcute]T\\[EAcute]\\\" i]\"}"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"False", ",", "True"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[":checked"], "InlineFormula"], " tests the ", Cell[BoxData[StyleBox["selected", "TR"]], "InlineFormula"], " attribute only, not the default first option:"}], "ExampleText"], Cell[BoxData["XMLCases[ImportString[\"<select><option>a</option><option>b</option></select>\",{\"HTML\",\"XMLObject\"}],\"option:checked\"]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[":root"], "InlineFormula"], " after a combinator can match nothing, and is refused:"}], "ExampleText"], Cell[BoxData["FromCSSSelector[\"body :root\"]"], "Input"],
+
+Cell["FromCSSSelector::unsupported: \"body :root\" is valid CSS, but \":root\" cannot be translated to an XML pattern. \"It matches the only top element, which has no parent or sibling in the tree, so it can only be in the first compound of a selector, followed by > or a descendant combinator, as in :root > body.\"", "Message", "MSG"],
+
+Cell[BoxData["$Failed"], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"On a list of several top-level elements, ", Cell[BoxData[":scope"], "InlineFormula"], " matches nothing, so ", Cell[BoxData[StyleBox["\":scope > p\"", "TR"]], "InlineFormula"], " gives no elements:"}], "ExampleText"], Cell[BoxData["XMLCases[{XMLElement[\"p\",{},{\"One\"}],XMLElement[\"p\",{},{\"Two\"}]},\":scope > p\"]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", "}"}]], "Output"],
+
+Cell[TextData[{"Use ", Cell[BoxData[RowBox[{ButtonBox["XMLDocument", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLDocument"], "[", "]"}]], "InlineFormula"], " to find the top-level ", Cell[BoxData[StyleBox["p", "TR"]], "InlineFormula"], " elements:"}], "ExampleText"],
+
+Cell[BoxData["XMLCases[{XMLElement[\"p\",{},{\"One\"}],XMLElement[\"p\",{},{\"Two\"}]},Child[XMLDocument[],XMLPattern[\"p\"]]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"One\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Two\"", "}"}]}], "]"}]}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A selector with a pseudo-class of position translates to a combinator, which ", Cell[BoxData[ButtonBox["XMLMatchQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLMatchQ"]], "InlineFormula"], " refuses:"}], "ExampleText"], Cell[BoxData["XMLMatchQ[XMLElement[\"li\",{},{}],\"li:first-child\"]"], "Input"],
+
+Cell["XMLMatchQ::combinator: \"li:first-child\" relates an element to its parent or siblings, which a lone element does not have. Use XMLCases or XMLFirstCase to search a tree with it.", "Message", "MSG"],
+
+Cell[BoxData["$Failed"], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A list of selectors of different shapes runs each of them, as alternatives of combinators:", "ExampleText"], Cell[BoxData["FromCSSSelector[\"h2 + p, h3 > span\"]"], "Input"],
+
+Cell[BoxData[RowBox[{RowBox[{"Adjacent", "[", RowBox[{RowBox[{"XMLPattern", "[", "\"h2\"", "]"}], ",", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "]"}], "|", RowBox[{"Child", "[", RowBox[{RowBox[{"XMLPattern", "[", "\"h3\"", "]"}], ",", RowBox[{"XMLPattern", "[", "\"span\"", "]"}]}], "]"}]}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"In a ", Cell[BoxData[StyleBox["\"Roles\"", "TR"]], "InlineFormula"], " rule a string is CSS, so a tag such as ", Cell[BoxData["a.b"], "InlineFormula"], " needs ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["element=XMLElement[\"div\",{},{XMLElement[\"a.b\",{},{\"hidden\"}],XMLElement[\"p\",{},{\"shown\"}]}];
+{HTMLInnerText[element,\"Roles\"->{\"a.b\"->\"Skip\"}],HTMLInnerText[element,\"Roles\"->{XMLPattern[\"a.b\"]->\"Skip\"}]}"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"\"hidden\\nshown\"", ",", "\"shown\""}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[":is"], "InlineFormula"], " and ", Cell[BoxData[":where"], "InlineFormula"], " drop an argument that is not a valid selector, as CSS does:"}], "ExampleText"], Cell[BoxData["FromCSSSelector[\"p:is(.lead, ::before)\"]"], "Input"],
+
+Cell[BoxData[RowBox[{"XMLPattern", "[", RowBox[{"\"p\"", ",", RowBox[{"\"classList\"", "\[Rule]", "\"lead\""}]}], "]"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A combinator inside ", Cell[BoxData[":is"], "InlineFormula"], " after another part is not translated:"}], "ExampleText"], Cell[BoxData["FromCSSSelector[\"section :is(nav a)\"]"], "Input"],
+
+Cell["FromCSSSelector::unsupported: \"section :is(nav a)\" is valid CSS, but \":is(nav a)\" cannot be translated to an XML pattern. \"Its arguments can hold a combinator only when its compound is the whole selector, as in p:is(div p, section > p), and not inside :not() or :has().\"", "Message", "MSG"],
+
+Cell[BoxData["$Failed"], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A list pattern does not see text, so text at the top level does not stop ", Cell[BoxData[":root"], "InlineFormula"], " from matching, as it does in some CSS libraries:"}], "ExampleText"], Cell[BoxData["XMLCases[{\"Text\",XMLElement[\"p\",{},{\"Para\"}]},\":root\"]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Para\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Interactive Examples", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Neat Examples", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"]}, Open]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Metadata", "MetadataSection"],
+
+Cell[TextData[{
+ "New in: ",
+ Cell["XX", "HistoryData",
+  CellTags->"New"],
+ " | Modified in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Modified"],
+ " | Obsolete in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Obsolete"]
+}], "History"],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Categorization",
+ Cell[BoxData[
+  TemplateBox[{"Metadata", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell[
+       "Metadata such as page URI, context, and type of documentation page.", 
+        "MoreInfoText"], BaseStyle -> "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "CategorizationSection"],
+
+Cell["Symbol", "Categorization",
+ CellLabel->"Entity Type"],
+
+Cell["MaximilienTirard/BeautifulTureen", "Categorization",
+ CellLabel->"Paclet Name"],
+
+Cell["MaximilienTirard`BeautifulTureen`", "Categorization",
+ CellLabel->"Context"],
+
+Cell["MaximilienTirard/BeautifulTureen/ref/FromCSSSelector", "Categorization",
+ CellLabel->"URI"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Keywords", "KeywordsSection"],
+
+Cell["XXXX", "Keywords"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Syntax Templates", "TemplatesSection"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Additional Function Template"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Arguments Pattern"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Local Variables"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Color Equal Signs"]
+}, Closed]]
+}, Open  ]]
+},
+TaggingRules->Association["Paclet" -> "None"],
+CellContext->"Global`",
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "FunctionPageStylesExt.nb", 
+  CharacterEncoding -> "UTF-8"]
+]
+(* End of Notebook Content *)

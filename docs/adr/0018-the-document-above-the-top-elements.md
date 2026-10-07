@@ -1,5 +1,5 @@
 ---
-status: accepted (not yet implemented)
+status: accepted
 ---
 
 # Every input has a document above its top elements, matched by `XMLDocument[]`
@@ -57,3 +57,14 @@ Possible Issues, for documentation:
 - soupsieve also refuses `:root` when there is top-level text. A list stage does not see text, so this does not.
 - On a list input with several top elements, Selectors 4 makes the list a virtual scope, so `:scope > p` should give the top-level `p`s. It gives `{}` here. Write `Child[XMLDocument[], XMLPattern["p"]]`.
 - `XMLDocument[]` alone selects nothing, and `Child[XMLDocument[], p]` on a bare `p` gives `{}`, because the input is never a result.
+
+As built:
+
+- The document is the chain site `{0}`, which is no position in the tree; `Extract` gives the tree's head there, which the compiled `XMLDocument[]` matches. A bare `XMLElement` input stays at `{}`, so no position shifts.
+- `XMLMatchQ` and the `Roles`/`Constructs` rules refuse `XMLDocument[]` with `::badpat`, since it is not a combinator. A combinator holding it is refused as any combinator is.
+- As an entry in a list stage, `XMLDocument[]` is refused with `::listentry`, as any entry that is not an XML pattern is, rather than `::badpat`.
+- `Adjacent[XMLDocument[], b]` gives `{}`, as the document has no siblings, rather than a refusal.
+- A CSS string given as a later stage, such as `Child[a, "li:first-child"]`, starts with `XMLPattern[_]` there, not `XMLDocument[] | XMLPattern[_]`, since no later stage can be the document. A string that needs the document there, such as `":root"`, is `::badpat`.
+- `:root` and `:scope` in a run with `+` or `~` (`:root + p`) are `::unsupported`, as after a combinator: the top element has no siblings. On `:root`, a position among siblings holds when it admits index 1 and otherwise never matches, so `:root:nth-child(2)` is `Child[XMLDocument[], {Except[_], XMLPattern[_]}]`.
+- `Sibling` over 1,000 top-level elements of a list costs what it costs over 1,000 children of one element (2.5 ms both).
+- On the Rosetta pages, `html:first-child`, `html:only-child`, `:only-of-type`, `:root`, `:root > body`, `:scope > *` and the other root rows give soupsieve's elements in soupsieve's order.

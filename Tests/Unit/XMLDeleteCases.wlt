@@ -1,5 +1,5 @@
 (* XMLDeleteCases: tag/Alternatives removal, envelope preservation, scoped
-   deletion via Child/Descendant, and the unsupported-combinator/bad-pattern
+   deletion via Child, Descendant, Adjacent, Sibling and list stages, and the bad-pattern
    fallbacks. All fixtures here are local to this file. *)
 
 $treeNoise = ImportString["<html><body>
@@ -106,17 +106,17 @@ TestCreate[
   TestID -> "delete-descendant-nested-same-tag"
 ];
 
-(* Adjacent/Sibling emit unsupported message *)
+(* Adjacent is a list stage (ADR 0016): the p right after a script goes. *)
 TestCreate[
-  XMLDeleteCases[$treeNoise, Adjacent[XMLPattern["p"], XMLPattern["p"]]],
-  $Failed,
-  {XMLDeleteCases::unsupported},
-  TestID -> "delete-adjacent-unsupported"
+  HTMLTextContent /@ XMLCases[XMLDeleteCases[$treeNoise, Adjacent[XMLPattern["script"], XMLPattern["p"]]], XMLPattern["p"]],
+  {"visible"},
+  TestID -> "delete-adjacent"
 ];
 
-(* Bad pattern fallback *)
+(* Bad pattern fallback. A string is a CSS selector (ADR 0017), so the bad
+   pattern is a number. *)
 TestCreate[
-  XMLDeleteCases[$treeNoise, "not-a-pattern"],
+  XMLDeleteCases[$treeNoise, 42],
   $Failed,
   {XMLDeleteCases::badpat},
   TestID -> "delete-bad-pattern"
@@ -213,11 +213,13 @@ TestCreate[
   TestID -> "delete-descendant-any-matching-ancestor"
 ];
 
-(* Adjacent and Sibling stay unsupported at any depth. *)
+(* Adjacent and Sibling delete at any depth. *)
 TestCreate[
   {XMLDeleteCases[$treeNestDel, Descendant[XMLPattern["section"], Adjacent[XMLPattern["p"], XMLPattern["div"]]]],
    XMLDeleteCases[$treeNestDel, Child[Sibling[XMLPattern["p"], XMLPattern["div"]], XMLPattern["p"]]]},
-  {$Failed, $Failed},
-  {XMLDeleteCases::unsupported, XMLDeleteCases::unsupported},
-  TestID -> "delete-nested-adjacent-sibling-unsupported"
+  {XMLElement["div", {"class" -> "outer"}, {
+     XMLElement["section", {}, {XMLElement["p", {}, {"1"}]}], XMLElement["p", {}, {"3"}]}],
+   XMLElement["div", {"class" -> "outer"}, {
+     XMLElement["section", {}, {XMLElement["p", {}, {"1"}], XMLElement["div", {}, {}]}], XMLElement["p", {}, {"3"}]}]},
+  TestID -> "delete-nested-adjacent-sibling"
 ];
