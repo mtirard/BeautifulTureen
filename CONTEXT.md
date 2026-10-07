@@ -1,4 +1,4 @@
-# BeautifulTureen — Context Glossary
+# HTMLPatterns — Context Glossary
 
 BeautifulSoup-style HTML element selection and text extraction for the Wolfram Language. Operates on the static `XMLObject` tree produced by `Import[…, {"HTML", "XMLObject"}]`.
 

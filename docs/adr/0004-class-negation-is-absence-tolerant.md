@@ -6,7 +6,7 @@ status: superseded by ADR-0006
 
 > **Superseded outright by [ADR 0006](./0006-three-levels-token-predicate-quantifier-conjunction.md), conclusion included.** This ADR holds that a missing `class` and `class=""` state the same fact and that no constraint may distinguish them. Under ADR 0006 they _are_ distinguishable, by design: every constraint naming an attribute requires that attribute. The reasoning below was correct in its own world — tolerance was _forced_, because `CSSClass[Except[…]]` was the only way to spell "not an ad" — and is obsolete in a world that supplies vocabulary for absence. What survives is the other holding, now applied uniformly rather than as a carve-out: **never silently reinterpret the user's own pattern.**
 >
-> **Correction.** The examples below use `Except["ad"]` and `Except[___]`, and **neither is a legal string pattern.** `Except`'s first argument must be single-character-width, so `StringMatchQ` issues `StringExpression::invld` and comes back unevaluated. Both worked only because `CSSClass` unwrapped `Except` before it reached a string pattern (`Kernel/BeautifulTureen.wl:182`).
+> **Correction.** The examples below use `Except["ad"]` and `Except[___]`, and **neither is a legal string pattern.** `Except`'s first argument must be single-character-width, so `StringMatchQ` issues `StringExpression::invld` and comes back unevaluated. Both worked only because `CSSClass` unwrapped `Except` before it reached a string pattern (`Kernel/HTMLPatterns.wl:182`).
 
 `CSSClass[Except[cls]]` matches an element that does not carry class `cls`, **including an element with no `class` attribute at all**. A missing `class` and `class=""` are the same fact — an empty class list — so no `CSSClass` constraint may distinguish them.
 
