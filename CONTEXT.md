@@ -1,6 +1,6 @@
 # HTMLPatterns — Context Glossary
 
-BeautifulSoup-style HTML element selection and text extraction for the Wolfram Language. Operates on the static `XMLObject` tree produced by `Import[…, {"HTML", "XMLObject"}]`.
+Pattern-based HTML element selection and text extraction for the Wolfram Language. Operates on the static `XMLObject` tree produced by `Import[…, {"HTML", "XMLObject"}]`.
 
 This file is a glossary, not a spec. It defines the language we use to talk about the domain. Implementation lives in the code; decisions live in `docs/adr/`.
 
