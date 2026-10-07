@@ -11,15 +11,15 @@ Notebook[{
 Cell[CellGroupData[{
 Cell["HTMLTextContent", "ObjectName"],
 
-Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["HTMLTextContent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLTextContent"], "[", StyleBox["tree", "TI"], "]"}]], "InlineFormula"], " \[LineSeparator]gives all the strings in ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], ", joined in document order."}], "Usage"],
+Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["HTMLTextContent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLTextContent"], "[", StyleBox["tree", "TI"], "]"}]], "InlineFormula"], " \[LineSeparator]gives all the strings in ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], ", joined in document order."}], "Usage"],
 
 Cell[TextData[{"No whitespace is added or removed. Indentation, newlines and the content of ", Cell[BoxData[StyleBox["pre", "TR"]], "InlineFormula"], " are kept as written."}], "Notes"],
 
 Cell[TextData[{Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " may be an ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], ", an ", Cell[BoxData[ButtonBox["XMLObject", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLObject"]], "InlineFormula"], " document, a string, or a list of elements and strings."}], "Notes"],
 
-Cell[TextData[{"For readable text, with whitespace collapsed and each block-level element on its own line, use ", Cell[BoxData[ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLInnerText"]], "InlineFormula"], "."}], "Notes"],
+Cell[TextData[{"For readable text, with whitespace collapsed and each block-level element on its own line, use ", Cell[BoxData[ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLInnerText"]], "InlineFormula"], "."}], "Notes"],
 
-Cell[TextData[{"If ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " is not one of these forms, ", Cell[BoxData[ButtonBox["HTMLTextContent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLTextContent"]], "InlineFormula"], " issues a message and returns ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], "."}], "Notes"]
+Cell[TextData[{"If ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " is not one of these forms, ", Cell[BoxData[ButtonBox["HTMLTextContent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLTextContent"]], "InlineFormula"], " issues a message and returns ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], "."}], "Notes"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -37,7 +37,7 @@ Cell[TextData[{
    "MoreInfoOpenerButtonTemplate"]]]
 }], "SeeAlsoSection"],
 
-Cell[TextData[{Cell[BoxData[TemplateBox[{Cell[TextData["HTMLInnerText"]], "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLInnerText"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLCases"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLFirstCase"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLPattern"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}]}], "SeeAlso"]
+Cell[TextData[{Cell[BoxData[TemplateBox[{Cell[TextData["HTMLInnerText"]], "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLInnerText"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLCases"]], "paclet:MaximilienTirard/HTMLPatterns/ref/XMLCases"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLFirstCase"]], "paclet:MaximilienTirard/HTMLPatterns/ref/XMLFirstCase"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLPattern"]], "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}]}], "SeeAlso"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -56,14 +56,14 @@ Cell[TextData[{
 
 Cell["XXXX", "Tutorials"],
 
-Cell[TextData[ButtonBox["Scraping HTML with BeautifulTureen", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/tutorial/ScrapingHTMLWithBeautifulTureen"]], "TechNotes"]
+Cell[TextData[ButtonBox["Scraping HTML with Patterns", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/tutorial/ScrapingHTMLWithPatterns"]], "TechNotes"]
 }, Open  ]],
 
 Cell[CellGroupData[{
 
 Cell["Related Guides", "MoreAboutSection"],
 
-Cell[TextData[ButtonBox["BeautifulTureen", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/guide/BeautifulTureen"]], "MoreAbout"]
+Cell[TextData[ButtonBox["HTMLPatterns", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/guide/HTMLPatterns"]], "MoreAbout"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -100,7 +100,7 @@ Needs[\[Ellipsis]].", "MoreInfoText"], BaseStyle -> "IFrameBox"]],
    "MoreInfoOpenerButtonTemplate"]]]
 }], "ExamplesInitializationSection"],
 
-Cell[BoxData[RowBox[{"Needs", "[", "\"MaximilienTirard`BeautifulTureen`\"", "]"}]], "ExampleInitialization"]
+Cell[BoxData[RowBox[{"Needs", "[", "\"MaximilienTirard`HTMLPatterns`\"", "]"}]], "ExampleInitialization"]
 }, Open  ]],
 
 Cell[CellGroupData[{Cell[BoxData[
@@ -198,12 +198,12 @@ Cell[CellGroupData[{Cell[BoxData[
   "Properties & Relations", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Whitespace is kept as written, where ", Cell[BoxData[ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLInnerText"]], "InlineFormula"], " collapses it:"}], "ExampleText"], Cell[BoxData["doc=ImportString[\"<p>Hi   <em>there</em>, \\n  world</p>\",{\"HTML\",\"XMLObject\"}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Whitespace is kept as written, where ", Cell[BoxData[ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLInnerText"]], "InlineFormula"], " collapses it:"}], "ExampleText"], Cell[BoxData["doc=ImportString[\"<p>Hi   <em>there</em>, \\n  world</p>\",{\"HTML\",\"XMLObject\"}];
 {HTMLTextContent[doc],HTMLInnerText[doc]}"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"\"Hi   there, \\n  world\"", ",", "\"Hi there, world\""}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Get the text of an element found with ", Cell[BoxData[ButtonBox["XMLFirstCase", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["tree=ImportString[\"<article><h1>Title</h1><p>Body</p></article>\",{\"HTML\",\"XMLObject\"}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Get the text of an element found with ", Cell[BoxData[ButtonBox["XMLFirstCase", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLFirstCase"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["tree=ImportString[\"<article><h1>Title</h1><p>Body</p></article>\",{\"HTML\",\"XMLObject\"}];
 HTMLTextContent[XMLFirstCase[tree,XMLPattern[\"h1\"]]]"], "Input"],
 
 Cell[BoxData["\"Title\""], "Output"]}, Open]]}, Open]],
@@ -266,13 +266,13 @@ Cell[TextData[{
 Cell["Symbol", "Categorization",
  CellLabel->"Entity Type"],
 
-Cell["MaximilienTirard/BeautifulTureen", "Categorization",
+Cell["MaximilienTirard/HTMLPatterns", "Categorization",
  CellLabel->"Paclet Name"],
 
-Cell["MaximilienTirard`BeautifulTureen`", "Categorization",
+Cell["MaximilienTirard`HTMLPatterns`", "Categorization",
  CellLabel->"Context"],
 
-Cell["MaximilienTirard/BeautifulTureen/ref/HTMLTextContent", "Categorization",
+Cell["MaximilienTirard/HTMLPatterns/ref/HTMLTextContent", "Categorization",
  CellLabel->"URI"]
 }, Closed]],
 

@@ -11,17 +11,17 @@ Notebook[{
 Cell[CellGroupData[{
 Cell["HTMLClassList", "ObjectName"],
 
-Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLClassList"], "[", StyleBox["element", "TI"], "]"}]], "InlineFormula"], " \[LineSeparator]gives the classes of the ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], " ", Cell[BoxData[StyleBox["element", "TI"]], "InlineFormula"], " as a list of strings, in the order written."}], "Usage"],
+Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"], "[", StyleBox["element", "TI"], "]"}]], "InlineFormula"], " \[LineSeparator]gives the classes of the ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], " ", Cell[BoxData[StyleBox["element", "TI"]], "InlineFormula"], " as a list of strings, in the order written."}], "Usage"],
 
-Cell[TextData[{Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLClassList"]], "InlineFormula"], " splits the ", Cell[BoxData[StyleBox["class", "TR"]], "InlineFormula"], " attribute on ", Cell[BoxData[ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLWhitespace"]], "InlineFormula"], ", as a browser does. A no-break space or other Unicode whitespace is part of a class name."}], "Notes"],
+Cell[TextData[{Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"]], "InlineFormula"], " splits the ", Cell[BoxData[StyleBox["class", "TR"]], "InlineFormula"], " attribute on ", Cell[BoxData[ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLWhitespace"]], "InlineFormula"], ", as a browser does. A no-break space or other Unicode whitespace is part of a class name."}], "Notes"],
 
 Cell[TextData[{"An element with no ", Cell[BoxData[StyleBox["class", "TR"]], "InlineFormula"], " attribute, or with an empty or whitespace-only one, gives ", Cell[BoxData[RowBox[{"{", "}"}]], "InlineFormula"], "."}], "Notes"],
 
 Cell[TextData[{"Duplicate classes are kept. A browser's ", Cell[BoxData[StyleBox["classList", "TR"]], "InlineFormula"], " removes them, as ", Cell[BoxData[ButtonBox["DeleteDuplicates", BaseStyle -> "Link", ButtonData -> "paclet:ref/DeleteDuplicates"]], "InlineFormula"], " does."}], "Notes"],
 
-Cell[TextData[{Cell[BoxData[RowBox[{ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLClassList"], "[", StyleBox["element", "TI"], "]"}]], "InlineFormula"], " is the list that ", Cell[BoxData[StyleBox["\"classList\"", "TR"]], "InlineFormula"], " in ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"]], "InlineFormula"], " matches for the same element."}], "Notes"],
+Cell[TextData[{Cell[BoxData[RowBox[{ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"], "[", StyleBox["element", "TI"], "]"}]], "InlineFormula"], " is the list that ", Cell[BoxData[StyleBox["\"classList\"", "TR"]], "InlineFormula"], " in ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], " matches for the same element."}], "Notes"],
 
-Cell[TextData[{Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLClassList"]], "InlineFormula"], " takes a single ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], ". For many elements, use ", Cell[BoxData["HTMLClassList /@ XMLCases[tree$, pattern$]"], "InlineFormula"], "."}], "Notes"]
+Cell[TextData[{Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"]], "InlineFormula"], " takes a single ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], ". For many elements, use ", Cell[BoxData["HTMLClassList /@ XMLCases[tree$, pattern$]"], "InlineFormula"], "."}], "Notes"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -39,7 +39,7 @@ Cell[TextData[{
    "MoreInfoOpenerButtonTemplate"]]]
 }], "SeeAlsoSection"],
 
-Cell[TextData[{Cell[BoxData[TemplateBox[{Cell[TextData["HTMLWhitespace"]], "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLWhitespace"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLPattern"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["$AttributeReadings"]], "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLCases"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLFirstCase"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLFirstCase"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLMatchQ"]], "paclet:MaximilienTirard/BeautifulTureen/ref/XMLMatchQ"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["StringSplit"]], "paclet:ref/StringSplit"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["DeleteDuplicates"]], "paclet:ref/DeleteDuplicates"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}]}], "SeeAlso"]
+Cell[TextData[{Cell[BoxData[TemplateBox[{Cell[TextData["HTMLWhitespace"]], "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLWhitespace"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLPattern"]], "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["$AttributeReadings"]], "paclet:MaximilienTirard/HTMLPatterns/ref/$AttributeReadings"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLCases"]], "paclet:MaximilienTirard/HTMLPatterns/ref/XMLCases"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLFirstCase"]], "paclet:MaximilienTirard/HTMLPatterns/ref/XMLFirstCase"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLMatchQ"]], "paclet:MaximilienTirard/HTMLPatterns/ref/XMLMatchQ"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["StringSplit"]], "paclet:ref/StringSplit"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["DeleteDuplicates"]], "paclet:ref/DeleteDuplicates"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}]}], "SeeAlso"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -56,14 +56,14 @@ Cell[TextData[{
    "MoreInfoOpenerButtonTemplate"]]]
 }], "TechNotesSection"],
 
-Cell[TextData[ButtonBox["Scraping HTML with BeautifulTureen", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/tutorial/ScrapingHTMLWithBeautifulTureen"]], "Tutorials"]
+Cell[TextData[ButtonBox["Scraping HTML with Patterns", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/tutorial/ScrapingHTMLWithPatterns"]], "Tutorials"]
 }, Open  ]],
 
 Cell[CellGroupData[{
 
 Cell["Related Guides", "MoreAboutSection"],
 
-Cell[TextData[ButtonBox["BeautifulTureen", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/guide/BeautifulTureen"]], "MoreAbout"]
+Cell[TextData[ButtonBox["HTMLPatterns", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/guide/HTMLPatterns"]], "MoreAbout"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -100,7 +100,7 @@ Needs[\[Ellipsis]].", "MoreInfoText"], BaseStyle -> "IFrameBox"]],
    "MoreInfoOpenerButtonTemplate"]]]
 }], "ExamplesInitializationSection"],
 
-Cell[BoxData[RowBox[{"Needs", "[", "\"MaximilienTirard`BeautifulTureen`\"", "]"}]], "ExampleInitialization"]
+Cell[BoxData[RowBox[{"Needs", "[", "\"MaximilienTirard`HTMLPatterns`\"", "]"}]], "ExampleInitialization"]
 }, Open  ]],
 
 Cell[CellGroupData[{Cell[BoxData[
@@ -163,7 +163,7 @@ Cell[BoxData["DeleteDuplicates[HTMLClassList[XMLElement[\"p\",{\"class\"->\"lead
 
 Cell[BoxData[RowBox[{"{", RowBox[{"\"lead\"", ",", "\"promo\""}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Get the classes of each element that ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLCases"]], "InlineFormula"], " finds:"}], "ExampleText"], Cell[BoxData["menu=ImportString[\"<ul><li class=\\\"item active\\\">A</li><li>B</li><li class=\\\"item\\\">C</li></ul>\",{\"HTML\",\"XMLObject\"}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Get the classes of each element that ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLCases"]], "InlineFormula"], " finds:"}], "ExampleText"], Cell[BoxData["menu=ImportString[\"<ul><li class=\\\"item active\\\">A</li><li>B</li><li class=\\\"item\\\">C</li></ul>\",{\"HTML\",\"XMLObject\"}];
 HTMLClassList/@XMLCases[menu,XMLPattern[\"li\"]]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"\"item\"", ",", "\"active\""}], "}"}], ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"item\"", "}"}]}], "}"}]], "Output"]}, Open]]}, Open]],
@@ -211,22 +211,22 @@ Cell[CellGroupData[{Cell[BoxData[
   "Properties & Relations", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLClassList"]], "InlineFormula"], " agrees with the ", Cell[BoxData[StyleBox["\"classList\"", "TR"]], "InlineFormula"], " key of ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["menu=ImportString[\"<ul><li class=\\\"item  active\\\">A</li><li>B</li></ul>\",{\"HTML\",\"XMLObject\"}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"]], "InlineFormula"], " agrees with the ", Cell[BoxData[StyleBox["\"classList\"", "TR"]], "InlineFormula"], " key of ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["menu=ImportString[\"<ul><li class=\\\"item  active\\\">A</li><li>B</li></ul>\",{\"HTML\",\"XMLObject\"}];
 XMLCases[menu,XMLPattern[\"li\",\"classList\"->classes_]:>classes]===(HTMLClassList/@XMLCases[menu,XMLPattern[\"li\"]])"], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLClassList"]], "InlineFormula"], " gives the same list as ", Cell[BoxData[ButtonBox["StringSplit", BaseStyle -> "Link", ButtonData -> "paclet:ref/StringSplit"]], "InlineFormula"], " with ", Cell[BoxData[ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLWhitespace"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["element=XMLElement[\"p\",{\"class\"->\"lead\\tpromo\"},{}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"]], "InlineFormula"], " gives the same list as ", Cell[BoxData[ButtonBox["StringSplit", BaseStyle -> "Link", ButtonData -> "paclet:ref/StringSplit"]], "InlineFormula"], " with ", Cell[BoxData[ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLWhitespace"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["element=XMLElement[\"p\",{\"class\"->\"lead\\tpromo\"},{}];
 HTMLClassList[element]===StringSplit[Lookup[element〚2〛,\"class\"],HTMLWhitespace]"], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"To tell an empty ", Cell[BoxData[StyleBox["class", "TR"]], "InlineFormula"], " from a missing one, test for the attribute with ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/XMLPattern"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["elements={XMLElement[\"p\",{},{}],XMLElement[\"p\",{\"class\"->\"\"},{}]};
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"To tell an empty ", Cell[BoxData[StyleBox["class", "TR"]], "InlineFormula"], " from a missing one, test for the attribute with ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["elements={XMLElement[\"p\",{},{}],XMLElement[\"p\",{\"class\"->\"\"},{}]};
 {HTMLClassList/@elements,Map[XMLMatchQ[XMLPattern[\"p\",\"class\"]],elements]}"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "}"}], ",", RowBox[{"{", RowBox[{"False", ",", "True"}], "}"}]}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLClassList"]], "InlineFormula"], " does not depend on ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/$AttributeReadings"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["Block[{$AttributeReadings= <||>},HTMLClassList[XMLElement[\"p\",{\"class\"->\"lead promo\"},{}]]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"]], "InlineFormula"], " does not depend on ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/$AttributeReadings"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["Block[{$AttributeReadings= <||>},HTMLClassList[XMLElement[\"p\",{\"class\"->\"lead promo\"},{}]]]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"\"lead\"", ",", "\"promo\""}], "}"}]], "Output"]}, Open]]}, Open]],
 
@@ -241,13 +241,13 @@ StringSplit[value]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"\"btn\"", ",", "\"btn-primary\""}], "}"}]], "Output"],
 
-Cell[TextData[{Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLClassList"]], "InlineFormula"], " gives one class, as a browser does:"}], "ExampleText"],
+Cell[TextData[{Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"]], "InlineFormula"], " gives one class, as a browser does:"}], "ExampleText"],
 
 Cell[BoxData["HTMLClassList[XMLFirstCase[page,XMLPattern[\"p\"]]]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", "\"btn\[NonBreakingSpace]btn-primary\"", "}"}]], "Output"],
 
-Cell[TextData[{"Split on ", Cell[BoxData[ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLWhitespace"]], "InlineFormula"], " to get the same result from the attribute value:"}], "ExampleText"],
+Cell[TextData[{"Split on ", Cell[BoxData[ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLWhitespace"]], "InlineFormula"], " to get the same result from the attribute value:"}], "ExampleText"],
 
 Cell[BoxData["StringSplit[value,HTMLWhitespace]"], "Input"],
 
@@ -271,7 +271,7 @@ Cell["HTMLClassList::notelement: The argument should be a single XMLElement. Got
 
 Cell[BoxData["$Failed"], "Output"],
 
-Cell[TextData[{"To split an attribute value, use ", Cell[BoxData[ButtonBox["StringSplit", BaseStyle -> "Link", ButtonData -> "paclet:ref/StringSplit"]], "InlineFormula"], " with ", Cell[BoxData[ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/BeautifulTureen/ref/HTMLWhitespace"]], "InlineFormula"], ":"}], "ExampleText"],
+Cell[TextData[{"To split an attribute value, use ", Cell[BoxData[ButtonBox["StringSplit", BaseStyle -> "Link", ButtonData -> "paclet:ref/StringSplit"]], "InlineFormula"], " with ", Cell[BoxData[ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLWhitespace"]], "InlineFormula"], ":"}], "ExampleText"],
 
 Cell[BoxData["StringSplit[\"lead promo\",HTMLWhitespace]"], "Input"],
 
@@ -322,13 +322,13 @@ Cell[TextData[{
 Cell["Symbol", "Categorization",
  CellLabel->"Entity Type"],
 
-Cell["MaximilienTirard/BeautifulTureen", "Categorization",
+Cell["MaximilienTirard/HTMLPatterns", "Categorization",
  CellLabel->"Paclet Name"],
 
-Cell["MaximilienTirard`BeautifulTureen`", "Categorization",
+Cell["MaximilienTirard`HTMLPatterns`", "Categorization",
  CellLabel->"Context"],
 
-Cell["MaximilienTirard/BeautifulTureen/ref/HTMLClassList", "Categorization",
+Cell["MaximilienTirard/HTMLPatterns/ref/HTMLClassList", "Categorization",
  CellLabel->"URI"]
 }, Closed]],
 
