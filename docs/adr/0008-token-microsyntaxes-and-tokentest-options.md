@@ -39,7 +39,7 @@ The enum-versus-primitives dichotomy was false: both ship, layered. What makes t
 ADR 0006 leaves extra arguments to `TokenTest` as conjoined predicates, which settles the disambiguation rule: **a symbol-keyed `Rule` is an option; every other argument falls through to a token predicate.** Two consequences are surface-visible and worth stating:
 
 - A **positional** microsyntax was never available. `TokenTest[q, "comma-separated"]` already means "…and has a token spelled literally `comma-separated`".
-- This departs from the repo's existing string-keyed options (`Options[HTMLInnerText]`, `Kernel/BeautifulTureen.wl:787`). Not a semantic distinction — symbols are the more idiomatic WL form, and they are what makes the rule above expressible at all.
+- This departs from the repo's existing string-keyed options (`Options[HTMLInnerText]`, `Kernel/HTMLPatterns.wl:3341`). Not a semantic distinction — symbols are the more idiomatic WL form, and they are what makes the rule above expressible at all.
 
 ### `ClassTest` is a reading, and the only one
 

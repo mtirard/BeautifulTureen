@@ -8,7 +8,7 @@
 (* Recognition off, for one evaluation: every list stage runs on the general
    matcher. *)
 SetAttributes[unrecognised, HoldFirst];
-unrecognised[expr_] := Block[{MaximilienTirard`BeautifulTureen`Private`$recogniseShapes = False}, expr];
+unrecognised[expr_] := Block[{MaximilienTirard`HTMLPatterns`Private`$recogniseShapes = False}, expr];
 
 SetAttributes[sameEitherWay, HoldFirst];
 sameEitherWay[expr_] := With[{on = expr}, on === unrecognised[expr] && !FreeQ[on, _XMLElement | _String] && FreeQ[on, $Failed]];

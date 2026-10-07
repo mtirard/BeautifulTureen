@@ -106,7 +106,7 @@ Two issues this depends on are tracked on their own: a `"classList"` key, which 
 
 They inherit the per-candidate cost of the nested call. Measured on the Rosetta pages (v1 phase 1, 2026-10-05; time for the whole query, then per element that the compound's own `XMLPattern` takes):
 
-| selector | page | BeautifulTureen | soupsieve | per candidate |
+| selector | page | HTMLPatterns | soupsieve | per candidate |
 |---|---|---|---|---|
 | `li:not(.mw-list-item)` (merged into the class list) | css | 29 ms | 4.7 ms | 40 µs |
 | `a:not([href^="#"])` | sel4 | 17 ms | 12 ms | 5 µs |

@@ -1,6 +1,6 @@
 .PHONY: test build publish install uninstall clean
 
-PACLET_NAME = MaximilienTirard/BeautifulTureen
+PACLET_NAME = MaximilienTirard/HTMLPatterns
 
 WREL_USER   ?= mtirard
 WREL_HOST   ?= paclet-host.example

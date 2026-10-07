@@ -4,7 +4,7 @@ status: accepted
 
 # `XMLCases[tree, pattern, n]` gives at most the first n results, and `XMLCases` never takes a levelspec
 
-bs4's `find_all(…, limit=n)` had no counterpart: `XMLFirstCase` was the only way to stop early. The obvious spelling, `XMLCases[t, p, n]`, clashes with `Cases`, whose third argument is a levelspec and whose fourth is the count (`Cases[expr, pat, levelspec, n]`). A bare third argument with a different meaning from `Cases`'s would mislead WL users unless the levelspec slot is given up for good. Settled in [issue #14](https://github.com/mtirard/BeautifulTureen/issues/14).
+bs4's `find_all(…, limit=n)` had no counterpart: `XMLFirstCase` was the only way to stop early. The obvious spelling, `XMLCases[t, p, n]`, clashes with `Cases`, whose third argument is a levelspec and whose fourth is the count (`Cases[expr, pat, levelspec, n]`). A bare third argument with a different meaning from `Cases`'s would mislead WL users unless the levelspec slot is given up for good. Settled in [issue #14](https://github.com/mtirard/HTMLPatterns/issues/14).
 
 ## Decision
 

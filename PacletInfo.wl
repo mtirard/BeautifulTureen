@@ -1,20 +1,20 @@
 PacletObject[
   <|
-    "Name" -> "MaximilienTirard/BeautifulTureen",
-    "Description" -> "Pattern-based HTML element selection, text extraction, and notebook/Markdown conversion with CSS-like combinators, class-list matching, and document-order results \[LongDash] BeautifulSoup ergonomics in Wolfram Language",
+    "Name" -> "MaximilienTirard/HTMLPatterns",
+    "Description" -> "Pattern-based HTML element selection, text extraction, and notebook/Markdown conversion with CSS-like combinators, class-list matching, and document-order results",
     "Creator" -> "Maximilien Tirard",
-    "Version" -> "2.1.0",
+    "Version" -> "3.0.0",
     "WolframVersion" -> "12.3+",
     "PublisherID" -> "MaximilienTirard",
     "License" -> "MIT",
-    "PrimaryContext" -> "MaximilienTirard`BeautifulTureen`",
-    "URL" -> "https://github.com/mtirard/BeautifulTureen",
+    "PrimaryContext" -> "MaximilienTirard`HTMLPatterns`",
+    "URL" -> "https://github.com/mtirard/HTMLPatterns",
     "DocumentationURL" -> "https://resources.wolframcloud.com/PacletRepository/resources",
     "Extensions" -> {
       {
         "Kernel",
         "Root" -> "Kernel",
-        "Context" -> {"MaximilienTirard`BeautifulTureen`"}
+        "Context" -> {"MaximilienTirard`HTMLPatterns`"}
       },
       {
         "Documentation",
