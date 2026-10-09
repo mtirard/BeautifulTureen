@@ -349,3 +349,22 @@ TestCreate[
   "Comment:",
   TestID -> "innertext-textarea-no-text"
 ];
+
+(* The text of a skipped root is trimmed at both ends, as every result is, and
+   kept as written inside *)
+TestCreate[
+  HTMLInnerText[XMLElement["title", {}, {"\n    My \n  page\n  "}]],
+  "My \n  page",
+  TestID -> "innertext-skip-root-trimmed"
+];
+
+(* A document's root element is a top element too: skipped by a rule, it gives
+   the document's text content *)
+TestCreate[
+  HTMLInnerText[
+    ImportString["<title>T</title><p>Body</p>", {"HTML", "XMLObject"}],
+    "Roles" -> {"html" -> "Skip"}
+  ],
+  "TBody",
+  TestID -> "innertext-roles-skip-document-root"
+];

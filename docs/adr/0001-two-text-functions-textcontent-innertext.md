@@ -1,8 +1,10 @@
 ---
-status: accepted
+status: accepted (amended 2026-10-09)
 ---
 
 # Two text functions mirroring `textContent` / `innerText`, not one mode option
+
+> **Amended 2026-10-09** (GitHub issue #41), after a closer reading of the [`innerText` algorithm](https://html.spec.whatwg.org/multipage/dom.html#the-innertext-idl-attribute). A top element (the input, a document's root element, or a top-level element of a list) whose role is `Skip` gives its whole text content, trimmed at both ends, as the getter does for an element that is not being rendered. This holds whether the role comes from the frozen table or a `"Roles"` rule, which stands in for the page's CSS. A `Skip` element below the top is dropped as before. The frozen table now holds the whole of §15.3.1's `display: none` list (adding `area`, `basefont`, `noembed`, `noframes`, `param`, `rp`), and `textarea` is `Skip`, not `Preformatted`, since its content has no CSS box. Whitespace collapse covers HTML whitespace only, so a no-break space is kept, and each `<br>` gives its own newline. Everything else stands; "paragraph-aware spacing" below is GitHub issue #44.
 
 ## Context
 

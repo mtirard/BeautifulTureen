@@ -14,7 +14,7 @@ This file is a glossary, not a spec. It defines the language we use to talk abou
 
 **HTMLTextContent**: The lossless concatenation of every descendant text node, in document order, with no whitespace inserted or removed. The DOM `textContent` analogue. _Avoid_: HTMLText (former name through v1.0.2), text content, raw text
 
-**HTMLInnerText**: Text as the structural meaning of the tags implies it should read: whitespace collapsed, block tags on their own line, `<br>` as a newline, preformatted tags verbatim, non-rendered tags dropped. The DOM `innerText` analogue, approximated via the [[Frozen UA stylesheet]] since a non-rendered element has no layout to consult. _Avoid_: rendered text, visible text, display text
+**HTMLInnerText**: Text as the structural meaning of the tags implies it should read: whitespace collapsed, block tags on their own line, `<br>` as a newline, preformatted tags verbatim, non-rendered tags dropped (a non-rendered element passed in gives its whole text, trimmed). The DOM `innerText` analogue, approximated via the [[Frozen UA stylesheet]] since a non-rendered element has no layout to consult. _Avoid_: rendered text, visible text, display text
 
 **Block separator**: The single global string (default `"\n"`) inserted between Block boundaries when `HTMLInnerText` emits text — the `get_text(separator=…)` analogue. Uniform across all tags; never varies per tag. _Avoid_: line separator, join string
 

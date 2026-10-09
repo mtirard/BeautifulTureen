@@ -3285,12 +3285,14 @@ roleOf[el : XMLElement[tag_, _, _], lookup_, msgHead_] :=
 (* HTMLInnerText                                               *)
 (* Readable text over the display-role substrate. A two-pass    *)
 (* fold turns the classified tree into text:                    *)
-(*   Pass A (itToks): tree -> flat token stream; the preserve   *)
+(*   Pass A (itTopToks, itToks): tree -> flat token stream; a   *)
+(*     skipped top element gives its text content, the preserve *)
 (*     whitespace flag is threaded down, box/skip/break are     *)
 (*     decided locally.                                         *)
 (*   Pass B (itSerialize): tokens -> string; collapse runs,     *)
-(*     strongest-glue-wins between content, coalesce breaks,    *)
-(*     trim both ends (glue is gated on a non-empty accumulator).*)
+(*     strongest-glue-wins between content, one newline per     *)
+(*     <br>, trim both ends (glue is gated on a non-empty       *)
+(*     accumulator).                                            *)
 (* Public arms validate (validTextInputQ) and message on bad    *)
 (* input; the internal walk is total so stray nodes contribute  *)
 (* nothing mid-tree.                                            *)
@@ -3313,11 +3315,14 @@ itElToks[XMLElement[_, _, ch_], role_, pre_, rules_] :=
     _,              Flatten[itToks[#, pre, rules] & /@ ch]];
 
 (* A top element that is not being rendered gives its descendant text content,
-   as the innerText getter does (step 1); a "Skip" below it is dropped as usual.
-   A list's top elements are each such an element. *)
+   as the innerText getter does (step 1): all of it, a "Skip" inside included,
+   but trimmed at both ends as every result is. A list's top elements are each
+   such an element. *)
 itTopToks[el_XMLElement, rules_] :=
   With[{role = roleOf[el, rules, HTMLInnerText]},
-    If[role === "Skip", {itV[textContentWalk[el]]}, itElToks[el, role, False, rules]]];
+    If[role === "Skip",
+      {itV[StringTrim[textContentWalk[el], HTMLWhitespace]]},
+      itElToks[el, role, False, rules]]];
 itTopToks[l_List, rules_] := Flatten[itTopToks[#, rules] & /@ l];
 itTopToks[x_, rules_] := itToks[x, False, rules];
 

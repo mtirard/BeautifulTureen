@@ -924,3 +924,13 @@ TestCreate[
   "|  |\n| - |\n| 1 |",
   TestID -> "htn-table-caption-roles-skip"
 ];
+
+(* The display-role tables are shared with HTMLInnerText: a textarea gives no
+   text, and a no-break space is not collapsed *)
+TestCreate[
+  plainText @ HTMLToNotebook[ImportString[
+    "<p>Comment: <textarea>type here</textarea></p><p>10&nbsp;&nbsp;km</p>",
+    {"HTML", "XMLObject"}]],
+  "Comment:\n10\[NonBreakingSpace]\[NonBreakingSpace]km",
+  TestID -> "htn-shared-tables-textarea-nbsp"
+];
