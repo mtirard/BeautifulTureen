@@ -58,12 +58,6 @@ $AttributeReadings::badvalue = "The reading for `1` has `2` -> `3`. Delimiters s
 $AttributeReadings::duplistkey = "More than one reading has the list key `1`. Give each reading a different \"ListKey\".";
 $AttributeReadings::listkeyisreading = "The list key `1` is also an attribute with a reading, so `1` in an XMLPattern would be ambiguous. Choose a different \"ListKey\".";
 XMLMatchQ::combinator = "`1` relates an element to its parent or siblings, which a lone element does not have. Use XMLCases or XMLFirstCase to search a tree with it.";
-(* A list of patterns for an element's children (ADR 0016), refused where it
-   cannot stand, with the reason. *)
-Scan[Function[h,
-    MessageName[h, "liststage"] = "`1` is a list of patterns for an element's children. `2`";
-    MessageName[h, "listentry"] = "`1` cannot be an entry in a list of patterns for an element's children. `2`"],
-  {XMLCases, XMLFirstCase, XMLDeleteCases, XMLMatchQ, HTMLInnerText, HTMLToNotebook}];
 FromCSSSelector::invalid = "`1` is not a valid CSS selector: `2`.";
 FromCSSSelector::unsupported = "`1` is valid CSS, but `2` cannot be translated to an XML pattern. `3`";
 FromCSSSelector::impossible = "`2` in `1` depends on a browser, such as user input, layout or the page's URL, and cannot be matched in a static document. `3`";
@@ -86,6 +80,14 @@ HTMLToNotebook::condcombinator = "A condition (/;) can apply to an XMLPattern or
 HTMLToNotebook::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
 
 Begin["`Private`"];
+
+(* A list of patterns for an element's children (ADR 0016), refused where it
+   cannot stand, with the reason. Set here, not with the other messages above,
+   so that h is a private symbol. *)
+Scan[Function[h,
+    MessageName[h, "liststage"] = "`1` is a list of patterns for an element's children. `2`";
+    MessageName[h, "listentry"] = "`1` cannot be an entry in a list of patterns for an element's children. `2`"],
+  {XMLCases, XMLFirstCase, XMLDeleteCases, XMLMatchQ, HTMLInnerText, HTMLToNotebook}];
 
 (* =========================================================== *)
 (* Validation helpers                                           *)
