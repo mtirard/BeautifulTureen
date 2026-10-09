@@ -284,3 +284,87 @@ TestCreate[
   {XMLPattern::nargs},
   TestID -> "innertext-roles-xmlpattern-refusal"
 ];
+
+(* === Spec conformance: the innerText getter and the rendered text collection
+   steps (WHATWG HTML, "The innerText and outerText properties") === *)
+
+(* An element that is not being rendered gives its descendant text content
+   (getter step 1), so the title passed in gives its text (#41) *)
+TestCreate[
+  HTMLInnerText[XMLElement["title", {}, {"My page"}]],
+  "My page",
+  TestID -> "innertext-skip-root-text-content"
+];
+
+(* A "Roles" rule stands in for the page's CSS, so a root it skips is not
+   being rendered either *)
+TestCreate[
+  HTMLInnerText[
+    XMLElement["span", {"class" -> "sr-only"}, {"screenreader"}],
+    "Roles" -> {".sr-only" -> "Skip"}
+  ],
+  "screenreader",
+  TestID -> "innertext-roles-skip-root-text-content"
+];
+
+(* Each top element of a list is a root: a skipped one gives its text content *)
+TestCreate[
+  HTMLInnerText[XMLCases[
+    ImportString["<title>My page</title><p>Body</p>", {"HTML", "XMLObject"}],
+    "title, p"]],
+  "My page\nBody",
+  TestID -> "innertext-list-skip-top-element"
+];
+
+(* CSS collapses only space, tab and line feed (CSS Text 3, "white space"):
+   no-break spaces are kept, each one *)
+TestCreate[
+  HTMLInnerText[ImportString["<p>a&nbsp;&nbsp;b</p>", {"HTML", "XMLObject"}]],
+  "a\[NonBreakingSpace]\[NonBreakingSpace]b",
+  TestID -> "innertext-nbsp-kept"
+];
+
+(* A br element appends a line feed (rendered text collection steps), so two in
+   a row leave a blank line *)
+TestCreate[
+  HTMLInnerText[ImportString["<p>a<br><br>b</p>", {"HTML", "XMLObject"}]],
+  "a\n\nb",
+  TestID -> "innertext-consecutive-br"
+];
+
+(* The user-agent stylesheet hides rp and noembed (WHATWG HTML 15.3.1),
+   so a ruby gives its base and annotation without the fallback parentheses *)
+TestCreate[
+  HTMLInnerText[ImportString[
+    "<p><ruby>\:6f22<rp>(</rp><rt>kan</rt><rp>)</rp></ruby></p><noembed>NE</noembed>",
+    {"HTML", "XMLObject"}]],
+  "\:6f22kan",
+  TestID -> "innertext-ua-hidden-tags"
+];
+
+(* A textarea is a replaced element: its content, the control's initial value,
+   has no CSS box and gives no rendered text *)
+TestCreate[
+  HTMLInnerText[ImportString["<p>Comment: <textarea>type here</textarea></p>", {"HTML", "XMLObject"}]],
+  "Comment:",
+  TestID -> "innertext-textarea-no-text"
+];
+
+(* The text of a skipped root is trimmed at both ends, as every result is, and
+   kept as written inside *)
+TestCreate[
+  HTMLInnerText[XMLElement["title", {}, {"\n    My \n  page\n  "}]],
+  "My \n  page",
+  TestID -> "innertext-skip-root-trimmed"
+];
+
+(* A document's root element is a top element too: skipped by a rule, it gives
+   the document's text content *)
+TestCreate[
+  HTMLInnerText[
+    ImportString["<title>T</title><p>Body</p>", {"HTML", "XMLObject"}],
+    "Roles" -> {"html" -> "Skip"}
+  ],
+  "TBody",
+  TestID -> "innertext-roles-skip-document-root"
+];
