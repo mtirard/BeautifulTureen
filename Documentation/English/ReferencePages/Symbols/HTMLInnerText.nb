@@ -21,11 +21,11 @@ Cell[TextData[{"The role sets how the text of an element is placed:
 | --- | --- | --- |
 | \"Block\" | on its own line | ", Cell[BoxData[StyleBox["div", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["p", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["h1", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["li", "TR"]], "InlineFormula"], ", etc. |
 | \"Inline\" | in the surrounding line | all other tags, such as ", Cell[BoxData[StyleBox["span", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["b", "TR"]], "InlineFormula"], " and ", Cell[BoxData[StyleBox["a", "TR"]], "InlineFormula"], " |
-| \"Preformatted\" | on its own lines, with whitespace kept as written | ", Cell[BoxData[StyleBox["pre", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["textarea", "TR"]], "InlineFormula"], ", etc. |
+| \"Preformatted\" | on its own lines, with whitespace kept as written | ", Cell[BoxData[StyleBox["pre", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["xmp", "TR"]], "InlineFormula"], ", etc. |
 | \"LineBreak\" | a newline | ", Cell[BoxData[StyleBox["br", "TR"]], "InlineFormula"], " |
 | \"Skip\" | dropped with its content | ", Cell[BoxData[StyleBox["script", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["style", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["head", "TR"]], "InlineFormula"], ", etc. |"}], "Notes"],
 
-Cell["Outside preformatted elements, each run of whitespace becomes one space. The result is trimmed at both ends.", "Notes"],
+Cell[TextData[{"Outside preformatted elements, each run of spaces, tabs and newlines becomes one space. A no-break space, such as one written ", Cell[BoxData["&nbsp;"], "InlineFormula"], ", is kept. The result is trimmed at both ends."}], "Notes"],
 
 Cell[TextData[{Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " may be an ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], ", an ", Cell[BoxData[ButtonBox["XMLObject", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLObject"]], "InlineFormula"], " document, a string, or a list of elements and strings."}], "Notes"],
 
@@ -45,7 +45,9 @@ Cell[TextData[{Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " may 
 
 Cell[TextData[{"A name in ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], ", such as ", Cell[BoxData[StyleBox["e", "TI"]], "InlineFormula"], " in ", Cell[BoxData["e$ : XMLPattern[\"li\"] /; test$"], "InlineFormula"], ", is bound to the element as it is in ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], ", without list keys."}], "Notes"],
 
-Cell[TextData[{"A ", Cell[BoxData[StyleBox["br", "TR"]], "InlineFormula"], " element gives one newline, whatever the setting of \"BlockSeparator\"."}], "Notes"]
+Cell[TextData[{"Each ", Cell[BoxData[StyleBox["br", "TR"]], "InlineFormula"], " element gives one newline, whatever the setting of \"BlockSeparator\", so two in a row leave a blank line."}], "Notes"],
+
+Cell[TextData[{"If ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " has the role \"Skip\", or a list has an element with that role, its text is given as ", Cell[BoxData[ButtonBox["HTMLTextContent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLTextContent"]], "InlineFormula"], " gives it, as a web browser does for an element that is not displayed. This applies whether the role comes from the built-in user-agent stylesheet or from a \"Roles\" rule. So the text of a ", Cell[BoxData[StyleBox["title", "TR"]], "InlineFormula"], " element is its title, although a ", Cell[BoxData[StyleBox["title", "TR"]], "InlineFormula"], " inside ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " is dropped."}], "Notes"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -195,7 +197,15 @@ Cell[BoxData["\"code:\\n  for x:\\n    print x\\ndone\""], "Output"]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Elements such as ", Cell[BoxData[StyleBox["script", "TR"]], "InlineFormula"], " are dropped with their content:"}], "ExampleText"], Cell[BoxData["HTMLInnerText[ImportString[\"<section><script>var x=1;</script><p>Visible.</p></section>\",{\"HTML\",\"XMLObject\"}]]"], "Input"],
 
-Cell[BoxData["\"Visible.\""], "Output"]}, Open]]}, Open]],
+Cell[BoxData["\"Visible.\""], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Elements such as ", Cell[BoxData[StyleBox["title", "TR"]], "InlineFormula"], " are dropped inside a tree, but one given on its own gives its text:"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"tree", "=", RowBox[{"ImportString", "[", RowBox[{"\"<html><head><title>My page</title></head><body><p>Body.</p></body></html>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"{", RowBox[{RowBox[{"HTMLInnerText", "[", "tree", "]"}], ",", RowBox[{"HTMLInnerText", "[", RowBox[{"XMLFirstCase", "[", RowBox[{"tree", ",", "\"title\""}], "]"}], "]"}]}], "}"}]}], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"\"Body.\"", ",", "\"My page\""}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["No-break spaces are kept, while other whitespace is collapsed:", "ExampleText"], Cell[BoxData[RowBox[{RowBox[{"HTMLInnerText", "[", RowBox[{"ImportString", "[", RowBox[{"\"<p>10&nbsp;km   away</p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}], "]"}], "//", "InputForm"}]], "Input"],
+
+Cell[BoxData[InterpretationBox[StyleBox["\"10\[NonBreakingSpace]km away\"", ShowStringCharacters -> True, NumberMarks -> True], InputForm["10\[NonBreakingSpace]km away"], Editable -> True, AutoDelete -> True]], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[

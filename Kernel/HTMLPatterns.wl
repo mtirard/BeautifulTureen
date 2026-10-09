@@ -3211,13 +3211,17 @@ $htmlBlockTags = {"html", "body", "address", "article", "aside", "blockquote",
   "h5", "h6", "header", "hgroup", "hr", "legend", "li", "main", "menu", "nav",
   "ol", "p", "section", "search", "table", "caption", "colgroup", "thead",
   "tbody", "tfoot", "tr", "td", "th", "ul"};
-$htmlPreTags = {"pre", "listing", "plaintext", "xmp", "textarea"};
-$htmlSkipTags = {"script", "style", "head", "title", "template", "datalist",
-  "link", "meta", "base", "noscript"};
+$htmlPreTags = {"pre", "listing", "plaintext", "xmp"};
+(* 15.3.1's display: none list; noscript, hidden there when scripting is on; and
+   textarea, a replaced element whose content has no CSS box *)
+$htmlSkipTags = {"area", "base", "basefont", "datalist", "head", "link", "meta",
+  "noembed", "noframes", "param", "rp", "script", "style", "template", "title",
+  "noscript", "textarea"};
 
-(* Collapse every run of whitespace to a single space \[LongDash] the Normal-whitespace
-   primitive shared by both emitters. *)
-normWS[s_String] := StringReplace[s, Whitespace .. -> " "];
+(* Collapse every run of HTML whitespace to a single space \[LongDash] the Normal-whitespace
+   primitive shared by both emitters. Not WL's Whitespace: CSS never collapses
+   a no-break space. *)
+normWS[s_String] := StringReplace[s, HTMLWhitespace -> " "];
 
 defaultRole[tag_String] := Which[
   MemberQ[$htmlSkipTags, tag], "Skip",
@@ -3297,14 +3301,25 @@ roleOf[el : XMLElement[tag_, _, _], lookup_, msgHead_] :=
 itToks[s_String, False, _] := {s};
 itToks[s_String, True, _] := {itV[s]};
 itToks[l_List, pre_, rules_] := Flatten[itToks[#, pre, rules] & /@ l];
-itToks[el : XMLElement[_, _, ch_], pre_, rules_] :=
-  Switch[roleOf[el, rules, HTMLInnerText],
+itToks[el_XMLElement, pre_, rules_] := itElToks[el, roleOf[el, rules, HTMLInnerText], pre, rules];
+itToks[_, _, _] := {};
+
+itElToks[XMLElement[_, _, ch_], role_, pre_, rules_] :=
+  Switch[role,
     "Skip",         {},
     "LineBreak",    {itNl},
     "Preformatted", Join[{itBr}, Flatten[itToks[#, True, rules] & /@ ch], {itBr}],
     "Block",        Join[{itBr}, Flatten[itToks[#, pre, rules] & /@ ch], {itBr}],
     _,              Flatten[itToks[#, pre, rules] & /@ ch]];
-itToks[_, _, _] := {};
+
+(* A top element that is not being rendered gives its descendant text content,
+   as the innerText getter does (step 1); a "Skip" below it is dropped as usual.
+   A list's top elements are each such an element. *)
+itTopToks[el_XMLElement, rules_] :=
+  With[{role = roleOf[el, rules, HTMLInnerText]},
+    If[role === "Skip", {itV[textContentWalk[el]]}, itElToks[el, role, False, rules]]];
+itTopToks[l_List, rules_] := Flatten[itTopToks[#, rules] & /@ l];
+itTopToks[x_, rules_] := itToks[x, False, rules];
 
 (* ---- Pass B: tokens -> atoms -> string. Words and soft spaces from normal
    text; verbatim text is one opaque atom; break markers pass through. ---- *)
@@ -3323,20 +3338,22 @@ atomRank[itNl] := 2;
 atomRank[itBr] := 3;
 atomRank[_] := 0;
 
-glueStr[1, _] := " ";
-glueStr[2, _] := "\n";
-glueStr[3, bsep_] := bsep;
-glueStr[_, _] := "";
+(* Each <br> in a run of breaks is a newline of its own; a block boundary in the
+   run still gives one separator. *)
+glueStr[1, _, _] := " ";
+glueStr[2, nls_, _] := StringRepeat["\n", nls];
+glueStr[3, _, bsep_] := bsep;
+glueStr[_, _, _] := "";
 
 itSerialize[toks_, bsep_] :=
   First @ Fold[
     Function[{state, a},
-      With[{out = First[state], glue = Last[state]},
+      Replace[state, {out_, glue_, nls_} :>
         If[contentQ[a],
-          {out <> If[out =!= "", glueStr[glue, bsep], ""] <> contentText[a], 0},
-          {out, Max[glue, atomRank[a]]}
+          {out <> If[out =!= "", glueStr[glue, nls, bsep], ""] <> contentText[a], 0, 0},
+          {out, Max[glue, atomRank[a]], nls + Boole[a === itNl]}
         ]]],
-    {"", 0},
+    {"", 0, 0},
     Flatten[atomize /@ toks]];
 
 (* ---- Public interface ---- *)
@@ -3349,7 +3366,7 @@ HTMLInnerText[tree_, opts : OptionsPattern[]] :=
   withReadings[OptionValue["AttributeReadings"],
     Replace[ruleLookups[{OptionValue["Roles"]}, HTMLInnerText, tree], {
       $Failed -> $Failed,
-      {roles_} :> itSerialize[Flatten[itToks[tree, False, roles]], OptionValue["BlockSeparator"]]}]
+      {roles_} :> itSerialize[itTopToks[tree, roles], OptionValue["BlockSeparator"]]}]
   ] /; validTextInputQ[tree];
 
 HTMLInnerText[tree_, OptionsPattern[]] :=

@@ -51,7 +51,7 @@ Cell[TextData[{"The role sets what an element becomes:
 | --- | --- | --- |
 | \"Block\" | one or more cells | ", Cell[BoxData[StyleBox["div", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["p", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["h1", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["li", "TR"]], "InlineFormula"], ", etc. |
 | \"Inline\" | formatted text in the surrounding cell | all other tags, such as ", Cell[BoxData[StyleBox["span", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["b", "TR"]], "InlineFormula"], " and ", Cell[BoxData[StyleBox["a", "TR"]], "InlineFormula"], " |
-| \"Preformatted\" | a \"Program\" cell, with whitespace kept as written | ", Cell[BoxData[StyleBox["pre", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["textarea", "TR"]], "InlineFormula"], ", etc. |
+| \"Preformatted\" | a \"Program\" cell, with whitespace kept as written | ", Cell[BoxData[StyleBox["pre", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["xmp", "TR"]], "InlineFormula"], ", etc. |
 | \"LineBreak\" | a newline in the surrounding cell | ", Cell[BoxData[StyleBox["br", "TR"]], "InlineFormula"], " |
 | \"Skip\" | dropped with its content | ", Cell[BoxData[StyleBox["script", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["style", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["head", "TR"]], "InlineFormula"], ", etc. |"}], "Notes"],
 
