@@ -171,14 +171,15 @@ TestCreate[
   TestID -> "count-text-function-options-unchanged"
 ];
 
-(* The front end colours a wrong argument count from SyntaxInformation. A
-   one-argument XMLCases, XMLFirstCase or XMLDeleteCases gives no message, so
-   its second argument is optional there too. *)
+(* The front end colours a wrong argument count from SyntaxInformation. The
+   second argument of XMLCases, XMLFirstCase and XMLDeleteCases is required:
+   were it optional, the front end would read a query pattern :> rhs as an
+   option and colour its pattern red. *)
 TestCreate[
   Lookup[SyntaxInformation /@ {XMLCases, XMLFirstCase, XMLDeleteCases, XMLMatchQ,
     HTMLInnerText, HTMLTextContent, HTMLToNotebook, HTMLClassList,
     XMLPattern, Child, Descendant, Adjacent, Sibling}, "ArgumentsPattern"],
-  {{_, _., _., OptionsPattern[]}, {_, _., _., OptionsPattern[]}, {_, _., OptionsPattern[]},
+  {{_, _, _., OptionsPattern[]}, {_, _, _., OptionsPattern[]}, {_, _, OptionsPattern[]},
     {_, _., OptionsPattern[]}, {_, OptionsPattern[]}, {_}, {_, OptionsPattern[]}, {_},
     {_, _.}, {_, _, ___}, {_, _, ___}, {_, _, ___}, {_, _, ___}},
   TestID -> "syntax-information-arguments-pattern"
