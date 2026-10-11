@@ -243,3 +243,13 @@ TestCreate[
   {"\"div > p\" relates an element to its parent or siblings, which a lone element does not have. Use XMLCases or XMLFirstCase to search a tree with it."},
   TestID -> "message-css-string-combinator-names-the-string"
 ];
+
+(* A blank, as a stage or as a list with no XML-pattern entry, points to
+   XMLPattern[_], and to the text functions for the text in an element. *)
+TestCreate[
+  {capturedMessages[XMLCases[$msgTree, Child[XMLPattern["section"], _]]],
+   capturedMessages[XMLCases[$msgTree, Child[XMLPattern["section"], {_}]]]},
+  {{"_ is a blank, which is not an XML pattern. Any element is XMLPattern[_]. An XML pattern matches elements only; for the text inside an element, use HTMLTextContent or HTMLInnerText."},
+   {"{_} is a list of patterns for an element's children. \"It needs an entry that is an XML pattern, which selects the child in its place, as XMLPattern[_] does in {___, XMLPattern[_]}. Entries such as _, ___, Repeated and Except only describe the other children. A list sees element children only; for the text inside an element, use HTMLTextContent or HTMLInnerText.\""}},
+  TestID -> "message-blank-stage-and-blank-list"
+];
