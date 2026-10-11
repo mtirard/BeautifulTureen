@@ -1003,3 +1003,14 @@ TestCreate[
    HTMLInnerText::stages, HTMLToNotebook::stages},
   TestID -> "one-stage-combinator-refused"
 ];
+
+(* A blank is not an XML pattern, as a stage or as the whole query: any element
+   is XMLPattern[_] (ADR 0018). *)
+TestCreate[
+  {XMLCases[$treeChains, Child[XMLPattern["div"], _]],
+   XMLFirstCase[$treeChains, Descendant[_String, XMLPattern["p"]]],
+   XMLDeleteCases[$treeChains, Child[XMLPattern["div"], x_ /; True]]},
+  {$Failed, $Failed, $Failed},
+  {XMLCases::blank, XMLFirstCase::blank, XMLDeleteCases::blank},
+  TestID -> "blank-stage-refused"
+];

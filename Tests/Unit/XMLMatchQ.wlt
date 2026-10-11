@@ -75,7 +75,7 @@ TestCreate[
 TestCreate[
   Quiet[
     {Select[{$lead, $lead}, XMLMatchQ[_String]], Length[$MessageList]},
-    {XMLMatchQ::badpat}],
+    {XMLMatchQ::blank}],
   {{}, 2},
   TestID -> "xmlmatchq-operator-form-messages-on-each-call"
 ];
@@ -102,9 +102,9 @@ TestCreate[
 ];
 
 TestCreate[
-  XMLMatchQ[$lead, _String],
-  $Failed,
-  {XMLMatchQ::badpat},
+  {XMLMatchQ[$lead, _String], XMLMatchQ[$lead, 42]},
+  {$Failed, $Failed},
+  {XMLMatchQ::blank, XMLMatchQ::badpat},
   TestID -> "xmlmatchq-refuses-non-xml-pattern"
 ];
 
