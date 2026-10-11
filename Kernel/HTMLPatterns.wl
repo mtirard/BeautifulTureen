@@ -86,7 +86,8 @@ Begin["`Private`"];
    so that h is a private symbol. *)
 Scan[Function[h,
     MessageName[h, "liststage"] = "`1` is a list of patterns for an element's children. `2`";
-    MessageName[h, "listentry"] = "`1` cannot be an entry in a list of patterns for an element's children. `2`"],
+    MessageName[h, "listentry"] = "`1` cannot be an entry in a list of patterns for an element's children. `2`";
+    MessageName[h, "blank"] = "`1` is a blank, which is not an XML pattern. Any element is XMLPattern[_]. An XML pattern matches elements only; for the text inside an element, use HTMLTextContent or HTMLInnerText."],
   {XMLCases, XMLFirstCase, XMLDeleteCases, XMLMatchQ, HTMLInnerText, HTMLToNotebook}];
 
 (* =========================================================== *)
@@ -577,6 +578,9 @@ cElem[Verbatim[PatternTest][p_, test_]] :=
 (* A plain XMLElement pattern is already what the consumers run. *)
 cElem[x_XMLElement] := x;
 cElem[l_List] := refuseEntry["list", l];
+(* A blank would be a second spelling of XMLPattern[_] (ADR 0018), and reads as
+   matching text too. *)
+cElem[b : _Blank | _BlankSequence | _BlankNullSequence] := refuseAtHead["blank", b];
 cElem[q_] := badpat[q];
 
 (* ---- List stages (ADR 0016) ---- *)
@@ -611,7 +615,7 @@ $listReasons = <|
   "query" -> "It can only follow Child or Descendant, as in Child[XMLPattern[_], {XMLPattern[\"li\"], ___}], and is not a pattern on its own. For alternatives, use p1 | p2.",
   "first" -> "It can only follow Child or Descendant, as in Child[XMLPattern[_], {XMLPattern[\"li\"], ___}], and cannot be the first stage, which has no parent whose children it would list.",
   "sibling" -> "It can only follow Child or Descendant, not Adjacent or Sibling.",
-  "noentry" -> "It needs an entry that is an XML pattern, which selects the child in its place, as XMLPattern[_] does in {___, XMLPattern[_]}. Entries such as _, ___, Repeated and Except only describe the other children.",
+  "noentry" -> "It needs an entry that is an XML pattern, which selects the child in its place, as XMLPattern[_] does in {___, XMLPattern[_]}. Entries such as _, ___, Repeated and Except only describe the other children. A list sees element children only; for the text inside an element, use HTMLTextContent or HTMLInnerText.",
   "list" -> "An entry is an XML pattern, a combinator, or a pattern such as _, ___, Repeated, Except or PatternSequence over these, but not a list.",
   "element" -> "An entry is an XML pattern, a combinator, or a pattern such as _, ___, Repeated, Except or PatternSequence over these. Write an element pattern as XMLPattern[tag, attrs].",
   "entry" -> "An entry is an XML pattern, a combinator, or a pattern such as _, ___, Repeated, Except or PatternSequence over these.",
