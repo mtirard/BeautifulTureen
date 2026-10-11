@@ -34,13 +34,16 @@ XMLPattern::badkey = "An attribute key should be a string, a {namespace, name} p
 XMLPattern::dupkey = "The attribute key `1` appears in more than one constraint, so the pattern can never match. Combine the constraints into one value pattern.";
 XMLPattern::strpat = "`1` is a string pattern, and in an XMLPattern it does not match any string. Write _?(StringMatchQ[`1`]) instead.";
 XMLDocument::place = "XMLDocument[] takes no arguments and stands for the document above the top elements, so it can only be the first stage of a combinator, alone or in alternatives, as in Child[XMLDocument[], XMLPattern[\"html\"]], and it cannot be named or have a condition or test. Got `1`.";
-XMLCases::badtree = "The first argument should be an XMLObject, an XMLElement, or a list of these. Got head `1`.";
+XMLCases::badtree = "The first argument should be an XMLObject, an XMLElement, or a list of XMLElement expressions and strings. Got head `1`.";
+XMLCases::badmember = "A list given as the first argument should hold only XMLElement expressions and strings. The member at position `1` has head `2`.";
 XMLCases::badpat = "The second argument should be an XMLPattern, a Child, Descendant, Adjacent or Sibling combinator, a CSS selector string, alternatives of any of these, or a rule pattern -> rhs or pattern :> body with one of these. Each can have a condition (/;). An XMLPattern or alternatives of them can also be named or have a test (?), but a combinator, or alternatives that hold one, cannot. Got `1`.";
 XMLCases::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
-XMLFirstCase::badtree = "The first argument should be an XMLObject, an XMLElement, or a list of these. Got head `1`.";
+XMLFirstCase::badtree = "The first argument should be an XMLObject, an XMLElement, or a list of XMLElement expressions and strings. Got head `1`.";
+XMLFirstCase::badmember = "A list given as the first argument should hold only XMLElement expressions and strings. The member at position `1` has head `2`.";
 XMLFirstCase::badpat = "The second argument should be an XMLPattern, a Child, Descendant, Adjacent or Sibling combinator, a CSS selector string, alternatives of any of these, or a rule pattern -> rhs or pattern :> body with one of these. Each can have a condition (/;). An XMLPattern or alternatives of them can also be named or have a test (?), but a combinator, or alternatives that hold one, cannot. Got `1`.";
 XMLFirstCase::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
-XMLDeleteCases::badtree = "The first argument should be an XMLObject, an XMLElement, or a list of these. Got head `1`.";
+XMLDeleteCases::badtree = "The first argument should be an XMLObject, an XMLElement, or a list of XMLElement expressions and strings. Got head `1`.";
+XMLDeleteCases::badmember = "A list given as the first argument should hold only XMLElement expressions and strings. The member at position `1` has head `2`.";
 XMLDeleteCases::badpat = "The second argument should be an XMLPattern, a Child, Descendant, Adjacent or Sibling combinator, a CSS selector string, or alternatives of any of these. Each can have a condition (/;). An XMLPattern or alternatives of them can also be named or have a test (?), but a combinator, or alternatives that hold one, cannot. A rule, whether pattern -> rhs or pattern :> body, cannot be used. Got `1`.";
 XMLDeleteCases::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
 XMLMatchQ::badpat = "The pattern should be an XMLPattern, alternatives of them, or either with a condition pat /; test or a test pat?f, or a CSS selector string that describes one element. Got `1`.";
@@ -60,16 +63,19 @@ FromCSSSelector::invalid = "`1` is not a valid CSS selector: `2`.";
 FromCSSSelector::unsupported = "`1` is valid CSS, but `2` cannot be translated to an XML pattern. `3`";
 FromCSSSelector::impossible = "`2` in `1` depends on a browser, such as user input, layout or the page's URL, and cannot be matched in a static document. `3`";
 XMLDeleteCases::root = "The root element of an XMLObject cannot be deleted; it was kept.";
-HTMLTextContent::badtree ="The first argument should be an XMLObject, an XMLElement, a string, or a list of these. Got head `1`.";
+HTMLTextContent::badtree = "The first argument should be an XMLObject, an XMLElement, a string, or a list of XMLElement expressions and strings. Got head `1`.";
+HTMLTextContent::badmember = "A list given as the first argument should hold only XMLElement expressions and strings. The member at position `1` has head `2`.";
 HTMLClassList::notelement = "The argument should be a single XMLElement. Got head `1`. For a list of elements, use HTMLClassList /@ elements.";
-HTMLInnerText::badtree = "The first argument should be an XMLObject, an XMLElement, a string, or a list of these. Got head `1`.";
+HTMLInnerText::badtree = "The first argument should be an XMLObject, an XMLElement, a string, or a list of XMLElement expressions and strings. Got head `1`.";
+HTMLInnerText::badmember = "A list given as the first argument should hold only XMLElement expressions and strings. The member at position `1` has head `2`.";
 HTMLInnerText::badrole = "A \"Roles\" rule gave `1`, which is not \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\" or \"Skip\". The element gets its role from the built-in user-agent stylesheet instead.";
 HTMLInnerText::badpat = "The left-hand side of a rule should be an XMLPattern, alternatives of them, or either with a condition pat /; test or a test pat?f, or a CSS selector string that describes one element. Got `1`.";
 HTMLInnerText::stages = "`1` is a combinator with fewer than two stages. A combinator needs at least two, but a rule is tried on one element at a time and cannot use one; use an XMLPattern or alternatives of them.";
 HTMLInnerText::notrule = "Each \"Roles\" entry should be a rule pattern -> value or pattern :> value. Got `1`.";
 HTMLInnerText::condcombinator = "A condition (/;) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Got `1`.";
 HTMLInnerText::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
-HTMLToNotebook::badtree = "The first argument should be an XMLObject, an XMLElement, a string, or a list of these. Got head `1`.";
+HTMLToNotebook::badtree = "The first argument should be an XMLObject, an XMLElement, a string, or a list of XMLElement expressions and strings. Got head `1`.";
+HTMLToNotebook::badmember = "A list given as the first argument should hold only XMLElement expressions and strings. The member at position `1` has head `2`.";
 HTMLToNotebook::badrole = "A \"Roles\" rule gave `1`, which is not \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\" or \"Skip\". The element gets its role from the built-in user-agent stylesheet instead.";
 HTMLToNotebook::badpat = "The left-hand side of a rule should be an XMLPattern, alternatives of them, or either with a condition pat /; test or a test pat?f, or a CSS selector string that describes one element. Got `1`.";
 HTMLToNotebook::stages = "`1` is a combinator with fewer than two stages. A combinator needs at least two, but a rule is tried on one element at a time and cannot use one; use an XMLPattern or alternatives of them.";
@@ -141,6 +147,13 @@ validTreeQ[XMLObject["Document"][_, _XMLElement, _]] := True;
 validTreeQ[_XMLElement] := True;
 validTreeQ[expr_List] := AllTrue[expr, MatchQ[#, _XMLElement | _String] &];
 validTreeQ[_] := False;
+
+(* The message for a tree refused by validTreeQ or validTextInputQ, on head:
+   badmember with a list's first refused member, otherwise badtree. *)
+treeMessage[head_, tree_List] :=
+  With[{i = LengthWhile[tree, MatchQ[_XMLElement | _String]] + 1},
+    Message[MessageName[head, "badmember"], i, Head[tree[[i]]]]];
+treeMessage[head_, tree_] := Message[MessageName[head, "badtree"], Head[tree]];
 
 (* Input surface for the text extractors: the selector surface, plus a bare
    string (text-of-a-string is meaningful, unlike for the selectors). *)
@@ -1456,7 +1469,7 @@ elementMatcher[c_] :=
         If[r === {}, MatchQ[p], Function[el, MatchQ[materialise[el, r, {0}], p]]]]]];
 
 treeRefusedQ[c_, tree_] :=
-  !validTreeQ[tree] && With[{h = c["Head"]}, Message[MessageName[h, "badtree"], Head[tree]]; True];
+  !validTreeQ[tree] && (treeMessage[c["Head"], tree]; True);
 
 (* A query tested on one element at a time takes no links: a combinator is
    refused under tag, and a combinator with a Condition under condcombinator.
@@ -3226,7 +3239,7 @@ cssSlot[hasI[v_]] := With[{f = $cssFold}, Hold[MemberQ[f[#], v]]];
 HTMLTextContent[tree_] := textContentWalk[tree] /; validTextInputQ[tree];
 
 HTMLTextContent[tree_] :=
-  (Message[HTMLTextContent::badtree, Head[tree]]; $Failed) /; !validTextInputQ[tree];
+  (treeMessage[HTMLTextContent, tree]; $Failed) /; !validTextInputQ[tree];
 
 HTMLTextContent[args___] /; (countMessage[HTMLTextContent, {args}, {1, 1}]; False) := Null;
 
@@ -3425,7 +3438,7 @@ HTMLInnerText[tree_, opts : OptionsPattern[]] :=
   ] /; validTextInputQ[tree];
 
 HTMLInnerText[tree_, OptionsPattern[]] :=
-  (Message[HTMLInnerText::badtree, Head[tree]]; $Failed) /; !validTextInputQ[tree];
+  (treeMessage[HTMLInnerText, tree]; $Failed) /; !validTextInputQ[tree];
 
 HTMLInnerText[args___] /; (countMessage[HTMLInnerText, {args}, {1, 1}]; False) := Null;
 
@@ -3839,7 +3852,7 @@ HTMLToNotebook[tree_, opts : OptionsPattern[]] :=
   ] /; validTextInputQ[tree];
 
 HTMLToNotebook[tree_, OptionsPattern[]] :=
-  (Message[HTMLToNotebook::badtree, Head[tree]]; $Failed) /; !validTextInputQ[tree];
+  (treeMessage[HTMLToNotebook, tree]; $Failed) /; !validTextInputQ[tree];
 
 HTMLToNotebook[args___] /; (countMessage[HTMLToNotebook, {args}, {1, 1}]; False) := Null;
 
