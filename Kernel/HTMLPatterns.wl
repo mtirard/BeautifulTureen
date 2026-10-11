@@ -33,14 +33,15 @@ XMLPattern::badattrs = "The attribute argument should be a key -> value rule, a 
 XMLPattern::badkey = "An attribute key should be a string, a {namespace, name} pair of strings, or alternatives of these. Got `1`. To test the keys, test the attributes as a whole: XMLPattern[tag, attrs_?test].";
 XMLPattern::dupkey = "The attribute key `1` appears in more than one constraint, so the pattern can never match. Combine the constraints into one value pattern.";
 XMLPattern::strpat = "`1` is a string pattern, and in an XMLPattern it does not match any string. Write _?(StringMatchQ[`1`]) instead.";
+XMLDocument::place = "XMLDocument[] takes no arguments and stands for the document above the top elements, so it can only be the first stage of a combinator, alone or in alternatives, as in Child[XMLDocument[], XMLPattern[\"html\"]], and it cannot be named or have a condition or test. Got `1`.";
 XMLCases::badtree = "The first argument should be an XMLObject, an XMLElement, or a list of these. Got head `1`.";
-XMLCases::badpat = "The second argument should be an XMLPattern, a Child, Descendant, Adjacent or Sibling combinator, a CSS selector string, alternatives of any of these, or a rule pattern -> rhs or pattern :> body with one of these. Each can have a condition (/;). An XMLPattern or alternatives of them can also be named or have a test (?), but a combinator, or alternatives that hold one, cannot. XMLDocument[] can only be the first stage of a combinator, alone or in alternatives, and cannot be named or have a condition or test of its own. Got `1`.";
+XMLCases::badpat = "The second argument should be an XMLPattern, a Child, Descendant, Adjacent or Sibling combinator, a CSS selector string, alternatives of any of these, or a rule pattern -> rhs or pattern :> body with one of these. Each can have a condition (/;). An XMLPattern or alternatives of them can also be named or have a test (?), but a combinator, or alternatives that hold one, cannot. Got `1`.";
 XMLCases::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
 XMLFirstCase::badtree = "The first argument should be an XMLObject, an XMLElement, or a list of these. Got head `1`.";
-XMLFirstCase::badpat = "The second argument should be an XMLPattern, a Child, Descendant, Adjacent or Sibling combinator, a CSS selector string, alternatives of any of these, or a rule pattern -> rhs or pattern :> body with one of these. Each can have a condition (/;). An XMLPattern or alternatives of them can also be named or have a test (?), but a combinator, or alternatives that hold one, cannot. XMLDocument[] can only be the first stage of a combinator, alone or in alternatives, and cannot be named or have a condition or test of its own. Got `1`.";
+XMLFirstCase::badpat = "The second argument should be an XMLPattern, a Child, Descendant, Adjacent or Sibling combinator, a CSS selector string, alternatives of any of these, or a rule pattern -> rhs or pattern :> body with one of these. Each can have a condition (/;). An XMLPattern or alternatives of them can also be named or have a test (?), but a combinator, or alternatives that hold one, cannot. Got `1`.";
 XMLFirstCase::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
 XMLDeleteCases::badtree = "The first argument should be an XMLObject, an XMLElement, or a list of these. Got head `1`.";
-XMLDeleteCases::badpat = "The second argument should be an XMLPattern, a Child, Descendant, Adjacent or Sibling combinator, a CSS selector string, or alternatives of any of these. Each can have a condition (/;). An XMLPattern or alternatives of them can also be named or have a test (?), but a combinator, or alternatives that hold one, cannot. XMLDocument[] can only be the first stage of a combinator, alone or in alternatives, and cannot be named or have a condition or test of its own. A rule, whether pattern -> rhs or pattern :> body, cannot be used. Got `1`.";
+XMLDeleteCases::badpat = "The second argument should be an XMLPattern, a Child, Descendant, Adjacent or Sibling combinator, a CSS selector string, or alternatives of any of these. Each can have a condition (/;). An XMLPattern or alternatives of them can also be named or have a test (?), but a combinator, or alternatives that hold one, cannot. A rule, whether pattern -> rhs or pattern :> body, cannot be used. Got `1`.";
 XMLDeleteCases::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
 XMLMatchQ::badpat = "The pattern should be an XMLPattern, alternatives of them, or either with a condition pat /; test or a test pat?f, or a CSS selector string that describes one element. Got `1`.";
 XMLMatchQ::stages = "`1` is a combinator with fewer than two stages. A combinator needs at least two, but XMLMatchQ tests a lone element and cannot use one; use XMLCases or XMLFirstCase to search a tree with it.";
@@ -577,7 +578,11 @@ cElem[XMLPattern[args___]] := cXMLPattern[{args}];
 (* The document above the top elements (ADR 0018), featureless. A chain site
    {0} stands for it, where the tree has its head, which this matches. *)
 cElem[XMLDocument[]] /; documentAllowedQ[] := $documentStage;
+cElem[d_XMLDocument] := refuseDocument[d];
 documentAllowedQ[] := $atStart && $firstOfLink;
+(* Misplaced, the document is its own message (ADR 0022), except where only an
+   element pattern can stand, which it is not. *)
+refuseDocument[x_] := With[{h = holderFor[XMLDocument]}, If[h === XMLDocument, refuseAt[h, "place", x], badpat[x]]];
 $documentStage = List | XMLElement | XMLObject["Document"];
 documentQ[p_] := !FreeQ[p, XMLDocument];
 (* A string that gives a combinator is not an element pattern, and is named as
@@ -590,18 +595,21 @@ multiStageQ[p_] :=
   With[{b = patternBase[p]}, combinatorQ[b] || ListQ[b] || MatchQ[b, _Alternatives] && AnyTrue[List @@ b, multiStageQ]];
 (* A combinator is not an element pattern; the whole Alternatives is named. *)
 cElem[alts_Alternatives] /; AnyTrue[List @@ alts, multiStageQ] := badpat[alts];
-cElem[alts_Alternatives] /; !documentAllowedQ[] && documentQ[alts] := badpat[alts];
+cElem[alts_Alternatives] /; !documentAllowedQ[] && documentQ[alts] := refuseDocument[alts];
 cElem[alts_Alternatives] := Alternatives @@ (cElem /@ List @@ alts);
 (* A named combinator, or named alternatives holding one, would bind a Sequence
    of elements, which says nothing of how they relate (ADR 0015). *)
 cElem[Verbatim[Pattern][s_Symbol, p_]] :=
-  If[multiStageQ[p] || documentQ[p], badpat[namedPattern[s, p]], bindAs[s, cElem[p], strip]];
+  Which[
+    multiStageQ[p], badpat[namedPattern[s, p]],
+    documentQ[p], refuseDocument[namedPattern[s, p]],
+    True, bindAs[s, cElem[p], strip]];
 (* The document has no element for a name, a Condition or a test to see. *)
-cElem[c_Condition] := If[documentQ[patternBase[c]], badpat[c], conditioned[cElem, c, conditionWith]];
+cElem[c_Condition] := If[documentQ[patternBase[c]], refuseDocument[c], conditioned[cElem, c, conditionWith]];
 (* The same refusal, for a tested combinator inside Alternatives or a name. *)
 cElem[t : Verbatim[PatternTest][x_, _]] /; multiStageQ[patternBase[x]] := refuseTestedCombinator[t];
 (* pat?f is n : pat /; f[n]: f sees the original element, as a name does. *)
-cElem[t : Verbatim[PatternTest][p_, test_]] /; documentQ[p] := badpat[t];
+cElem[t : Verbatim[PatternTest][p_, test_]] /; documentQ[p] := refuseDocument[t];
 cElem[Verbatim[PatternTest][p_, test_]] :=
   With[{c = cElem[p]}, If[$mat, PatternTest[c, Function[e, test[strip[e]]]], PatternTest[c, test]]];
 (* A plain XMLElement pattern is already what the consumers run. *)
@@ -1102,6 +1110,7 @@ cEntry[Verbatim[PatternSequence][ps___]] := PatternSequence @@ (cEntry /@ {ps});
 cEntry[Verbatim[Alternatives][ps__]] := Alternatives @@ (cEntry /@ {ps});
 cEntry[Verbatim[Optional][p_, d___]] := Optional[cEntry[p], d];
 cEntry[l_List] := refuseEntry["list", l];
+cEntry[e_] /; documentQ[e] := refuseDocument[e];
 cEntry[x_XMLElement] := refuseEntry["element", x];
 cEntry[e_] := refuseEntry["entry", e];
 
