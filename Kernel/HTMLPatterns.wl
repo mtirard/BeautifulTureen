@@ -296,8 +296,8 @@ validFieldQ["ListKey", k_] := MatchQ[k, Automatic | _String];
 (* Materialisation (ADR 0012)                                   *)
 (* A query naming a list key runs on a tree whose elements each *)
 (* carry the token list beside the raw value, under the private *)
-(* key head tok (inert: no definitions). strip is the exact     *)
-(* inverse: strip[materialise[e, ...]] === e.                   *)
+(* key head tok (inert: no definitions). unmaterialised is the  *)
+(* exact inverse: unmaterialised[materialise[e, ...]] === e.    *)
 (* =========================================================== *)
 
 (* Only the distinct raw values on the tree are split: a page has a handful of
@@ -329,13 +329,11 @@ materialiser[tree_, readings_] :=
 attachTokens[maps_, XMLElement[t_, a_List, c_]] :=
   XMLElement[t, Join[a, Function[{key, map}, tok[key] -> Lookup[map, Lookup[a, key, None], {}]] @@@ maps], c];
 
-stripAttrs[a_] := DeleteCases[a, _tok -> _];
-
-strip[x_] :=
-  Replace[x, XMLElement[t_, a_List, c_] :> XMLElement[t, stripAttrs[a], c], {0, Infinity}];
-
-(* A name on a sequence of children binds a Sequence. *)
-stripAll[xs___] := Sequence @@ (strip /@ {xs});
+(* Every token list removed, at any depth, from whatever a name or a test can
+   see: an element, an attribute list, a list of copied attribute lists, or a
+   sequence of these (a name on a run of children binds a Sequence). It is
+   exact because nothing else in a tree has the head tok. *)
+unmaterialised[xs___] := Sequence @@ DeleteCases[{xs}, _tok -> _, Infinity];
 
 (* =========================================================== *)
 (* The query compiler                                           *)
@@ -391,7 +389,8 @@ stripAll[xs___] := Sequence @@ (strip /@ {xs});
 (* or a name or test on the attribute argument \[LongDash] is renamed to a   *)
 (* fresh symbol, and each place that can see the name (a rule   *)
 (* body, a Condition's test) is wrapped in                      *)
-(* With[{e = strip[e$]}, ...], so it sees the original element. *)
+(* With[{e = unmaterialised[e$]}, ...], so it sees the original *)
+(* element.                                                     *)
 (* A query is compiled once to learn its list keys and, only if *)
 (* it names one, again with the renaming on.                    *)
 (* =========================================================== *)
@@ -469,7 +468,7 @@ cQuery[q_] := normalForm[cStage[q], None];
 ruleQuery[lhs_, body_Hold] :=
   Module[{stages, binds},
     {stages, binds} = reapBinds[cStage[lhs]];
-    normalForm[stages, wrapBinds[binds, body]]];
+    normalForm[stages, wrapBinds[unmaterialised, binds, body]]];
 
 (* Identity keeps a Condition from being the top of the body, where it would
    be a test. *)
@@ -603,15 +602,14 @@ cElem[Verbatim[Pattern][s_Symbol, p_]] :=
   Which[
     multiStageQ[p], badpat[namedPattern[s, p]],
     documentQ[p], refuseDocument[namedPattern[s, p]],
-    True, bindAs[s, cElem[p], strip]];
+    True, bindAs[s, cElem[p]]];
 (* The document has no element for a name, a Condition or a test to see. *)
 cElem[c_Condition] := If[documentQ[patternBase[c]], refuseDocument[c], conditioned[cElem, c, conditionWith]];
 (* The same refusal, for a tested combinator inside Alternatives or a name. *)
 cElem[t : Verbatim[PatternTest][x_, _]] /; multiStageQ[patternBase[x]] := refuseTestedCombinator[t];
 (* pat?f is n : pat /; f[n]: f sees the original element, as a name does. *)
 cElem[t : Verbatim[PatternTest][p_, test_]] /; documentQ[p] := refuseDocument[t];
-cElem[Verbatim[PatternTest][p_, test_]] :=
-  With[{c = cElem[p]}, If[$mat, PatternTest[c, Function[e, test[strip[e]]]], PatternTest[c, test]]];
+cElem[Verbatim[PatternTest][p_, test_]] := testAs[cElem[p], test];
 (* A plain XMLElement pattern is already what the consumers run. *)
 cElem[x_XMLElement] := x;
 cElem[l_List] := refuseEntry["list", l];
@@ -677,11 +675,10 @@ listChains[l_] :=
    rest of the chain its selected entry continues with, as chain[stages after
    the first, links, conditions]. A name, a Condition or a test on the list
    applies to its pattern. *)
-listForms[Verbatim[Pattern][s_Symbol, p_]] := mapListPattern[bindAs[s, #, strip] &, listForms[p]];
+listForms[Verbatim[Pattern][s_Symbol, p_]] := mapListPattern[bindAs[s, #] &, listForms[p]];
 listForms[c_Condition] :=
   conditioned[listForms, c, Function[{forms, test}, mapListPattern[conditionWith[#, test] &, forms]]];
-listForms[Verbatim[PatternTest][p_, f_]] :=
-  mapListPattern[PatternTest[#, If[$mat, Function[x, f[strip[x]]], f]] &, listForms[p]];
+listForms[Verbatim[PatternTest][p_, f_]] := mapListPattern[testAs[#, f] &, listForms[p]];
 listForms[entries_List] :=
   With[{s = Replace[Flatten @ Position[xmlEntryQ /@ entries, True],
       {{} :> (Scan[cEntry, entries]; refuseList["noentry", entries]), is_ :> Last[is]}]},
@@ -834,11 +831,12 @@ $methodQuery = <||>;
 
 (* {block, view, measures, test} for a list {g___, b1, ..., s, h___} /; test,
    or None when it is not of that form: the entries b, how the test sees a
-   child (strip, when its names are restored around it, or Identity), the
-   measures it takes, and the test as a function of their values. g and h may
-   be unnamed, and each b is a pattern of one child that binds no name, or one
-   named. A name the list binds other than the selected entry's is used only
-   in the test, and the test sees no name bound elsewhere. *)
+   child (unmaterialised, when its names are restored around it, or
+   Identity), the measures it takes, and the test as a function of their
+   values. g and h may be unnamed, and each b is a pattern of one child that
+   binds no name, or one named. A name the list binds other than the selected
+   entry's is used only in the test, and the test sees no name bound
+   elsewhere. *)
 splitAround[a_] :=
   Replace[a["Pattern"], {
     Verbatim[Condition][{Verbatim[Pattern][a["Index"], Verbatim[PatternSequence][g_, b___]], s_, h_}, _] :>
@@ -876,11 +874,15 @@ otherStages[stages_, ls_] := Delete[stages, FirstPosition[stages, Verbatim[ls], 
 namesPattern[names_] := Alternatives @@ (HoldPattern @@@ DeleteCases[names, None]);
 
 (* {test, view}: the held test with each name restored around it (wrapBinds)
-   read as the name it restores, seen through strip; None when it binds
-   anything else. *)
+   read as the name it restores, seen through unmaterialised; None when it
+   binds anything else. Any restore is accepted: the list's pattern is read
+   before the two-step match copies its selected entry, so only restores of
+   materialisation reach here. A name that is not of a child, such as an
+   attribute list, is then left to the checks of the measures, which refuse
+   it. *)
 restoredTest[Hold[With[{bs___}, body_]]] :=
-  If[MatchQ[Hold[bs], Hold[HoldPattern[_Symbol = restore[strip | stripAll, _Symbol]] ...]],
-    {Hold[body] /. (restoredAs /@ List @@ Map[Hold, Hold[bs]]), strip},
+  If[MatchQ[Hold[bs], Hold[HoldPattern[_Symbol = restore[_, _Symbol]] ...]],
+    {Hold[body] /. (restoredAs /@ List @@ Map[Hold, Hold[bs]]), unmaterialised},
     None];
 restoredTest[held_] := {held, Identity};
 
@@ -1100,10 +1102,9 @@ twoStepQ[p_] := brokenConditionsQ[p] || overlappingKeysQ[p];
    children, each the original element. *)
 cEntry[e_] /; xmlEntryQ[e] := cElem[e];
 cEntry[b : (_Blank | _BlankSequence | _BlankNullSequence)] := b;
-cEntry[Verbatim[Pattern][s_Symbol, p_]] := bindAs[s, cEntry[p], stripAll];
+cEntry[Verbatim[Pattern][s_Symbol, p_]] := bindAs[s, cEntry[p]];
 cEntry[c_Condition] := conditioned[cEntry, c, conditionWith];
-cEntry[Verbatim[PatternTest][p_, f_]] :=
-  With[{c = cEntry[p]}, If[$mat, PatternTest[c, Function[x, f[strip[x]]]], PatternTest[c, f]]];
+cEntry[Verbatim[PatternTest][p_, f_]] := testAs[cEntry[p], f];
 cEntry[(h : Repeated | RepeatedNull)[p_, spec___]] := h[cEntry[p], spec];
 cEntry[Verbatim[Except][p_, q___]] := Except @@ (cEntry /@ {p, q});
 cEntry[Verbatim[PatternSequence][ps___]] := PatternSequence @@ (cEntry /@ {ps});
@@ -1130,7 +1131,7 @@ conditioned[comp_, c_, attach_] :=
   Module[{lhs, binds},
     {lhs, binds} = reapBinds[comp[c[[1]]]];
     Scan[Sow[#, $bindTag] &, binds];
-    attach[lhs, wrapBinds[binds, Extract[c, {2}, Hold]]]];
+    attach[lhs, wrapBinds[unmaterialised, binds, Extract[c, {2}, Hold]]]];
 
 (* p /; test, from a held test. *)
 conditionWith[p_, test_Hold] := Condition @@ Join[Hold[p], test];
@@ -1150,11 +1151,9 @@ noStringPatterns[p_] :=
 (* ---- The attribute argument ---- *)
 
 cAttrs[$Failed] := refuseQuietly[];
-cAttrs[Verbatim[Pattern][s_Symbol, inner_]] := bindAs[s, cAttrs[inner], stripAttrs];
+cAttrs[Verbatim[Pattern][s_Symbol, inner_]] := bindAs[s, cAttrs[inner]];
 (* A test on the whole attribute map sees the original map. *)
-cAttrs[Verbatim[PatternTest][inner_, test_]] :=
-  With[{p = cAttrs[inner]},
-    If[$mat, PatternTest[p, Function[a, test[stripAttrs[a]]]], PatternTest[p, test]]];
+cAttrs[Verbatim[PatternTest][inner_, test_]] := testAs[cAttrs[inner], test];
 cAttrs[Verbatim[_]] := _;
 cAttrs[rules_List] :=
   With[{kvp = KeyValuePattern[cRule /@ rules]}, noDuplicateKeys[rules]; kvp];
@@ -1199,15 +1198,23 @@ noDuplicateKeys[rules_] :=
 (* The same name gets the same fresh symbol throughout a query, so that
    (e : XMLPattern["a"]) | (e : XMLPattern["b"]) still binds one name, and a name
    at two stages of a combinator is still one value: materialisation is the same
-   on equal elements. *)
+   on equal elements. A record is the name and its fresh symbol, whatever the
+   name binds, so one name has one record (issue #52). *)
 SetAttributes[bindAs, HoldFirst];
-bindAs[s_, p_, inverse_] :=
+bindAs[s_, p_] :=
   If[!$mat,
     namedPattern[s, p],
     With[{fresh = If[KeyExistsQ[$fresh, Hold[s]], $fresh[Hold[s]],
         $fresh[Hold[s]] = freshSymbol[]]},
-      Sow[{Hold[s], fresh, inverse}, $bindTag];
+      Sow[{Hold[s], fresh}, $bindTag];
       namedPattern[fresh, p]]];
+
+(* p?f, with f seeing the original value, as a name does: on a materialised
+   tree, f is given the value with its token lists removed. f is held, as in
+   the query, and the choice is made outside PatternTest, which holds its
+   test. *)
+SetAttributes[testAs, HoldRest];
+testAs[p_, f_] := If[$mat, PatternTest[p, Function[x, f[unmaterialised[x]]]], PatternTest[p, f]];
 
 (* A temporary private symbol, so nothing is left in the caller's context. *)
 freshSymbol[] := Module[{bound}, bound];
@@ -1221,34 +1228,35 @@ SetAttributes[reapBinds, HoldFirst];
 reapBinds[expr_] :=
   MapAt[DeleteDuplicates[Join @@ #] &, Reap[expr, $bindTag], 2];
 
-(* Hold[body] -> Hold[With[{e = strip[e$], ...}, body]]
+(* Hold[body] -> Hold[With[{e = inverse[e$], ...}, body]]
 
    The two-step match (restored, below) renames an element name a second time
    and wraps what this gives, so the two compose as
-   With[{e$ = uncopied[e$$]}, With[{e = strip[e$]}, body]]. The order is
-   required: strip removes token lists from an attribute list, not from a list
-   of copies of one, so an element is uncopied before it is stripped. Issue #3
-   proposes one module for both renamings.
+   With[{e$ = uncopied[e$$]}, With[{e = unmaterialised[e$]}, body]]. The two
+   inverses commute: unmaterialised removes token lists at any depth, from a
+   list of copies of an attribute list as from the list itself, so the order
+   the wrappers stack in does not change what the name sees. Issue #3 proposes
+   one module for both renamings.
 
    Only the names written in held are restored, also those inside held code
-   within it: strip is linear in an element's subtree, and a list stage's test
-   runs once per split of the list, often seeing none of the siblings after the
-   selected one. With replaces a name only where it is written, so a name
-   reached otherwise, as Symbol["e"], never saw the restored value, and leaving
-   it out changes nothing. *)
-wrapBinds[binds_, held_Hold] :=
-  withBinds[Select[binds, !FreeQ[held, Replace[First[#], Hold[s_] :> HoldPattern[s]]] &], held];
+   within it: unmaterialised is linear in an element's subtree, and a list
+   stage's test runs once per split of the list, often seeing none of the
+   siblings after the selected one. With replaces a name only where it is
+   written, so a name reached otherwise, as Symbol["e"], never saw the restored
+   value, and leaving it out changes nothing. *)
+wrapBinds[inverse_, binds_, held_Hold] :=
+  withBinds[inverse, Select[binds, !FreeQ[held, Replace[First[#], Hold[s_] :> HoldPattern[s]]] &], held];
 
-withBinds[{}, held_Hold] := held;
-withBinds[binds_, held_Hold] :=
+withBinds[_, {}, held_Hold] := held;
+withBinds[inverse_, binds_, held_Hold] :=
   With[{spec = Replace[
-      Join @@ (Replace[#, {Hold[s_], fresh_, inverse_} :> Hold[s = restore[inverse, fresh]]] & /@ binds),
+      Join @@ (Replace[#, {Hold[s_], fresh_} :> Hold[s = restore[inverse, fresh]]] & /@ binds),
       Hold[sets___] :> Hold[{sets}]]},
     Replace[Join[spec, held], Hold[vars_, body_] :> Hold[With[vars, body]]]];
 
 (* A name bound only in an Alternatives branch that did not match is Sequence[],
-   as in WL, and stays so when restored: inverse[] would leak a private head
-   (issue #18). *)
+   as in WL, and stays so when restored (issue #18). restore also marks a
+   restored name for restoredTest. *)
 restore[_] := Sequence[];
 restore[inverse_, xs__] := inverse[xs];
 
@@ -1351,7 +1359,7 @@ copiedRule[lhs_, body_Hold] :=
 renaming[p_] := Association[# -> freshSymbol[] & /@ elementNames[p]];
 
 restored[l_, held_Hold] :=
-  wrapBinds[{#, $renamed[#], uncopied} & /@ Select[boundNames[l], KeyExistsQ[$renamed, #] &], held];
+  wrapBinds[uncopied, {#, $renamed[#]} & /@ Select[boundNames[l], KeyExistsQ[$renamed, #] &], held];
 
 copiedIn[Verbatim[Pattern][s_, p_]] /; KeyExistsQ[$renamed, Hold[s]] :=
   With[{f = $renamed[Hold[s]]}, namedPattern[f, copiedIn[p]]];
@@ -1463,13 +1471,13 @@ elementQuery[c_, q_, head_, tag_] :=
       True, Message[MessageName[h, "condcombinator"], patternBase[q]]; $Failed]];
 
 (* Materialise once per query, over the union of the list keys all its stages
-   name; strip once, at the output. A chain runner is given the normal form, a
-   plain runner the pattern or rule it runs. *)
+   name; undo it once, at the output. A chain runner is given the normal form,
+   a plain runner the pattern or rule it runs. *)
 runCompiled[run_, tree_, q_, rest___] :=
   With[{p = Lookup[q, "Plain", q]},
     Block[{$kids = <||>, $contextMemo = <||>, $contexts = q["ContextEntries"]},
       If[q["Readings"] === {}, run[tree, p, rest],
-        strip @ run[materialise[tree, q["Readings"]], p, rest]]]];
+        unmaterialised @ run[materialise[tree, q["Readings"]], p, rest]]]];
 
 (* The pattern a plain query runs, or its rule, in its two-step form. *)
 plainQuery[q_] :=
