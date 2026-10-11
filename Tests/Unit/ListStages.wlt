@@ -281,6 +281,16 @@ TestCreate[
   TestID -> "list-conditions"
 ];
 
+(* A test on the whole list sees the children as they are in the tree, with or
+   without a list key in the query. *)
+TestCreate[
+  {ids @ XMLCases[$five, Child[any, {li, ___}?(Length[#] > 2 &)]],
+   ids @ XMLCases[$five, Child[any, {___, XMLPattern["li", "classList" -> "a"], _}?(
+     MemberQ[#, XMLElement["li", {"class" -> "a", "id" -> "4"}, {"d"}]] &)]]},
+  {{"1"}, {"4"}},
+  TestID -> "list-test-on-list"
+];
+
 (* A condition on the list sees its names when the selected entry names two
    attribute values, which the two-step match binds over copied children
    (issue #39). *)
