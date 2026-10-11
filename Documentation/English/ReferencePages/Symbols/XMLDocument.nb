@@ -236,7 +236,7 @@ Cell[BoxData[RowBox[{"{", "}"}]], "Output"]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[RowBox[{ButtonBox["XMLDocument", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLDocument"], "[", "]"}]], "InlineFormula"], " alone would select nothing, and is refused:"}], "ExampleText"], Cell[BoxData["XMLCases[XMLElement[\"p\",{},{\"Text\"}],XMLDocument[]]"], "Input"],
 
-Cell["XMLCases::badpat: The second argument should be an XMLPattern, a Child, Descendant, Adjacent or Sibling combinator, a CSS selector string, alternatives of any of these, or a rule pattern -> rhs or pattern :> body with one of these. Each can have a condition (/;). An XMLPattern or alternatives of them can also be named or have a test (?), but a combinator, or alternatives that hold one, cannot. XMLDocument[] can only be the first stage of a combinator, alone or in alternatives, and cannot be named or have a condition or test of its own. Got XMLDocument[].", "Message", "MSG"],
+Cell["XMLDocument::place: XMLDocument[] takes no arguments and stands for the document above the top elements, so it can only be the first stage of a combinator, alone or in alternatives, as in Child[XMLDocument[], XMLPattern[\"html\"]], and it cannot be named or have a condition or test. Got XMLDocument[].", "Message", "MSG"],
 
 Cell[BoxData["$Failed"], "Output"]}, Open]],
 
@@ -259,7 +259,13 @@ XMLDeleteCases[page,Child[XMLDocument[],XMLPattern[\"html\"]]]===page"], "Input"
 
 Cell["XMLDeleteCases::root: The root element of an XMLObject cannot be deleted; it was kept.", "Message", "MSG"],
 
-Cell[BoxData["True"], "Output"]}, Open]]}, Open]],
+Cell[BoxData["True"], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[RowBox[{ButtonBox["XMLDocument", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLDocument"], "[", "]"}]], "InlineFormula"], " can only be the first stage, since it is no element's child:"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"doc", "=", RowBox[{"ImportString", "[", RowBox[{"\"<p>a</p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"doc", ",", RowBox[{"Child", "[", RowBox[{RowBox[{"XMLPattern", "[", "\"body\"", "]"}], ",", RowBox[{"XMLDocument", "[", "]"}]}], "]"}]}], "]"}]}], "Input"],
+
+Cell["XMLDocument::place: XMLDocument[] takes no arguments and stands for the document above the top elements, so it can only be the first stage of a combinator, alone or in alternatives, as in Child[XMLDocument[], XMLPattern[\"html\"]], and it cannot be named or have a condition or test. Got XMLDocument[].", "Message", "MSG"],
+
+Cell[BoxData["$Failed"], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[

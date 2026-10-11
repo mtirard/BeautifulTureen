@@ -309,7 +309,25 @@ Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBo
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A condition on the combinator or a shared name makes the search slower, in proportion to the depth:", "ExampleText"], Cell[BoxData["deep=Nest[XMLElement[\"div\",{},Join[{#},Table[XMLElement[\"p\",{},{\"x\"}],50]]]&,XMLElement[\"p\",{},{\"x\"}],30];
 {First@AbsoluteTiming[XMLCases[deep,Descendant[XMLPattern[\"div\"],XMLPattern[\"p\"]]]],First@AbsoluteTiming[XMLCases[deep,Descendant[XMLPattern[\"div\"],XMLPattern[\"p\"]]/;True]]}"], "Input"],
 
-Cell[BoxData[RowBox[{"{", RowBox[{"0.004286`", ",", "0.138471`"}], "}"}]], "Output"]}, Open]]}, Open]],
+Cell[BoxData[RowBox[{"{", RowBox[{"0.004286`", ",", "0.138471`"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A ", Cell[BoxData[ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Descendant"]], "InlineFormula"], " combinator needs at least two stages:"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"doc", "=", RowBox[{"ImportString", "[", RowBox[{"\"<div><p>a</p><p>b</p></div>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"doc", ",", RowBox[{"Descendant", "[", RowBox[{"XMLPattern", "[", "\"p\"", "]"}], "]"}]}], "]"}]}], "Input"],
+
+Cell["Descendant::stages: Descendant needs at least two stages, as in Descendant[a, b] or Descendant[a, b, c]. Got Descendant[XMLPattern[\"p\"]].", "Message", "MSG"],
+
+Cell[BoxData["$Failed"], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A test cannot apply to a whole ", Cell[BoxData[ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Descendant"]], "InlineFormula"], " combinator:"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"doc", "=", RowBox[{"ImportString", "[", RowBox[{"\"<div><p>a</p><p>b</p></div>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"doc", ",", RowBox[{RowBox[{"Descendant", "[", RowBox[{RowBox[{"XMLPattern", "[", "\"div\"", "]"}], ",", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "]"}], "?", RowBox[{"(", RowBox[{RowBox[{RowBox[{"HTMLTextContent", "[", "#", "]"}], "===", "\"b\""}], "&"}], ")"}]}]}], "]"}]}], "Input"],
+
+Cell["Descendant::testcombinator: A test (?) can apply to an XMLPattern or alternatives of them, but not to a Descendant combinator. Put it on the stage it tests, as in Descendant[a, b?f]. Got (Descendant[XMLPattern[\"div\"], XMLPattern[\"p\"]])?(HTMLTextContent[#1] === \"b\" & ).", "Message", "MSG"],
+
+Cell[BoxData["$Failed"], "Output"],
+
+Cell["Put the test on the stage it tests:", "ExampleText"],
+
+Cell[BoxData[RowBox[{"XMLCases", "[", RowBox[{"doc", ",", RowBox[{"Descendant", "[", RowBox[{RowBox[{"XMLPattern", "[", "\"div\"", "]"}], ",", RowBox[{RowBox[{"XMLPattern", "[", "\"p\"", "]"}], "?", RowBox[{"(", RowBox[{RowBox[{RowBox[{"HTMLTextContent", "[", "#", "]"}], "===", "\"b\""}], "&"}], ")"}]}]}], "]"}]}], "]"}]], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"b\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[

@@ -296,7 +296,37 @@ Cell[BoxData[RowBox[{"{", RowBox[{"\"A\"", ",", "\"B\""}], "}"}]], "Output"]}, O
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["When no pair matches a shared name, the time grows with the square of the number of siblings:", "ExampleText"], Cell[BoxData["siblings[n_]:=XMLElement[\"ul\",{},Table[XMLElement[\"li\",{\"id\"->ToString[i]},{}],{i,n}]];
 Table[First@AbsoluteTiming[XMLCases[siblings[n],Sibling[XMLPattern[\"li\",\"id\"->id_],XMLPattern[\"li\",\"id\"->id_]]]],{n,{200,400}}]"], "Input"],
 
-Cell[BoxData[RowBox[{"{", RowBox[{"0.157128`", ",", "0.640656`"}], "}"}]], "Output"]}, Open]]}, Open]],
+Cell[BoxData[RowBox[{"{", RowBox[{"0.157128`", ",", "0.640656`"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A ", Cell[BoxData[ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Sibling"]], "InlineFormula"], " combinator needs at least two stages:"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"doc", "=", RowBox[{"ImportString", "[", RowBox[{"\"<div><p>a</p><p>b</p></div>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"doc", ",", RowBox[{"Sibling", "[", RowBox[{"XMLPattern", "[", "\"p\"", "]"}], "]"}]}], "]"}]}], "Input"],
+
+Cell["Sibling::stages: Sibling needs at least two stages, as in Sibling[a, b] or Sibling[a, b, c]. Got Sibling[XMLPattern[\"p\"]].", "Message", "MSG"],
+
+Cell[BoxData["$Failed"], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A test cannot apply to a whole ", Cell[BoxData[ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Sibling"]], "InlineFormula"], " combinator:"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"doc", "=", RowBox[{"ImportString", "[", RowBox[{"\"<div><p>a</p><p>b</p></div>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"doc", ",", RowBox[{RowBox[{"Sibling", "[", RowBox[{RowBox[{"XMLPattern", "[", "\"p\"", "]"}], ",", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "]"}], "?", RowBox[{"(", RowBox[{RowBox[{RowBox[{"HTMLTextContent", "[", "#", "]"}], "===", "\"b\""}], "&"}], ")"}]}]}], "]"}]}], "Input"],
+
+Cell["Sibling::testcombinator: A test (?) can apply to an XMLPattern or alternatives of them, but not to a Sibling combinator. Put it on the stage it tests, as in Sibling[a, b?f]. Got (Sibling[XMLPattern[\"p\"], XMLPattern[\"p\"]])?(HTMLTextContent[#1] === \"b\" & ).", "Message", "MSG"],
+
+Cell[BoxData["$Failed"], "Output"],
+
+Cell["Put the test on the stage it tests:", "ExampleText"],
+
+Cell[BoxData[RowBox[{"XMLCases", "[", RowBox[{"doc", ",", RowBox[{"Sibling", "[", RowBox[{RowBox[{"XMLPattern", "[", "\"p\"", "]"}], ",", RowBox[{RowBox[{"XMLPattern", "[", "\"p\"", "]"}], "?", RowBox[{"(", RowBox[{RowBox[{RowBox[{"HTMLTextContent", "[", "#", "]"}], "===", "\"b\""}], "&"}], ")"}]}]}], "]"}]}], "]"}]], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"b\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A list of patterns for the children cannot follow ", Cell[BoxData[ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Sibling"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"doc", "=", RowBox[{"ImportString", "[", RowBox[{"\"<div><p>a</p><p>b</p></div>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"doc", ",", RowBox[{"Sibling", "[", RowBox[{RowBox[{"XMLPattern", "[", "\"p\"", "]"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLPattern", "[", "\"p\"", "]"}], ",", "___"}], "}"}]}], "]"}]}], "]"}]}], "Input"],
+
+Cell["Sibling::liststage: {XMLPattern[\"p\"], ___} is a list of patterns for an element's children. \"It can only follow Child or Descendant, not Adjacent or Sibling.\"", "Message", "MSG"],
+
+Cell[BoxData["$Failed"], "Output"],
+
+Cell[TextData[{"Use ", Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Child"]], "InlineFormula"], " to match the children of the parent:"}], "ExampleText"],
+
+Cell[BoxData[RowBox[{"XMLCases", "[", RowBox[{"doc", ",", RowBox[{"Child", "[", RowBox[{RowBox[{"XMLPattern", "[", "\"div\"", "]"}], ",", RowBox[{"{", RowBox[{"___", ",", RowBox[{"XMLPattern", "[", "\"p\"", "]"}], ",", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "}"}]}], "]"}]}], "]"}]], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"b\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
