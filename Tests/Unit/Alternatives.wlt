@@ -59,11 +59,11 @@ TestCreate[
   TestID -> "alts-firstcase-no-match-default"
 ];
 
-(* Bad Alternatives: contains a non-XMLElement \[LongDash] falls through to badpat *)
+(* Bad Alternatives: a blank is not an XML pattern *)
 TestCreate[
   XMLCases[$treeAlts, XMLPattern["a"] | _String],
   $Failed,
-  {XMLCases::badpat},
+  {XMLCases::blank},
   TestID -> "alts-cases-bad-non-xmlelement"
 ];
 
