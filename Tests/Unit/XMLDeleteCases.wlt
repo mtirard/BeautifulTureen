@@ -144,7 +144,7 @@ TestCreate[
   TestID -> "delete-classlist-result-is-original"
 ];
 
-(* Nothing to delete gives the tree back unchanged: strip inverts materialisation
+(* Nothing to delete gives the tree back unchanged: materialisation is undone
    exactly, including on elements with no class. *)
 TestCreate[
   XMLDeleteCases[$treeAds, XMLPattern["p", "classList" -> "zzz"]] === $treeAds,

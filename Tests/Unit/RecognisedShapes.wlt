@@ -813,6 +813,21 @@ TestCreate[
   TestID -> "shape-split-attribute-readings"
 ];
 
+(* A test that sees the attribute list of the selected entry, bound with a
+   list key in it: the name sees the list as it is in the tree, and is not a
+   measure of a run of children, so the list runs on the general matcher. *)
+TestCreate[
+  sameEitherWay[Map[Function[t, Join @@ Table[Join[
+      XMLCases[t, Child[any, l]],
+      {XMLFirstCase[t, Child[any, l], None]}],
+    {l, {
+      {g___, c : XMLPattern["li", a : {"classList" -> "a"}], h___} /; Length[{g}] < 3 && Length[a] == 2,
+      {g___, c : XMLPattern["li" | "p", a : {"classList" -> "b"}], h___} /; Length[{g, a}] == 3,
+      {g___, c : XMLPattern[_, a : {"classList" -> "a"}], h___} /; Count[{g}, XMLElement[_, a, _]] == 0 && Length[{h}] == 1}}]], $trees]],
+  True,
+  TestID -> "shape-split-attribute-name"
+];
+
 (* Laws: .x:nth-of-type(k) is .x among the union over the tags T of
    T:nth-of-type(k), on lists of the random trees' tags, and
    *:first-of-type is *:nth-of-type(1), and the same from the end. *)
