@@ -308,7 +308,7 @@ Cell[BoxData["None"], "Output"]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["An invalid tree gives a message and $Failed:", "ExampleText"], Cell[BoxData["XMLFirstCase[42,XMLPattern[\"p\"]]"], "Input"],
 
-Cell["XMLFirstCase::badtree: The first argument should be an XMLObject, an XMLElement, or a list of these. Got head Integer.", "Message", "MSG"],
+Cell["XMLFirstCase::badtree: The first argument should be an XMLObject, an XMLElement, or a list of XMLElement expressions and strings. Got head Integer.", "Message", "MSG"],
 
 Cell[BoxData["$Failed"], "Output"]}, Open]],
 

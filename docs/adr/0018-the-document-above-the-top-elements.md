@@ -16,7 +16,7 @@ A query sees nothing outside the tree it is given. A **top element** is an eleme
 
 - for an `XMLObject` document, its root element;
 - for a bare `XMLElement`, the input itself;
-- for a list, each top-level `XMLElement`. A list holds elements and strings only (`validTreeQ`), though the `::badtree` messages say "a list of these", documents included.
+- for a list, each top-level `XMLElement`. A list holds elements and strings only (`validTreeQ`). A list holding anything else is refused with `::badmember`, which names the first member refused.
 
 ADR 0014 stands: the input itself is never a result, as `Cases` never returns level 0. So a bare `XMLElement` input's top element is never a result, and every other top element can be one. This is the DOM's answer. `document.querySelectorAll("html")` gives `html`, and `el.querySelectorAll(…)` never gives `el`. soupsieve agrees: `body.select(":scope")` is `[]`.
 

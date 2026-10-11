@@ -72,6 +72,51 @@ TestCreate[
   TestID -> "message-one-stage-combinator-in-xmlmatchq"
 ];
 
+(* ---- The tree argument ----
+   A list holds XMLElement expressions and strings only (issue #36, ADR 0018).
+   A refused list is described by its first refused member, not by List. *)
+
+TestCreate[
+  {XMLCases[{$msgTree}, XMLPattern["p"]], HTMLTextContent[{$msgTree, "x"}]},
+  {$Failed, $Failed},
+  {XMLCases::badmember, HTMLTextContent::badmember},
+  TestID -> "tree-list-with-document-refused"
+];
+
+TestCreate[
+  capturedMessages[XMLCases[{XMLElement["p", {}, {}], $msgTree}, XMLPattern["p"]]],
+  {"A list given as the first argument should hold only XMLElement expressions and strings. The member at position 2 has head XMLObject[\"Document\"]."},
+  TestID -> "tree-list-message-names-member"
+];
+
+TestCreate[
+  Flatten[capturedMessages /@ Unevaluated[{
+    XMLFirstCase[{$msgTree}, XMLPattern["p"]],
+    XMLDeleteCases[{$msgTree}, XMLPattern["p"]],
+    HTMLInnerText[{$msgTree}],
+    HTMLToNotebook[{$msgTree}]}]],
+  ConstantArray[
+    "A list given as the first argument should hold only XMLElement expressions and strings. The member at position 1 has head XMLObject[\"Document\"].",
+    4],
+  TestID -> "tree-list-message-on-each-function"
+];
+
+TestCreate[
+  {XMLFirstCase[{$msgTree}, XMLPattern["p"]], XMLDeleteCases[{$msgTree}, XMLPattern["p"]],
+    HTMLInnerText[{$msgTree}], HTMLToNotebook[{$msgTree}]},
+  ConstantArray[$Failed, 4],
+  {XMLFirstCase::badmember, XMLDeleteCases::badmember, HTMLInnerText::badmember, HTMLToNotebook::badmember},
+  TestID -> "tree-list-message-names-function-called"
+];
+
+(* No text says a list may hold a document. *)
+TestCreate[
+  {capturedMessages[XMLCases[42, XMLPattern["p"]]], capturedMessages[HTMLTextContent[37]]},
+  {{"The first argument should be an XMLObject, an XMLElement, or a list of XMLElement expressions and strings. Got head Integer."},
+    {"The first argument should be an XMLObject, an XMLElement, a string, or a list of XMLElement expressions and strings. Got head Integer."}},
+  TestID -> "tree-message-describes-accepted-input"
+];
+
 (* ---- Argument counts ----
    A call with a number of positional arguments outside a function's range gives
    the standard argument-count message and stays unevaluated, as a built-in
