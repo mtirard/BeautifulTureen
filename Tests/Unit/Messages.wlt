@@ -51,6 +51,13 @@ TestCreate[
   TestID -> "message-one-stage-combinator-names-two-stage-minimum"
 ];
 
+(* A misplaced XMLDocument[] says where it can stand. *)
+TestCreate[
+  capturedMessages[XMLCases[$msgTree, Child[XMLPattern["article"], XMLDocument[]]]],
+  {"XMLDocument[] takes no arguments and stands for the document above the top elements, so it can only be the first stage of a combinator, alone or in alternatives, as in Child[XMLDocument[], XMLPattern[\"html\"]], and it cannot be named or have a condition or test. Got XMLDocument[]."},
+  TestID -> "message-document-placement"
+];
+
 (* A test on a combinator names it, and says where the test goes. *)
 TestCreate[
   capturedMessages[XMLCases[$msgTree, Child[XMLPattern["section"], XMLPattern["p"]]?(True &)]],

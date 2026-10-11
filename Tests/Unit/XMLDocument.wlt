@@ -100,12 +100,15 @@ TestCreate[
 
 (* === Refusals === *)
 
+(* A misplaced XMLDocument[] is refused under XMLDocument (ADR 0022). A
+   consumer that takes only an element pattern gives its own ::badpat. *)
+
 TestCreate[
   {XMLCases[$doc, XMLDocument[]],
    XMLCases[$doc, XMLDocument[] | p],
    XMLCases[$doc, Child[p, XMLDocument[]]]},
   {$Failed, $Failed, $Failed},
-  {XMLCases::badpat, XMLCases::badpat, XMLCases::badpat, General::stop},
+  {XMLDocument::place, XMLDocument::place, XMLDocument::place, General::stop},
   TestID -> "document-refused-alone-and-later"
 ];
 
@@ -114,7 +117,7 @@ TestCreate[
    XMLCases[$doc, Child[d : XMLDocument[], p]],
    XMLCases[$doc, Child[XMLDocument[] /; True, p]]},
   {$Failed, $Failed, $Failed},
-  {XMLCases::badpat, XMLCases::badpat, XMLCases::badpat, General::stop},
+  {XMLDocument::place, XMLDocument::place, XMLDocument::place, General::stop},
   TestID -> "document-refused-nested-named-conditioned"
 ];
 
@@ -123,14 +126,14 @@ TestCreate[
    XMLCases[$doc, Child[XMLDocument["x"], p]],
    XMLCases[$doc, Child[p, {XMLDocument[], ___}]]},
   {$Failed, $Failed, $Failed},
-  {XMLCases::badpat, XMLCases::badpat, Child::listentry},
+  {XMLDocument::place, XMLDocument::place, XMLDocument::place, General::stop},
   TestID -> "document-refused-tested-arguments-entry"
 ];
 
 TestCreate[
   XMLCases[$doc, Child[p, {___, Child[XMLDocument[], p]}]],
   $Failed,
-  {XMLCases::badpat},
+  {XMLDocument::place},
   TestID -> "document-refused-in-list-combinator"
 ];
 
