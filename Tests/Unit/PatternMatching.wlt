@@ -568,7 +568,7 @@ TestCreate[
    HTMLInnerText[$testedTree, "Roles" -> {$testedComb?$testedHasLink -> "Skip"}],
    HTMLToNotebook[$testedTree, "Constructs" -> {$testedComb?$testedHasLink -> "Bold"}]},
   {$Failed, $Failed, $Failed, $Failed, $Failed, $Failed},
-  {XMLCases::testcombinator, XMLFirstCase::testcombinator, XMLDeleteCases::testcombinator,
+  {Child::testcombinator, Child::testcombinator, Child::testcombinator, General::stop,
    XMLMatchQ::testcombinator, HTMLInnerText::testcombinator, HTMLToNotebook::testcombinator},
   TestID -> "patterntest-on-combinator-refused"
 ];
@@ -577,7 +577,7 @@ TestCreate[
   {XMLCases[$testedTree, Descendant[XMLPattern["div"], $testedComb?$testedHasLink]],
    XMLCases[$testedTree, ($testedComb /; True)?$testedHasLink]},
   {$Failed, $Failed},
-  {XMLCases::testcombinator, XMLCases::testcombinator},
+  {Child::testcombinator, Child::testcombinator},
   TestID -> "patterntest-on-combinator-refused-anywhere"
 ];
 
@@ -585,6 +585,15 @@ TestCreate[
   {XMLCases[$testedTree, ($testedComb?$testedHasLink) /; True],
    XMLCases[$testedTree, $testedComb?$testedHasLink :> 1]},
   {$Failed, $Failed},
-  {XMLCases::testcombinator, XMLCases::testcombinator},
+  {Child::testcombinator, Child::testcombinator},
   TestID -> "patterntest-on-combinator-refused-in-rule"
+];
+
+(* A test on alternatives that hold combinators is refused under the first of
+   them as written. *)
+TestCreate[
+  XMLCases[$testedTree, (Descendant[XMLPattern["div"], XMLPattern["p"]] | $testedComb)?$testedHasLink],
+  $Failed,
+  {Descendant::testcombinator},
+  TestID -> "patterntest-on-alternatives-names-first-combinator"
 ];

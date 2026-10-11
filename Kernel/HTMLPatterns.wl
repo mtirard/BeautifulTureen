@@ -35,15 +35,12 @@ XMLPattern::dupkey = "The attribute key `1` appears in more than one constraint,
 XMLPattern::strpat = "`1` is a string pattern, and in an XMLPattern it does not match any string. Write _?(StringMatchQ[`1`]) instead.";
 XMLCases::badtree = "The first argument should be an XMLObject, an XMLElement, or a list of these. Got head `1`.";
 XMLCases::badpat = "The second argument should be an XMLPattern, a Child, Descendant, Adjacent or Sibling combinator, a CSS selector string, alternatives of any of these, or a rule pattern -> rhs or pattern :> body with one of these. Each can have a condition (/;). An XMLPattern or alternatives of them can also be named or have a test (?), but a combinator, or alternatives that hold one, cannot. XMLDocument[] can only be the first stage of a combinator, alone or in alternatives, and cannot be named or have a condition or test of its own. Got `1`.";
-XMLCases::stages = "A combinator such as Child or Descendant needs at least two stages, as in Descendant[a, b] or Descendant[a, b, c]. Got `1`.";
 XMLCases::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
 XMLFirstCase::badtree = "The first argument should be an XMLObject, an XMLElement, or a list of these. Got head `1`.";
 XMLFirstCase::badpat = "The second argument should be an XMLPattern, a Child, Descendant, Adjacent or Sibling combinator, a CSS selector string, alternatives of any of these, or a rule pattern -> rhs or pattern :> body with one of these. Each can have a condition (/;). An XMLPattern or alternatives of them can also be named or have a test (?), but a combinator, or alternatives that hold one, cannot. XMLDocument[] can only be the first stage of a combinator, alone or in alternatives, and cannot be named or have a condition or test of its own. Got `1`.";
-XMLFirstCase::stages = "A combinator such as Child or Descendant needs at least two stages, as in Descendant[a, b] or Descendant[a, b, c]. Got `1`.";
 XMLFirstCase::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
 XMLDeleteCases::badtree = "The first argument should be an XMLObject, an XMLElement, or a list of these. Got head `1`.";
 XMLDeleteCases::badpat = "The second argument should be an XMLPattern, a Child, Descendant, Adjacent or Sibling combinator, a CSS selector string, or alternatives of any of these. Each can have a condition (/;). An XMLPattern or alternatives of them can also be named or have a test (?), but a combinator, or alternatives that hold one, cannot. XMLDocument[] can only be the first stage of a combinator, alone or in alternatives, and cannot be named or have a condition or test of its own. A rule, whether pattern -> rhs or pattern :> body, cannot be used. Got `1`.";
-XMLDeleteCases::stages = "A combinator such as Child or Descendant needs at least two stages, as in Descendant[a, b] or Descendant[a, b, c]. Got `1`.";
 XMLDeleteCases::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
 XMLMatchQ::badpat = "The pattern should be an XMLPattern, alternatives of them, or either with a condition pat /; test or a test pat?f, or a CSS selector string that describes one element. Got `1`.";
 XMLMatchQ::stages = "`1` is a combinator with fewer than two stages. A combinator needs at least two, but XMLMatchQ tests a lone element and cannot use one; use XMLCases or XMLFirstCase to search a tree with it.";
@@ -89,6 +86,14 @@ Scan[Function[h,
     MessageName[h, "listentry"] = "`1` cannot be an entry in a list of patterns for an element's children. `2`";
     MessageName[h, "blank"] = "`1` is a blank, which is not an XML pattern. Any element is XMLPattern[_]. An XML pattern matches elements only; for the text inside an element, use HTMLTextContent or HTMLInnerText."],
   {XMLCases, XMLFirstCase, XMLDeleteCases, XMLMatchQ, HTMLInnerText, HTMLToNotebook}];
+
+(* A mistake in a combinator is its message, named for it (ADR 0022). The
+   message's own slot is a value here, so that the template keeps it. *)
+Scan[Function[h,
+    With[{fill = TemplateApply[#, <|"h" -> h, "got" -> "`1`"|>] &},
+      MessageName[h, "stages"] = fill["`h` needs at least two stages, as in `h`[a, b] or `h`[a, b, c]. Got `got`."];
+      MessageName[h, "testcombinator"] = fill["A test (?) can apply to an XMLPattern or alternatives of them, but not to a `h` combinator. Put it on the stage it tests, as in `h`[a, b?f]. Got `got`."]]],
+  {Child, Descendant, Adjacent, Sibling}];
 
 (* =========================================================== *)
 (* Validation helpers                                           *)
@@ -410,7 +415,7 @@ compileWith[q_, head_, readings_Association] :=
     $refusal];
 
 compilePass[q_, head_, readings_, mat_] :=
-  Block[{$head = head, $readings = readings, $mat = mat, $fresh = <||>, $listSources = <||>,
+  Block[{$head = head, $holder = head, $readings = readings, $mat = mat, $fresh = <||>, $listSources = <||>,
       $atStart = True, $firstOfLink = False},
     With[{r = Reap[First @ Reap[cQuery[q], $bindTag], {$listKeyTag, $contextTag}]},
       {First[r], Union @@ r[[2, 1]], contextEntries[First[r], Join @@ r[[2, 2]]]}]];
@@ -433,6 +438,23 @@ refuseQuietly[] := Throw[$Failed, $refusal];
 (* MessageName holds its first argument, so the consumer head is injected. *)
 refuseAtHead[tag_, args___] := With[{h = $head}, refuse[MessageName[h, tag], args]];
 badpat[q_] := refuseAtHead["badpat", q];
+
+(* A message goes on the innermost symbol the mistake is in (ADR 0022): a
+   combinator used wrongly, or the combinator whose argument is wrong, which is
+   $holder while that argument is compiled. A consumer that takes only an
+   element pattern refuses any combinator, so there the message stays its own. *)
+refuseAt[h_, tag_, args___] := refuse[MessageName[h, tag], args];
+holderFor[h_] := If[MatchQ[$head, XMLCases | XMLFirstCase | XMLDeleteCases], h, $head];
+
+(* The first combinator in a tested pattern, as written. *)
+firstCombinator[s_String] := firstCombinator[cssPattern[s]];
+firstCombinator[(h : $links)[___]] := h;
+firstCombinator[alts_Alternatives] := FirstCase[firstCombinator /@ List @@ alts, $links, None];
+firstCombinator[p_] := With[{b = patternBase[p]}, If[b === p, None, firstCombinator[b]]];
+
+(* Alternatives of list stages hold no combinator; their test is the holder's. *)
+refuseTestedCombinator[t : Verbatim[PatternTest][x_, _]] :=
+  refuseAt[holderFor[Replace[firstCombinator[x], None -> $holder]], "testcombinator", t];
 
 (* ---- Queries: a rule over a pattern, or a pattern ---- *)
 
@@ -490,13 +512,15 @@ cStage[Verbatim[Pattern][s_Symbol, alts_Alternatives]] /; AllTrue[List @@ alts, 
 (* The document can be only the first stage of a chain (ADR 0018): $atStart
    while a stage at the start of the query is compiled, $firstOfLink while it is the
    first argument of a combinator. *)
-cStage[(h : $links)[a_, b_]] := joinChains[Block[{$firstOfLink = True}, cStage[a]], h, Block[{$atStart = False}, cStage[b]]];
+cStage[(h : $links)[a_, b_]] :=
+  Block[{$holder = holderFor[h]},
+    joinChains[Block[{$firstOfLink = True}, cStage[a]], h, Block[{$atStart = False}, cStage[b]]]];
 cStage[(h : $links)[a_, b_, rest__]] := cStage[h[a, h[b, rest]]];
-cStage[q : $links[RepeatedNull[_, 1]]] := refuseAtHead["stages", q];
+cStage[q : $links[RepeatedNull[_, 1]]] := refuseAt[holderFor[Head[q]], "stages", q];
 cStage[c_Condition] /; multiStageQ[patternBase[c]] := conditioned[cStage, c, coverChain];
 (* A test on a combinator would only restate a test on its last stage, so it is
    refused until a CSS selector string can be a combinator (ADR 0014). *)
-cStage[t : Verbatim[PatternTest][x_, _]] /; multiStageQ[patternBase[x]] := refuseAtHead["testcombinator", t];
+cStage[t : Verbatim[PatternTest][x_, _]] /; multiStageQ[patternBase[x]] := refuseTestedCombinator[t];
 (* Alternatives holding a combinator are union[{chain, ...}], one chain per
    alternative, in written order (ADR 0015). Alternatives of element patterns
    stay one stage. *)
@@ -570,7 +594,7 @@ cElem[Verbatim[Pattern][s_Symbol, p_]] :=
 (* The document has no element for a name, a Condition or a test to see. *)
 cElem[c_Condition] := If[documentQ[patternBase[c]], badpat[c], conditioned[cElem, c, conditionWith]];
 (* The same refusal, for a tested combinator inside Alternatives or a name. *)
-cElem[t : Verbatim[PatternTest][x_, _]] /; multiStageQ[patternBase[x]] := refuseAtHead["testcombinator", t];
+cElem[t : Verbatim[PatternTest][x_, _]] /; multiStageQ[patternBase[x]] := refuseTestedCombinator[t];
 (* pat?f is n : pat /; f[n]: f sees the original element, as a name does. *)
 cElem[t : Verbatim[PatternTest][p_, test_]] /; documentQ[p] := badpat[t];
 cElem[Verbatim[PatternTest][p_, test_]] :=

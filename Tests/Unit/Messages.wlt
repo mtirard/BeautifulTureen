@@ -43,11 +43,19 @@ TestCreate[
   TestID -> "message-names-whole-named-alternatives-with-combinator"
 ];
 
-(* A combinator with one stage is refused with a message that says it needs two. *)
+(* A combinator with one stage is refused with a message that says it needs two,
+   named for the combinator written. *)
 TestCreate[
   capturedMessages[XMLCases[$msgTree, Descendant[XMLPattern["p"]]]],
-  {"A combinator such as Child or Descendant needs at least two stages, as in Descendant[a, b] or Descendant[a, b, c]. Got Descendant[XMLPattern[\"p\"]]."},
+  {"Descendant needs at least two stages, as in Descendant[a, b] or Descendant[a, b, c]. Got Descendant[XMLPattern[\"p\"]]."},
   TestID -> "message-one-stage-combinator-names-two-stage-minimum"
+];
+
+(* A test on a combinator names it, and says where the test goes. *)
+TestCreate[
+  capturedMessages[XMLCases[$msgTree, Child[XMLPattern["section"], XMLPattern["p"]]?(True &)]],
+  {"A test (?) can apply to an XMLPattern or alternatives of them, but not to a Child combinator. Put it on the stage it tests, as in Child[a, b?f]. Got (Child[XMLPattern[\"section\"], XMLPattern[\"p\"]])?(True & )."},
+  TestID -> "message-test-on-combinator-names-it"
 ];
 
 (* Where no combinator can be used, the message does not suggest one. *)
