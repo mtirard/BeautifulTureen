@@ -85,7 +85,7 @@ Scan[Function[h,
     MessageName[h, "liststage"] = "`1` is a list of patterns for an element's children. `2`";
     MessageName[h, "listentry"] = "`1` cannot be an entry in a list of patterns for an element's children. `2`";
     MessageName[h, "blank"] = "`1` is a blank, which is not an XML pattern. Any element is XMLPattern[_]. An XML pattern matches elements only; for the text inside an element, use HTMLTextContent or HTMLInnerText."],
-  {XMLCases, XMLFirstCase, XMLDeleteCases, XMLMatchQ, HTMLInnerText, HTMLToNotebook}];
+  {XMLCases, XMLFirstCase, XMLDeleteCases, XMLMatchQ, HTMLInnerText, HTMLToNotebook, Child, Descendant, Adjacent, Sibling}];
 
 (* A mistake in a combinator is its message, named for it (ADR 0022). The
    message's own slot is a value here, so that the template keeps it. *)
@@ -514,7 +514,7 @@ cStage[Verbatim[Pattern][s_Symbol, alts_Alternatives]] /; AllTrue[List @@ alts, 
    first argument of a combinator. *)
 cStage[(h : $links)[a_, b_]] :=
   Block[{$holder = holderFor[h]},
-    joinChains[Block[{$firstOfLink = True}, cStage[a]], h, Block[{$atStart = False}, cStage[b]]]];
+    joinChains[noFirstList[Block[{$firstOfLink = True}, cStage[a]]], h, Block[{$atStart = False}, cStage[b]]]];
 cStage[(h : $links)[a_, b_, rest__]] := cStage[h[a, h[b, rest]]];
 cStage[q : $links[RepeatedNull[_, 1]]] := refuseAt[holderFor[Head[q]], "stages", q];
 cStage[c_Condition] /; multiStageQ[patternBase[c]] := conditioned[cStage, c, coverChain];
@@ -526,6 +526,11 @@ cStage[t : Verbatim[PatternTest][x_, _]] /; multiStageQ[patternBase[x]] := refus
    stay one stage. *)
 cStage[alts_Alternatives] /; AnyTrue[List @@ alts, multiStageQ] := toUnion[Join @@ (chainsOf[cStage[#]] & /@ List @@ alts)];
 cStage[q_] := chain[{cElem[q]}, {}, {}];
+
+(* A list stage needs a parent, so it cannot start the query's chain. Refused
+   here, in the combinator, rather than in normalForm. *)
+noFirstList[c_] :=
+  (If[$atStart, Replace[chainsOf[c], {___, chain[{ls_listStage, ___}, _, _], ___} :> refuseList["first", ls]]]; c);
 
 chainsOf[union[cs_]] := cs;
 chainsOf[c_chain] := {c};
@@ -604,7 +609,7 @@ cElem[x_XMLElement] := x;
 cElem[l_List] := refuseEntry["list", l];
 (* A blank would be a second spelling of XMLPattern[_] (ADR 0018), and reads as
    matching text too. *)
-cElem[b : _Blank | _BlankSequence | _BlankNullSequence] := refuseAtHead["blank", b];
+cElem[b : _Blank | _BlankSequence | _BlankNullSequence] := refuseAt[$holder, "blank", b];
 cElem[q_] := badpat[q];
 
 (* ---- List stages (ADR 0016) ---- *)
@@ -625,8 +630,8 @@ listFormQ[p_] := ListQ[patternBase[p]];
 
 (* A refusal names the list or the entry as written. *)
 refuseList[reason_, ls_listStage] := refuseList[reason, $listSources[ls[[1, "Id"]]]];
-refuseList[reason_, l_] := refuseAtHead["liststage", l, $listReasons[reason]];
-refuseEntry[reason_, e_] := refuseAtHead["listentry", e, $listReasons[reason]];
+refuseList[reason_, l_] := refuseAt[$holder, "liststage", l, $listReasons[reason]];
+refuseEntry[reason_, e_] := refuseAt[$holder, "listentry", e, $listReasons[reason]];
 
 stageNames[listStage[a_]] := namesIn[a["Pattern"]];
 stageNames[s_] := namesIn[s];
@@ -704,7 +709,7 @@ contextCombinator[e_] :=
       MatchQ[First[ch[[1]]], _listStage], refuseEntry["firstlist", e]];
     With[{first = First[ch[[1]]], id = ++$contextCount},
       Scan[Sow[#, $bindTag] &, Select[binds, !FreeQ[first, #[[2]]] &]];
-      Sow[{id, normalForm[ch, None], Complement[Union @@ (stageNames /@ Rest[ch[[1]]]), stageNames[first]], e}, $contextTag];
+      Sow[{id, normalForm[ch, None], Complement[Union @@ (stageNames /@ Rest[ch[[1]]]), stageNames[first]], e, $holder}, $contextTag];
       entry[first, id]]];
 
 $contextCount = 0;
@@ -714,7 +719,7 @@ $contextCount = 0;
 contextEntries[$Failed, _] := <||>;
 contextEntries[query_, sown_] :=
   With[{outer = Union @@ (Union @@ (stageNames /@ #["Stages"]) & /@ alternativesOf[query])},
-    Scan[If[IntersectingQ[#[[3]], outer], refuseEntry["contextname", #[[4]]]] &, sown];
+    Scan[If[IntersectingQ[#[[3]], outer], Block[{$holder = #[[5]]}, refuseEntry["contextname", #[[4]]]]] &, sown];
     Association[#[[1]] -> #[[2]] & /@ sown]];
 
 (* ---- List stage methods (ADR 0020) ---- *)

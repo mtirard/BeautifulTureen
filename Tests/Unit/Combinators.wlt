@@ -1006,12 +1006,13 @@ TestCreate[
 ];
 
 (* A blank is not an XML pattern, as a stage or as the whole query: any element
-   is XMLPattern[_] (ADR 0018). *)
+   is XMLPattern[_] (ADR 0018). As a stage, the message is the combinator's
+   (ADR 0022). *)
 TestCreate[
   {XMLCases[$treeChains, Child[XMLPattern["div"], _]],
    XMLFirstCase[$treeChains, Descendant[_String, XMLPattern["p"]]],
    XMLDeleteCases[$treeChains, Child[XMLPattern["div"], x_ /; True]]},
   {$Failed, $Failed, $Failed},
-  {XMLCases::blank, XMLFirstCase::blank, XMLDeleteCases::blank},
+  {Child::blank, Descendant::blank, Child::blank},
   TestID -> "blank-stage-refused"
 ];

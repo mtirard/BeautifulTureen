@@ -181,7 +181,7 @@ TestCreate[
    XMLCases[$five, Child[ul, {_, _}]],
    XMLCases[$five, Child[ul, {___, li | _}]]},
   ConstantArray[$Failed, 5],
-  {XMLCases::liststage, XMLCases::liststage, XMLCases::liststage, General::stop},
+  {Child::liststage, Child::liststage, Child::liststage, General::stop},
   TestID -> "list-no-xml-pattern-entry"
 ];
 
@@ -432,6 +432,9 @@ TestCreate[
 
 (* === Refusals === *)
 
+(* A list in a combinator is refused under that combinator, and a list that is
+   the whole query under the consumer (ADR 0022). *)
+
 TestCreate[
   {XMLCases[$five, {li, ___}],
    XMLCases[$five, {li, ___} /; True],
@@ -447,7 +450,7 @@ TestCreate[
    XMLCases[$five, Adjacent[li, {li, ___}]],
    XMLFirstCase[$five, Sibling[li, s : {li}]]},
   ConstantArray[$Failed, 3],
-  {XMLCases::liststage, XMLCases::liststage, XMLFirstCase::liststage},
+  {Child::liststage, Adjacent::liststage, Sibling::liststage},
   TestID -> "list-refused-first-or-after-sibling"
 ];
 
@@ -455,9 +458,9 @@ TestCreate[
   {XMLCases[$five, Child[ul, {___, {li}}]],
    XMLCases[$five, Child[ul, {___, XMLElement["li", _, _]}]],
    XMLCases[$five, Child[ul, {___, Child[{li}, XMLPattern["a"]]}]],
-   XMLDeleteCases[$five, Child[ul, {___, li, 3}]]},
+   XMLDeleteCases[$five, Descendant[ul, {___, li, 3}]]},
   ConstantArray[$Failed, 4],
-  {XMLCases::listentry, XMLCases::listentry, XMLCases::listentry, General::stop, XMLDeleteCases::listentry},
+  {Child::listentry, Child::listentry, Child::listentry, General::stop, Descendant::listentry},
   TestID -> "list-refused-entries"
 ];
 
@@ -468,7 +471,7 @@ TestCreate[
   {XMLCases[$heads, Child[any, {___, Descendant[XMLPattern["h2"], XMLPattern["span", "id" -> i_]], XMLPattern["p", "id" -> i_], ___}]],
    XMLCases[$heads, Child[any, {___, Descendant[XMLPattern["h2"], XMLPattern["span"]] | XMLPattern["h2"], p, ___}]]},
   {$Failed, $Failed},
-  {XMLCases::listentry, XMLCases::listentry},
+  {Child::listentry, Child::listentry},
   TestID -> "list-refused-context-combinator"
 ];
 
