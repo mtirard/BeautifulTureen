@@ -815,7 +815,9 @@ TestCreate[
 
 (* A test that sees the attribute list of the selected entry, bound with a
    list key in it: the name sees the list as it is in the tree, and is not a
-   measure of a run of children, so the list runs on the general matcher. *)
+   measure of a run of children, so the shape refuses the list and it runs on
+   the general matcher. This checks only that the results are the same either
+   way. *)
 TestCreate[
   sameEitherWay[Map[Function[t, Join @@ Table[Join[
       XMLCases[t, Child[any, l]],

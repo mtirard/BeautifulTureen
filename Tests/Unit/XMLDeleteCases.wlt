@@ -132,8 +132,8 @@ TestCreate[
 
 (* === The classList key === *)
 
-(* Deletion runs on the materialised tree and the whole result is stripped, so
-   what survives is exactly the original. *)
+(* Deletion runs on the materialised tree and its token lists are removed from
+   the whole result, so what survives is exactly the original. *)
 $treeAds = ImportString[
   "<div class=\"main\"><p class=\"ad promo\">ad</p><p>keep</p><p class=\"note\">note</p></div>",
   {"HTML", "XMLObject"}];

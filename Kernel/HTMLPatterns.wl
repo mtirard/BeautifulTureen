@@ -875,8 +875,11 @@ namesPattern[names_] := Alternatives @@ (HoldPattern @@@ DeleteCases[names, None
 
 (* {test, view}: the held test with each name restored around it (wrapBinds)
    read as the name it restores, seen through unmaterialised; None when it
-   binds anything else. A name that is not of a child, such as an attribute
-   list, is then left to the checks of the measures, which refuse it. *)
+   binds anything else. Any restore is accepted: the list's pattern is read
+   before the two-step match copies its selected entry, so only restores of
+   materialisation reach here. A name that is not of a child, such as an
+   attribute list, is then left to the checks of the measures, which refuse
+   it. *)
 restoredTest[Hold[With[{bs___}, body_]]] :=
   If[MatchQ[Hold[bs], Hold[HoldPattern[_Symbol = restore[_, _Symbol]] ...]],
     {Hold[body] /. (restoredAs /@ List @@ Map[Hold, Hold[bs]]), unmaterialised},
@@ -1252,8 +1255,8 @@ withBinds[inverse_, binds_, held_Hold] :=
     Replace[Join[spec, held], Hold[vars_, body_] :> Hold[With[vars, body]]]];
 
 (* A name bound only in an Alternatives branch that did not match is Sequence[],
-   as in WL, and stays so when restored: inverse[] would leak a private head
-   (issue #18). *)
+   as in WL, and stays so when restored (issue #18). restore also marks a
+   restored name for restoredTest. *)
 restore[_] := Sequence[];
 restore[inverse_, xs__] := inverse[xs];
 
