@@ -234,7 +234,7 @@ TestCreate[
 TestCreate[
   XMLCases[$unionDoc, (Child[XMLPattern["ul"], XMLPattern["li"]] | XMLPattern["a"])?(True &)],
   $Failed,
-  {XMLCases::testcombinator},
+  {Child::testcombinator},
   TestID -> "union-test-refused"
 ];
 
