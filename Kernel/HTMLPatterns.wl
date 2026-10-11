@@ -609,8 +609,7 @@ cElem[c_Condition] := If[documentQ[patternBase[c]], refuseDocument[c], condition
 cElem[t : Verbatim[PatternTest][x_, _]] /; multiStageQ[patternBase[x]] := refuseTestedCombinator[t];
 (* pat?f is n : pat /; f[n]: f sees the original element, as a name does. *)
 cElem[t : Verbatim[PatternTest][p_, test_]] /; documentQ[p] := refuseDocument[t];
-cElem[Verbatim[PatternTest][p_, test_]] :=
-  With[{c = cElem[p]}, If[$mat, PatternTest[c, Function[e, test[unmaterialised[e]]]], PatternTest[c, test]]];
+cElem[Verbatim[PatternTest][p_, test_]] := testAs[cElem[p], test];
 (* A plain XMLElement pattern is already what the consumers run. *)
 cElem[x_XMLElement] := x;
 cElem[l_List] := refuseEntry["list", l];
@@ -679,8 +678,7 @@ listChains[l_] :=
 listForms[Verbatim[Pattern][s_Symbol, p_]] := mapListPattern[bindAs[s, #] &, listForms[p]];
 listForms[c_Condition] :=
   conditioned[listForms, c, Function[{forms, test}, mapListPattern[conditionWith[#, test] &, forms]]];
-listForms[Verbatim[PatternTest][p_, f_]] :=
-  mapListPattern[PatternTest[#, If[$mat, Function[x, f[unmaterialised[x]]], f]] &, listForms[p]];
+listForms[Verbatim[PatternTest][p_, f_]] := mapListPattern[testAs[#, f] &, listForms[p]];
 listForms[entries_List] :=
   With[{s = Replace[Flatten @ Position[xmlEntryQ /@ entries, True],
       {{} :> (Scan[cEntry, entries]; refuseList["noentry", entries]), is_ :> Last[is]}]},
@@ -1103,8 +1101,7 @@ cEntry[e_] /; xmlEntryQ[e] := cElem[e];
 cEntry[b : (_Blank | _BlankSequence | _BlankNullSequence)] := b;
 cEntry[Verbatim[Pattern][s_Symbol, p_]] := bindAs[s, cEntry[p]];
 cEntry[c_Condition] := conditioned[cEntry, c, conditionWith];
-cEntry[Verbatim[PatternTest][p_, f_]] :=
-  With[{c = cEntry[p]}, If[$mat, PatternTest[c, Function[x, f[unmaterialised[x]]]], PatternTest[c, f]]];
+cEntry[Verbatim[PatternTest][p_, f_]] := testAs[cEntry[p], f];
 cEntry[(h : Repeated | RepeatedNull)[p_, spec___]] := h[cEntry[p], spec];
 cEntry[Verbatim[Except][p_, q___]] := Except @@ (cEntry /@ {p, q});
 cEntry[Verbatim[PatternSequence][ps___]] := PatternSequence @@ (cEntry /@ {ps});
@@ -1153,9 +1150,7 @@ noStringPatterns[p_] :=
 cAttrs[$Failed] := refuseQuietly[];
 cAttrs[Verbatim[Pattern][s_Symbol, inner_]] := bindAs[s, cAttrs[inner]];
 (* A test on the whole attribute map sees the original map. *)
-cAttrs[Verbatim[PatternTest][inner_, test_]] :=
-  With[{p = cAttrs[inner]},
-    If[$mat, PatternTest[p, Function[a, test[unmaterialised[a]]]], PatternTest[p, test]]];
+cAttrs[Verbatim[PatternTest][inner_, test_]] := testAs[cAttrs[inner], test];
 cAttrs[Verbatim[_]] := _;
 cAttrs[rules_List] :=
   With[{kvp = KeyValuePattern[cRule /@ rules]}, noDuplicateKeys[rules]; kvp];
@@ -1210,6 +1205,13 @@ bindAs[s_, p_] :=
         $fresh[Hold[s]] = freshSymbol[]]},
       Sow[{Hold[s], fresh}, $bindTag];
       namedPattern[fresh, p]]];
+
+(* p?f, with f seeing the original value, as a name does: on a materialised
+   tree, f is given the value with its token lists removed. f is held, as in
+   the query, and the choice is made outside PatternTest, which holds its
+   test. *)
+SetAttributes[testAs, HoldRest];
+testAs[p_, f_] := If[$mat, PatternTest[p, Function[x, f[unmaterialised[x]]]], PatternTest[p, f]];
 
 (* A temporary private symbol, so nothing is left in the caller's context. *)
 freshSymbol[] := Module[{bound}, bound];
