@@ -4,6 +4,8 @@ status: accepted
 
 # Every input has a document above its top elements, matched by `XMLDocument[]`
 
+> **Amended by [ADR 0022](./0022-a-message-goes-on-the-symbol-the-mistake-is-in.md).** In `XMLCases`, `XMLFirstCase` and `XMLDeleteCases`, a misplaced `XMLDocument[]` now gives `XMLDocument::place` instead of `::badpat`. `XMLMatchQ` and the `Roles`/`Constructs` rules still give `::badpat`. Everything else stands.
+
 A query cannot say where an element sits relative to the input it was given. Four features wait on that: list stages that reach the root (ADR 0016 left `html:first-child` unmatched), CSS's `:root` and `:scope` (refused by ADR 0017), and a children-only search, bs4's `recursive=False` (set aside in #14). They are decided together here, so that no one of them settles it by accident. The design was settled in `.scratch/css-selectors/issues/07-decide-how-a-query-reaches-the-root-and-the-input.md`, and the implementation spec is `.scratch/css-selectors/specs/root-and-input.md`.
 
 ## Decision
