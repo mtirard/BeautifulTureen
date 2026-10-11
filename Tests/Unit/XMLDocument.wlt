@@ -123,7 +123,7 @@ TestCreate[
    XMLCases[$doc, Child[XMLDocument["x"], p]],
    XMLCases[$doc, Child[p, {XMLDocument[], ___}]]},
   {$Failed, $Failed, $Failed},
-  {XMLCases::badpat, XMLCases::badpat, XMLCases::listentry},
+  {XMLCases::badpat, XMLCases::badpat, Child::listentry},
   TestID -> "document-refused-tested-arguments-entry"
 ];
 
