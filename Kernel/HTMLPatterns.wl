@@ -3804,9 +3804,7 @@ tableRowsOf[XMLElement[_, _, ch_]] :=
     XMLElement["thead" | "tbody" | "tfoot", _, sec_] :> Cases[sec, XMLElement["tr", _, _]],
     _ -> {}}, {1}];
 
-tableHeaderRowQ[tr_] :=
-  With[{cs = tableCellsOf[tr]},
-    cs =!= {} && AllTrue[cs, MatchQ[#, XMLElement["th", _, _]] &]];
+headerRowQ[cells_] := cells =!= {} && AllTrue[cells, MatchQ[XMLElement["th", _, _]]];
 
 padRow[row_, n_] := PadRight[row, n, ""];
 rectangular[rows_] := With[{n = Max[Length /@ rows]}, padRow[#, n] & /@ rows];
@@ -3830,15 +3828,13 @@ captionCells[XMLElement[_, _, ch_], ctx_] :=
   blockEmit[Cases[ch, XMLElement["caption", _, _]], <|ctx, "blk" -> "Text"|>];
 
 tableCell[el_XMLElement] :=
-  Module[{trs = tableRowsOf[el],
-          rows, hasHeader, headers},
-    rows = tableCellsOf /@ trs;
-    rows = DeleteCases[rows, {}];
+  Module[{rows, headers},
+    (* A row with no cells is ignored, also when choosing the header row *)
+    rows = DeleteCases[tableCellsOf /@ tableRowsOf[el], {}];
     If[rows === {}, Return[gridCell[{{""}}]]];
-    hasHeader = trs =!= {} && tableHeaderRowQ[First[trs]];
     headers = cellText /@ First[rows];
     (* A Dataset with no body rows shows no header and fails to export *)
-    If[hasHeader && Length[rows] > 1 && DuplicateFreeQ[headers],
+    If[headerRowQ[First[rows]] && Length[rows] > 1 && DuplicateFreeQ[headers],
       datasetCell[headers, Map[cellText, Rest[rows], {2}]],
       gridCell[Map[gridItem, rows, {2}]]]];
 

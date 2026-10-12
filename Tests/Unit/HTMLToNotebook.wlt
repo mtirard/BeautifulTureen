@@ -275,6 +275,26 @@ TestCreate[
   TestID -> "htn-table-sections-order"
 ];
 
+(* A <tr> with no cells is ignored, also when choosing the header row *)
+TestCreate[
+  nbmd["<table><tr></tr><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table>"],
+  "| A | B |\n| - | - |\n| 1 | 2 |",
+  TestID -> "htn-table-empty-first-row"
+];
+
+TestCreate[
+  nbmd["<table><thead><tr></tr></thead><tbody><tr><th>A</th></tr><tr><td>1</td></tr></tbody></table>"],
+  "| A |\n| - |\n| 1 |",
+  TestID -> "htn-table-empty-thead"
+];
+
+(* A table with only empty rows is still an empty Grid *)
+TestCreate[
+  nbmd["<table><tr></tr><tr></tr></table>"],
+  "|  |\n| - |\n|  |",
+  TestID -> "htn-table-only-empty-rows"
+];
+
 (* === HTMLToNotebook: Roles + Constructs overrides === *)
 
 (* "Roles" (Layer 1) shares HTMLInnerText's machinery: skip a block by class *)
