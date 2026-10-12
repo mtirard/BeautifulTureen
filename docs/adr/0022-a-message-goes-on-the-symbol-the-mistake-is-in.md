@@ -39,7 +39,7 @@ A message is placed by where the mistake is, which can be read from the input al
 - **A test on alternatives** holding combinators is refused under the first combinator as written. The message shows the whole pattern, so naming one of them is enough. A test on alternatives of lists holds no combinator and is refused under the symbol that holds it.
 - **The element-pattern consumers.** `XMLMatchQ` and the `"Roles"` and `"Constructs"` rules of `HTMLInnerText` and `HTMLToNotebook` take only an element pattern (ADR 0013). There, any combinator and `XMLDocument[]` are the consumer's mistake, not the construct's, so every message stays the consumer's. Pointing to `Child`'s page for a fix that the consumer would then refuse would mislead.
 - **A combinator's message names it.** Each combinator has its own copy, made from one template, so the text says "Child needs at least two stages, as in Child[a, b]", not "a combinator such as Child or Descendant".
-- **Unchanged.** `::badpat` and `::badtree` describe a consumer's own arguments. A CSS selector string is the consumer's argument too, so `"div > :root"` still gives `::badpat` with the string, not `XMLDocument::place`.
+- **Unchanged.** `::badpat`, `::badtree` and `::badmember` describe a consumer's own arguments. A CSS selector string is the consumer's argument too, so `"div > :root"` still gives `::badpat` with the string, not `XMLDocument::place`.
 
 ## Consequences
 

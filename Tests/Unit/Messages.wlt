@@ -111,9 +111,12 @@ TestCreate[
 
 (* No text says a list may hold a document. *)
 TestCreate[
-  {capturedMessages[XMLCases[42, XMLPattern["p"]]], capturedMessages[HTMLTextContent[37]]},
-  {{"The first argument should be an XMLObject, an XMLElement, or a list of XMLElement expressions and strings. Got head Integer."},
-    {"The first argument should be an XMLObject, an XMLElement, a string, or a list of XMLElement expressions and strings. Got head Integer."}},
+  Flatten[capturedMessages /@ Unevaluated[{
+    XMLCases[42, XMLPattern["p"]], XMLFirstCase[42, XMLPattern["p"]], XMLDeleteCases[42, XMLPattern["p"]],
+    HTMLTextContent[37], HTMLInnerText[37], HTMLToNotebook[37]}]],
+  Join[
+    ConstantArray["The first argument should be an XMLObject, an XMLElement, or a list of XMLElement expressions and strings. Got head Integer.", 3],
+    ConstantArray["The first argument should be an XMLObject, an XMLElement, a string, or a list of XMLElement expressions and strings. Got head Integer.", 3]],
   TestID -> "tree-message-describes-accepted-input"
 ];
 
