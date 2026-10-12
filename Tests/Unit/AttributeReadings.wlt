@@ -104,13 +104,16 @@ TestCreate[
   TestID -> "readings-option-reaches-nested-call-deletecases-firstcase"
 ];
 
-(* In XMLMatchQ, both forms; in the operator form, for each call of the operator. *)
+(* In XMLMatchQ, both forms; in the operator form, for each call of the operator.
+   Without the option, the nested "relList" has no reading, and is warned about
+   for each element its condition is tried on. *)
 TestCreate[
   With[{q = e : XMLPattern["a"] /; XMLMatchQ[e, XMLPattern["a", "relList" -> "x"]]},
     {XMLMatchQ[$rel[[3, 1]], q, "AttributeReadings" -> <|"rel" -> <||>|>],
      XMLMatchQ[q, "AttributeReadings" -> <|"rel" -> <||>|>] /@ $rel[[3]],
      XMLMatchQ[q] /@ $rel[[3]]}],
   {True, {True, False}, {False, False}},
+  {XMLPattern::nolistreading, XMLPattern::nolistreading},
   TestID -> "readings-option-reaches-nested-call-matchq"
 ];
 
@@ -140,6 +143,7 @@ TestCreate[
   XMLCases[$cls, XMLPattern["p", "classList" -> _],
     "AttributeReadings" -> <|"class" -> <|"ListKey" -> "classes"|>|>],
   {},
+  {XMLPattern::otherlistkey},
   TestID -> "readings-option-replaced-entry-drops-its-list-key"
 ];
 
@@ -151,12 +155,14 @@ TestCreate[
   TestID -> "readings-option-keeps-builtin"
 ];
 
-(* Block replaces the global, and drops the built-in with it. *)
+(* Block replaces the global, and drops the built-in with it, so "classList" is
+   warned about as a key with no reading. *)
 TestCreate[
   Block[{$AttributeReadings = <|"rel" -> <||>|>},
     {XMLCases[$links, XMLPattern["a", "relList" -> "author"] :> "rel"],
      XMLCases[$cls, XMLPattern["p", "classList" -> _]]}],
   {{"rel"}, {}},
+  {XMLPattern::nolistreading},
   TestID -> "readings-block-replaces-global"
 ];
 
@@ -289,4 +295,93 @@ TestCreate[
   {$Failed, $Failed},
   {$AttributeReadings::badentry, $AttributeReadings::badentry},
   TestID -> "readings-emitters-refuse-bad-table"
+];
+
+(* === A list key with no reading (#24) === *)
+
+(* A key k <> "List" that is not a list key in force is matched as an attribute
+   of that name, and warned about on XMLPattern; the result is unchanged. *)
+TestCreate[
+  XMLCases[$rel, XMLPattern["a", "relList" -> "x"]],
+  {},
+  {XMLPattern::nolistreading},
+  TestID -> "list-key-warning-no-reading"
+];
+
+TestCreate[
+  {XMLCases[$rel, XMLPattern["a", "relList" -> "x"], "AttributeReadings" -> <|"rel" -> <||>|>],
+   XMLCases[$rel, e : XMLPattern["a"] /; XMLMatchQ[e, XMLPattern["a", "relList" -> "x"]],
+     "AttributeReadings" -> <|"rel" -> <||>|>]},
+  {{XMLElement["a", {"rel" -> "x"}, {"1"}]}, {XMLElement["a", {"rel" -> "x"}, {"1"}]}},
+  TestID -> "list-key-warning-not-with-option-reading"
+];
+
+TestCreate[
+  XMLCases[$rel, XMLPattern["a", "relList" -> "x"], "AttributeReadings" -> <|"rel" -> <|"ListKey" -> "rels"|>|>],
+  {},
+  {XMLPattern::otherlistkey},
+  TestID -> "list-key-warning-other-list-key"
+];
+
+TestCreate[
+  {XMLCases[$rel, XMLPattern["a", "fooList" -> "x"], "AttributeReadings" -> <|"rel" -> <|"ListKey" -> "fooList"|>|>],
+   XMLCases[XMLElement["p", {"class" -> "x"}, {}], XMLPattern["p", "classList" -> "x"]]},
+  {{XMLElement["a", {"rel" -> "x"}, {"1"}]}, {}},
+  TestID -> "list-key-warning-not-on-list-keys-in-force"
+];
+
+(* Key alternatives and bare keys are checked; namespaced keys and "List" are not. *)
+TestCreate[
+  {XMLCases[$rel, XMLPattern["a", ("relList" | "rel") -> "x"]],
+   XMLCases[$rel, XMLPattern["a", "relList"]],
+   XMLCases[$rel, XMLPattern["a", {{"ns", "relList"}, "List"}]]},
+  {{XMLElement["a", {"rel" -> "x"}, {"1"}]}, {}, {}},
+  {XMLPattern::nolistreading, XMLPattern::nolistreading},
+  TestID -> "list-key-warning-key-forms"
+];
+
+TestCreate[
+  XMLCases[$rel, "a[rel~=x]"],
+  {},
+  {XMLPattern::nolistreading},
+  TestID -> "list-key-warning-css-selector"
+];
+
+TestCreate[
+  FromCSSSelector["a[rel~=x]"],
+  XMLPattern["a", "relList" -> "x"],
+  TestID -> "list-key-warning-not-from-fromcssselector"
+];
+
+TestCreate[
+  Quiet[XMLCases[$rel, XMLPattern["a", "relList" -> "x"]], XMLPattern::nolistreading],
+  {},
+  TestID -> "list-key-warning-quiet"
+];
+
+TestCreate[
+  HTMLInnerText[$rel, "Roles" -> {XMLPattern["a", "relList" -> "x"] -> "Skip"}],
+  "12",
+  {XMLPattern::nolistreading},
+  TestID -> "list-key-warning-roles-rule"
+];
+
+TestCreate[
+  {StringContainsQ[messageText[XMLCases[$rel, XMLPattern["a", "relList" -> "x"],
+     "AttributeReadings" -> <|"ping" -> <||>|>]],
+     "The key relList looks like a list key, but rel has no reading"],
+   StringContainsQ[messageText[XMLCases[$rel, XMLPattern["a", "relList" -> "x"],
+     "AttributeReadings" -> <|"rel" -> <|"ListKey" -> "rels"|>|>]],
+     "gives its tokens under the list key rels"]},
+  {True, True},
+  {XMLPattern::nolistreading, XMLPattern::otherlistkey},
+  TestID -> "list-key-warning-text-under-block"
+];
+
+(* A refused query gives only its refusal. *)
+TestCreate[
+  XMLCases[$rel, XMLPattern["a", {"relList" -> "x", "relList" -> "y"}]],
+  $Failed,
+  {XMLPattern::dupkey},
+  TestID -> "list-key-warning-not-on-refused-query"
 ];

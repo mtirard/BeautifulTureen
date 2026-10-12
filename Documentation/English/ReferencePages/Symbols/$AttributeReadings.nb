@@ -270,6 +270,8 @@ Cell[TextData[{"The key ", Cell[BoxData[StyleBox["\"classList\"", "TR"]], "Inlin
 
 Cell[BoxData["XMLCases[{element},XMLPattern[\"p\",\"classList\"->c_]:>c,\"AttributeReadings\"-> <|\"class\"-> <|\"ListKey\"->\"classes\"|>|>]"], "Input"],
 
+Cell["XMLPattern::otherlistkey: The key \"classList\" is matched as an attribute of that name, but the reading for \"class\" gives its tokens under the list key \"classes\". Use \"classes\", or set \"ListKey\" -> \"classList\" in the reading.", "Message", "MSG"],
+
 Cell[BoxData[RowBox[{"{", "}"}]], "Output"]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"With a reading for ", Cell[BoxData[StyleBox["rel", "TR"]], "InlineFormula"], ", the key ", Cell[BoxData[StyleBox["\"rel\"", "TR"]], "InlineFormula"], " still matches only the whole attribute value:"}], "ExampleText"], Cell[BoxData["links=ImportString[\"<p><a rel=\\\"nofollow noopener\\\" href=\\\"/ad\\\">Ad</a><a href=\\\"/home\\\">Home</a><a rel=\\\"noopener\\\" href=\\\"/x\\\">X</a></p>\",{\"HTML\",\"XMLObject\"}];
@@ -299,6 +301,8 @@ Cell[CellGroupData[{Cell[BoxData[
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A ", Cell[BoxData[ButtonBox["Block", BaseStyle -> "Link", ButtonData -> "paclet:ref/Block"]], "InlineFormula"], " that sets ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/$AttributeReadings"]], "InlineFormula"], " also removes the ", Cell[BoxData[StyleBox["class", "TR"]], "InlineFormula"], " reading:"}], "ExampleText"], Cell[BoxData["element=XMLElement[\"p\",{\"class\"->\"lead promo\"},{}];
 Block[{$AttributeReadings= <|\"rel\"-> <||>|>},XMLMatchQ[element,XMLPattern[\"p\",\"classList\"->\"lead\"]]]"], "Input"],
+
+Cell["XMLPattern::nolistreading: The key \"classList\" looks like a list key, but \"class\" has no reading, so \"classList\" is matched as an attribute of that name. To match the tokens of \"class\", add a reading: $AttributeReadings[\"class\"] = <||> for the session, or \"AttributeReadings\" -> <|\"class\" -> <||>|> in the call.", "Message", "MSG"],
 
 Cell[BoxData["False"], "Output"],
 
@@ -365,7 +369,33 @@ Cell[BoxData["$Failed"], "Output"]}, Open]],
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The option does not reach ", Cell[BoxData[StyleBox["rhs", "TI"]], "InlineFormula"], " in ", Cell[BoxData[RowBox[{StyleBox["pattern", "TI"], "\[Rule]", StyleBox["rhs", "TI"]}]], "InlineFormula"], ", which is evaluated first:"}], "ExampleText"], Cell[BoxData["links=ImportString[\"<p><a rel=\\\"nofollow noopener\\\" href=\\\"/ad\\\">Ad</a><a href=\\\"/home\\\">Home</a><a rel=\\\"noopener\\\" href=\\\"/x\\\">X</a></p>\",{\"HTML\",\"XMLObject\"}];
 {XMLCases[links,e:XMLPattern[\"a\"]->XMLMatchQ[e,XMLPattern[\"a\",\"relList\"->\"nofollow\"]],\"AttributeReadings\"-> <|\"rel\"-> <||>|>],XMLCases[links,e:XMLPattern[\"a\"]:>XMLMatchQ[e,XMLPattern[\"a\",\"relList\"->\"nofollow\"]],\"AttributeReadings\"-> <|\"rel\"-> <||>|>]}"], "Input"],
 
-Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"False", ",", "False", ",", "False"}], "}"}], ",", RowBox[{"{", RowBox[{"True", ",", "False", ",", "False"}], "}"}]}], "}"}]], "Output"]}, Open]]}, Open]],
+Cell["XMLPattern::nolistreading: The key \"relList\" looks like a list key, but \"rel\" has no reading, so \"relList\" is matched as an attribute of that name. To match the tokens of \"rel\", add a reading: $AttributeReadings[\"rel\"] = <||> for the session, or \"AttributeReadings\" -> <|\"rel\" -> <||>|> in the call.", "Message", "MSG"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"False", ",", "False", ",", "False"}], "}"}], ",", RowBox[{"{", RowBox[{"True", ",", "False", ",", "False"}], "}"}]}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"With no reading for ", Cell[BoxData[StyleBox["rel", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["\"relList\"", "TR"]], "InlineFormula"], " names an attribute, with a message:"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"links", "=", RowBox[{"ImportString", "[", RowBox[{"\"<p><a rel=\\\"nofollow\\\" href=\\\"/ad\\\">Ad</a><a href=\\\"/home\\\">Home</a></p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"links", ",", RowBox[{"XMLPattern", "[", RowBox[{"\"a\"", ",", RowBox[{"\"relList\"", "->", "\"nofollow\""}]}], "]"}]}], "]"}]}], "Input"],
+
+Cell["XMLPattern::nolistreading: The key \"relList\" looks like a list key, but \"rel\" has no reading, so \"relList\" is matched as an attribute of that name. To match the tokens of \"rel\", add a reading: $AttributeReadings[\"rel\"] = <||> for the session, or \"AttributeReadings\" -> <|\"rel\" -> <||>|> in the call.", "Message", "MSG"],
+
+Cell[BoxData[RowBox[{"{", "}"}]], "Output"],
+
+Cell[TextData[{"Add a reading for ", Cell[BoxData[StyleBox["rel", "TR"]], "InlineFormula"], ", here for one call:"}], "ExampleText"],
+
+Cell[BoxData[RowBox[{"XMLCases", "[", RowBox[{"links", ",", RowBox[{"XMLPattern", "[", RowBox[{"\"a\"", ",", RowBox[{"\"relList\"", "->", "\"nofollow\""}]}], "]"}], ",", RowBox[{"\"AttributeReadings\"", "->", RowBox[{"<|", RowBox[{"\"rel\"", "->", RowBox[{"<|", "|>"}]}], "|>"}]}]}], "]"}]], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{RowBox[{"\"shape\"", "\[Rule]", "\"rect\""}], ",", RowBox[{"\"rel\"", "\[Rule]", "\"nofollow\""}], ",", RowBox[{"\"href\"", "\[Rule]", "\"/ad\""}]}], "}"}], ",", RowBox[{"{", "\"Ad\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"With the reading under another list key, ", Cell[BoxData[StyleBox["\"relList\"", "TR"]], "InlineFormula"], " names an attribute:"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"links", "=", RowBox[{"ImportString", "[", RowBox[{"\"<p><a rel=\\\"nofollow\\\" href=\\\"/ad\\\">Ad</a><a href=\\\"/home\\\">Home</a></p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"links", ",", RowBox[{"XMLPattern", "[", RowBox[{"\"a\"", ",", RowBox[{"\"relList\"", "->", "\"nofollow\""}]}], "]"}], ",", RowBox[{"\"AttributeReadings\"", "->", RowBox[{"<|", RowBox[{"\"rel\"", "->", RowBox[{"<|", RowBox[{"\"ListKey\"", "->", "\"rels\""}], "|>"}]}], "|>"}]}]}], "]"}]}], "Input"],
+
+Cell["XMLPattern::otherlistkey: The key \"relList\" is matched as an attribute of that name, but the reading for \"rel\" gives its tokens under the list key \"rels\". Use \"rels\", or set \"ListKey\" -> \"relList\" in the reading.", "Message", "MSG"],
+
+Cell[BoxData[RowBox[{"{", "}"}]], "Output"],
+
+Cell["Use the list key the reading gives:", "ExampleText"],
+
+Cell[BoxData[RowBox[{"XMLCases", "[", RowBox[{"links", ",", RowBox[{"XMLPattern", "[", RowBox[{"\"a\"", ",", RowBox[{"\"rels\"", "->", "\"nofollow\""}]}], "]"}], ",", RowBox[{"\"AttributeReadings\"", "->", RowBox[{"<|", RowBox[{"\"rel\"", "->", RowBox[{"<|", RowBox[{"\"ListKey\"", "->", "\"rels\""}], "|>"}]}], "|>"}]}]}], "]"}]], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{RowBox[{"\"shape\"", "\[Rule]", "\"rect\""}], ",", RowBox[{"\"rel\"", "\[Rule]", "\"nofollow\""}], ",", RowBox[{"\"href\"", "\[Rule]", "\"/ad\""}]}], "}"}], ",", RowBox[{"{", "\"Ad\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[

@@ -32,6 +32,8 @@ XMLPattern::nargs = "XMLPattern was given `1` arguments, but takes a tag and at 
 XMLPattern::badattrs = "The attribute argument should be a key -> value rule, a key, or a list of these, optionally named (attrs : ...) or tested (...?test) as a whole. Got `1`.";
 XMLPattern::badkey = "An attribute key should be a string, a {namespace, name} pair of strings, or alternatives of these. Got `1`. To test the keys, test the attributes as a whole: XMLPattern[tag, attrs_?test].";
 XMLPattern::dupkey = "The attribute key `1` appears in more than one constraint, so the pattern can never match. Combine the constraints into one value pattern.";
+XMLPattern::nolistreading = "The key `1` looks like a list key, but `2` has no reading, so `1` is matched as an attribute of that name. To match the tokens of `2`, add a reading: $AttributeReadings[`2`] = <||> for the session, or \"AttributeReadings\" -> <|`2` -> <||>|> in the call.";
+XMLPattern::otherlistkey = "The key `1` is matched as an attribute of that name, but the reading for `2` gives its tokens under the list key `3`. Use `3`, or set \"ListKey\" -> `1` in the reading.";
 XMLPattern::strpat = "`1` is a string pattern, and in an XMLPattern it does not match any string. Write _?(StringMatchQ[`1`]) instead.";
 XMLDocument::place = "XMLDocument[] takes no arguments and stands for the document above the top elements, so it can only be the first stage of a combinator, alone or in alternatives, as in Child[XMLDocument[], XMLPattern[\"html\"]], and it cannot be named or have a condition or test. Got `1`.";
 XMLCases::badtree = "The first argument should be an XMLObject, an XMLElement, or a list of XMLElement expressions and strings. Got head `1`.";
@@ -424,9 +426,10 @@ $recogniseShapes = True;
 compileWith[_, _, $Failed] := $Failed;
 compileWith[q_, head_, readings_Association] :=
   Catch[
-    Module[{query, keys, contexts},
-      {query, keys, contexts} = compilePass[q, head, readings, False];
-      If[keys =!= {}, {query, contexts} = Delete[compilePass[q, head, readings, True], 2]];
+    Module[{query, keys, contexts, stringKeys},
+      {query, keys, contexts, stringKeys} = compilePass[q, head, readings, False];
+      If[keys =!= {}, {query, contexts} = compilePass[q, head, readings, True][[{1, 3}]]];
+      Scan[warnLookalikeListKey[readings], stringKeys];
       Join[runnable[withMethods[query]], <|"Readings" -> Lookup[readings, keys], "Head" -> head, "Query" -> q,
         "ContextEntries" -> runnableChain @* withMethods /@ contexts, "Recognition" -> $recogniseShapes|>]],
     $refusal];
@@ -434,8 +437,19 @@ compileWith[q_, head_, readings_Association] :=
 compilePass[q_, head_, readings_, mat_] :=
   Block[{$head = head, $holder = head, $readings = readings, $mat = mat, $fresh = <||>, $listSources = <||>,
       $atStart = True, $firstOfLink = False},
-    With[{r = Reap[First @ Reap[cQuery[q], $bindTag], {$listKeyTag, $contextTag}]},
-      {First[r], Union @@ r[[2, 1]], contextEntries[First[r], Join @@ r[[2, 2]]]}]];
+    With[{r = Reap[First @ Reap[cQuery[q], $bindTag], {$listKeyTag, $contextTag, $stringKeyTag}]},
+      {First[r], Union @@ r[[2, 1]], contextEntries[First[r], Join @@ r[[2, 2]]], Join @@ r[[2, 3]]}]];
+
+(* A key that looks like a list key but is not one in force is still matched as
+   an attribute of that name, as an explicit list key can name a real attribute
+   (ADR 0012), so it is only warned about, once the query has compiled, from the
+   string keys the first pass sees. *)
+warnLookalikeListKey[readings_][k_] /; StringEndsQ[k, "List"] && StringLength[k] > 4 && !KeyExistsQ[readings, k] :=
+  With[{raw = StringDrop[k, -4]},
+    Replace[FirstCase[Normal[readings], (listKey_ -> {raw, _}) :> listKey], {
+      Missing[__] :> Message[XMLPattern::nolistreading, k, raw],
+      listKey_ :> Message[XMLPattern::otherlistkey, k, raw, listKey]}]];
+warnLookalikeListKey[_][_] := Null;
 
 (* The compiled query with the fields that say how it runs (see the header). *)
 runnable[q_] /; unionQ[q] := MapAt[runnableChain, q, {Key["Alternatives"], All}];
@@ -1183,6 +1197,7 @@ cRule[$Failed] := refuseQuietly[];
 cRule[Verbatim[Rule][k_, v_]] :=
   Module[{listKeys},
     If[!literalKeyQ[k], refuse[XMLPattern::badkey, k]];
+    Scan[Sow[#, $stringKeyTag] &, Select[keyLiterals[k], StringQ]];
     noStringPatterns[v];
     listKeys = Select[keyLiterals[k], StringQ[#] && KeyExistsQ[$readings, #] &];
     Scan[Sow[#, $listKeyTag] &, listKeys];

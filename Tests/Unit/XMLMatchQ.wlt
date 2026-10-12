@@ -52,11 +52,13 @@ TestCreate[
 ];
 
 (* The operator form keeps its compiled query between calls (issue #2), and
-   follows a change to $AttributeReadings between them. *)
+   follows a change to $AttributeReadings between them. Without the reading,
+   "relList" is warned about once, when the kept query is first compiled. *)
 TestCreate[
   With[{op = XMLMatchQ[XMLPattern["a", "relList" -> "next"]], a = XMLElement["a", {"rel" -> "next"}, {}]},
     {op[a], Block[{$AttributeReadings = Append[$AttributeReadings, "rel" -> <||>]}, op[a]], op[a]}],
   {False, True, False},
+  {XMLPattern::nolistreading},
   TestID -> "xmlmatchq-operator-form-follows-readings"
 ];
 
