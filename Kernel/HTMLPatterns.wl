@@ -3784,9 +3784,10 @@ quoteCells[XMLElement[_, _, ch_], ctx_] :=
 
 hrConstruct[_] := Cell["", "Text", CellFrame -> {{0, 0}, {0, 1}}];
 
-(* <table> -> Dataset when a leading all-<th> row gives unique column labels (an
+(* <table> -> Dataset when a header row gives unique column labels (an
    idiomatic GFM header) and at least one body row follows it, else Grid
-   (positional, blank header, every row kept).
+   (positional, blank header, every row kept). The header row is the one row of
+   a <thead>, or with no <thead> a leading all-<th> row.
    Dataset/Grid over Tabular because the paclet floor is WL 12.3. Cells degrade
    to plain text; in the Grid form a <th> cell is bold. See ADR 0003. *)
 cellText[XMLElement[_, _, c_]] := StringTrim[normWS[StringJoin[textContentWalk /@ c]]];
@@ -3797,14 +3798,26 @@ gridItem[e_] := cellText[e];
 tableCellsOf[tr_] := Cases[tr[[3]], XMLElement["th" | "td", _, _]];
 
 (* A table's own rows, in document order: the <tr> children of the <table> and
-   of its <thead>, <tbody> and <tfoot>, not the rows of a nested table *)
+   of its <thead>, <tbody> and <tfoot>, not the rows of a nested table. Each is
+   {inHead, tr}, inHead being whether the row is in a <thead>. *)
 tableRowsOf[XMLElement[_, _, ch_]] :=
   Catenate @ Replace[ch, {
-    tr : XMLElement["tr", _, _] :> {tr},
-    XMLElement["thead" | "tbody" | "tfoot", _, sec_] :> Cases[sec, XMLElement["tr", _, _]],
+    tr : XMLElement["tr", _, _] :> {{False, tr}},
+    XMLElement[s : "thead" | "tbody" | "tfoot", _, sec_] :>
+      Cases[sec, tr : XMLElement["tr", _, _] :> {s === "thead", tr}],
     _ -> {}}, {1}];
 
 headerRowQ[cells_] := cells =!= {} && AllTrue[cells, MatchQ[XMLElement["th", _, _]]];
+
+(* The position of the header row in rows, the cells of each row, or None: the
+   one row of a <thead>, whatever its cells are, given inHead, whether each row
+   is in a <thead>; with no <thead> row, a leading row of <th> cells. A <thead>
+   of several rows gives none (ADR 0003). *)
+headerRowPosition[rows_, inHead_] :=
+  Replace[Flatten @ Position[inHead, True], {
+    {i_} :> i,
+    {} :> If[headerRowQ[First[rows]], 1, None],
+    _ -> None}];
 
 padRow[row_, n_] := PadRight[row, n, ""];
 rectangular[rows_] := With[{n = Max[Length /@ rows]}, padRow[#, n] & /@ rows];
@@ -3828,14 +3841,16 @@ captionCells[XMLElement[_, _, ch_], ctx_] :=
   blockEmit[Cases[ch, XMLElement["caption", _, _]], <|ctx, "blk" -> "Text"|>];
 
 tableCell[el_XMLElement] :=
-  Module[{rows, headers},
+  Module[{tagged, inHead, rows, headerPos, headers},
     (* A row with no cells is ignored, also when choosing the header row *)
-    rows = DeleteCases[tableCellsOf /@ tableRowsOf[el], {}];
-    If[rows === {}, Return[gridCell[{{""}}]]];
-    headers = cellText /@ First[rows];
+    tagged = DeleteCases[MapAt[tableCellsOf, tableRowsOf[el], {All, 2}], {_, {}}];
+    If[tagged === {}, Return[gridCell[{{""}}]]];
+    {inHead, rows} = Transpose[tagged];
+    headerPos = headerRowPosition[rows, inHead];
+    headers = If[headerPos === None, None, cellText /@ rows[[headerPos]]];
     (* A Dataset with no body rows shows no header and fails to export *)
-    If[headerRowQ[First[rows]] && Length[rows] > 1 && DuplicateFreeQ[headers],
-      datasetCell[headers, Map[cellText, Rest[rows], {2}]],
+    If[headerPos =!= None && Length[rows] > 1 && DuplicateFreeQ[headers],
+      datasetCell[headers, Map[cellText, Delete[rows, headerPos], {2}]],
       gridCell[Map[gridItem, rows, {2}]]]];
 
 (* ---- Public interface ---- *)

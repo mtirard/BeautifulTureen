@@ -288,6 +288,42 @@ TestCreate[
   TestID -> "htn-table-empty-thead"
 ];
 
+(* The one row of a <thead> is the header row, whatever its cells are *)
+TestCreate[
+  nbmd["<table><thead><tr><td>A</td><td>B</td></tr></thead><tbody><tr><td>1</td><td>2</td></tr></tbody></table>"],
+  "| A | B |\n| - | - |\n| 1 | 2 |",
+  TestID -> "htn-table-thead-td"
+];
+
+(* A <thead> written after a body row still gives the labels *)
+TestCreate[
+  nbmd["<table><tr><td>1</td></tr><thead><tr><td>A</td></tr></thead><tr><td>2</td></tr></table>"],
+  "| A |\n| - |\n| 1 |\n| 2 |",
+  TestID -> "htn-table-thead-late"
+];
+
+(* Only the <thead> rows with cells count *)
+TestCreate[
+  nbmd["<table><thead><tr></tr><tr><td>A</td></tr></thead><tbody><tr><td>1</td></tr></tbody></table>"],
+  "| A |\n| - |\n| 1 |",
+  TestID -> "htn-table-thead-empty-and-full-row"
+];
+
+(* A <thead> with two rows gives no header row, even when its first row is all
+   <th>: a Dataset has one row of labels, so the Grid keeps every cell *)
+TestCreate[
+  nbmd["<table><thead><tr><th>A</th><th>B</th></tr><tr><th>a</th><th>b</th></tr></thead><tbody><tr><td>1</td><td>2</td></tr></tbody></table>"],
+  "|  |  |\n| - | - |\n| **A** | **B** |\n| **a** | **b** |\n| 1 | 2 |",
+  TestID -> "htn-table-thead-two-rows"
+];
+
+(* Duplicate <thead> labels give the Grid, where a <td> is not bold *)
+TestCreate[
+  nbmd["<table><thead><tr><td>X</td><td>X</td></tr></thead><tbody><tr><td>1</td><td>2</td></tr></tbody></table>"],
+  "|  |  |\n| - | - |\n| X | X |\n| 1 | 2 |",
+  TestID -> "htn-table-thead-dup-labels"
+];
+
 (* A table with only empty rows is still an empty Grid *)
 TestCreate[
   nbmd["<table><tr></tr><tr></tr></table>"],
