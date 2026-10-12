@@ -265,7 +265,16 @@ SetAttributes[withReadings, HoldRest];
 withReadings[opt_, call_] :=
   Replace[Catch[Join @@ (validTable /@ {$AttributeReadings, opt}), $refusal], {
     $Failed -> $Failed,
-    t_ :> Block[{$AttributeReadings = t}, call]}];
+    t_ :> Block[{$AttributeReadings = t}, withListKeyWarnings[call]]}];
+
+(* The list keys already warned about in this call (#24). The outermost call
+   sets up the set and every nested call shares it, so each key is warned
+   about once per call, however many queries the call compiles, and again on
+   the next call. Outside any call it is None, and every warning is issued. *)
+$warnedListKeys = None;
+
+SetAttributes[withListKeyWarnings, HoldAll];
+withListKeyWarnings[call_] := If[$warnedListKeys === None, Block[{$warnedListKeys = <||>}, call], call];
 
 (* A Block of $AttributeReadings, the option's or a caller's, hides the
    symbol's message texts too, so a refusal gives its text back for the
@@ -443,13 +452,18 @@ compilePass[q_, head_, readings_, mat_] :=
 (* A key that looks like a list key but is not one in force is still matched as
    an attribute of that name, as an explicit list key can name a real attribute
    (ADR 0012), so it is only warned about, once the query has compiled, from the
-   string keys the first pass sees. *)
-warnLookalikeListKey[readings_][k_] /; StringEndsQ[k, "List"] && StringLength[k] > 4 && !KeyExistsQ[readings, k] :=
+   string keys the first pass sees, and only once per call. *)
+warnLookalikeListKey[readings_][k_] /; StringEndsQ[k, "List"] && StringLength[k] > 4 && !KeyExistsQ[readings, k] &&
+    firstWarningQ[k] :=
   With[{raw = StringDrop[k, -4]},
     Replace[FirstCase[Normal[readings], (listKey_ -> {raw, _}) :> listKey], {
       Missing[__] :> Message[XMLPattern::nolistreading, k, raw],
       listKey_ :> Message[XMLPattern::otherlistkey, k, raw, listKey]}]];
 warnLookalikeListKey[_][_] := Null;
+
+(* True, and the key recorded as warned about, unless the call has warned about it. *)
+firstWarningQ[_] /; $warnedListKeys === None := True;
+firstWarningQ[k_] := !KeyExistsQ[$warnedListKeys, k] && ($warnedListKeys[k] = True);
 
 (* The compiled query with the fields that say how it runs (see the header). *)
 runnable[q_] /; unionQ[q] := MapAt[runnableChain, q, {Key["Alternatives"], All}];
@@ -2327,7 +2341,9 @@ Options[XMLMatchQ] = {"AttributeReadings" -> <||>};
    operator form. Its option is a Block for each call of the operator. *)
 XMLMatchQ[q_, opts : Longest[__?(optionRuleQ[XMLMatchQ])]][el_] :=
   withReadings[OptionValue[XMLMatchQ, {opts}, "AttributeReadings"], matchWith[cachedMatcher[q], el]];
-XMLMatchQ[q_][el_] := matchWith[cachedMatcher[q], el];
+(* Each call of the operator is a call of its own, so the XML* calls in its
+   condition share one set of warned list keys. *)
+XMLMatchQ[q_][el_] := withListKeyWarnings[matchWith[cachedMatcher[q], el]];
 
 XMLMatchQ[el_, q : Except[_?(optionRuleQ[XMLMatchQ])], opts : OptionsPattern[]] :=
   withReadings[OptionValue["AttributeReadings"], matchWith[matcherOf[q], el]];

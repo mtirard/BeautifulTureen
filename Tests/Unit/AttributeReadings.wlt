@@ -106,7 +106,7 @@ TestCreate[
 
 (* In XMLMatchQ, both forms; in the operator form, for each call of the operator.
    Without the option, the nested "relList" has no reading, and is warned about
-   for each element its condition is tried on. *)
+   once for each call of the operator, as each is a call of its own. *)
 TestCreate[
   With[{q = e : XMLPattern["a"] /; XMLMatchQ[e, XMLPattern["a", "relList" -> "x"]]},
     {XMLMatchQ[$rel[[3, 1]], q, "AttributeReadings" -> <|"rel" -> <||>|>],
@@ -384,4 +384,46 @@ TestCreate[
   $Failed,
   {XMLPattern::dupkey},
   TestID -> "list-key-warning-not-on-refused-query"
+];
+
+(* Each key is warned about once per outermost call, however many times the
+   call compiles queries, and again on the next call. *)
+$rels = XMLElement["div", {}, Table[XMLElement["a", {"rel" -> "x"}, {ToString[i]}], {i, 4}]];
+
+TestCreate[
+  XMLCases[$rels, e : XMLPattern["a"] /; XMLMatchQ[e, XMLPattern["a", "relList" -> "x"]]],
+  {},
+  {XMLPattern::nolistreading},
+  TestID -> "list-key-warning-once-per-call"
+];
+
+TestCreate[
+  Table[XMLCases[$rels, e : XMLPattern["a"] /; XMLMatchQ[e, XMLPattern["a", "relList" -> "x"]]], 2],
+  {{}, {}},
+  {XMLPattern::nolistreading, XMLPattern::nolistreading},
+  TestID -> "list-key-warning-again-next-call"
+];
+
+TestCreate[
+  XMLCases[$rels, e : XMLPattern["a"] /;
+    XMLMatchQ[e, XMLPattern["a", "relList" -> "x"]] || XMLMatchQ[e, XMLPattern["a", "pingList" -> "x"]]],
+  {},
+  {XMLPattern::nolistreading, XMLPattern::nolistreading},
+  TestID -> "list-key-warning-once-per-key"
+];
+
+TestCreate[
+  Select[$rels[[3]], XMLMatchQ[XMLPattern["a", "headersList" -> "x"]]],
+  {},
+  {XMLPattern::nolistreading},
+  TestID -> "list-key-warning-once-operator-form"
+];
+
+(* A call of the operator form shares one set between the calls in its condition. *)
+TestCreate[
+  XMLMatchQ[e : XMLPattern["a"] /;
+    XMLMatchQ[e, XMLPattern["a", "relList" -> "y"]] || XMLMatchQ[e, XMLPattern["a", "relList" -> "y"]]][$rels[[3, 1]]],
+  False,
+  {XMLPattern::nolistreading},
+  TestID -> "list-key-warning-once-per-operator-call"
 ];
