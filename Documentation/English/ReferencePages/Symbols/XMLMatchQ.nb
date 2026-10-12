@@ -203,6 +203,8 @@ Cell[TextData[{"Without the option, ", Cell[BoxData[StyleBox["\"relList\"", "TR"
 
 Cell[BoxData["XMLMatchQ[XMLElement[\"a\",{\"rel\"->\"nofollow noopener\",\"href\"->\"/ad\"},{\"Ad\"}],XMLPattern[\"a\",\"relList\"->\"nofollow\"]]"], "Input"],
 
+Cell["XMLPattern::nolistreading: The key \"relList\" looks like a list key, but \"rel\" has no reading, so \"relList\" is matched as an attribute of that name. To match the tokens of \"rel\", add a reading: $AttributeReadings[\"rel\"] = <||> for the session, or \"AttributeReadings\" -> <|\"rel\" -> <||>|> in the call.", "Message", "MSG"],
+
 Cell[BoxData["False"], "Output"]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["In the operator form, give the option with the pattern:", "ExampleText"], Cell[BoxData["links={XMLElement[\"a\",{\"rel\"->\"nofollow\"},{\"Ad\"}],XMLElement[\"a\",{\"href\"->\"/home\"},{\"Home\"}]};

@@ -314,6 +314,8 @@ Cell["Without the option, \"relList\" is an ordinary attribute name, which no el
 
 Cell[BoxData["XMLCases[links,XMLPattern[\"a\",\"relList\"->\"nofollow\"]]"], "Input"],
 
+Cell["XMLPattern::nolistreading: The key \"relList\" looks like a list key, but \"rel\" has no reading, so \"relList\" is matched as an attribute of that name. To match the tokens of \"rel\", add a reading: $AttributeReadings[\"rel\"] = <||> for the session, or \"AttributeReadings\" -> <|\"rel\" -> <||>|> in the call.", "Message", "MSG"],
+
 Cell[BoxData[RowBox[{"{", "}"}]], "Output"]}, Open]]}, Open]]}, Open]],
 
 Cell[CellGroupData[{
