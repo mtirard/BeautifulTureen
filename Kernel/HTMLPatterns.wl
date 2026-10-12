@@ -3366,32 +3366,33 @@ roleOf[el : XMLElement[tag_, _, _], lookup_, msgHead_] :=
 (* =========================================================== *)
 
 (* ---- Pass A: tree -> token stream (itV = verbatim text; itNl = <br>;
-   itBr = block boundary). The preserve flag rides down the recursion. ---- *)
+   itBr = block boundary). The preserve flag rides down the recursion. roleFn
+   gives an element's role, messaging a bad one under the caller's symbol. ---- *)
 itToks[s_String, False, _] := {s};
 itToks[s_String, True, _] := {itV[s]};
-itToks[l_List, pre_, rules_] := Flatten[itToks[#, pre, rules] & /@ l];
-itToks[el_XMLElement, pre_, rules_] := itElToks[el, roleOf[el, rules, HTMLInnerText], pre, rules];
+itToks[l_List, pre_, roleFn_] := Flatten[itToks[#, pre, roleFn] & /@ l];
+itToks[el_XMLElement, pre_, roleFn_] := itElToks[el, roleFn[el], pre, roleFn];
 itToks[_, _, _] := {};
 
-itElToks[XMLElement[_, _, ch_], role_, pre_, rules_] :=
+itElToks[XMLElement[_, _, ch_], role_, pre_, roleFn_] :=
   Switch[role,
     "Skip",         {},
     "LineBreak",    {itNl},
-    "Preformatted", Join[{itBr}, Flatten[itToks[#, True, rules] & /@ ch], {itBr}],
-    "Block",        Join[{itBr}, Flatten[itToks[#, pre, rules] & /@ ch], {itBr}],
-    _,              Flatten[itToks[#, pre, rules] & /@ ch]];
+    "Preformatted", Join[{itBr}, Flatten[itToks[#, True, roleFn] & /@ ch], {itBr}],
+    "Block",        Join[{itBr}, Flatten[itToks[#, pre, roleFn] & /@ ch], {itBr}],
+    _,              Flatten[itToks[#, pre, roleFn] & /@ ch]];
 
 (* A top element that is not being rendered gives its descendant text content,
    as the innerText getter does (step 1): all of it, a "Skip" inside included,
    but trimmed at both ends as every result is. A list's top elements are each
    such an element. *)
-itTopToks[el_XMLElement, rules_] :=
-  With[{role = roleOf[el, rules, HTMLInnerText]},
+itTopToks[el_XMLElement, roleFn_] :=
+  With[{role = roleFn[el]},
     If[role === "Skip",
       {itV[StringTrim[textContentWalk[el], HTMLWhitespace]]},
-      itElToks[el, role, False, rules]]];
-itTopToks[l_List, rules_] := Flatten[itTopToks[#, rules] & /@ l];
-itTopToks[x_, rules_] := itToks[x, False, rules];
+      itElToks[el, role, False, roleFn]]];
+itTopToks[l_List, roleFn_] := Flatten[itTopToks[#, roleFn] & /@ l];
+itTopToks[x_, roleFn_] := itToks[x, False, roleFn];
 
 (* ---- Pass B: tokens -> atoms -> string. Words and soft spaces from normal
    text; verbatim text is one opaque atom; break markers pass through. ---- *)
@@ -3428,6 +3429,10 @@ itSerialize[toks_, bsep_] :=
     {"", 0, 0},
     Flatten[atomize /@ toks]];
 
+(* The inner text of tree, given roleFn, which gives an element's role, and the
+   block separator bsep. HTMLToNotebook uses it for a table cell's text. *)
+innerText[tree_, roleFn_, bsep_] := itSerialize[itTopToks[tree, roleFn], bsep];
+
 (* ---- Public interface ---- *)
 Options[HTMLInnerText] = {"Roles" -> {}, "BlockSeparator" -> "\n", "AttributeReadings" -> <||>};
 
@@ -3438,7 +3443,7 @@ HTMLInnerText[tree_, opts : OptionsPattern[]] :=
   withReadings[OptionValue["AttributeReadings"],
     Replace[ruleLookups[{OptionValue["Roles"]}, HTMLInnerText, tree], {
       $Failed -> $Failed,
-      {roles_} :> itSerialize[itTopToks[tree, roles], OptionValue["BlockSeparator"]]}]
+      {roles_} :> innerText[tree, roleOf[#, roles, HTMLInnerText] &, OptionValue["BlockSeparator"]]}]
   ] /; validTextInputQ[tree];
 
 HTMLInnerText[tree_, OptionsPattern[]] :=
@@ -3789,11 +3794,12 @@ hrConstruct[_] := Cell["", "Text", CellFrame -> {{0, 0}, {0, 1}}];
    than it, else Grid (positional, blank header, every row kept). The header
    row is the one row of a <thead>, or with no <thead> a leading all-<th> row.
    Dataset/Grid over Tabular because the paclet floor is WL 12.3. Cells degrade
-   to plain text; in the Grid form a <th> cell is bold. See ADR 0003. *)
-cellText[XMLElement[_, _, c_]] := StringTrim[normWS[StringJoin[textContentWalk /@ c]]];
+   to plain text, which is what HTMLInnerText gives for the cell under the
+   call's "Roles"; in the Grid form a <th> cell is bold. See ADR 0003. *)
+cellText[cell_XMLElement, ctx_] := innerText[cell, nodeRole[#, ctx] &, "\n"];
 
-gridItem[e : XMLElement["th", _, _]] := With[{t = cellText[e]}, If[t === "", t, Style[t, Bold]]];
-gridItem[e_] := cellText[e];
+gridItem[e : XMLElement["th", _, _], ctx_] := With[{t = cellText[e, ctx]}, If[t === "", t, Style[t, Bold]]];
+gridItem[e_, ctx_] := cellText[e, ctx];
 
 tableCellsOf[tr_] := Cases[tr[[3]], XMLElement["th" | "td", _, _]];
 
@@ -3835,12 +3841,12 @@ gridCell[rows_] := Cell[BoxData[ToBoxes[Grid[rectangular[rows],
 
 (* A <caption> is a Text cell before the table's cell, converted as a paragraph
    is, so that it is not lost (ADR 0003). *)
-tableConstruct[el_XMLElement, ctx_] := Join[captionCells[el, ctx], {tableCell[el]}];
+tableConstruct[el_XMLElement, ctx_] := Join[captionCells[el, ctx], {tableCell[el, ctx]}];
 
 captionCells[XMLElement[_, _, ch_], ctx_] :=
   blockEmit[Cases[ch, XMLElement["caption", _, _]], <|ctx, "blk" -> "Text"|>];
 
-tableCell[el_XMLElement] :=
+tableCell[el_XMLElement, ctx_] :=
   Module[{tagged, inHead, rows, headerPos, headers, body},
     (* A row with no cells is ignored, also when choosing the header row *)
     tagged = DeleteCases[MapAt[tableCellsOf, tableRowsOf[el], {All, 2}], {_, {}}];
@@ -3848,13 +3854,13 @@ tableCell[el_XMLElement] :=
     {inHead, rows} = Transpose[tagged];
     headerPos = headerRowPosition[rows, inHead];
     {headers, body} = If[headerPos === None, {None, {}},
-      {cellText /@ rows[[headerPos]], Delete[rows, headerPos]}];
+      {cellText[#, ctx] & /@ rows[[headerPos]], Delete[rows, headerPos]}];
     (* A Dataset with no body rows shows no header and fails to export. A
        Dataset has no column for a cell beyond the last label. *)
     If[headerPos =!= None && body =!= {} && DuplicateFreeQ[headers] &&
         Max[Length /@ body] <= Length[headers],
-      datasetCell[headers, Map[cellText, body, {2}]],
-      gridCell[Map[gridItem, rows, {2}]]]];
+      datasetCell[headers, Map[cellText[#, ctx] &, body, {2}]],
+      gridCell[Map[gridItem[#, ctx] &, rows, {2}]]]];
 
 (* ---- Public interface ---- *)
 
