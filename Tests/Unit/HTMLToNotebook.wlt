@@ -347,6 +347,72 @@ TestCreate[
   TestID -> "htn-table-thead-two-rows-colspan"
 ];
 
+(* The strings of the table in the notebook of h, labels and cells in order. Line
+   breaks in cells are checked here, not in the Markdown, whose exporter (15.0)
+   breaks the GFM table on a newline in a cell *)
+tableStrings[h_String, opts___] := Cases[
+  Replace[
+    ToExpression @ First @ FirstCase[
+      HTMLToNotebook[ImportString[h, {"HTML", "XMLObject"}], opts],
+      Cell[_BoxData, "Output", ___], Missing[], Infinity],
+    {g_Grid :> First[g], d_Dataset :> Normal[Normal[d]]}],
+  _String, Infinity];
+
+(* A cell's text is what HTMLInnerText gives for it: no <style> text, and <br>
+   gives a line break *)
+TestCreate[
+  tableStrings["<table><tr><th>A</th></tr><tr><td>1<style>.x{}</style></td></tr><tr><td>a<br>b</td></tr></table>"],
+  {"A", "1", "A", "a\nb"},
+  TestID -> "htn-table-cell-innertext"
+];
+
+(* The same in the Grid form *)
+TestCreate[
+  tableStrings["<table><tr><th>a<br>b</th><td>1<script>var y</script></td></tr></table>"],
+  {"a\nb", "1"},
+  TestID -> "htn-table-cell-innertext-grid"
+];
+
+TestCreate[
+  nbmd["<table><tr><td>x<script>var y</script></td></tr></table>"],
+  "|  |\n| - |\n| x |",
+  TestID -> "htn-table-cell-no-script"
+];
+
+(* A block boundary in a cell gives a line break *)
+TestCreate[
+  tableStrings["<table><tr><td><p>a</p><p>b</p></td></tr></table>"],
+  {"a\nb"},
+  TestID -> "htn-table-cell-blocks"
+];
+
+(* A "Roles" rule changes a cell's text as it changes HTMLInnerText's *)
+TestCreate[
+  With[{h = "<table><tr><td>keep <span class=\"ad\">drop</span> <span class=\"b\">own line</span></td></tr></table>",
+      roles = {XMLPattern["span", "classList" -> "ad"] -> "Skip", ".b" -> "Block"}},
+    {tableStrings[h, "Roles" -> roles],
+     {HTMLInnerText[XMLFirstCase[ImportString[h, {"HTML", "XMLObject"}], "td"], "Roles" -> roles]}}],
+  {{"keep\nown line"}, {"keep\nown line"}},
+  TestID -> "htn-table-cell-roles"
+];
+
+(* The call's "AttributeReadings" reach a "Roles" rule for an element in a cell *)
+TestCreate[
+  nbmd2["<table><tr><td>keep <span data-x=\"q ad\">drop</span></td></tr></table>",
+    "AttributeReadings" -> <|"data-x" -> <|"ListKey" -> "xList"|>|>,
+    "Roles" -> {XMLPattern["span", "xList" -> "ad"] -> "Skip"}],
+  "|  |\n| - |\n| keep |",
+  TestID -> "htn-table-cell-readings"
+];
+
+(* A bad role for an element in a cell is a mistake in the HTMLToNotebook call *)
+TestCreate[
+  tableStrings["<table><tr><td>a<span>b</span></td></tr></table>", "Roles" -> {"span" -> "Nope"}],
+  {"ab"},
+  {HTMLToNotebook::badrole},
+  TestID -> "htn-table-cell-badrole"
+];
+
 (* A table with only empty rows is still an empty Grid *)
 TestCreate[
   nbmd["<table><tr></tr><tr></tr></table>"],
