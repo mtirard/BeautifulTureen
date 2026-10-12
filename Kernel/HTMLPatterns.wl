@@ -3785,9 +3785,9 @@ quoteCells[XMLElement[_, _, ch_], ctx_] :=
 hrConstruct[_] := Cell["", "Text", CellFrame -> {{0, 0}, {0, 1}}];
 
 (* <table> -> Dataset when a header row gives unique column labels (an
-   idiomatic GFM header) and at least one body row follows it, else Grid
-   (positional, blank header, every row kept). The header row is the one row of
-   a <thead>, or with no <thead> a leading all-<th> row.
+   idiomatic GFM header), at least one body row follows it and none is wider
+   than it, else Grid (positional, blank header, every row kept). The header
+   row is the one row of a <thead>, or with no <thead> a leading all-<th> row.
    Dataset/Grid over Tabular because the paclet floor is WL 12.3. Cells degrade
    to plain text; in the Grid form a <th> cell is bold. See ADR 0003. *)
 cellText[XMLElement[_, _, c_]] := StringTrim[normWS[StringJoin[textContentWalk /@ c]]];
@@ -3841,16 +3841,19 @@ captionCells[XMLElement[_, _, ch_], ctx_] :=
   blockEmit[Cases[ch, XMLElement["caption", _, _]], <|ctx, "blk" -> "Text"|>];
 
 tableCell[el_XMLElement] :=
-  Module[{tagged, inHead, rows, headerPos, headers},
+  Module[{tagged, inHead, rows, headerPos, headers, body},
     (* A row with no cells is ignored, also when choosing the header row *)
     tagged = DeleteCases[MapAt[tableCellsOf, tableRowsOf[el], {All, 2}], {_, {}}];
     If[tagged === {}, Return[gridCell[{{""}}]]];
     {inHead, rows} = Transpose[tagged];
     headerPos = headerRowPosition[rows, inHead];
-    headers = If[headerPos === None, None, cellText /@ rows[[headerPos]]];
-    (* A Dataset with no body rows shows no header and fails to export *)
-    If[headerPos =!= None && Length[rows] > 1 && DuplicateFreeQ[headers],
-      datasetCell[headers, Map[cellText, Delete[rows, headerPos], {2}]],
+    {headers, body} = If[headerPos === None, {None, {}},
+      {cellText /@ rows[[headerPos]], Delete[rows, headerPos]}];
+    (* A Dataset with no body rows shows no header and fails to export. A
+       Dataset has no column for a cell beyond the last label. *)
+    If[headerPos =!= None && body =!= {} && DuplicateFreeQ[headers] &&
+        Max[Length /@ body] <= Length[headers],
+      datasetCell[headers, Map[cellText, body, {2}]],
       gridCell[Map[gridItem, rows, {2}]]]];
 
 (* ---- Public interface ---- *)

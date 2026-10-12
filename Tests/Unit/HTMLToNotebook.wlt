@@ -324,6 +324,29 @@ TestCreate[
   TestID -> "htn-table-thead-dup-labels"
 ];
 
+(* A body row wider than the header row gives the Grid: a Dataset has no
+   column for the extra cell, so it would be lost *)
+TestCreate[
+  nbmd["<table><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td><td>3</td></tr></table>"],
+  "|  |  |  |\n| - | - | - |\n| **A** | **B** |  |\n| 1 | 2 | 3 |",
+  TestID -> "htn-table-body-row-wider"
+];
+
+(* A body row shorter than the header row is padded with blanks *)
+TestCreate[
+  nbmd["<table><tr><th>A</th><th>B</th></tr><tr><td>1</td></tr><tr><td>2</td><td>3</td></tr></table>"],
+  "| A | B |\n| - | - |\n| 1 |  |\n| 2 | 3 |",
+  TestID -> "htn-table-body-row-shorter"
+];
+
+(* The two-row <thead> of #46: a spanning cell over two labels. The Grid keeps
+   every cell, where the Dataset kept only Group and the first column *)
+TestCreate[
+  nbmd["<table><thead><tr><th colspan=2>Group</th></tr><tr><th>a</th><th>b</th></tr></thead><tbody><tr><td>1</td><td>2</td></tr></tbody></table>"],
+  "|  |  |\n| - | - |\n| **Group** |  |\n| **a** | **b** |\n| 1 | 2 |",
+  TestID -> "htn-table-thead-two-rows-colspan"
+];
+
 (* A table with only empty rows is still an empty Grid *)
 TestCreate[
   nbmd["<table><tr></tr><tr></tr></table>"],
