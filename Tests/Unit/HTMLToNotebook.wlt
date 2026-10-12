@@ -251,6 +251,30 @@ TestCreate[
   TestID -> "htn-table-th-empty"
 ];
 
+(* A table's rows are its own: a nested table's rows are not rows of the outer
+   table, and the nested table is only text in the cell that holds it. Each
+   nested table has one cell, so its text is the same however cell text joins
+   cells and rows *)
+TestCreate[
+  nbmd["<table><tr><th>A</th><th>B</th></tr><tr><td><table><tr><td>x</td></tr></table></td><td>2</td></tr></table>"],
+  "| A | B |\n| - | - |\n| x | 2 |",
+  TestID -> "htn-table-nested"
+];
+
+TestCreate[
+  nbmd["<table><tbody><tr><td><table><tbody><tr><td>x</td></tr></tbody></table></td></tr></tbody></table>"],
+  "|  |\n| - |\n| x |",
+  TestID -> "htn-table-nested-tbody"
+];
+
+(* <thead>, <tbody> and <tfoot> rows and rows directly under <table> all count,
+   in document order *)
+TestCreate[
+  nbmd["<table><thead><tr><th>H</th></tr></thead><tbody><tr><td>1</td></tr></tbody><tr><td>2</td></tr><tfoot><tr><td>F</td></tr></tfoot><tbody><tr><td>3</td></tr></tbody></table>"],
+  "| H |\n| - |\n| 1 |\n| 2 |\n| F |\n| 3 |",
+  TestID -> "htn-table-sections-order"
+];
+
 (* === HTMLToNotebook: Roles + Constructs overrides === *)
 
 (* "Roles" (Layer 1) shares HTMLInnerText's machinery: skip a block by class *)

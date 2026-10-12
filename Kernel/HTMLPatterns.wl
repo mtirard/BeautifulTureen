@@ -3795,6 +3795,15 @@ gridItem[e : XMLElement["th", _, _]] := With[{t = cellText[e]}, If[t === "", t, 
 gridItem[e_] := cellText[e];
 
 tableCellsOf[tr_] := Cases[tr[[3]], XMLElement["th" | "td", _, _]];
+
+(* A table's own rows, in document order: the <tr> children of the <table> and
+   of its <thead>, <tbody> and <tfoot>, not the rows of a nested table *)
+tableRowsOf[XMLElement[_, _, ch_]] :=
+  Catenate @ Replace[ch, {
+    tr : XMLElement["tr", _, _] :> {tr},
+    XMLElement["thead" | "tbody" | "tfoot", _, sec_] :> Cases[sec, XMLElement["tr", _, _]],
+    _ -> {}}, {1}];
+
 tableHeaderRowQ[tr_] :=
   With[{cs = tableCellsOf[tr]},
     cs =!= {} && AllTrue[cs, MatchQ[#, XMLElement["th", _, _]] &]];
@@ -3821,7 +3830,7 @@ captionCells[XMLElement[_, _, ch_], ctx_] :=
   blockEmit[Cases[ch, XMLElement["caption", _, _]], <|ctx, "blk" -> "Text"|>];
 
 tableCell[el_XMLElement] :=
-  Module[{trs = Cases[el, _XMLElement?(MatchQ[#, XMLElement["tr", _, _]] &), Infinity],
+  Module[{trs = tableRowsOf[el],
           rows, hasHeader, headers},
     rows = tableCellsOf /@ trs;
     rows = DeleteCases[rows, {}];
