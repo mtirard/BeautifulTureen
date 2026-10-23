@@ -1016,3 +1016,14 @@ TestCreate[
   {Child::blank, Descendant::blank, Child::blank},
   TestID -> "blank-stage-refused"
 ];
+
+(* A body that can reject and gives Nothing or Sequence[] gives no value, as in
+   Cases. *)
+TestCreate[
+  {XMLCases[$tree, Child[XMLPattern["div"], x : XMLPattern["p"]] :> Nothing /; True],
+   XMLCases[$tree, Child[XMLPattern["div"], x : XMLPattern["p"]] :> Sequence[] /; True],
+   HTMLTextContent @ XMLFirstCase[$tree,
+     Child[XMLPattern["div"], x : XMLPattern["p"]] :> If[HTMLTextContent[x] === "Hello", Nothing, x] /; True]},
+  {{}, {}, "World"},
+  TestID -> "chain-rule-no-value"
+];
