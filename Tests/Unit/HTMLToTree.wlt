@@ -234,8 +234,9 @@ TestCreate[
 (* Top-down: a width only. Another layout sizes itself. *)
 TestCreate[
   {NumericQ[treeOption[HTMLToTree[$cmpBody, TreeLayout -> Top], ImageSize]],
+    NumericQ[treeOption[HTMLToTree[$cmpBody, TreeLayout -> Bottom], ImageSize]],
     treeOption[HTMLToTree[$cmpBody, TreeLayout -> "RadialEmbedding"], ImageSize]},
-  {True, Missing[]},
+  {True, True, Missing[]},
   TestID -> "htt-image-size-other-layouts"
 ];
 

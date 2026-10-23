@@ -3863,9 +3863,10 @@ hrConstruct[_] := Cell["", "Text", CellFrame -> {{0, 0}, {0, 1}}];
    idiomatic GFM header), at least one body row follows it and none is wider
    than it, else Grid (positional, blank header, every row kept). The header
    row is the one row of a <thead>, or with no <thead> a leading all-<th> row.
-   Dataset/Grid over Tabular because the paclet floor is WL 12.3. Cells degrade
-   to plain text, which is what HTMLInnerText gives for the cell under the
-   call's "Roles"; in the Grid form a <th> cell is bold. See ADR 0003. *)
+   Dataset/Grid over Tabular because Tabular needs 14.1, above the paclet
+   floor of 13.2. Cells degrade to plain text, which is what HTMLInnerText
+   gives for the cell under the call's "Roles"; in the Grid form a <th> cell
+   is bold. See ADR 0003. *)
 cellText[cell_XMLElement, ctx_] := innerText[cell, nodeRole[#, ctx] &, "\n"];
 
 gridItem[e : XMLElement["th", _, _], ctx_] := With[{t = cellText[e, ctx]}, If[t === "", t, Style[t, Bold]]];
@@ -4097,8 +4098,8 @@ constantLabels[rules_List] := Replace[rules,
    An ImageSize computed from the tree as displayed: only the children that
    MaxDisplayedChildren shows count, plus the "N total" node for the rest.
    For Left, the height comes from the displayed leaves and the width from the
-   number of levels and the widest label at each; for a top-down layout, the width is about 60
-   points per displayed leaf. Any other layout sizes itself. *)
+   number of levels and the widest label at each; for a top-down layout, the
+   width is about 60 points per displayed leaf (Bottom too). Any other layout sizes itself. *)
 
 $leafHeight = 24;
 $charWidth = 7;
@@ -4114,7 +4115,7 @@ treeImageSize[t_, Left, mdc_] :=
    widest pair of neighbouring labels. *)
 levelSpacing[{_}] := 0;
 levelSpacing[widths_] := Max[MovingAverage[widths, 2]] + $levelGap;
-treeImageSize[t_, Automatic | Top, mdc_] := $topDownLeafWidth displayedLeaves[t, {}, mdc];
+treeImageSize[t_, Automatic | Top | Bottom, mdc_] := $topDownLeafWidth displayedLeaves[t, {}, mdc];
 treeImageSize[_, _, _] := Automatic;
 
 (* The number of children shown at position pos: TreeCases rules first, then
@@ -4148,19 +4149,18 @@ labelWidth[_] := 1;
 
 (* ---- Tree options ----
    A bare MaxDisplayedChildren -> m becomes {All -> m}, so that it limits every
-   node; a rule or a list is passed as given. The user's label settings and the default become one
-   TreeElementLabelFunction. TreeLayout -> Left and the computed ImageSize are
+   node; a rule or a list is passed as given. The user's label settings and
+   the default become one TreeElementLabelFunction. TreeLayout -> Left and the computed ImageSize are
    added when the user gives none. A computed {width, height} comes with its
    AspectRatio: Tree keeps the layout's own one otherwise, and draws it in the
    middle of the image. *)
 
-maxDisplayedRules[m : Except[_List | _Rule | _RuleDelayed]] := {All -> m};
-maxDisplayedRules[r : (_Rule | _RuleDelayed)] := {r};
-maxDisplayedRules[l_List] := l;
+maxDisplayedSetting[m : Except[_List | _Rule | _RuleDelayed]] := {All -> m};
+maxDisplayedSetting[m_] := m;
 
 treeOptions[t_, opts_List] := Module[{given, mdc, layout, labels},
   given = Select[Flatten[opts], treeOptionNameQ[First[#]] &];
-  mdc = Join @@ Cases[given, _[MaxDisplayedChildren, m_] :> maxDisplayedRules[m]];
+  mdc = Flatten[Cases[given, _[MaxDisplayedChildren, m_] :> maxDisplayedSetting[m]]];
   layout = FirstCase[given, _[TreeLayout, l_] :> l, Left];
   labels = Join[
     Join @@ Cases[given, _[TreeElementLabelFunction, f_] :> labelRules[f]],
@@ -4169,7 +4169,7 @@ treeOptions[t_, opts_List] := Module[{given, mdc, layout, labels},
     {All -> treeLabel}];
   Join[
     Replace[DeleteCases[given, _[TreeElementLabelFunction | TreeElementLabel, _]],
-      _[MaxDisplayedChildren, m : Except[_List | _Rule | _RuleDelayed]] :> (MaxDisplayedChildren -> {All -> m}), {1}],
+      _[MaxDisplayedChildren, m_] :> (MaxDisplayedChildren -> maxDisplayedSetting[m]), {1}],
     {TreeElementLabelFunction -> labels},
     If[MemberQ[Keys[given], TreeLayout], {}, {TreeLayout -> Left}],
     If[MemberQ[Keys[given], ImageSize], {},
@@ -4189,17 +4189,18 @@ notRuleQ[a_] := !MatchQ[a, _Rule | _RuleDelayed | {(_Rule | _RuleDelayed) ..}];
 HTMLToTree[tree_, n : _?notRuleQ : Infinity, opts : OptionsPattern[]] /;
     countQ[n] && unknownTreeOptions[{opts}] === {} :=
   If[!validTreeQ[tree], messageTreeRefusal[HTMLToTree, tree]; $Failed,
-    Replace[treeSettings[AssociationThread[Keys[Options[HTMLToTree]],
-        OptionValue[HTMLToTree, FilterRules[{opts}, Options[HTMLToTree]], Keys[Options[HTMLToTree]]]]], {
+    Replace[treeSettings[AssociationThread[Keys[Options[HTMLToTree]], OptionValue[HTMLToTree,
+        FilterRules[{opts}, Options[HTMLToTree]], Keys[Options[HTMLToTree]]]]], {
       $Failed -> $Failed,
-      s_ :> With[{t = rootNode[tree, s]},
+      settings_ :> With[{t = rootNode[tree, settings]},
         Tree[TreeData[t], TreeChildren[t], Sequence @@ treeOptions[t, {opts}]]]}]];
 
 HTMLToTree[args___] /; (treeCallMessage[{args}]; False) := Null;
 
-treeCallMessage[{tree_, rest___}] /; unknownTreeOptions[Select[{rest}, !notRuleQ[#] &]] =!= {} :=
-  Message[HTMLToTree::optx, First[First[unknownTreeOptions[Select[{rest}, !notRuleQ[#] &]]]],
-    Unevaluated[HTMLToTree[tree, rest]]];
+treeCallMessage[args : {tree_, rest___}] :=
+  Replace[unknownTreeOptions[Select[{rest}, !notRuleQ[#] &]], {
+    {} :> countMessage[HTMLToTree, args, {1, 2}],
+    {first_, ___} :> Message[HTMLToTree::optx, First[first], Unevaluated[HTMLToTree[tree, rest]]]}];
 treeCallMessage[args_] := countMessage[HTMLToTree, args, {1, 2}];
 
 (* =========================================================== *)
