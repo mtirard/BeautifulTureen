@@ -134,6 +134,62 @@ TestCreate[
   TestID -> "htt-real-page-element-count"
 ];
 
+(* ---- Depth ----
+   DOM depth counts generations of elements from the root. A Cut element (at
+   depth n, with element children) has one Collapsed leaf for all its
+   contents, counting the elements not drawn. *)
+
+collapsed[k_] := Missing["Collapsed", k];
+
+(* Configuration 2 of the prototype's comparison: depth 1 *)
+TestCreate[
+  shape[HTMLToTree[$cmpBody, 1]],
+  e["body"] -> {e["nav"] -> {collapsed[2]}, e["main"] -> {collapsed[12]}, e["footer"] -> {collapsed[1]}},
+  TestID -> "htt-depth-one-comparison"
+];
+
+(* Text has its element's depth: an element at the limit whose contents are
+   only text keeps them, and one with an element among them is cut, its text
+   with it. The count is of every element below, not just the children. *)
+$depthTree = XMLElement["div", {}, {
+  XMLElement["h1", {}, {"Title"}],
+  XMLElement["p", {}, {"Some ", XMLElement["b", {}, {XMLElement["i", {}, {"x"}]}], " text"}],
+  XMLElement["hr", {}, {}],
+  "tail"}];
+
+TestCreate[
+  shape[HTMLToTree[$depthTree, 1]],
+  e["div"] -> {e["h1"] -> {"Title"}, e["p"] -> {collapsed[2]}, e["hr"], "tail"},
+  TestID -> "htt-depth-text-kept-cut-counted"
+];
+
+TestCreate[
+  shape[HTMLToTree[$depthTree, 2]],
+  e["div"] -> {e["h1"] -> {"Title"}, e["p"] -> {"Some ", e["b"] -> {collapsed[1]}, " text"}, e["hr"], "tail"},
+  TestID -> "htt-depth-two"
+];
+
+(* Depth 0: the root with one Collapsed leaf, for an element, a document and a
+   list. A root whose contents are only text keeps them. *)
+TestCreate[
+  shape /@ {HTMLToTree[$depthTree, 0],
+    HTMLToTree[ImportString["<p>Hi</p>", {"HTML", "XMLObject"}], 0],
+    HTMLToTree[{XMLElement["p", {}, {"x"}], "tail"}, 0],
+    HTMLToTree[XMLElement["p", {}, {"x"}], 0],
+    HTMLToTree[{"x"}, 0]},
+  {e["div"] -> {collapsed[5]}, "#document" -> {collapsed[3]}, "#document" -> {collapsed[1]},
+    e["p"] -> {"x"}, "#document" -> {"x"}},
+  TestID -> "htt-depth-zero"
+];
+
+(* Infinity, as when n is omitted, draws everything; so does a depth beyond the
+   deepest element. *)
+TestCreate[
+  shape /@ {HTMLToTree[$cmpBody, Infinity], HTMLToTree[$cmpBody, 6]},
+  {shape[HTMLToTree[$cmpBody]], shape[HTMLToTree[$cmpBody]]},
+  TestID -> "htt-depth-infinity-everything"
+];
+
 (* ---- Options ---- *)
 
 TestCreate[
@@ -256,6 +312,14 @@ TestCreate[
     Last[treeOption[HTMLToTree[$items[30], MaxDisplayedChildren -> Infinity], ImageSize]],
   True,
   TestID -> "htt-image-size-follows-max-displayed-children"
+];
+
+(* The computed size counts the cut tree: three leaves at depth 1 are as tall
+   as three items. *)
+TestCreate[
+  Last[treeOption[HTMLToTree[$cmpBody, 1], ImageSize]],
+  Last[treeOption[HTMLToTree[$items[3]], ImageSize]],
+  TestID -> "htt-depth-image-size"
 ];
 
 (* ---- Labels ----
@@ -438,4 +502,36 @@ TestCreate[
   {capturedMessages[HTMLToTree[$p, 1, 2, TreeLayout -> Top]], Head[Quiet[HTMLToTree[$p, 1, 2]]]},
   {{"HTMLToTree called with 3 arguments; 1 or 2 arguments are expected."}, HTMLToTree},
   TestID -> "htt-message-count-tree-options-not-counted"
+];
+
+(* A depth that is not Infinity or an integer >= 0 gives innf at position 2,
+   and the call stays unevaluated, as XMLCases does for its count. *)
+TestCreate[
+  Replace[withMessages[HTMLToTree[$p, -1, TreeLayout -> Top]], {m_, r_} :> {m, Head[r], List @@ r}],
+  {{"Non-negative integer or Infinity expected at position 2 in HTMLToTree[XMLElement[\"p\", {}, {}], -1, TreeLayout -> Top]."},
+    HTMLToTree, {$p, -1, TreeLayout -> Top}},
+  TestID -> "htt-message-innf"
+];
+
+(* Two at a time, since a third innf in one evaluation is stopped *)
+TestCreate[
+  Head /@ {HTMLToTree[$p, 1.5], HTMLToTree[$p, All]},
+  {HTMLToTree, HTMLToTree},
+  {HTMLToTree::innf, HTMLToTree::innf},
+  TestID -> "htt-message-innf-values"
+];
+
+TestCreate[
+  Head /@ {HTMLToTree[$p, {2}], HTMLToTree[$p, UpTo[2]]},
+  {HTMLToTree, HTMLToTree},
+  {HTMLToTree::innf, HTMLToTree::innf},
+  TestID -> "htt-message-innf-more-values"
+];
+
+(* An invalid depth with an unknown option: innf, not optx *)
+TestCreate[
+  Head[HTMLToTree[$p, "1", Foo -> 1]],
+  HTMLToTree,
+  {HTMLToTree::innf},
+  TestID -> "htt-message-innf-before-optx"
 ];
