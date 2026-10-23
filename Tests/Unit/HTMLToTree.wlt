@@ -185,8 +185,8 @@ TestCreate[
 (* Infinity, as when n is omitted, draws everything; so does a depth beyond the
    deepest element. *)
 TestCreate[
-  shape /@ {HTMLToTree[$cmpBody, Infinity], HTMLToTree[$cmpBody, 6]},
-  {shape[HTMLToTree[$cmpBody]], shape[HTMLToTree[$cmpBody]]},
+  SameQ @@ shape /@ {HTMLToTree[$cmpBody], HTMLToTree[$cmpBody, Infinity], HTMLToTree[$cmpBody, 6]},
+  True,
   TestID -> "htt-depth-infinity-everything"
 ];
 
