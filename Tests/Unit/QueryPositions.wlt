@@ -120,6 +120,14 @@ TestCreate[
   TestID -> "positions-chain-rules"
 ];
 
+(* A value of Nothing is no element, but its site is selected. *)
+TestCreate[
+  Length /@ {positionsOf[$positionsDoc, Child["ul", e : XMLPattern["li"]] :> Nothing /; True],
+    XMLCases[$positionsDoc, Child["ul", e : XMLPattern["li"]] :> Nothing /; True]},
+  {5, 0},
+  TestID -> "positions-chain-no-value"
+];
+
 TestCreate[
   positionsOf[$positionsDoc, Descendant[d : XMLPattern["div"], e : XMLPattern["li"]] :> e /; MemberQ[e[[3]], "y"]],
   {{2, 3, 1, 3, 1, 3, 1, 3, 3}},
@@ -143,8 +151,8 @@ TestCreate[
 TestCreate[
   With[{q = Child["ul", e : XMLPattern["li"]] | XMLPattern["p"]},
     {positionsOf[$positionsDoc, q :> 1 /; True] === positionsOf[$positionsDoc, q],
-     Length[positionsOf[$positionsDoc, q :> 1 /; True]] === Length[XMLCases[$positionsDoc, q :> 1 /; True]] === 8}],
-  {True, True},
+     Length[positionsOf[$positionsDoc, q :> 1 /; True]], Length[XMLCases[$positionsDoc, q :> 1 /; True]]}],
+  {True, 8, 8},
   TestID -> "positions-alternatives-values"
 ];
 
@@ -170,7 +178,8 @@ TestCreate[
     {e : XMLPattern["li"] :> e /; True, 1},
     {Descendant[XMLPattern["div"], XMLPattern["li"]], 2},
     {Child["ul", e : XMLPattern["li"]] :> e /; True, 4},
-    {"ul > li, p", 3}},
+    {"ul > li, p", 3},
+    {(Child["ul", e : XMLPattern["li"]] | Child["div", e : XMLPattern["p"]]) :> e /; !MemberQ[e[[3]], "x"], 2}},
     agreesQ[$positionsDoc, Sequence @@ #] &],
   True,
   TestID -> "positions-count"

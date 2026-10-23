@@ -2049,14 +2049,14 @@ namesIn[s_] :=
 (* The plain form picks the last element of a matching tuple rather than binding
    the tuple: a rule's right-hand side re-evaluates what it is given, and a
    tuple may hold a large element. *)
-chainCases[tree_, q_, n_] /; bodyRejectsQ[q] := Block[{$chainTree = tree}, Take[Last /@ ruleTuples[q], UpTo[n]]];
+chainCases[tree_, q_, n_] /; bodyRejectsQ[q] := Block[{$chainTree = tree}, Take[ruleValues[q], UpTo[n]]];
 chainCases[tree_, q_, n_] /; q["Body"] =!= None :=
   Block[{$chainTree = tree}, Cases[tuplesElements[q, matchedSites[q]], q["TupleRule"], {1}, n]];
 chainCases[tree_, q_, n_] :=
   Block[{$chainTree = tree}, atAll[Last /@ Take[matchedSites[q], UpTo[n]]]];
 
 chainFirst[tree_, q_, default_] /; bodyRejectsQ[q] :=
-  Block[{$chainTree = tree}, Replace[ruleTuples[q], {{{_, v_}, ___} :> v, {} -> default}]];
+  Block[{$chainTree = tree}, Replace[ruleValues[q], {{v_, ___} :> v, {} -> default}]];
 chainFirst[tree_, q_, default_] /; q["Body"] =!= None :=
   Block[{$chainTree = tree},
     FirstCase[tuplesElements[q, matchedSites[q]], q["TupleRule"], default, {1}]];
@@ -2068,19 +2068,22 @@ chainFirst[tree_, q_, default_] :=
    choosing one, as a Condition on the combinator does: as Cases gives the
    places where a rule gives a value, a tuple is accepted when the rule gives
    it one. The value is kept, so the body is not evaluated again once the tuple
-   is chosen. Each accepted tuple is given as {tuple, value}, in document order
-   of its last site. *)
+   is chosen. The accepted tuples are given with their values, keyed by tuple,
+   as {tuples, values}: a value of Nothing or Sequence[] has no place in a
+   list. *)
 ruleTuples[q_] :=
   Module[{rule = q["TupleRule"], elements = tupleElements[q], values = <||>, tuples},
     tuples = siteTuples[q["Chain"],
       Function[t, With[{v = Replace[elements[t], {rule, _ :> $unmatched}]},
         v =!= $unmatched && (values[t] = v; True)]]];
-    {#, values[#]} & /@ tuples];
+    {tuples, values}];
+
+ruleValues[q_] := Replace[ruleTuples[q], {tuples_, values_} :> Lookup[values, Key /@ tuples]];
 
 (* The sites chainCases takes its elements from, or its values: the last sites
-   of the tuples it accepts. *)
+   of the tuples it accepts. A site whose value is Nothing is a site. *)
 chainPositions[tree_, q_, n_] /; bodyRejectsQ[q] :=
-  Block[{$chainTree = tree}, Last @* First /@ Take[ruleTuples[q], UpTo[n]]];
+  Block[{$chainTree = tree}, Last /@ Take[First[ruleTuples[q]], UpTo[n]]];
 chainPositions[tree_, q_, n_] := Block[{$chainTree = tree}, Last /@ Take[matchedSites[q], UpTo[n]]];
 
 (* A chain deletes the elements its last stage selects. Delete removes
