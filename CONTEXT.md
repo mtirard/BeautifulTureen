@@ -85,3 +85,23 @@ This file is a glossary, not a spec. It defines the language we use to talk abou
 **Leaf-collapsing construct**: A construct (`<blockquote>`, `<pre>`, `<table>`) that collapses its whole subtree into a single cell's content rather than recursing into separate child cells. Contrasts with the default recurse-and-flatten behavior of most Block constructs. _Avoid_: table construct (too narrow — also covers blockquote/pre)
 
 **Construct rule**: A user override of the default [[Construct]] map — the Layer-2 analogue of a [[Role rule]] — of the form `pattern -> construct`, tried in order, first match wins. The RHS is a block cell-style string, an inline token, or a constructor function; the [[Display role]] still decides block-vs-inline and wins on conflict. _Avoid_: construct override
+
+### Tree drawing
+
+**HTMLToTree**: A directed, lossy projection of an HTML/XML tree into a `Tree` for display: one node per element and text string, with parts collapsed or removed by the focus, hide and depth settings. _Avoid_: DOM tree, tree view, TreeForm (the WL function it is modelled on)
+
+**DOM depth**: How many generations of elements lie between an element and the element counting starts from: its children are at depth 1, its grandchildren at depth 2. Counting starts at the nearest [[Focused element]] above it, or at the tree's root when there is no focus. With a focus, an element outside every focused element has no depth: it is collapsed, or drawn only because it is on the path to one. Text has the depth of its element. `HTMLToTree[tree, n]` draws elements down to depth *n*. _Avoid_: level (a child element is two WL levels down, at part `{3, i}`), depth alone (WL's `Depth` counts levels)
+
+**Cut element**: A drawn element at the [[DOM depth]] limit that has element children. Its contents are not drawn, except for any [[Focused element]] in them and the path to it: the rest become [[Collapsed run]]s. _Avoid_: truncated element
+
+**Focused element**: An element the `"Focus"` query selects, unless it is a [[Hidden element]] or inside one. It is drawn with its contents below it. _Avoid_: shown element, selected element
+
+**Hidden element**: An element the `"Hide"` query selects. It is removed with its contents and leaves no mark in the tree. Hiding wins over focus. _Avoid_: removed, deleted, skipped (Skip is a [[Display role]])
+
+**Collapsed edge**: A dashed edge from a [[Focused element]] to its nearest drawn ancestor. It stands for the path of undrawn elements between them, which `"CollapsePaths" -> False` draws instead. _Avoid_: collapsed chain, elided edge
+
+**Collapsed run**: Consecutive siblings that are not drawn and contain no [[Focused element]]. They are drawn as one [[Collapsed leaf]], in their place in [[Document order]]. _Avoid_: dropped subtree
+
+**Collapsed leaf**: A `…` leaf standing for *n* undrawn elements, with the data `Missing["Collapsed", n]`. It is how a [[Collapsed run]] is drawn, whether outside any focused element or inside a [[Cut element]]. _Avoid_: ellipsis node, placeholder, marker, elided (that is `MaxDisplayedChildren`'s "N total" node)
+
+**Merged text leaf**: The single text leaf that replaces an element's contents when they hold at least one element and every element in them is Inline. Its text comes from [[HTMLInnerText]] or [[HTMLTextContent]]. The element keeps its own node. _Avoid_: flattened text, inline run
