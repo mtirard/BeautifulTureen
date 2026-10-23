@@ -589,6 +589,136 @@ TestCreate[
   TestID -> "htt-collapse-paths-true-is-default"
 ];
 
+(* ---- Merged text ----
+   A drawn element whose contents hold at least one element, every element in
+   them Inline by Display role, gets one Merged text leaf; it keeps its node. *)
+
+(* Configuration 4 of the prototype's comparison. h1 and the p elements with
+   only text are not merged: there is nothing to merge. *)
+TestCreate[
+  shape[HTMLToTree[$cmpBody, "MergeText" -> HTMLInnerText]],
+  e["body"] -> {
+    e["nav"] -> {"Home About"},
+    e["main"] -> {
+      e["h1"] -> {"Title"},
+      e["section", {"id" -> "a"}] -> {
+        e["h2"] -> {"Intro"},
+        e["p"] -> {"Some bold text"},
+        e["div"] -> {
+          e["aside"] -> {e["section", {"id" -> "b"}] -> {e["h2"] -> {"Note"}}},
+          e["p"] -> {"More"}}},
+      e["div", {"class" -> "ad"}] -> {e["p"] -> {"Buy"}}},
+    e["footer"] -> {e["p"] -> {"Fine print"}}},
+  TestID -> "htt-merge-comparison"
+];
+
+(* HTMLInnerText collapses whitespace; HTMLTextContent keeps the raw text *)
+$mergeP = XMLElement["p", {}, {"Some\n  ", XMLElement["b", {}, {"bold"}], "  text "}];
+
+TestCreate[
+  shape /@ {HTMLToTree[$mergeP, "MergeText" -> HTMLInnerText], HTMLToTree[$mergeP, "MergeText" -> HTMLTextContent]},
+  {e["p"] -> {"Some bold text"}, e["p"] -> {"Some\n  bold  text "}},
+  TestID -> "htt-merge-both-functions"
+];
+
+(* None, the default, keeps separate text leaves *)
+TestCreate[
+  SameQ @@ shape /@ {HTMLToTree[$mergeP], HTMLToTree[$mergeP, "MergeText" -> None]},
+  True,
+  TestID -> "htt-merge-none-is-default"
+];
+
+(* Contents that are only text are not merged: there is nothing to merge, and
+   the strings stay as they are. *)
+TestCreate[
+  shape[HTMLToTree[XMLElement["p", {}, {"  a  ", XMLObject["CDATASection"]["b"]}], "MergeText" -> HTMLInnerText]],
+  e["p"] -> {"  a  ", "b"},
+  TestID -> "htt-merge-text-only-not-merged"
+];
+
+(* "Inline" is decided by Display role under "Roles": a div is Block, unless a
+   rule makes it Inline, and a rule can make a b Block. *)
+$mergeDiv = XMLElement["p", {}, {"a", XMLElement["div", {}, {"b"}], "c"}];
+
+TestCreate[
+  shape /@ {HTMLToTree[$mergeDiv, "MergeText" -> HTMLInnerText],
+    HTMLToTree[$mergeDiv, "MergeText" -> HTMLInnerText, "Roles" -> {"div" -> "Inline"}],
+    HTMLToTree[$mergeDiv, "MergeText" -> HTMLTextContent, "Roles" -> {"div" -> "Inline"}],
+    HTMLToTree[$mergeP, "MergeText" -> HTMLInnerText, "Roles" -> {"b" -> "Block"}]},
+  {e["p"] -> {"a", e["div"] -> {"b"}, "c"}, e["p"] -> {"abc"}, e["p"] -> {"abc"},
+    e["p"] -> {"Some\n  ", e["b"] -> {"bold"}, "  text "}},
+  TestID -> "htt-merge-roles-decide-inline"
+];
+
+(* Elements that are not Inline, such as br (LineBreak) and script (Skip),
+   are not merged. *)
+TestCreate[
+  shape /@ {HTMLToTree[XMLElement["p", {}, {"a", XMLElement["br", {}, {}], "b"}], "MergeText" -> HTMLInnerText],
+    HTMLToTree[XMLElement["p", {}, {"a", XMLElement["script", {}, {"x"}]}], "MergeText" -> HTMLInnerText]},
+  {e["p"] -> {"a", e["br"], "b"}, e["p"] -> {"a", e["script"] -> {"x"}}},
+  TestID -> "htt-merge-not-inline"
+];
+
+(* The text is the function's own result with the same "Roles" and
+   "AttributeReadings": here a role rule naming a list key makes the div
+   Preformatted, so its whitespace is kept. *)
+$mergePre = XMLElement["div", {"data-k" -> "x y"}, {"a  ", XMLElement["b", {}, {"b"}], "  c"}];
+$mergePreOpts = {"Roles" -> {XMLPattern["div", "data-kList" -> "x"] -> "Preformatted"},
+  "AttributeReadings" -> <|"data-k" -> <||>|>};
+
+TestCreate[
+  {shape[HTMLToTree[$mergePre, "MergeText" -> HTMLInnerText, Sequence @@ $mergePreOpts]],
+    HTMLInnerText[$mergePre, Sequence @@ $mergePreOpts]},
+  {e["div", {"data-k" -> "x y"}] -> {"a  b  c"}, "a  b  c"},
+  TestID -> "htt-merge-roles-and-readings-passed"
+];
+
+(* Hidden elements are left out of the merged text, and a Hidden element that
+   is not Inline does not stop the merge. *)
+TestCreate[
+  shape /@ {HTMLToTree[XMLElement["p", {}, {"a ", XMLElement["b", {}, {"x"}], " ", XMLElement["i", {}, {"y"}]}],
+      "MergeText" -> HTMLInnerText, "Hide" -> "i"],
+    HTMLToTree[$mergeDiv, "MergeText" -> HTMLTextContent, "Hide" -> "div"],
+    HTMLToTree[XMLElement["p", {}, {"a", XMLElement["div", {}, {"z"}], XMLElement["b", {}, {"x"}]}],
+      "MergeText" -> HTMLInnerText, "Hide" -> "div"]},
+  {e["p"] -> {"a x"}, e["p"] -> {"a", "c"}, e["p"] -> {"ax"}},
+  TestID -> "htt-merge-hidden-left-out"
+];
+
+(* Merged text that is whitespace only is not drawn, as a text leaf would not
+   be, unless "IncludeWhitespace" is on. *)
+$mergeBlank = XMLElement["p", {}, {" ", XMLElement["b", {}, {}], " "}];
+
+TestCreate[
+  shape /@ {HTMLToTree[$mergeBlank, "MergeText" -> HTMLTextContent],
+    HTMLToTree[$mergeBlank, "MergeText" -> HTMLTextContent, "IncludeWhitespace" -> True]},
+  {e["p"], e["p"] -> {"  "}},
+  TestID -> "htt-merge-whitespace-only"
+];
+
+(* A merged element at the depth limit is not a Cut element: it has its text. *)
+TestCreate[
+  shape /@ {HTMLToTree[$depthTree, 1, "MergeText" -> HTMLInnerText], HTMLToTree[$mergeP, 0, "MergeText" -> HTMLInnerText]},
+  {e["div"] -> {e["h1"] -> {"Title"}, e["p"] -> {"Some x text"}, e["hr"], "tail"}, e["p"] -> {"Some bold text"}},
+  TestID -> "htt-merge-not-cut"
+];
+
+(* A Focused element can be merged; an element holding one, or on a drawn
+   path to one, is not, so that no Focused element is lost. *)
+$mergeInDiv = XMLElement["div", {}, {$mergeP}];
+
+TestCreate[
+  shape /@ {HTMLToTree[$mergeInDiv, "Focus" -> "p", "MergeText" -> HTMLInnerText],
+    HTMLToTree[$mergeInDiv, "Focus" -> "p, b", "MergeText" -> HTMLInnerText],
+    HTMLToTree[$mergeInDiv, 0, "Focus" -> "p, b", "MergeText" -> HTMLInnerText],
+    HTMLToTree[$mergeInDiv, "Focus" -> "b", "CollapsePaths" -> False, "MergeText" -> HTMLInnerText]},
+  {e["div"] -> {e["p"] -> {"Some bold text"}},
+    e["div"] -> {e["p"] -> {"Some\n  ", e["b"] -> {"bold"}, "  text "}},
+    e["div"] -> {e["p"] -> {collapsed[0], e["b"] -> {"bold"}, collapsed[0]}},
+    e["div"] -> {e["p"] -> {collapsed[0], e["b"] -> {"bold"}, collapsed[0]}}},
+  TestID -> "htt-merge-not-on-focus-path"
+];
+
 (* ---- Readings ----
    "AttributeReadings" applies to both queries. *)
 $tokens = XMLElement["ul", {}, {XMLElement["li", {"data-k" -> "a b"}, {"1"}],
@@ -977,4 +1107,52 @@ TestCreate[
   HTMLToTree,
   {HTMLToTree::innf},
   TestID -> "htt-message-innf-before-optx"
+];
+
+(* "MergeText" takes HTMLInnerText and HTMLTextContent as tokens: any other
+   function gives optval. *)
+TestCreate[
+  withMessages[HTMLToTree[$p, "MergeText" -> #]] & /@ {StringJoin[#] &, HTMLToNotebook},
+  {{{"The value of the \"MergeText\" option should be None | HTMLInnerText | HTMLTextContent | Automatic. Got StringJoin[#1] & ."}, $Failed},
+    {{"The value of the \"MergeText\" option should be None | HTMLInnerText | HTMLTextContent | Automatic. Got HTMLToNotebook."}, $Failed}},
+  TestID -> "htt-message-optval-merge-function"
+];
+
+(* Bad "Roles" give HTMLToTree's own copies of HTMLInnerText's messages, once,
+   on every call, whether merging is on or not, and $Failed. *)
+$badRoles = {{3}, {5 -> "Block"}, {Child[XMLPattern["a"]] -> "Block"},
+  {(Child["a", "b"] /; True) -> "Block"}, {Child["a", "b"]?f -> "Block"}};
+$badRolesMessages = {
+  "Each \"Roles\" entry should be a rule pattern -> value or pattern :> value. Got 3.",
+  "The left-hand side of a rule should be an XMLPattern, alternatives of them, or either with a condition pat /; test or a test pat?f, or a CSS selector string that describes one element. Got 5.",
+  "Child[XMLPattern[\"a\"]] is a combinator with fewer than two stages. A combinator needs at least two, but a rule is tried on one element at a time and cannot use one; use an XMLPattern or alternatives of them.",
+  "A condition (/;) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Got Child[\"a\", \"b\"].",
+  "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got (Child[\"a\", \"b\"])?f."};
+
+TestCreate[
+  Table[withMessages[HTMLToTree[$mergeP, "Roles" -> r, "MergeText" -> m]], {m, {Automatic, HTMLInnerText}}, {r, $badRoles}],
+  ConstantArray[{{#}, $Failed} & /@ $badRolesMessages, 2],
+  TestID -> "htt-message-roles"
+];
+
+TestCreate[
+  First /@ Table[withMessages[HTMLToTree[$mergeP, "Roles" -> r, "MergeText" -> HTMLInnerText]], {r, $badRoles}],
+  First /@ Table[withMessages[HTMLInnerText[$mergeP, "Roles" -> r]], {r, $badRoles}],
+  TestID -> "htt-message-roles-as-html-inner-text"
+];
+
+TestCreate[
+  {HTMLToTree[$mergeP, "Roles" -> {3}], HTMLToTree[$mergeP, "Roles" -> {3}, "MergeText" -> HTMLTextContent]},
+  {$Failed, $Failed},
+  {HTMLToTree::notrule, HTMLToTree::notrule},
+  TestID -> "htt-message-roles-head"
+];
+
+(* A rule giving a value that is not a role gives badrole once, when merging
+   looks the role up, and the element keeps its own role. *)
+TestCreate[
+  withMessages[shape[HTMLToTree[$mergeInDiv, "Roles" -> {"b" -> "Bold"}, "MergeText" -> HTMLInnerText]]],
+  {{"A \"Roles\" rule gave \"Bold\", which is not \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\" or \"Skip\". The element gets its role from the built-in user-agent stylesheet instead."},
+    e["div"] -> {e["p"] -> {"Some bold text"}}},
+  TestID -> "htt-message-badrole-once"
 ];
