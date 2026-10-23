@@ -12,6 +12,27 @@ e[tag_, attrs_ : {}] := XMLElement[tag, attrs, {}];
 htmlBody[h_String] := FirstCase[ImportString[h, {"HTML", "XMLObject"}],
   XMLElement["body", __], Missing[], Infinity];
 
+(* Messages captured as a reader sees them, as in Messages.wlt *)
+SetAttributes[capturedMessages, HoldFirst];
+capturedMessages[expr_] := Module[{texts = {}},
+  Internal`HandlerBlock[
+    {"Message", Function[m,
+      Replace[m, Hold[Message[mn : MessageName[_, _], args___], _] :>
+        AppendTo[texts, ToString[
+          StringForm[messageText[mn], Sequence @@ (List @@ Map[
+            Function[a, ToString[Unevaluated[a], InputForm], HoldAllComplete],
+            Hold[args]])],
+          OutputForm, PageWidth -> Infinity]]]]},
+    Quiet[expr]];
+  texts];
+
+SetAttributes[messageText, HoldFirst];
+messageText[MessageName[s_, tag_]] :=
+  Replace[MessageName[s, tag], _MessageName :> MessageName[General, tag]];
+
+SetAttributes[withMessages, HoldFirst];
+withMessages[expr_] := Module[{r}, {capturedMessages[r = expr], r}];
+
 (* ---- Inputs ---- *)
 
 (* A document gets a "#document" root above its root element. *)
@@ -188,6 +209,253 @@ TestCreate[
   SameQ @@ shape /@ {HTMLToTree[$cmpBody], HTMLToTree[$cmpBody, Infinity], HTMLToTree[$cmpBody, 6]},
   True,
   TestID -> "htt-depth-infinity-everything"
+];
+
+(* ---- Hide ----
+   Hidden elements are removed with their contents and leave no mark. The
+   query is matched against the original input. *)
+
+(* Configuration 3 of the prototype's comparison *)
+TestCreate[
+  shape[HTMLToTree[$cmpBody, "Hide" -> ".ad"]],
+  e["body"] -> {
+    e["nav"] -> {e["a", $rect] -> {"Home"}, e["a", $rect] -> {"About"}},
+    e["main"] -> {
+      e["h1"] -> {"Title"},
+      e["section", {"id" -> "a"}] -> {
+        e["h2"] -> {"Intro"},
+        e["p"] -> {"Some ", e["b"] -> {"bold"}, " text"},
+        e["div"] -> {
+          e["aside"] -> {e["section", {"id" -> "b"}] -> {e["h2"] -> {"Note"}}},
+          e["p"] -> {"More"}}}},
+    e["footer"] -> {e["p"] -> {"Fine print"}}},
+  TestID -> "htt-hide-comparison"
+];
+
+(* Combinators see the original input: hiding each li after another hides the
+   second and third, not just the second, as it would if the second were
+   removed first; and :has() sees a b that is itself hidden. *)
+$list3 = XMLElement["ul", {}, {XMLElement["li", {}, {"1"}], XMLElement["li", {}, {"2"}],
+  XMLElement["li", {}, {"3"}]}];
+
+TestCreate[
+  shape[HTMLToTree[$list3, "Hide" -> Adjacent[XMLPattern["li"], XMLPattern["li"]]]],
+  e["ul"] -> {e["li"] -> {"1"}},
+  TestID -> "htt-hide-adjacent-original-input"
+];
+
+TestCreate[
+  shape[HTMLToTree[XMLElement["div", {}, {XMLElement["p", {}, {XMLElement["b", {}, {}], "x"}],
+      XMLElement["p", {}, {"y"}]}], "Hide" -> "b, p:has(b)"]],
+  e["div"] -> {e["p"] -> {"y"}},
+  TestID -> "htt-hide-has-original-input"
+];
+
+(* A Hidden element leaves no mark, in a Cut element's count too *)
+TestCreate[
+  shape[HTMLToTree[$depthTree, 1, "Hide" -> "i"]],
+  e["div"] -> {e["h1"] -> {"Title"}, e["p"] -> {collapsed[1]}, e["hr"], "tail"},
+  TestID -> "htt-hide-not-counted-at-cut"
+];
+
+TestCreate[
+  shape[HTMLToTree[$depthTree, 1, "Hide" -> "b"]],
+  e["div"] -> {e["h1"] -> {"Title"}, e["p"] -> {"Some ", " text"}, e["hr"], "tail"},
+  TestID -> "htt-hide-cut-element-text-only-left"
+];
+
+(* A bare element root that hide selects is kept, with root; hide still
+   applies below it. *)
+TestCreate[
+  withMessages[shape[HTMLToTree[$list3, "Hide" -> "ul, li:first-child"]]],
+  {{"The root element cannot be hidden; it was kept."}, e["ul"] -> {e["li"] -> {"2"}, e["li"] -> {"3"}}},
+  TestID -> "htt-hide-bare-root-kept"
+];
+
+(* A document's root element is an element like any other, and hiding
+   everything below the root gives no message. *)
+$hiDoc = ImportString["<p>Hi</p>", {"HTML", "XMLObject"}];
+
+TestCreate[
+  withMessages[shape[HTMLToTree[$hiDoc, "Hide" -> "html"]]],
+  {{}, "#document"},
+  TestID -> "htt-hide-document-root-element"
+];
+
+(* ---- Focus ----
+   Only the Focused elements and their contents are drawn. A Focused element
+   hangs from its nearest drawn ancestor, by a Collapsed edge when elements
+   were skipped; runs of undrawn siblings become Collapsed leaves in place. *)
+
+(* The options that make a Collapsed edge, on a subtree *)
+edge[t_Tree] := Lookup[Options[t], {ParentEdgeStyle, ParentEdgeLabel}, None];
+
+$focusSections = HTMLToTree[$cmpBody, "Focus" -> "section"];
+
+(* Configuration 5 of the prototype's comparison. A run joins elements from
+   several depths: nav and its two a, then h1 inside main. *)
+TestCreate[
+  shape[$focusSections],
+  e["body"] -> {
+    collapsed[4],
+    e["section", {"id" -> "a"}] -> {
+      e["h2"] -> {"Intro"},
+      e["p"] -> {"Some ", e["b"] -> {"bold"}, " text"},
+      e["div"] -> {
+        e["aside"] -> {e["section", {"id" -> "b"}] -> {e["h2"] -> {"Note"}}},
+        e["p"] -> {"More"}}},
+    collapsed[4]},
+  TestID -> "htt-focus-comparison"
+];
+
+TestCreate[
+  edge[TreeChildren[$focusSections][[2]]],
+  {Dashed, Placed["main", Tooltip]},
+  TestID -> "htt-focus-collapsed-edge"
+];
+
+(* A Focused element nested in another is part of its contents: no Collapsed
+   edge, and nothing collapsed around it. *)
+TestCreate[
+  edge[TreeChildren[TreeChildren[TreeChildren[TreeChildren[$focusSections][[2]]][[3]]][[1]]][[1]]],
+  {None, None},
+  TestID -> "htt-focus-nested-part-of-contents"
+];
+
+(* The path is the skipped elements' compound selectors, joined by " > " *)
+$deep = XMLElement["div", {}, {XMLElement["main", {"id" -> "m"}, {
+  XMLElement["article", {"class" -> "x y"}, {XMLElement["p", {}, {"deep"}]}]}]}];
+
+TestCreate[
+  With[{t = HTMLToTree[$deep, "Focus" -> "p"]}, {shape[t], edge[First[TreeChildren[t]]]}],
+  {e["div"] -> {e["p"] -> {"deep"}}, {Dashed, Placed["main#m > article.x.y", Tooltip]}},
+  TestID -> "htt-focus-path-selectors"
+];
+
+(* A Focused element whose parent is drawn hangs from it by an ordinary edge.
+   Equal siblings are told apart: li:first-child focuses only the first. *)
+$twins = XMLElement["ul", {}, {XMLElement["li", {}, {"same"}], XMLElement["li", {}, {"same"}]}];
+
+TestCreate[
+  With[{t = HTMLToTree[$twins, "Focus" -> "li:first-child"]}, {shape[t], edge[First[TreeChildren[t]]]}],
+  {e["ul"] -> {e["li"] -> {"same"}, collapsed[1]}, {None, None}},
+  TestID -> "htt-focus-equal-siblings"
+];
+
+(* A run of text only is still drawn, counting 0; text and elements together
+   count the elements. *)
+TestCreate[
+  shape[HTMLToTree[XMLElement["div", {}, {"intro ", XMLElement["p", {}, {"x"}], " and ",
+    XMLElement["span", {}, {XMLElement["i", {}, {}]}], "\n"}], "Focus" -> "p"]],
+  e["div"] -> {collapsed[0], e["p"] -> {"x"}, collapsed[2]},
+  TestID -> "htt-focus-text-only-run"
+];
+
+(* Matching is on the original input, for combinators, CSS and alternatives *)
+TestCreate[
+  shape[HTMLToTree[$list3, "Focus" -> Adjacent[XMLPattern["li"], XMLPattern["li"]]]],
+  e["ul"] -> {collapsed[1], e["li"] -> {"2"}, e["li"] -> {"3"}},
+  TestID -> "htt-focus-adjacent"
+];
+
+TestCreate[
+  shape[HTMLToTree[$cmpBody, "Focus" -> "p:has(b)" | XMLPattern["footer"]]],
+  e["body"] -> {collapsed[5], e["p"] -> {"Some ", e["b"] -> {"bold"}, " text"}, collapsed[7],
+    e["footer"] -> {e["p"] -> {"Fine print"}}},
+  TestID -> "htt-focus-css-has-and-alternatives"
+];
+
+(* A document: the root element is under "#document", and can be focused *)
+TestCreate[
+  With[{t = HTMLToTree[ImportString["<p>Hi</p><p>Bye</p>", {"HTML", "XMLObject"}], "Focus" -> "p:last-child"]},
+    {shape[t], edge[TreeChildren[t][[2]]]}],
+  {"#document" -> {collapsed[1], e["p"] -> {"Bye"}}, {Dashed, Placed["html > body", Tooltip]}},
+  TestID -> "htt-focus-document"
+];
+
+TestCreate[
+  shape[HTMLToTree[{XMLElement["p", {}, {"x"}], "tail", XMLElement["b", {}, {}]}, "Focus" -> "b"]],
+  "#document" -> {collapsed[1], e["b"]},
+  TestID -> "htt-focus-list"
+];
+
+(* A focus that matches nothing gives the root and collapsed content, with no
+   message. *)
+TestCreate[
+  withMessages[shape[HTMLToTree[$cmpBody, "Focus" -> "table"]]],
+  {{}, e["body"] -> {collapsed[18]}},
+  TestID -> "htt-focus-nothing"
+];
+
+TestCreate[
+  shape[HTMLToTree[$cmpBody, "Focus" -> All]],
+  shape[HTMLToTree[$cmpBody]],
+  TestID -> "htt-focus-all-everything"
+];
+
+(* A real page: the Focused elements are those XMLCases gives, each drawn
+   with its contents, and nothing else is drawn as an element. *)
+TestCreate[
+  Length[TreeCases[HTMLToTree[$realTree, "Focus" -> "h2"], _XMLElement]],
+  Total[1 + Count[#, _XMLElement, Infinity] & /@ XMLCases[$realTree, "h2"]],
+  TestID -> "htt-real-page-focus"
+];
+
+(* ---- Hide and focus ----
+   Hiding wins over focus, and a Hidden element inside a Focused one is
+   removed from its contents. *)
+
+(* Configuration 13 of the prototype's comparison *)
+TestCreate[
+  shape[HTMLToTree[$cmpBody, "Focus" -> "section", "Hide" -> ".ad"]],
+  e["body"] -> {
+    collapsed[4],
+    e["section", {"id" -> "a"}] -> {
+      e["h2"] -> {"Intro"},
+      e["p"] -> {"Some ", e["b"] -> {"bold"}, " text"},
+      e["div"] -> {
+        e["aside"] -> {e["section", {"id" -> "b"}] -> {e["h2"] -> {"Note"}}},
+        e["p"] -> {"More"}}},
+    collapsed[2]},
+  TestID -> "htt-focus-hide-comparison"
+];
+
+TestCreate[
+  shape[HTMLToTree[$cmpBody, "Focus" -> "section", "Hide" -> "aside"]],
+  e["body"] -> {
+    collapsed[4],
+    e["section", {"id" -> "a"}] -> {
+      e["h2"] -> {"Intro"},
+      e["p"] -> {"Some ", e["b"] -> {"bold"}, " text"},
+      e["div"] -> {e["p"] -> {"More"}}},
+    collapsed[4]},
+  TestID -> "htt-hide-inside-focus"
+];
+
+(* A Focused element inside a Hidden one is not focused, and Hidden elements
+   do not count in a Collapsed run. *)
+TestCreate[
+  shape[HTMLToTree[$cmpBody, "Focus" -> "#b", "Hide" -> "aside"]],
+  e["body"] -> {collapsed[15]},
+  TestID -> "htt-hide-wins-over-focus"
+];
+
+TestCreate[
+  shape[HTMLToTree[$cmpBody, "Focus" -> "section", "Hide" -> "section"]],
+  e["body"] -> {collapsed[9]},
+  TestID -> "htt-hide-wins-over-focus-same-element"
+];
+
+(* ---- Readings ----
+   "AttributeReadings" applies to both queries. *)
+$tokens = XMLElement["ul", {}, {XMLElement["li", {"data-k" -> "a b"}, {"1"}],
+  XMLElement["li", {"data-k" -> "b c"}, {"2"}], XMLElement["li", {"data-k" -> "c"}, {"3"}]}];
+
+TestCreate[
+  shape[HTMLToTree[$tokens, "Focus" -> XMLPattern["li", "data-kList" -> "b"],
+    "Hide" -> XMLPattern["li", "data-kList" -> "a"], "AttributeReadings" -> <|"data-k" -> <||>|>]],
+  e["ul"] -> {e["li", {"data-k" -> "b c"}] -> {"2"}, collapsed[1]},
+  TestID -> "htt-readings-both-queries"
 ];
 
 (* ---- Options ---- *)
@@ -433,28 +701,7 @@ TestCreate[
   TestID -> "htt-label-collapsed"
 ];
 
-(* ---- Messages ----
-   Captured as a reader sees them, as in Messages.wlt. *)
-
-SetAttributes[capturedMessages, HoldFirst];
-capturedMessages[expr_] := Module[{texts = {}},
-  Internal`HandlerBlock[
-    {"Message", Function[m,
-      Replace[m, Hold[Message[mn : MessageName[_, _], args___], _] :>
-        AppendTo[texts, ToString[
-          StringForm[messageText[mn], Sequence @@ (List @@ Map[
-            Function[a, ToString[Unevaluated[a], InputForm], HoldAllComplete],
-            Hold[args]])],
-          OutputForm, PageWidth -> Infinity]]]]},
-    Quiet[expr]];
-  texts];
-
-SetAttributes[messageText, HoldFirst];
-messageText[MessageName[s_, tag_]] :=
-  Replace[MessageName[s, tag], _MessageName :> MessageName[General, tag]];
-
-SetAttributes[withMessages, HoldFirst];
-withMessages[expr_] := Module[{r}, {capturedMessages[r = expr], r}];
+(* ---- Messages ---- *)
 
 $p = XMLElement["p", {}, {}];
 
@@ -502,6 +749,59 @@ TestCreate[
   {capturedMessages[HTMLToTree[$p, 1, 2, TreeLayout -> Top]], Head[Quiet[HTMLToTree[$p, 1, 2]]]},
   {{"HTMLToTree called with 3 arguments; 1 or 2 arguments are expected."}, HTMLToTree},
   TestID -> "htt-message-count-tree-options-not-counted"
+];
+
+(* A bad query, a rule, "Focus" -> None or "Hide" -> All gives badquery,
+   naming the option, and $Failed. *)
+$badquery[name_, off_, got_] := "The value of the \"" <> name <> "\" option should be " <> off <>
+  ", Automatic, an XMLPattern, a Child, Descendant, Adjacent or Sibling combinator, a CSS selector string, or alternatives of any of these. Each can have a condition (/;). An XMLPattern or alternatives of them can also be named or have a test (?), but a combinator, or alternatives that hold one, cannot. A rule, whether pattern -> rhs or pattern :> body, cannot be used. Got " <> got <> ".";
+
+TestCreate[
+  withMessages[HTMLToTree[$p, #1 -> #2]] & @@@ {{"Focus", 1}, {"Focus", None}, {"Hide", All}},
+  {{{$badquery["Focus", "All", "1"]}, $Failed}, {{$badquery["Focus", "All", "None"]}, $Failed},
+    {{$badquery["Hide", "None", "All"]}, $Failed}},
+  TestID -> "htt-message-badquery"
+];
+
+TestCreate[
+  {withMessages[HTMLToTree[$p, "Focus" -> ("p" -> 1)]],
+    withMessages[HTMLToTree[$p, "Hide" -> (XMLPattern["p"] :> 1)]]},
+  {{{$badquery["Focus", "All", "\"p\" -> 1"]}, $Failed},
+    {{$badquery["Hide", "None", "XMLPattern[\"p\"] :> 1"]}, $Failed}},
+  TestID -> "htt-message-badquery-rule"
+];
+
+(* A mistake at the query's top level is the option's; one inside a
+   combinator is the combinator's (ADR 0022). *)
+TestCreate[
+  {withMessages[HTMLToTree[$p, "Hide" -> _]], withMessages[HTMLToTree[$p, "Focus" -> {XMLPattern["a"]}]]},
+  {{{$badquery["Hide", "None", "_"]}, $Failed}, {{$badquery["Focus", "All", "{XMLPattern[\"a\"]}"]}, $Failed}},
+  TestID -> "htt-message-badquery-top-level"
+];
+
+TestCreate[
+  {withMessages[HTMLToTree[$p, "Hide" -> Child[XMLPattern["p"]]]],
+    Replace[withMessages[HTMLToTree[$p, "Focus" -> Child[XMLPattern["p"], _]]], {{m_}, r_} :> {StringTake[m, 22], r}]},
+  {{{"Child needs at least two stages, as in Child[a, b] or Child[a, b, c]. Got Child[XMLPattern[\"p\"]]."}, $Failed},
+    {"_ is a blank, which is", $Failed}},
+  TestID -> "htt-message-query-combinator"
+];
+
+(* Both queries are refused before either is matched: no root message from a
+   hide query when the focus query is bad. *)
+TestCreate[
+  withMessages[HTMLToTree[$p, "Hide" -> "p", "Focus" -> 2]],
+  {{$badquery["Focus", "All", "2"]}, $Failed},
+  TestID -> "htt-message-badquery-before-root"
+];
+
+(* Bad readings give the $AttributeReadings messages and $Failed. *)
+TestCreate[
+  {withMessages[HTMLToTree[$p, "AttributeReadings" -> 3]],
+    withMessages[HTMLToTree[$p, "Focus" -> "p", "AttributeReadings" -> <|"k" -> 1|>]]},
+  {{{"$AttributeReadings and the \"AttributeReadings\" option should be an Association from attribute names to readings. Got 3."}, $Failed},
+    {{"The reading for \"k\" should be an Association with any of the fields Method, Delimiters, \"TrimWhitespace\" and \"ListKey\". Got 1."}, $Failed}},
+  TestID -> "htt-message-readings"
 ];
 
 (* A depth that is not Infinity or an integer >= 0 gives innf at position 2,
