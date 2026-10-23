@@ -4013,14 +4013,14 @@ unknownTreeOptions[opts_List] := Select[Flatten[opts], !optionRuleQ[HTMLToTree][
 treeShell[XMLElement[tag_, attrs_, _]] := XMLElement[tag, attrs, {}];
 
 elementNode[el : XMLElement[_, _, ch_], pos_, d_, s_] :=
-  Tree[treeShell[el], belowNode[ch, d, s, childNodes[ch, Join[pos, {3}], d + 1, s] &]];
+  Tree[treeShell[el], nodeChildren[ch, d, s, childNodes[ch, Join[pos, {3}], d + 1, s] &]];
 
 (* The children of a node at depth d with contents items. A Cut element, at
    the depth limit with element children, has one Collapsed leaf for all its
    contents, text included, counting the elements in them; contents that are
    only text are kept, since nothing is cut. *)
-belowNode[items_, d_, s_, draw_] := Replace[
-  If[d == s["Depth"] && MemberQ[items, _XMLElement],
+nodeChildren[items_, d_, s_, draw_] := Replace[
+  If[d == s["DOMDepth"] && MemberQ[items, _XMLElement],
     {Tree[Missing["Collapsed", Count[items, _XMLElement, Infinity]], None]}, draw[]],
   {} -> None];
 
@@ -4036,9 +4036,9 @@ contentNodes[_, _, _, _] := {};
 (* A document or a list is drawn under a "#document" root (ADR 0018), whose
    children are its top elements and top-level strings, at depth 1. *)
 rootNode[XMLObject["Document"][_, root_, _], s_] :=
-  Tree["#document", belowNode[{root}, 0, s, contentNodes[root, {2}, 1, s] &]];
+  Tree["#document", nodeChildren[{root}, 0, s, contentNodes[root, {2}, 1, s] &]];
 rootNode[el_XMLElement, s_] := elementNode[el, {}, 0, s];
-rootNode[l_List, s_] := Tree["#document", belowNode[l, 0, s, childNodes[l, {}, 1, s] &]];
+rootNode[l_List, s_] := Tree["#document", nodeChildren[l, 0, s, childNodes[l, {}, 1, s] &]];
 
 (* ---- Labels ----
    One label function for every node, given as All -> treeLabel after the
@@ -4202,7 +4202,7 @@ HTMLToTree[tree_, n : _?notRuleQ : Infinity, opts : OptionsPattern[]] /;
     Replace[treeSettings[AssociationThread[Keys[Options[HTMLToTree]], OptionValue[HTMLToTree,
         FilterRules[{opts}, Options[HTMLToTree]], Keys[Options[HTMLToTree]]]]], {
       $Failed -> $Failed,
-      settings_ :> With[{t = rootNode[tree, Append[settings, "Depth" -> n]]},
+      settings_ :> With[{t = rootNode[tree, Append[settings, "DOMDepth" -> n]]},
         Tree[TreeData[t], TreeChildren[t], Sequence @@ treeOptions[t, {opts}]]]}]];
 
 HTMLToTree[args___] /; (treeCallMessage[{args}]; False) := Null;
