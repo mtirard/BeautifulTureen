@@ -4080,13 +4080,14 @@ elementNode[el_XMLElement, pos_, d_, s_] := With[{sites = childSites[el, pos, s]
 
 (* The children of a node at position pos and depth d with contents sites. A
    Cut element, at the depth limit with element children, has one Collapsed
-   leaf for all its contents, text included, counting the elements in them;
-   but if they hold a Focused element, they are drawn as outside every Focused
-   element. Contents that are only text are kept, since nothing is cut. *)
+   leaf for all its contents, text included, counting the elements in them.
+   If they hold a Focused element, they are drawn as the root's are with
+   focus: the Focused elements, with the path to them, among Collapsed runs.
+   Contents that are only text are kept, since nothing is cut. *)
 nodeChildren[sites_, pos_, d_, s_, draw_] := Replace[
   Which[
     d < s["DOMDepth"] || FreeQ[sites, {_XMLElement, _}, {1}], draw[],
-    KeyExistsQ[s["FocusPaths"], pos], nodesOutsideFocus[sites, s],
+    onFocusPathQ[pos, s], nodesOutsideFocus[sites, s],
     True, {Tree[Missing["Collapsed", elementCount[sites, s]], None]}],
   {} -> None];
 
@@ -4096,7 +4097,8 @@ elementCount[sites_, s_] :=
 
 childNodes[sites_, d_, s_] := Join @@ (contentNodes[#1, #2, d, s] & @@@ sites);
 
-contentNodes[el_XMLElement, pos_, d_, s_] := {elementNode[el, pos, d, s]};
+(* A Focused element counts depth from itself, inside another one too *)
+contentNodes[el_XMLElement, pos_, d_, s_] := {elementNode[el, pos, If[focusedQ[pos, s], 0, d], s]};
 contentNodes[str_String, _, _, s_] := If[drawnTextQ[str, s], {Tree[str, None]}, {}];
 contentNodes[XMLObject["CDATASection"][str_String], pos_, d_, s_] := contentNodes[str, pos, d, s];
 contentNodes[_, _, _, _] := {};
@@ -4118,16 +4120,22 @@ drawnTextQ[_, _] := False;
 
 nodesOutsideFocus[sites_, s_] := collapseRuns[Join @@ (itemsOutsideFocus[#1, #2, {}, s] & @@@ sites)];
 
-(* The items a site gives: a Focused element's node, a path element's node,
+(* The items a site gives: a Focused element's node, the node of an element
+   on the path to one (or, with collapsed paths, the items below it),
    collapsedRun[k] for k undrawn elements, or none. path holds the undrawn
    elements above. *)
 itemsOutsideFocus[el_XMLElement, pos_, path_, s_] := Which[
-  KeyExistsQ[s["Focused"], pos], {collapsedEdge[elementNode[el, pos, 0, s], path]},
-  KeyExistsQ[s["FocusPaths"], pos] && s["CollapsePaths"],
+  focusedQ[pos, s], {collapsedEdge[elementNode[el, pos, 0, s], path]},
+  !onFocusPathQ[pos, s], {collapsedRun[elementCount[{{el, pos}}, s]]},
+  s["CollapsePaths"],
     Join @@ (itemsOutsideFocus[#1, #2, Append[path, el], s] & @@@ childSites[el, pos, s]),
-  KeyExistsQ[s["FocusPaths"], pos], {Tree[treeShell[el], nodesOutsideFocus[childSites[el, pos, s], s]]},
-  True, {collapsedRun[elementCount[{{el, pos}}, s]]}];
+  True, {Tree[treeShell[el], nodesOutsideFocus[childSites[el, pos, s], s]]}];
 itemsOutsideFocus[item_, _, _, s_] := If[drawnTextQ[item, s], {collapsedRun[0]}, {}];
+
+focusedQ[pos_, s_] := AssociationQ[s["Focused"]] && KeyExistsQ[s["Focused"], pos];
+
+(* Whether pos is above a Focused element *)
+onFocusPathQ[pos_, s_] := KeyExistsQ[s["FocusPaths"], pos];
 
 collapseRuns[items_] := Replace[SplitBy[items, MatchQ[_collapsedRun]], {
   run : {__collapsedRun} :> Tree[Missing["Collapsed", Total[First /@ run]], None],

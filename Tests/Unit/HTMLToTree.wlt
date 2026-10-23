@@ -486,6 +486,15 @@ TestCreate[
   TestID -> "htt-focus-depth-zero"
 ];
 
+(* A Focused element drawn inside another counts depth from itself too, so it
+   shows the same detail however deep it is in the outer one: section#b, at
+   depth 3 in section#a, keeps its h2 at depths 2, 3 and 4. *)
+TestCreate[
+  shape[TreeExtract[HTMLToTree[$cmpBody, #, "Focus" -> "section"], {2, 3, 1, 1}]] & /@ {2, 3, 4},
+  ConstantArray[e["section", {"id" -> "b"}] -> {e["h2"] -> {"Note"}}, 3],
+  TestID -> "htt-focus-depth-nested"
+];
+
 TestCreate[
   edge[TreeExtract[HTMLToTree[$cmpBody, 0, "Focus" -> "section"], {2, 2}]],
   {Dashed, Placed["div > aside", Tooltip]},
@@ -519,12 +528,9 @@ TestCreate[
   TestID -> "htt-full-paths-comparison"
 ];
 
-(* Every subtree below the root, depth first *)
-subtrees[t_Tree] := Join @@ ({#, Splice[subtrees[#]]} & /@ Replace[TreeChildren[t], None -> {}]);
-
 TestCreate[
-  {Length[subtrees[$fullPaths]], Union[edge /@ subtrees[$fullPaths]]},
-  {20, {{None, None}}},
+  Union[edge /@ TreeLevel[$fullPaths, {1, Infinity}]],
+  {{None, None}},
   TestID -> "htt-full-paths-no-collapsed-edges"
 ];
 
