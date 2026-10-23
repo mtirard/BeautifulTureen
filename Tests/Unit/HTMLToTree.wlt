@@ -685,15 +685,17 @@ TestCreate[
   TestID -> "htt-merge-hidden-left-out"
 ];
 
-(* Merged text that is whitespace only is not drawn, as a text leaf would not
-   be, unless "IncludeWhitespace" is on. *)
+(* Merged text that would not be drawn, whitespace only (unless
+   "IncludeWhitespace" is on) or empty, is not merged, so that the inline
+   elements keep their nodes. *)
 $mergeBlank = XMLElement["p", {}, {" ", XMLElement["b", {}, {}], " "}];
 
 TestCreate[
   shape /@ {HTMLToTree[$mergeBlank, "MergeText" -> HTMLTextContent],
-    HTMLToTree[$mergeBlank, "MergeText" -> HTMLTextContent, "IncludeWhitespace" -> True]},
-  {e["p"], e["p"] -> {"  "}},
-  TestID -> "htt-merge-whitespace-only"
+    HTMLToTree[$mergeBlank, "MergeText" -> HTMLTextContent, "IncludeWhitespace" -> True],
+    HTMLToTree[XMLElement["p", {}, {XMLElement["img", {"alt" -> "A"}, {}]}], "MergeText" -> HTMLInnerText, "IncludeWhitespace" -> True]},
+  {e["p"] -> {e["b"]}, e["p"] -> {"  "}, e["p"] -> {e["img", {"alt" -> "A"}]}},
+  TestID -> "htt-merge-not-drawn-not-merged"
 ];
 
 (* A merged element at the depth limit is not a Cut element: it has its text. *)
