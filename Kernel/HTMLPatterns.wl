@@ -23,6 +23,7 @@ FromCSSSelector::usage = "FromCSSSelector[\"selector\"] gives the XML pattern th
 HTMLTextContent::usage ="HTMLTextContent[tree] gives the text of an XML tree: all the strings it contains, joined in document order. No whitespace is added or removed, so source indentation and the whitespace in <pre> are kept. tree can be an XMLElement, an XMLObject document, a list, or a string.";
 HTMLInnerText::usage = "HTMLInnerText[tree] gives the readable text of an XML tree. Runs of whitespace are collapsed, block-level elements go on their own lines, <br> becomes a newline, <pre> content is kept as written, tags such as script and style are dropped, and the result is trimmed. How each element is treated depends only on its tag, as given by the built-in user-agent stylesheet. HTMLInnerText[tree, \"Roles\" -> rules] changes this, with rules of the form pattern -> role, where pattern is an XMLPattern or a CSS selector string and role is \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\" or \"Skip\". \"BlockSeparator\" -> sep sets the string inserted between blocks (default \"\\n\"). \"AttributeReadings\" -> readings adds readings to $AttributeReadings for this call. tree can be an XMLElement, an XMLObject document, a list, or a string.";
 HTMLToNotebook::usage = "HTMLToNotebook[tree] converts an HTML or XML tree to a Notebook expression, which can be displayed or exported with Export to Markdown, PDF, RTF, etc. Block-level tags become cells, such as headings -> Title, Chapter, Section, etc., p -> Text, li -> Item, Subitem, etc., blockquote -> a framed quote, pre -> a Program cell, and table -> a Dataset or Grid, with its caption as a Text cell before it. Inline tags become boxes in the surrounding cell, such as b -> bold, i -> italic, code -> inline code, a -> a hyperlink and img -> its alt text, linked to its src. How each element is treated depends only on its tag, as given by the built-in user-agent stylesheet. HTMLToNotebook[tree, \"Roles\" -> rules] changes the role of elements, such as block or inline. \"Constructs\" -> rules changes what an element becomes: an inline style such as \"Bold\", a cell style, or a function that is applied to the element and gives a Cell or boxes. The left-hand side of each rule is an XMLPattern or a CSS selector string. \"AttributeReadings\" -> readings adds readings to $AttributeReadings for this call. tree can be an XMLElement, an XMLObject document, a list, or a string.";
+HTMLToTree::usage = "HTMLToTree[tree] draws an HTML or XML tree as a Tree, with one node per element and per text string. A document or a list is drawn under a \"#document\" root, and an XMLElement is its own root. Each element is labelled with its tag name, and its tooltip gives its compound selector, such as div#main.note, and its attributes. Each text string is a leaf, labelled with its text, whitespace collapsed and cut to 40 characters. Whitespace-only strings are left out unless \"IncludeWhitespace\" -> True is given. The data of an element node is the element with no contents, XMLElement[tag, attrs, {}], and the data of a text node is the string. Options of Tree, such as TreeElementLabelFunction, TreeLayout, MaxDisplayedChildren and ImageSize, can be given and are passed to Tree. The default layout is TreeLayout -> Left, and MaxDisplayedChildren -> m limits the children of every node. tree can be an XMLElement, an XMLObject document, or a list. HTMLToTree[tree, n] draws elements down to DOM depth n, counted in generations of elements from the root at depth 0; n is a non-negative integer or Infinity, the default. An element at depth n with element children has a single \[Ellipsis] child in place of all its contents, with data Missing[\"Collapsed\", k], where k is the number of elements not drawn. \"Focus\" -> query draws only the elements the query selects, as XMLCases does, with their contents: each hangs from its nearest drawn ancestor, by a dashed edge whose tooltip gives the skipped path when there is one, and each run of other siblings is a single \[Ellipsis] leaf. With focus, depth counts from each Focused element, and a Focused element below the depth limit is still drawn. \"CollapsePaths\" -> False draws the elements on the path to each Focused element as nodes, which do not count towards depth. \"Hide\" -> query removes the elements it selects, with their contents, and leaves no mark; hiding wins over focus. Both queries are matched against the tree as given and take \"AttributeReadings\". \"MergeText\" -> HTMLInnerText draws an element whose contents hold elements, all of them inline, with a single text leaf in place of its contents, holding the text HTMLInnerText gives for it; \"MergeText\" -> HTMLTextContent gives its raw text instead. \"Roles\" -> rules decides which elements are inline, as in HTMLInnerText, and the text is the one HTMLInnerText gives with the same \"Roles\" and \"AttributeReadings\". Hidden elements are left out of the text, and an element that holds a Focused element is not merged.";
 
 (* === Messages === *)
 
@@ -78,6 +79,16 @@ HTMLToNotebook::stages = "`1` is a combinator with fewer than two stages. A comb
 HTMLToNotebook::notrule = "Each \"Roles\" or \"Constructs\" entry should be a rule pattern -> value or pattern :> value. Got `1`.";
 HTMLToNotebook::condcombinator = "A condition (/;) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Got `1`.";
 HTMLToNotebook::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
+HTMLToTree::badtree = "The first argument should be an XMLObject, an XMLElement, or a list of XMLElement expressions and strings. Got head `1`.";
+HTMLToTree::optval = "The value of the `1` option should be `2`. Got `3`.";
+HTMLToTree::badquery = "The value of the `1` option should be `2`, Automatic, an XMLPattern, a Child, Descendant, Adjacent or Sibling combinator, a CSS selector string, or alternatives of any of these. Each can have a condition (/;). An XMLPattern or alternatives of them can also be named or have a test (?), but a combinator, or alternatives that hold one, cannot. A rule, whether pattern -> rhs or pattern :> body, cannot be used. Got `3`.";
+HTMLToTree::root = "The root element cannot be hidden; it was kept.";
+HTMLToTree::badrole = "A \"Roles\" rule gave `1`, which is not \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\" or \"Skip\". The element gets its role from the built-in user-agent stylesheet instead.";
+HTMLToTree::badpat = "The left-hand side of a rule should be an XMLPattern, alternatives of them, or either with a condition pat /; test or a test pat?f, or a CSS selector string that describes one element. Got `1`.";
+HTMLToTree::stages = "`1` is a combinator with fewer than two stages. A combinator needs at least two, but a rule is tried on one element at a time and cannot use one; use an XMLPattern or alternatives of them.";
+HTMLToTree::notrule = "Each \"Roles\" entry should be a rule pattern -> value or pattern :> value. Got `1`.";
+HTMLToTree::condcombinator = "A condition (/;) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Got `1`.";
+HTMLToTree::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
 
 Begin["`Private`"];
 
@@ -93,7 +104,7 @@ Scan[Function[h,
 (* A list given as a tree holding something other than elements and strings. *)
 Scan[Function[h,
     MessageName[h, "badmember"] = "A list given as the first argument should hold only XMLElement expressions and strings. The member at position `1` has head `2`."],
-  {XMLCases, XMLFirstCase, XMLDeleteCases, HTMLTextContent, HTMLInnerText, HTMLToNotebook}];
+  {XMLCases, XMLFirstCase, XMLDeleteCases, HTMLTextContent, HTMLInnerText, HTMLToNotebook, HTMLToTree}];
 
 (* A mistake in a combinator is its message, named for it (ADR 0022). The
    message's own slot is a value here, so that the template keeps it. *)
@@ -481,15 +492,22 @@ refuse[msg_, args___] := (Message[msg, args]; Throw[$Failed, $refusal]);
 refuseQuietly[] := Throw[$Failed, $refusal];
 
 (* MessageName holds its first argument, so the consumer head is injected. *)
-refuseAtHead[tag_, args___] := With[{h = $head}, refuse[MessageName[h, tag], args]];
+refuseAtHead[tag_, args___] := refuseAt[$head, tag, args];
 badpat[q_] := refuseAtHead["badpat", q];
 
 (* A message goes on the innermost symbol the mistake is in (ADR 0022): a
    combinator used wrongly, or the combinator whose argument is wrong, which is
    $holder while that argument is compiled. A consumer that takes only an
    element pattern refuses any combinator, so there the message stays its own. *)
+refuseAt[h_, tag_, args___] /; h === $head && $queryOption =!= None :=
+  (badQuery[$queryOption, First[{args}]]; Throw[$Failed, $refusal]);
 refuseAt[h_, tag_, args___] := refuse[MessageName[h, tag], args];
-holderFor[h_] := If[MatchQ[$head, XMLCases | XMLFirstCase | XMLDeleteCases], h, $head];
+holderFor[h_] := If[MatchQ[$head, XMLCases | XMLFirstCase | XMLDeleteCases] || $queryOption =!= None, h, $head];
+
+(* The option a query of HTMLToTree is compiled for, or None. Such a query is
+   searched with, as XMLCases's is, so a mistake in a combinator is the
+   combinator's; a mistake at its top level is the option's, as badquery. *)
+$queryOption = None;
 
 (* The first combinator in a tested pattern, as written. *)
 firstCombinator[s_String] := firstCombinator[cssPattern[s]];
@@ -1486,6 +1504,15 @@ queryDelete[c_, tree_] :=
       treeRefusedQ[c, tree], $Failed,
       True, runCompiled[runnerOf[c, unionDelete, chainDelete, deleteC], tree, c]]];
 
+(* The sites the query selects, at most the first n, in document order: the
+   positions in the tree of the elements queryCases gives, a rule's values
+   aside. Equal elements at two sites are two sites, so these are not found
+   from the elements. Materialising moves no element, so the positions in the
+   materialised tree are positions in the tree. *)
+queryPositions[$Failed, _, _] := $Failed;
+queryPositions[c_, tree_, n_] :=
+  If[treeRefusedQ[c, tree], $Failed, runCompiled[runnerOf[c, unionPositions, chainPositions, plainPositions], tree, c, n]];
+
 (* A query of alternatives holding a combinator runs as their chains, any
    other combinator as one chain. *)
 runnerOf[c_, onUnion_, onChain_, onPlain_] := Which[unionQ[c], onUnion, chainQ[c], onChain, True, onPlain];
@@ -2059,13 +2086,23 @@ chainFirst[tree_, q_, default_] :=
    choosing one, as a Condition on the combinator does: as Cases gives the
    places where a rule gives a value, a tuple is accepted when the rule gives
    it one. The value is kept, so the body is not evaluated again once the tuple
-   is chosen. *)
-ruleValues[q_] :=
+   is chosen. The accepted tuples are given with their values, keyed by tuple,
+   as {tuples, values}: a value of Nothing or Sequence[] has no place in a
+   list. *)
+ruleTuples[q_] :=
   Module[{rule = q["TupleRule"], elements = tupleElements[q], values = <||>, tuples},
     tuples = siteTuples[q["Chain"],
       Function[t, With[{v = Replace[elements[t], {rule, _ :> $unmatched}]},
         v =!= $unmatched && (values[t] = v; True)]]];
-    Lookup[values, Key /@ tuples]];
+    {tuples, values}];
+
+ruleValues[q_] := Replace[ruleTuples[q], {tuples_, values_} :> Lookup[values, Key /@ tuples]];
+
+(* The sites chainCases takes its elements from, or its values: the last sites
+   of the tuples it accepts. A site whose value is Nothing is a site. *)
+chainPositions[tree_, q_, n_] /; bodyRejectsQ[q] :=
+  Block[{$chainTree = tree}, Last /@ Take[First[ruleTuples[q]], UpTo[n]]];
+chainPositions[tree_, q_, n_] := Block[{$chainTree = tree}, Last /@ Take[matchedSites[q], UpTo[n]]];
 
 (* A chain deletes the elements its last stage selects. Delete removes
    positions nested in one another together. *)
@@ -2095,8 +2132,7 @@ alternativeSites[a_, test_] /; a["Links"] === {} :=
 alternativeSites[a_, test_] := siteTuples[a["Chain"], test];
 
 (* The sites below the root that s matches, in document order. *)
-elementSites[s_] :=
-  Replace[Position[$chainTree, s, Infinity, Heads -> False], {{} -> {}, ps_ :> fromCasesOrder[ps]}];
+elementSites[s_] := positionsInOrder[$chainTree, s];
 
 (* The accepted tuples of alternative a whose last site keep accepts, each
    {tuple}, or {tuple, value} when the body can reject and so is evaluated in
@@ -2137,6 +2173,10 @@ unionCases[tree_, q_, n_] :=
     With[{es = Take[inSiteOrder[unionEntries[q]], UpTo[n]]},
       If[q["Body"] === None, atAll[es[[All, 2, -1]]], entryResult[q, entryRules[q]] /@ es]]];
 
+(* The sites unionCases takes its elements or values from. *)
+unionPositions[tree_, q_, n_] :=
+  Block[{$chainTree = tree}, Take[inSiteOrder[unionEntries[q]], UpTo[n]][[All, 2, -1]]];
+
 (* Each alternative stops at its first accepted entry before the best so far:
    the answer is the earliest, ties going to the earlier alternative, as one
    element can only tie with itself. *)
@@ -2175,8 +2215,12 @@ deleteAt[tree_, ps_] := Delete[tree, ps];
 (* Only a rule naming an option of f is read as one: any other rule, such as
    XMLFirstCase's default, is an argument. *)
 optionRuleQ[f_][(Rule | RuleDelayed)[name_, _]] :=
-  MemberQ[Keys[Options[f]], ToString[name]];
+  MemberQ[Keys[Options[f]], ToString[name]] || passedOptionQ[f, name];
 optionRuleQ[_][_] := False;
+
+(* HTMLToTree also takes Tree's options, which it passes on to Tree *)
+passedOptionQ[HTMLToTree, name_] := treeOptionNameQ[name];
+passedOptionQ[_, _] := False;
 
 optionQ[f_][a_] := MatchQ[a, _?(optionRuleQ[f]) | {__?(optionRuleQ[f])}];
 
@@ -2232,6 +2276,14 @@ casesC[tree_, r : Verbatim[RuleDelayed][lhs_, _], n_] :=
     r, {1}, n];
 casesC[tree_, pat_, n_] := firstMatches[tree, pat, n];
 
+(* The sites casesC takes its elements from: those of a rule's left-hand side,
+   less those its body rejects, the body evaluated as casesC evaluates it. *)
+plainPositions[tree_, r : Verbatim[RuleDelayed][lhs_, _], n_] /; bodyConditionQ[Extract[r, {2}, Hold]] :=
+  Select[positionsInOrder[tree, lhs], Replace[Extract[tree, #], {r, _ :> $unmatched}] =!= $unmatched &, n];
+plainPositions[tree_, Verbatim[RuleDelayed][lhs_, _], n_] := plainPositions[tree, lhs, n];
+plainPositions[tree_, pat_, Infinity] := positionsInOrder[tree, pat];
+plainPositions[tree_, pat_, n_] := firstMatchPositions[tree, pat, n];
+
 (* The first n elements of tree, below its root, that match pat, in document
    order, the search stopping early. *)
 firstMatches[tree_, pat_, Infinity] := matchesInOrder[tree, pat];
@@ -2251,9 +2303,11 @@ firstMatchPositions[tree_, pat_, n_] :=
 (* The elements of tree, below its root, that match pat, in document order.
    Extract reads {} as the whole tree, not as no positions. *)
 matchesInOrder[tree_, pat_] :=
-  Replace[Position[tree, pat, Infinity, Heads -> False], {
-    {} -> {},
-    ps_ :> Extract[tree, fromCasesOrder[ps]]}];
+  Replace[positionsInOrder[tree, pat], {{} -> {}, ps_ :> Extract[tree, ps]}];
+
+(* The positions of those elements. *)
+positionsInOrder[tree_, pat_] :=
+  Replace[Position[tree, pat, Infinity, Heads -> False], {{} -> {}, ps_ :> fromCasesOrder[ps]}];
 
 (* Positions in Cases order, as Position gives them, put in document order.
    Cases visits an element right after the elements nested in it, so the
@@ -3824,9 +3878,10 @@ hrConstruct[_] := Cell["", "Text", CellFrame -> {{0, 0}, {0, 1}}];
    idiomatic GFM header), at least one body row follows it and none is wider
    than it, else Grid (positional, blank header, every row kept). The header
    row is the one row of a <thead>, or with no <thead> a leading all-<th> row.
-   Dataset/Grid over Tabular because the paclet floor is WL 12.3. Cells degrade
-   to plain text, which is what HTMLInnerText gives for the cell under the
-   call's "Roles"; in the Grid form a <th> cell is bold. See ADR 0003. *)
+   Dataset/Grid over Tabular because Tabular needs 14.1, above the paclet
+   floor of 13.2. Cells degrade to plain text, which is what HTMLInnerText
+   gives for the cell under the call's "Roles"; in the Grid form a <th> cell
+   is bold. See ADR 0003. *)
 cellText[cell_XMLElement, ctx_] := innerText[cell, nodeRole[#, ctx] &, "\n"];
 
 gridItem[e : XMLElement["th", _, _], ctx_] := With[{t = cellText[e, ctx]}, If[t === "", t, Style[t, Bold]]];
@@ -3921,6 +3976,429 @@ HTMLToNotebook[tree_, OptionsPattern[]] :=
 HTMLToNotebook[args___] /; (countMessage[HTMLToNotebook, {args}, {1, 1}]; False) := Null;
 
 (* =========================================================== *)
+(* HTMLToTree                                                  *)
+(* A lossy projection of a tree into a Tree for display: one   *)
+(* node per element (its shell as data) and per text string.   *)
+(* Customisation goes through Tree's own options, which pass   *)
+(* through apart from the label, layout and size defaults.     *)
+(* =========================================================== *)
+
+Options[HTMLToTree] = {"Focus" -> Automatic, "Hide" -> Automatic, "MergeText" -> Automatic,
+  "IncludeWhitespace" -> Automatic, "CollapsePaths" -> Automatic, "Roles" -> Automatic,
+  "AttributeReadings" -> Automatic};
+
+(* ---- Settings ----
+   Every Automatic is resolved here and only here, since the defaults are
+   provisional. "Roles" is checked when the tree is drawn. A value that is refused
+   gives optval, or badquery for a query, and $Failed. *)
+
+$treeDefaults = <|"Focus" -> All, "Hide" -> None, "MergeText" -> None,
+  "IncludeWhitespace" -> False, "CollapsePaths" -> True, "Roles" -> {},
+  "AttributeReadings" -> <||>|>;
+
+(* The value that turns each query off; the other's is refused *)
+$treeQueryOff = <|"Focus" -> All, "Hide" -> None|>;
+
+(* The values an option can take, written as the message shows them *)
+$treeOptionValues = <|"MergeText" -> None | HTMLInnerText | HTMLTextContent | Automatic,
+  "IncludeWhitespace" -> True | False | Automatic, "CollapsePaths" -> True | False | Automatic|>;
+
+treeSettings[values_Association] :=
+  Catch[Association[KeyValueMap[#1 -> treeSetting[#1, #2] &, values]], treeSettings];
+
+treeSetting[name_, Automatic] := $treeDefaults[name];
+treeSetting[name : "Focus" | "Hide", v : All | None | _Rule | _RuleDelayed] /; v =!= $treeQueryOff[name] :=
+  (badQuery[name, v]; Throw[$Failed, treeSettings]);
+treeSetting[name_, v_] /; KeyExistsQ[$treeOptionValues, name] :=
+  If[MatchQ[v, $treeOptionValues[name]], v,
+    Message[HTMLToTree::optval, name, $treeOptionValues[name], v];
+    Throw[$Failed, treeSettings]];
+treeSetting[_, v_] := v;
+
+(* The message for a query that is refused, from the settings or the compiler *)
+badQuery[name_, v_] := Message[HTMLToTree::badquery, name, $treeQueryOff[name], v];
+
+(* ---- Telling options apart ----
+   HTMLToTree's names are strings and Tree's are symbols, so they cannot
+   collide. Options[Tree] is read at call time, not stored. *)
+
+treeOptionNameQ[name_Symbol] := MemberQ[Keys[Options[Tree]], name];
+treeOptionNameQ[_] := False;
+
+unknownTreeOptions[opts_List] := Select[Flatten[opts], !optionRuleQ[HTMLToTree][#] &];
+
+(* ---- Hidden and focused sites ----
+   Both queries are matched against the original input, as XMLCases matches,
+   so that Adjacent and :has() see the page as it is. Removing the hidden
+   elements first (XMLDeleteCases, then draw) would be simpler, but it changes
+   what those combinators match: a sibling or descendant that is hidden would no
+   longer be there for the focus query to see. Both are compiled before
+   either is matched, and one that is refused gives $Failed. *)
+
+(* A compiled query, None for a query that is off, or $Failed *)
+treeQuery[_, All | None] := None;
+treeQuery[name_, q_] := Block[{$queryOption = name}, compileQuery[q, HTMLToTree]];
+
+(* The sites the walk reads: "Hidden", the positions of Hidden elements;
+   "Focused", those of Focused elements, or All; and "FocusPaths", every
+   position above a Focused element. Each is an Association to True. *)
+treeSites[tree_, s_] := Replace[treeQuery["Focus", s["Focus"]], {
+  $Failed -> $Failed,
+  focus_ :> Replace[treeQuery["Hide", s["Hide"]], {
+    $Failed -> $Failed,
+    hide_ :> With[{hidden = hiddenSites[tree, hide]},
+      With[{focused = focusedSites[tree, focus, siteSet[hidden]]},
+        <|"Hidden" -> siteSet[hidden], "Focused" -> Replace[focused, l_List :> siteSet[l]],
+          "FocusPaths" -> If[focused === All, <||>, siteSet[Join @@ (Most[prefixes[#]] & /@ focused)]]|>]]}]}];
+
+siteSet[ps_List] := AssociationThread[ps -> True];
+
+prefixes[pos_] := FoldList[Append, {}, pos];
+
+(* XMLCases does not select a bare element root, so the query is matched in a
+   list around it, where it can; a root it selects is kept, with root. *)
+hiddenSites[_, None] := {};
+hiddenSites[el_XMLElement, c_] := With[{ps = queryPositions[c, {el}, Infinity]},
+  If[MemberQ[ps, {1}], Message[HTMLToTree::root]];
+  Rest /@ DeleteCases[ps, {1}]];
+hiddenSites[tree_, c_] := queryPositions[c, tree, Infinity];
+
+(* Hiding wins: a site that is hidden, or inside a Hidden element, is not focused. *)
+focusedSites[_, None, _] := All;
+focusedSites[tree_, c_, hidden_] :=
+  Select[queryPositions[c, tree, Infinity], NoneTrue[prefixes[#], KeyExistsQ[hidden, #] &] &];
+
+(* ---- The tree that is built ----
+   The walk carries each item's position in the input, as the queries give
+   them, and each element's DOM depth d: the generations of elements from the
+   root, not WL levels. A site is an item with its position. contentNodes
+   gives the nodes an item is drawn as: none, one, or (later) several. *)
+
+(* A node's data is the element without its contents, not the whole element,
+   so a label function cannot read an element's text from its data. The node's
+   children already hold the contents, and an output cell serialises each node's
+   data separately: with whole elements, every ancestor carried the page again
+   (a 17-node overview was 1 MB of boxes, 49 KB with shells). The shell is part
+   of the result's contract, since a computation on the Tree reads it. *)
+treeShell[XMLElement[tag_, attrs_, _]] := XMLElement[tag, attrs, {}];
+
+(* The sites of items whose positions start with pos; a Hidden element leaves
+   no mark, so it is not one of them. *)
+contentSites[items_List, pos_, s_] := visibleSites[MapIndexed[{#1, Join[pos, #2]} &, items], s];
+
+visibleSites[sites_, s_] := Select[sites, !KeyExistsQ[s["Hidden"], Last[#]] &];
+
+childSites[XMLElement[_, _, ch_], pos_, s_] := contentSites[ch, Join[pos, {3}], s];
+
+elementNode[el_XMLElement, pos_, d_, s_] := With[{sites = childSites[el, pos, s]},
+  Tree[treeShell[el], Replace[mergedChildren[el, pos, sites, s],
+    _Missing :> nodeChildren[sites, pos, d, s, childNodes[sites, d + 1, s] &]]]];
+
+(* The children of a node at position pos and depth d with contents sites. A
+   Cut element, at the depth limit with element children, has one Collapsed
+   leaf for all its contents, text included, counting the elements in them.
+   If they hold a Focused element, they are drawn as the root's are with
+   focus: the Focused elements, with the path to them, among Collapsed runs.
+   Contents that are only text are kept, since nothing is cut. *)
+nodeChildren[sites_, pos_, d_, s_, draw_] := Replace[
+  Which[
+    d < s["DOMDepth"] || FreeQ[sites, {_XMLElement, _}, {1}], draw[],
+    onFocusPathQ[pos, s], nodesOutsideFocus[sites, s],
+    True, {Tree[Missing["Collapsed", elementCount[sites, s]], None]}],
+  {} -> None];
+
+(* The elements in sites, descendants included and Hidden elements not *)
+elementCount[sites_, s_] :=
+  Total[Cases[sites, {el_XMLElement, pos_} :> 1 + elementCount[childSites[el, pos, s], s]]];
+
+childNodes[sites_, d_, s_] := Join @@ (contentNodes[#1, #2, d, s] & @@@ sites);
+
+(* A Focused element counts depth from itself, inside another one too *)
+contentNodes[el_XMLElement, pos_, d_, s_] := {elementNode[el, pos, If[focusedQ[pos, s], 0, d], s]};
+contentNodes[str_String, _, _, s_] := If[drawnTextQ[str, s], {Tree[str, None]}, {}];
+contentNodes[XMLObject["CDATASection"][str_String], pos_, d_, s_] := contentNodes[str, pos, d, s];
+contentNodes[_, _, _, _] := {};
+
+(* Whether an item is text that is drawn: whitespace-only strings are not,
+   unless "IncludeWhitespace" is on. *)
+drawnTextQ[str_String, s_] := s["IncludeWhitespace"] || !StringMatchQ[str, "" | HTMLWhitespace];
+drawnTextQ[XMLObject["CDATASection"][str_String], s_] := drawnTextQ[str, s];
+drawnTextQ[_, _] := False;
+
+(* ---- Merged text ----
+   With "MergeText" on, an element whose contents hold at least one element,
+   every element in them Inline by Display role, has one Merged text leaf in
+   place of its contents; it is decided before depth, so a merged element is
+   never a Cut element. An element on a path to a Focused element is not
+   merged, so that no Focused element is lost. The text is the chosen
+   function's, on the element with its Hidden elements removed. *)
+
+(* The children of a merged element, or Missing[] for one that is not merged.
+   Merged text that would not be drawn, empty or whitespace only, is not
+   merged either, so that the inline elements keep their nodes. *)
+mergedChildren[el_, pos_, sites_, s_] /;
+    s["MergeText"] === None || onFocusPathQ[pos, s] || FreeQ[sites, {_XMLElement, _}, {1}] := Missing[];
+mergedChildren[el_, pos_, _, s_] := With[{v = visibleElement[el, pos, s]},
+  If[AllTrue[Cases[Last[v], _XMLElement, Infinity], treeRole[#, s] === "Inline" &],
+    Replace[mergedText[s["MergeText"], v, s], {
+      text_ /; text =!= "" && drawnTextQ[text, s] :> {Tree[text, None]},
+      _ -> Missing[]}],
+    Missing[]]];
+
+(* The text HTMLInnerText or HTMLTextContent gives for el under the call's
+   "Roles" and readings. HTMLInnerText's own walk is run here with HTMLToTree's
+   role lookup, so that a roles message is not issued again under
+   HTMLInnerText. HTMLToTree has no "BlockSeparator", so HTMLInnerText's is
+   used, as a call to it would. *)
+mergedText[HTMLInnerText, el_, s_] := innerText[el, treeRole[#, s] &, OptionValue[HTMLInnerText, "BlockSeparator"]];
+mergedText[HTMLTextContent, el_, _] := textContentWalk[el];
+
+(* An element's Display role under "Roles", looked up once per call, so that a
+   badrole is issued once for an element however often it is asked for. *)
+$treeRoles = <||>;
+treeRole[el_, s_] := Lookup[$treeRoles, Key[el], $treeRoles[el] = roleOf[el, s["RoleLookup"], HTMLToTree]];
+
+(* el with its Hidden elements removed, at any depth *)
+visibleElement[el_, _, s_] /; s["Hidden"] === <||> := el;
+visibleElement[el : XMLElement[tag_, attrs_, _], pos_, s_] := XMLElement[tag, attrs,
+  Replace[childSites[el, pos, s], {{x_XMLElement, p_} :> visibleElement[x, p, s], {x_, _} :> x}, {1}]];
+
+(* ---- Focus ----
+   Outside every Focused element, only the Focused elements are drawn, each
+   with its contents and DOM depth counted from it, hung from the nearest drawn
+   ancestor by a Collapsed edge when elements were skipped. Everything else
+   becomes Collapsed runs, in their places: a run can join elements from
+   several depths, and a run of text only counts 0. With "CollapsePaths" ->
+   False, the elements on a path to a Focused element are drawn as ordinary
+   nodes, at no depth, with their own runs, so a run is of one depth. *)
+
+nodesOutsideFocus[sites_, s_] := collapseRuns[Join @@ (itemsOutsideFocus[#1, #2, {}, s] & @@@ sites)];
+
+(* The items a site gives: a Focused element's node, the node of an element
+   on the path to one (or, with collapsed paths, the items below it),
+   collapsedRun[k] for k undrawn elements, or none. path holds the undrawn
+   elements above. *)
+itemsOutsideFocus[el_XMLElement, pos_, path_, s_] := Which[
+  focusedQ[pos, s], {collapsedEdge[elementNode[el, pos, 0, s], path]},
+  !onFocusPathQ[pos, s], {collapsedRun[elementCount[{{el, pos}}, s]]},
+  s["CollapsePaths"],
+    Join @@ (itemsOutsideFocus[#1, #2, Append[path, el], s] & @@@ childSites[el, pos, s]),
+  True, {Tree[treeShell[el], nodesOutsideFocus[childSites[el, pos, s], s]]}];
+itemsOutsideFocus[item_, _, _, s_] := If[drawnTextQ[item, s], {collapsedRun[0]}, {}];
+
+focusedQ[pos_, s_] := AssociationQ[s["Focused"]] && KeyExistsQ[s["Focused"], pos];
+
+(* Whether pos is above a Focused element *)
+onFocusPathQ[pos_, s_] := KeyExistsQ[s["FocusPaths"], pos];
+
+collapseRuns[items_] := Replace[SplitBy[items, MatchQ[_collapsedRun]], {
+  run : {__collapsedRun} :> Tree[Missing["Collapsed", Total[First /@ run]], None],
+  nodes_ :> Sequence @@ nodes}, {1}];
+
+collapsedEdge[t_, {}] := t;
+collapsedEdge[t_, path_] := Tree[TreeData[t], TreeChildren[t], ParentEdgeStyle -> Dashed,
+  ParentEdgeLabel -> Placed[StringRiffle[compoundSelector /@ path, " > "], Tooltip]];
+
+(* A document or a list is drawn under a "#document" root (ADR 0018), whose
+   children are its top elements and top-level strings, at depth 1. The root
+   is always drawn, and with focus its contents are outside every Focused
+   element. *)
+rootNode[XMLObject["Document"][_, root_, _], s_] :=
+  Tree["#document", rootChildren[visibleSites[{{root, {2}}}, s], s]];
+rootNode[el_XMLElement, s_] /; s["Focused"] === All := elementNode[el, {}, 0, s];
+rootNode[el_XMLElement, s_] := Tree[treeShell[el], rootChildren[childSites[el, {}, s], s]];
+rootNode[l_List, s_] := Tree["#document", rootChildren[contentSites[l, {}, s], s]];
+
+rootChildren[sites_, s_] /; s["Focused"] === All := nodeChildren[sites, {}, 0, s, childNodes[sites, 1, s] &];
+rootChildren[sites_, s_] := Replace[nodesOutsideFocus[sites, s], {} -> None];
+
+(* ---- Labels ----
+   One label function for every node, given as All -> treeLabel after the
+   user's rules, so that any rule the user gives wins for the nodes it covers.
+   A "#document" root is labelled by a {} rule, so that a text leaf that reads
+   "#document" is still drawn as text. *)
+
+treeLabel[el : XMLElement[tag_, attrs_, _]] :=
+  Tooltip[Style[localName[tag], FontFamily -> "Source Code Pro"],
+    Column[{compoundSelector[el],
+      If[attrs === {}, "no attributes",
+        Grid[{localName[#1], #2} & @@@ attrs, Alignment -> Left]]}]];
+treeLabel[str_String] := Tooltip[Style["\"" <> textLabel[str] <> "\"", Italic], str];
+treeLabel[Missing["Collapsed", n_]] := Tooltip["\[Ellipsis]", collapsedCount[n]];
+treeLabel[x_] := x;
+
+documentLabel[_] := Style["#document", Bold];
+
+localName[{_, name_String}] := name;
+localName[name_] := name;
+
+collapsedCount[0] := "text only";
+collapsedCount[1] := "1 element";
+collapsedCount[n_] := ToString[n] <> " elements";
+
+$textLabelLength = 40;
+
+(* Runs of HTML whitespace collapsed and the ends trimmed, then cut to 40
+   characters; a no-break space is not HTML whitespace, so it is kept. *)
+textLabel[str_String] :=
+  With[{t = StringTrim[StringReplace[str, HTMLWhitespace -> " "], HTMLWhitespace]},
+    If[StringLength[t] > $textLabelLength,
+      StringTrim[StringTake[t, $textLabelLength], HTMLWhitespace] <> "\[Ellipsis]", t]];
+
+(* tag#id.class..., each part escaped as CSS.escape does, so that the result
+   is a selector for the element. *)
+compoundSelector[XMLElement[tag_, attrs_, _]] := StringJoin[
+  cssEscape[localName[tag]],
+  Replace[Lookup[attrs, "id", ""], {"" -> "", id_String :> "#" <> cssEscape[id], _ -> ""}],
+  "." <> cssEscape[#] & /@ classList[Replace[Lookup[attrs, "class", ""], Except[_String] -> ""]]];
+
+cssEscape[s_String] := StringJoin[MapIndexed[cssEscapeChar[#1, First[#2], s] &, Characters[s]]];
+
+cssEscapeChar[c_, _, _] /; c === FromCharacterCode[0] := "\:fffd";
+cssEscapeChar[c_, i_, s_] := Which[
+  StringMatchQ[c, RegularExpression["[\\x01-\\x1f\\x7f]"]] ||
+    (StringMatchQ[c, DigitCharacter] && (i == 1 || (i == 2 && StringTake[s, 1] == "-"))),
+    "\\" <> IntegerString[ToCharacterCode[c][[1]], 16] <> " ",
+  i == 1 && c == "-" && StringLength[s] == 1, "\\-",
+  ToCharacterCode[c][[1]] >= 128 || StringMatchQ[c, RegularExpression["[A-Za-z0-9_-]"]], c,
+  True, "\\" <> c];
+
+(* The user's label settings, as one rule list that the default is appended
+   to. A bare function applies to the root only, which {} -> f says in a list.
+   TreeElementLabel is read as constant functions after the user's functions,
+   since a label function overrides TreeElementLabel. *)
+labelRules[None] := {All -> None};
+labelRules[Automatic] := {All -> Automatic};
+labelRules[r : (_Rule | _RuleDelayed)] := {r};
+labelRules[l_List] := l;
+labelRules[f_] := {{} -> f};
+
+constantLabels[rules_List] := Replace[rules,
+  (h : Rule | RuleDelayed)[k_, v : Except[None | Automatic]] :> h[k, Function[v]], {1}];
+
+(* ---- Sizing ----
+   An ImageSize computed from the tree as displayed: only the children that
+   MaxDisplayedChildren shows count, plus the "N total" node for the rest.
+   For Left, the height comes from the displayed leaves and the width from the
+   number of levels and the widest label at each; for a top-down layout, the
+   width is about 60 points per displayed leaf (Bottom too). Any other layout sizes itself. *)
+
+$leafHeight = 24;
+$charWidth = 7;
+$levelGap = 24;
+$topDownLeafWidth = 60;
+
+treeImageSize[t_, Left, mdc_] :=
+  With[{widths = $charWidth Values[KeySort[GroupBy[displayedNodes[t, {}, mdc], First -> Last, Max]]]},
+    {Round[levelSpacing[widths] (Length[widths] - 1) + (First[widths] + Last[widths])/2 + $levelGap],
+      $leafHeight displayedLeaves[t, {}, mdc]}];
+
+(* Tree spaces the levels evenly, so the space between two levels must fit the
+   widest pair of neighbouring labels. *)
+levelSpacing[{_}] := 0;
+levelSpacing[widths_] := Max[MovingAverage[widths, 2]] + $levelGap;
+treeImageSize[t_, Automatic | Top | Bottom, mdc_] := $topDownLeafWidth displayedLeaves[t, {}, mdc];
+treeImageSize[_, _, _] := Automatic;
+
+(* The number of children shown at position pos: TreeCases rules first, then
+   position rules (All among them), the first that applies winning, as in Tree. *)
+displayedCount[t_, pos_, rules_] := Replace[
+  FirstCase[rules, _[TreeCases[p_], m_] /; MatchQ[TreeData[t], p] :> m,
+    FirstCase[rules, _[k : Except[_TreeCases], m_] /; k === All || MatchQ[pos, k] :> m,
+      $MaxDisplayedChildren]],
+  All -> Infinity];
+
+(* The children shown, with their positions, and whether some are not *)
+shownChildren[t_, pos_, rules_] :=
+  With[{cs = Replace[TreeChildren[t], None -> {}], m = displayedCount[t, pos, rules]},
+    {Take[MapIndexed[{#1, Join[pos, #2]} &, cs], UpTo[m]], Length[cs] > m}];
+
+displayedLeaves[t_, pos_, rules_] := Replace[shownChildren[t, pos, rules], {
+  {{}, False} -> 1,
+  {shown_, more_} :> Total[displayedLeaves[#1, #2, rules] & @@@ shown] + Boole[more]}];
+
+(* {level, label width in characters} for each displayed node *)
+displayedNodes[t_, pos_, rules_] := With[{sc = shownChildren[t, pos, rules], d = Length[pos]},
+  Join[{{d, labelWidth[TreeData[t]]}},
+    Join @@ (displayedNodes[#1, #2, rules] & @@@ First[sc]),
+    If[Last[sc], {{d + 1, $totalLabelWidth}}, {}]]];
+
+$totalLabelWidth = 8;
+
+labelWidth[XMLElement[tag_, _, _]] := StringLength[localName[tag]];
+labelWidth[str_String] := StringLength[textLabel[str]] + 2;
+labelWidth[_] := 1;
+
+(* ---- Tree options ----
+   A bare MaxDisplayedChildren -> m becomes {All -> m}, so that it limits every
+   node; a rule or a list is passed as given. The user's label settings and
+   the default become one TreeElementLabelFunction. TreeLayout -> Left and the computed ImageSize are
+   added when the user gives none. A computed {width, height} comes with its
+   AspectRatio: Tree keeps the layout's own one otherwise, and draws it in the
+   middle of the image. *)
+
+maxDisplayedSetting[m : Except[_List | _Rule | _RuleDelayed]] := {All -> m};
+maxDisplayedSetting[m_] := m;
+
+treeOptions[t_, opts_List] := Module[{given, mdc, layout, labels},
+  given = Select[Flatten[opts], treeOptionNameQ[First[#]] &];
+  mdc = Flatten[Cases[given, _[MaxDisplayedChildren, m_] :> maxDisplayedSetting[m]]];
+  layout = FirstCase[given, _[TreeLayout, l_] :> l, Left];
+  labels = Join[
+    Join @@ Cases[given, _[TreeElementLabelFunction, f_] :> labelRules[f]],
+    Join @@ Cases[given, _[TreeElementLabel, l_] :> constantLabels[labelRules[l]]],
+    If[TreeData[t] === "#document", {{} -> documentLabel}, {}],
+    {All -> treeLabel}];
+  Join[
+    Replace[DeleteCases[given, _[TreeElementLabelFunction | TreeElementLabel, _]],
+      _[MaxDisplayedChildren, m_] :> (MaxDisplayedChildren -> maxDisplayedSetting[m]), {1}],
+    {TreeElementLabelFunction -> labels},
+    If[MemberQ[Keys[given], TreeLayout], {}, {TreeLayout -> Left}],
+    If[MemberQ[Keys[given], ImageSize], {},
+      Replace[treeImageSize[t, layout, mdc], {
+        Automatic -> {},
+        {w_, h_} :> {ImageSize -> {w, h},
+          If[MemberQ[Keys[given], AspectRatio], Nothing, AspectRatio -> h/w]},
+        w_ :> {ImageSize -> w}}]]]];
+
+(* ---- Public interface ----
+   A depth is never a rule, so a rule after the tree is always an option. An
+   option neither HTMLToTree's nor Tree's gives optx, and the call stays
+   unevaluated, as a wrong argument count does. *)
+
+notRuleQ[a_] := !MatchQ[a, _Rule | _RuleDelayed | {(_Rule | _RuleDelayed) ..}];
+
+HTMLToTree[tree_, n : _?notRuleQ : Infinity, opts : OptionsPattern[]] /;
+    countQ[n] && unknownTreeOptions[{opts}] === {} :=
+  If[!validTreeQ[tree], messageTreeRefusal[HTMLToTree, tree]; $Failed,
+    Replace[treeSettings[AssociationThread[Keys[Options[HTMLToTree]], OptionValue[HTMLToTree,
+        FilterRules[{opts}, Options[HTMLToTree]], Keys[Options[HTMLToTree]]]]], {
+      $Failed -> $Failed,
+      settings_ :> withReadings[settings["AttributeReadings"], drawnTree[tree, n, settings, {opts}]]}]];
+
+HTMLToTree[args___] /; (treeCallMessage[{args}]; False) := Null;
+
+(* The Tree for settings s, under the readings in force. "Roles" is checked on
+   every call, merging or not, then both queries. *)
+drawnTree[tree_, n_, s_, opts_] := Replace[ruleLookups[{s["Roles"]}, HTMLToTree, tree], {
+  $Failed -> $Failed,
+  {roles_} :> Replace[treeSites[tree, s], {
+    $Failed -> $Failed,
+    sites_ :> Block[{$treeRoles = <||>},
+      With[{drawn = rootNode[tree, Join[s, sites, <|"DOMDepth" -> n, "RoleLookup" -> roles|>]]},
+        Tree[TreeData[drawn], TreeChildren[drawn], Sequence @@ treeOptions[drawn, opts]]]]}]}];
+
+(* A depth that is not valid gives innf, as XMLCases's count does (ADR 0019),
+   before any unknown option after it. *)
+treeCallMessage[{tree_, n_?notRuleQ, opts___}] /; !countQ[n] && NoneTrue[{opts}, notRuleQ] :=
+  Message[HTMLToTree::innf, Unevaluated[HTMLToTree[tree, n, opts]], 2];
+treeCallMessage[args : {tree_, rest___}] :=
+  Replace[unknownTreeOptions[Select[{rest}, !notRuleQ[#] &]], {
+    {} :> countMessage[HTMLToTree, args, {1, 2}],
+    {first_, ___} :> Message[HTMLToTree::optx, First[first], Unevaluated[HTMLToTree[tree, rest]]]}];
+treeCallMessage[args_] := countMessage[HTMLToTree, args, {1, 2}];
+
+(* =========================================================== *)
 (* Syntax information                                           *)
 (* The front end colours a call with a wrong argument count.   *)
 (* XMLPattern and the combinators are inert, but their counts   *)
@@ -3941,6 +4419,11 @@ Scan[
     HTMLToNotebook -> {_, OptionsPattern[]}, HTMLClassList -> {_}, FromCSSSelector -> {_},
     XMLPattern -> {_, _.},
     Child -> {_, _, ___}, Descendant -> {_, _, ___}, Adjacent -> {_, _, ___}, Sibling -> {_, _, ___}}];
+
+(* HTMLToTree takes Tree's options as well as its own, as TreeForm takes a
+   depth. *)
+SyntaxInformation[HTMLToTree] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]},
+  "OptionNames" -> Join[Keys[Options[HTMLToTree]], ToString /@ Keys[Options[Tree]]]};
 
 End[];
 EndPackage[];
