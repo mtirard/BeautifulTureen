@@ -4029,7 +4029,10 @@ unknownTreeOptions[opts_List] := Select[Flatten[opts], !optionRuleQ[HTMLToTree][
 
 (* ---- Hidden and focused sites ----
    Both queries are matched against the original input, as XMLCases matches,
-   so that Adjacent and :has() see the page as it is. Both are compiled before
+   so that Adjacent and :has() see the page as it is. Removing the hidden
+   elements first (XMLDeleteCases, then draw) would be simpler, but it changes
+   what those combinators match: a sibling or descendant that is hidden would no
+   longer be there for the focus query to see. Both are compiled before
    either is matched, and one that is refused gives $Failed. *)
 
 (* A compiled query, None for a query that is off, or $Failed *)
@@ -4071,6 +4074,12 @@ focusedSites[tree_, c_, hidden_] :=
    root, not WL levels. A site is an item with its position. contentNodes
    gives the nodes an item is drawn as: none, one, or (later) several. *)
 
+(* A node's data is the element without its contents, not the whole element,
+   so a label function cannot read an element's text from its data. The node's
+   children already hold the contents, and an output cell serialises each node's
+   data separately: with whole elements, every ancestor carried the page again
+   (a 17-node overview was 1 MB of boxes, 49 KB with shells). The shell is part
+   of the result's contract, since a computation on the Tree reads it. *)
 treeShell[XMLElement[tag_, attrs_, _]] := XMLElement[tag, attrs, {}];
 
 (* The sites of items whose positions start with pos; a Hidden element leaves
