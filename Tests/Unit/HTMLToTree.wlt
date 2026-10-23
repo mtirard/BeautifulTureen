@@ -309,7 +309,7 @@ TestCreate[
 ];
 
 TestCreate[
-  edge[TreeChildren[$focusSections][[2]]],
+  edge[TreeExtract[$focusSections, {2}]],
   {Dashed, Placed["main", Tooltip]},
   TestID -> "htt-focus-collapsed-edge"
 ];
@@ -317,7 +317,7 @@ TestCreate[
 (* A Focused element nested in another is part of its contents: no Collapsed
    edge, and nothing collapsed around it. *)
 TestCreate[
-  edge[TreeChildren[TreeChildren[TreeChildren[TreeChildren[$focusSections][[2]]][[3]]][[1]]][[1]]],
+  edge[TreeExtract[$focusSections, {2, 3, 1, 1}]],
   {None, None},
   TestID -> "htt-focus-nested-part-of-contents"
 ];

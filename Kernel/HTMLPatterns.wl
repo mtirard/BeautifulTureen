@@ -494,7 +494,7 @@ badpat[q_] := refuseAtHead["badpat", q];
    $holder while that argument is compiled. A consumer that takes only an
    element pattern refuses any combinator, so there the message stays its own. *)
 refuseAt[h_, tag_, args___] /; h === $head && $queryOption =!= None :=
-  refuse[HTMLToTree::badquery, $queryOption, $treeQueryOff[$queryOption], First[{args}]];
+  (badQuery[$queryOption, First[{args}]]; Throw[$Failed, $refusal]);
 refuseAt[h_, tag_, args___] := refuse[MessageName[h, tag], args];
 holderFor[h_] := If[MatchQ[$head, XMLCases | XMLFirstCase | XMLDeleteCases] || $queryOption =!= None, h, $head];
 
@@ -3990,10 +3990,10 @@ $treeDefaults = <|"Focus" -> All, "Hide" -> None, "MergeText" -> None,
   "IncludeWhitespace" -> False, "CollapsePaths" -> True, "Roles" -> {},
   "AttributeReadings" -> <||>|>;
 
-(* The values an option can take, written as the message shows them *)
 (* The value that turns each query off; the other's is refused *)
 $treeQueryOff = <|"Focus" -> All, "Hide" -> None|>;
 
+(* The values an option can take, written as the message shows them *)
 $treeOptionValues = <|"MergeText" -> None | HTMLInnerText | HTMLTextContent | Automatic,
   "IncludeWhitespace" -> True | False | Automatic, "CollapsePaths" -> True | False | Automatic|>;
 
@@ -4001,16 +4001,16 @@ treeSettings[values_Association] :=
   Catch[Association[KeyValueMap[#1 -> treeSetting[#1, #2] &, values]], treeSettings];
 
 treeSetting[name_, Automatic] := $treeDefaults[name];
-treeSetting[name : "Focus" | "Hide", v : _Rule | _RuleDelayed] := refuseQuery[name, v];
-treeSetting["Focus", None] := refuseQuery["Focus", None];
-treeSetting["Hide", All] := refuseQuery["Hide", All];
+treeSetting[name : "Focus" | "Hide", v : All | None | _Rule | _RuleDelayed] /; v =!= $treeQueryOff[name] :=
+  (badQuery[name, v]; Throw[$Failed, treeSettings]);
 treeSetting[name_, v_] /; KeyExistsQ[$treeOptionValues, name] :=
   If[MatchQ[v, $treeOptionValues[name]], v,
     Message[HTMLToTree::optval, name, $treeOptionValues[name], v];
     Throw[$Failed, treeSettings]];
 treeSetting[_, v_] := v;
 
-refuseQuery[name_, v_] := (Message[HTMLToTree::badquery, name, $treeQueryOff[name], v]; Throw[$Failed, treeSettings]);
+(* The message for a query that is refused, from the settings or the compiler *)
+badQuery[name_, v_] := Message[HTMLToTree::badquery, name, $treeQueryOff[name], v];
 
 (* ---- Telling options apart ----
    HTMLToTree's names are strings and Tree's are symbols, so they cannot
@@ -4044,7 +4044,7 @@ treeSites[tree_, s_] := Replace[treeQuery["Focus", s["Focus"]], {
 
 siteSet[ps_List] := AssociationThread[ps -> True];
 
-prefixes[pos_] := Take[pos, #] & /@ Range[0, Length[pos]];
+prefixes[pos_] := FoldList[Append, {}, pos];
 
 (* XMLCases does not select a bare element root, so the query is matched in a
    list around it, where it can; a root it selects is kept, with root. *)
@@ -4073,9 +4073,9 @@ contentSites[items_List, pos_, s_] := visibleSites[MapIndexed[{#1, Join[pos, #2]
 
 visibleSites[sites_, s_] := Select[sites, !KeyExistsQ[s["Hidden"], Last[#]] &];
 
-elementSites[XMLElement[_, _, ch_], pos_, s_] := contentSites[ch, Join[pos, {3}], s];
+childSites[XMLElement[_, _, ch_], pos_, s_] := contentSites[ch, Join[pos, {3}], s];
 
-elementNode[el_XMLElement, pos_, d_, s_] := With[{sites = elementSites[el, pos, s]},
+elementNode[el_XMLElement, pos_, d_, s_] := With[{sites = childSites[el, pos, s]},
   Tree[treeShell[el], nodeChildren[sites, d, s, childNodes[sites, d + 1, s] &]]];
 
 (* The children of a node at depth d with contents sites. A Cut element, at
@@ -4089,15 +4089,20 @@ nodeChildren[sites_, d_, s_, draw_] := Replace[
 
 (* The elements in sites, descendants included and Hidden elements not *)
 elementCount[sites_, s_] :=
-  Total[Cases[sites, {el_XMLElement, pos_} :> 1 + elementCount[elementSites[el, pos, s], s]]];
+  Total[Cases[sites, {el_XMLElement, pos_} :> 1 + elementCount[childSites[el, pos, s], s]]];
 
 childNodes[sites_, d_, s_] := Join @@ (contentNodes[#1, #2, d, s] & @@@ sites);
 
 contentNodes[el_XMLElement, pos_, d_, s_] := {elementNode[el, pos, d, s]};
-contentNodes[str_String, _, _, s_] :=
-  If[!s["IncludeWhitespace"] && StringMatchQ[str, "" | HTMLWhitespace], {}, {Tree[str, None]}];
+contentNodes[str_String, _, _, s_] := If[drawnTextQ[str, s], {Tree[str, None]}, {}];
 contentNodes[XMLObject["CDATASection"][str_String], pos_, d_, s_] := contentNodes[str, pos, d, s];
 contentNodes[_, _, _, _] := {};
+
+(* Whether an item is text that is drawn: whitespace-only strings are not,
+   unless "IncludeWhitespace" is on. *)
+drawnTextQ[str_String, s_] := s["IncludeWhitespace"] || !StringMatchQ[str, "" | HTMLWhitespace];
+drawnTextQ[XMLObject["CDATASection"][str_String], s_] := drawnTextQ[str, s];
+drawnTextQ[_, _] := False;
 
 (* ---- Focus ----
    Outside every Focused element, only the Focused elements are drawn, each
@@ -4106,16 +4111,16 @@ contentNodes[_, _, _, _] := {};
    becomes Collapsed runs, in their places: a run can join elements from
    several depths, and a run of text only counts 0. *)
 
-outerNodes[sites_, s_] := collapseRuns[Join @@ (outerItems[#1, #2, {}, s] & @@@ sites)];
+nodesOutsideFocus[sites_, s_] := collapseRuns[Join @@ (itemsOutsideFocus[#1, #2, {}, s] & @@@ sites)];
 
 (* The items a site gives: a Focused element's node, collapsedRun[k] for k
    undrawn elements, or none. path holds the undrawn elements above. *)
-outerItems[el_XMLElement, pos_, path_, s_] := Which[
+itemsOutsideFocus[el_XMLElement, pos_, path_, s_] := Which[
   KeyExistsQ[s["Focused"], pos], {collapsedEdge[elementNode[el, pos, 0, s], path]},
   KeyExistsQ[s["FocusPaths"], pos],
-    Join @@ (outerItems[#1, #2, Append[path, el], s] & @@@ elementSites[el, pos, s]),
+    Join @@ (itemsOutsideFocus[#1, #2, Append[path, el], s] & @@@ childSites[el, pos, s]),
   True, {collapsedRun[elementCount[{{el, pos}}, s]]}];
-outerItems[item_, pos_, _, s_] := If[contentNodes[item, pos, 0, s] === {}, {}, {collapsedRun[0]}];
+itemsOutsideFocus[item_, _, _, s_] := If[drawnTextQ[item, s], {collapsedRun[0]}, {}];
 
 collapseRuns[items_] := Replace[SplitBy[items, MatchQ[_collapsedRun]], {
   run : {__collapsedRun} :> Tree[Missing["Collapsed", Total[First /@ run]], None],
@@ -4132,11 +4137,11 @@ collapsedEdge[t_, path_] := Tree[TreeData[t], TreeChildren[t], ParentEdgeStyle -
 rootNode[XMLObject["Document"][_, root_, _], s_] :=
   Tree["#document", rootChildren[visibleSites[{{root, {2}}}, s], s]];
 rootNode[el_XMLElement, s_] /; s["Focused"] === All := elementNode[el, {}, 0, s];
-rootNode[el_XMLElement, s_] := Tree[treeShell[el], rootChildren[elementSites[el, {}, s], s]];
+rootNode[el_XMLElement, s_] := Tree[treeShell[el], rootChildren[childSites[el, {}, s], s]];
 rootNode[l_List, s_] := Tree["#document", rootChildren[contentSites[l, {}, s], s]];
 
 rootChildren[sites_, s_] /; s["Focused"] === All := nodeChildren[sites, 0, s, childNodes[sites, 1, s] &];
-rootChildren[sites_, s_] := Replace[outerNodes[sites, s], {} -> None];
+rootChildren[sites_, s_] := Replace[nodesOutsideFocus[sites, s], {} -> None];
 
 (* ---- Labels ----
    One label function for every node, given as All -> treeLabel after the
