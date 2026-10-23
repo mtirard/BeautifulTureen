@@ -23,6 +23,7 @@ FromCSSSelector::usage = "FromCSSSelector[\"selector\"] gives the XML pattern th
 HTMLTextContent::usage ="HTMLTextContent[tree] gives the text of an XML tree: all the strings it contains, joined in document order. No whitespace is added or removed, so source indentation and the whitespace in <pre> are kept. tree can be an XMLElement, an XMLObject document, a list, or a string.";
 HTMLInnerText::usage = "HTMLInnerText[tree] gives the readable text of an XML tree. Runs of whitespace are collapsed, block-level elements go on their own lines, <br> becomes a newline, <pre> content is kept as written, tags such as script and style are dropped, and the result is trimmed. How each element is treated depends only on its tag, as given by the built-in user-agent stylesheet. HTMLInnerText[tree, \"Roles\" -> rules] changes this, with rules of the form pattern -> role, where pattern is an XMLPattern or a CSS selector string and role is \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\" or \"Skip\". \"BlockSeparator\" -> sep sets the string inserted between blocks (default \"\\n\"). \"AttributeReadings\" -> readings adds readings to $AttributeReadings for this call. tree can be an XMLElement, an XMLObject document, a list, or a string.";
 HTMLToNotebook::usage = "HTMLToNotebook[tree] converts an HTML or XML tree to a Notebook expression, which can be displayed or exported with Export to Markdown, PDF, RTF, etc. Block-level tags become cells, such as headings -> Title, Chapter, Section, etc., p -> Text, li -> Item, Subitem, etc., blockquote -> a framed quote, pre -> a Program cell, and table -> a Dataset or Grid, with its caption as a Text cell before it. Inline tags become boxes in the surrounding cell, such as b -> bold, i -> italic, code -> inline code, a -> a hyperlink and img -> its alt text, linked to its src. How each element is treated depends only on its tag, as given by the built-in user-agent stylesheet. HTMLToNotebook[tree, \"Roles\" -> rules] changes the role of elements, such as block or inline. \"Constructs\" -> rules changes what an element becomes: an inline style such as \"Bold\", a cell style, or a function that is applied to the element and gives a Cell or boxes. The left-hand side of each rule is an XMLPattern or a CSS selector string. \"AttributeReadings\" -> readings adds readings to $AttributeReadings for this call. tree can be an XMLElement, an XMLObject document, a list, or a string.";
+HTMLToTree::usage = "HTMLToTree[tree] draws an HTML or XML tree as a Tree, with one node per element and per text string. A document or a list is drawn under a \"#document\" root, and an XMLElement is its own root. Each element is labelled with its tag name, and its tooltip gives its compound selector, such as div#main.note, and its attributes. Each text string is a leaf, labelled with its text, whitespace collapsed and cut to 40 characters. Whitespace-only strings are left out unless \"IncludeWhitespace\" -> True is given. The data of an element node is the element with no contents, XMLElement[tag, attrs, {}], and the data of a text node is the string. Options of Tree, such as TreeElementLabelFunction, TreeLayout, MaxDisplayedChildren and ImageSize, can be given and are passed to Tree. The default layout is TreeLayout -> Left, and MaxDisplayedChildren -> m limits the children of every node. tree can be an XMLElement, an XMLObject document, or a list.";
 
 (* === Messages === *)
 
@@ -78,6 +79,8 @@ HTMLToNotebook::stages = "`1` is a combinator with fewer than two stages. A comb
 HTMLToNotebook::notrule = "Each \"Roles\" or \"Constructs\" entry should be a rule pattern -> value or pattern :> value. Got `1`.";
 HTMLToNotebook::condcombinator = "A condition (/;) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Got `1`.";
 HTMLToNotebook::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
+HTMLToTree::badtree = "The first argument should be an XMLObject, an XMLElement, or a list of XMLElement expressions and strings. Got head `1`.";
+HTMLToTree::optval = "The value of the `1` option should be `2`. Got `3`.";
 
 Begin["`Private`"];
 
@@ -93,7 +96,7 @@ Scan[Function[h,
 (* A list given as a tree holding something other than elements and strings. *)
 Scan[Function[h,
     MessageName[h, "badmember"] = "A list given as the first argument should hold only XMLElement expressions and strings. The member at position `1` has head `2`."],
-  {XMLCases, XMLFirstCase, XMLDeleteCases, HTMLTextContent, HTMLInnerText, HTMLToNotebook}];
+  {XMLCases, XMLFirstCase, XMLDeleteCases, HTMLTextContent, HTMLInnerText, HTMLToNotebook, HTMLToTree}];
 
 (* A mistake in a combinator is its message, named for it (ADR 0022). The
    message's own slot is a value here, so that the template keeps it. *)
@@ -2197,8 +2200,12 @@ deleteAt[tree_, ps_] := Delete[tree, ps];
 (* Only a rule naming an option of f is read as one: any other rule, such as
    XMLFirstCase's default, is an argument. *)
 optionRuleQ[f_][(Rule | RuleDelayed)[name_, _]] :=
-  MemberQ[Keys[Options[f]], ToString[name]];
+  MemberQ[Keys[Options[f]], ToString[name]] || passedOptionQ[f, name];
 optionRuleQ[_][_] := False;
+
+(* HTMLToTree also takes Tree's options, which it passes on to Tree *)
+passedOptionQ[HTMLToTree, name_] := treeOptionNameQ[name];
+passedOptionQ[_, _] := False;
 
 optionQ[f_][a_] := MatchQ[a, _?(optionRuleQ[f]) | {__?(optionRuleQ[f])}];
 
@@ -3953,6 +3960,249 @@ HTMLToNotebook[tree_, OptionsPattern[]] :=
 HTMLToNotebook[args___] /; (countMessage[HTMLToNotebook, {args}, {1, 1}]; False) := Null;
 
 (* =========================================================== *)
+(* HTMLToTree                                                  *)
+(* A lossy projection of a tree into a Tree for display: one   *)
+(* node per element (its shell as data) and per text string.   *)
+(* Customisation goes through Tree's own options, which pass   *)
+(* through apart from the label, layout and size defaults.     *)
+(* =========================================================== *)
+
+Options[HTMLToTree] = {"Focus" -> Automatic, "Hide" -> Automatic, "MergeText" -> Automatic,
+  "IncludeWhitespace" -> Automatic, "CollapsePaths" -> Automatic, "Roles" -> Automatic,
+  "AttributeReadings" -> Automatic};
+
+(* ---- Settings ----
+   Every Automatic is resolved here and only here, since the defaults are
+   provisional. "Focus", "Hide", "Roles" and "AttributeReadings" are taken but
+   not yet used. A value that is refused gives optval and $Failed. *)
+
+$treeDefaults = <|"Focus" -> All, "Hide" -> None, "MergeText" -> None,
+  "IncludeWhitespace" -> False, "CollapsePaths" -> True, "Roles" -> {},
+  "AttributeReadings" -> <||>|>;
+
+(* The values an option can take, written as the message shows them *)
+$treeOptionValues = <|"MergeText" -> None | HTMLInnerText | HTMLTextContent | Automatic,
+  "IncludeWhitespace" -> True | False | Automatic, "CollapsePaths" -> True | False | Automatic|>;
+
+treeSettings[values_Association] :=
+  Catch[Association[KeyValueMap[#1 -> treeSetting[#1, #2] &, values]], treeSettings];
+
+treeSetting[name_, Automatic] := $treeDefaults[name];
+treeSetting[name_, v_] /; KeyExistsQ[$treeOptionValues, name] :=
+  If[MatchQ[v, $treeOptionValues[name]], v,
+    Message[HTMLToTree::optval, name, $treeOptionValues[name], v];
+    Throw[$Failed, treeSettings]];
+treeSetting[_, v_] := v;
+
+(* ---- Telling options apart ----
+   HTMLToTree's names are strings and Tree's are symbols, so they cannot
+   collide. Options[Tree] is read at call time, not stored. *)
+
+treeOptionNameQ[name_Symbol] := MemberQ[Keys[Options[Tree]], name];
+treeOptionNameQ[_] := False;
+
+unknownTreeOptions[opts_List] := Select[Flatten[opts], !optionRuleQ[HTMLToTree][#] &];
+
+(* ---- The tree that is built ----
+   The walk carries each node's position in the input, for the queries that
+   later select sites by position. contentNodes gives the nodes an item is
+   drawn as: none, one, or (later) several. *)
+
+treeShell[XMLElement[tag_, attrs_, _]] := XMLElement[tag, attrs, {}];
+
+elementNode[el : XMLElement[_, _, ch_], pos_, s_] :=
+  Tree[treeShell[el], Replace[childNodes[ch, Join[pos, {3}], s], {} -> None]];
+
+childNodes[items_List, pos_, s_] :=
+  Join @@ MapIndexed[contentNodes[#1, Join[pos, #2], s] &, items];
+
+contentNodes[el_XMLElement, pos_, s_] := {elementNode[el, pos, s]};
+contentNodes[str_String, _, s_] :=
+  If[!s["IncludeWhitespace"] && StringMatchQ[str, "" | HTMLWhitespace], {}, {Tree[str, None]}];
+contentNodes[XMLObject["CDATASection"][str_String], pos_, s_] := contentNodes[str, pos, s];
+contentNodes[_, _, _] := {};
+
+(* A document or a list is drawn under a "#document" root (ADR 0018), whose
+   children are its top elements and top-level strings. *)
+rootNode[XMLObject["Document"][_, root_, _], s_] :=
+  Tree["#document", Replace[contentNodes[root, {2}, s], {} -> None]];
+rootNode[el_XMLElement, s_] := elementNode[el, {}, s];
+rootNode[l_List, s_] := Tree["#document", Replace[childNodes[l, {}, s], {} -> None]];
+
+(* ---- Labels ----
+   One label function for every node, given as All -> treeLabel after the
+   user's rules, so that any rule the user gives wins for the nodes it covers.
+   A "#document" root is labelled by a {} rule, so that a text leaf that reads
+   "#document" is still drawn as text. *)
+
+treeLabel[el : XMLElement[tag_, attrs_, _]] :=
+  Tooltip[Style[localName[tag], FontFamily -> "Source Code Pro"],
+    Column[{compoundSelector[el],
+      If[attrs === {}, "no attributes",
+        Grid[{localName[#1], #2} & @@@ attrs, Alignment -> Left]]}]];
+treeLabel[str_String] := Tooltip[Style["\"" <> textLabel[str] <> "\"", Italic], str];
+treeLabel[Missing["Collapsed", n_]] := Tooltip["\[Ellipsis]", collapsedCount[n]];
+treeLabel[x_] := x;
+
+documentLabel[_] := Style["#document", Bold];
+
+localName[{_, name_String}] := name;
+localName[name_] := name;
+
+collapsedCount[0] := "text only";
+collapsedCount[1] := "1 element";
+collapsedCount[n_] := ToString[n] <> " elements";
+
+$textLabelLength = 40;
+
+(* Runs of HTML whitespace collapsed and the ends trimmed, then cut to 40
+   characters; a no-break space is not HTML whitespace, so it is kept. *)
+textLabel[str_String] :=
+  With[{t = StringTrim[StringReplace[str, HTMLWhitespace -> " "], HTMLWhitespace]},
+    If[StringLength[t] > $textLabelLength,
+      StringTrim[StringTake[t, $textLabelLength], HTMLWhitespace] <> "\[Ellipsis]", t]];
+
+(* tag#id.class..., each part escaped as CSS.escape does, so that the result
+   is a selector for the element. *)
+compoundSelector[XMLElement[tag_, attrs_, _]] := StringJoin[
+  cssEscape[localName[tag]],
+  Replace[Lookup[attrs, "id", ""], {"" -> "", id_String :> "#" <> cssEscape[id], _ -> ""}],
+  "." <> cssEscape[#] & /@ classList[Replace[Lookup[attrs, "class", ""], Except[_String] -> ""]]];
+
+cssEscape[s_String] := StringJoin[MapIndexed[cssEscapeChar[#1, First[#2], s] &, Characters[s]]];
+
+cssEscapeChar[c_, _, _] /; c === FromCharacterCode[0] := "\:fffd";
+cssEscapeChar[c_, i_, s_] := Which[
+  StringMatchQ[c, RegularExpression["[\\x01-\\x1f\\x7f]"]] ||
+    (StringMatchQ[c, DigitCharacter] && (i == 1 || (i == 2 && StringTake[s, 1] == "-"))),
+    "\\" <> IntegerString[ToCharacterCode[c][[1]], 16] <> " ",
+  i == 1 && c == "-" && StringLength[s] == 1, "\\-",
+  ToCharacterCode[c][[1]] >= 128 || StringMatchQ[c, RegularExpression["[A-Za-z0-9_-]"]], c,
+  True, "\\" <> c];
+
+(* The user's label settings, as one rule list that the default is appended
+   to. A bare function applies to the root only, which {} -> f says in a list.
+   TreeElementLabel is read as constant functions after the user's functions,
+   since a label function overrides TreeElementLabel. *)
+labelRules[None] := {All -> None};
+labelRules[Automatic] := {All -> Automatic};
+labelRules[r : (_Rule | _RuleDelayed)] := {r};
+labelRules[l_List] := l;
+labelRules[f_] := {{} -> f};
+
+constantLabels[rules_List] := Replace[rules,
+  (h : Rule | RuleDelayed)[k_, v : Except[None | Automatic]] :> h[k, Function[v]], {1}];
+
+(* ---- Sizing ----
+   An ImageSize computed from the tree as displayed: only the children that
+   MaxDisplayedChildren shows count, plus the "N total" node for the rest.
+   For Left, the height comes from the displayed leaves and the width from the
+   number of levels and the widest label at each; for a top-down layout, the width is about 60
+   points per displayed leaf. Any other layout sizes itself. *)
+
+$leafHeight = 24;
+$charWidth = 7;
+$levelGap = 24;
+$topDownLeafWidth = 60;
+
+treeImageSize[t_, Left, mdc_] :=
+  With[{widths = $charWidth Values[KeySort[GroupBy[displayedNodes[t, {}, mdc], First -> Last, Max]]]},
+    {Round[levelSpacing[widths] (Length[widths] - 1) + (First[widths] + Last[widths])/2 + $levelGap],
+      $leafHeight displayedLeaves[t, {}, mdc]}];
+
+(* Tree spaces the levels evenly, so the space between two levels must fit the
+   widest pair of neighbouring labels. *)
+levelSpacing[{_}] := 0;
+levelSpacing[widths_] := Max[MovingAverage[widths, 2]] + $levelGap;
+treeImageSize[t_, Automatic | Top, mdc_] := $topDownLeafWidth displayedLeaves[t, {}, mdc];
+treeImageSize[_, _, _] := Automatic;
+
+(* The number of children shown at position pos: TreeCases rules first, then
+   position rules (All among them), the first that applies winning, as in Tree. *)
+displayedCount[t_, pos_, rules_] := Replace[
+  FirstCase[rules, _[TreeCases[p_], m_] /; MatchQ[TreeData[t], p] :> m,
+    FirstCase[rules, _[k : Except[_TreeCases], m_] /; k === All || MatchQ[pos, k] :> m,
+      $MaxDisplayedChildren]],
+  All -> Infinity];
+
+(* The children shown, with their positions, and whether some are not *)
+shownChildren[t_, pos_, rules_] :=
+  With[{cs = Replace[TreeChildren[t], None -> {}], m = displayedCount[t, pos, rules]},
+    {Take[MapIndexed[{#1, Join[pos, #2]} &, cs], UpTo[m]], Length[cs] > m}];
+
+displayedLeaves[t_, pos_, rules_] := Replace[shownChildren[t, pos, rules], {
+  {{}, False} -> 1,
+  {shown_, more_} :> Total[displayedLeaves[#1, #2, rules] & @@@ shown] + Boole[more]}];
+
+(* {level, label width in characters} for each displayed node *)
+displayedNodes[t_, pos_, rules_] := With[{sc = shownChildren[t, pos, rules], d = Length[pos]},
+  Join[{{d, labelWidth[TreeData[t]]}},
+    Join @@ (displayedNodes[#1, #2, rules] & @@@ First[sc]),
+    If[Last[sc], {{d + 1, $totalLabelWidth}}, {}]]];
+
+$totalLabelWidth = 8;
+
+labelWidth[XMLElement[tag_, _, _]] := StringLength[localName[tag]];
+labelWidth[str_String] := StringLength[textLabel[str]] + 2;
+labelWidth[_] := 1;
+
+(* ---- Tree options ----
+   A bare MaxDisplayedChildren -> m becomes {All -> m}, so that it limits every
+   node; a rule or a list is passed as given. The user's label settings and the default become one
+   TreeElementLabelFunction. TreeLayout -> Left and the computed ImageSize are
+   added when the user gives none. A computed {width, height} comes with its
+   AspectRatio: Tree keeps the layout's own one otherwise, and draws it in the
+   middle of the image. *)
+
+maxDisplayedRules[m : Except[_List | _Rule | _RuleDelayed]] := {All -> m};
+maxDisplayedRules[r : (_Rule | _RuleDelayed)] := {r};
+maxDisplayedRules[l_List] := l;
+
+treeOptions[t_, opts_List] := Module[{given, mdc, layout, labels},
+  given = Select[Flatten[opts], treeOptionNameQ[First[#]] &];
+  mdc = Join @@ Cases[given, _[MaxDisplayedChildren, m_] :> maxDisplayedRules[m]];
+  layout = FirstCase[given, _[TreeLayout, l_] :> l, Left];
+  labels = Join[
+    Join @@ Cases[given, _[TreeElementLabelFunction, f_] :> labelRules[f]],
+    Join @@ Cases[given, _[TreeElementLabel, l_] :> constantLabels[labelRules[l]]],
+    If[TreeData[t] === "#document", {{} -> documentLabel}, {}],
+    {All -> treeLabel}];
+  Join[
+    Replace[DeleteCases[given, _[TreeElementLabelFunction | TreeElementLabel, _]],
+      _[MaxDisplayedChildren, m : Except[_List | _Rule | _RuleDelayed]] :> (MaxDisplayedChildren -> {All -> m}), {1}],
+    {TreeElementLabelFunction -> labels},
+    If[MemberQ[Keys[given], TreeLayout], {}, {TreeLayout -> Left}],
+    If[MemberQ[Keys[given], ImageSize], {},
+      Replace[treeImageSize[t, layout, mdc], {
+        Automatic -> {},
+        {w_, h_} :> {ImageSize -> {w, h},
+          If[MemberQ[Keys[given], AspectRatio], Nothing, AspectRatio -> h/w]},
+        w_ :> {ImageSize -> w}}]]]];
+
+(* ---- Public interface ----
+   A depth is never a rule, so a rule after the tree is always an option. An
+   option neither HTMLToTree's nor Tree's gives optx, and the call stays
+   unevaluated, as a wrong argument count does. *)
+
+notRuleQ[a_] := !MatchQ[a, _Rule | _RuleDelayed | {(_Rule | _RuleDelayed) ..}];
+
+HTMLToTree[tree_, n : _?notRuleQ : Infinity, opts : OptionsPattern[]] /;
+    countQ[n] && unknownTreeOptions[{opts}] === {} :=
+  If[!validTreeQ[tree], messageTreeRefusal[HTMLToTree, tree]; $Failed,
+    Replace[treeSettings[AssociationThread[Keys[Options[HTMLToTree]],
+        OptionValue[HTMLToTree, FilterRules[{opts}, Options[HTMLToTree]], Keys[Options[HTMLToTree]]]]], {
+      $Failed -> $Failed,
+      s_ :> With[{t = rootNode[tree, s]},
+        Tree[TreeData[t], TreeChildren[t], Sequence @@ treeOptions[t, {opts}]]]}]];
+
+HTMLToTree[args___] /; (treeCallMessage[{args}]; False) := Null;
+
+treeCallMessage[{tree_, rest___}] /; unknownTreeOptions[Select[{rest}, !notRuleQ[#] &]] =!= {} :=
+  Message[HTMLToTree::optx, First[First[unknownTreeOptions[Select[{rest}, !notRuleQ[#] &]]]],
+    Unevaluated[HTMLToTree[tree, rest]]];
+treeCallMessage[args_] := countMessage[HTMLToTree, args, {1, 2}];
+
+(* =========================================================== *)
 (* Syntax information                                           *)
 (* The front end colours a call with a wrong argument count.   *)
 (* XMLPattern and the combinators are inert, but their counts   *)
@@ -3973,6 +4223,11 @@ Scan[
     HTMLToNotebook -> {_, OptionsPattern[]}, HTMLClassList -> {_}, FromCSSSelector -> {_},
     XMLPattern -> {_, _.},
     Child -> {_, _, ___}, Descendant -> {_, _, ___}, Adjacent -> {_, _, ___}, Sibling -> {_, _, ___}}];
+
+(* HTMLToTree takes Tree's options as well as its own, as TreeForm takes a
+   depth. *)
+SyntaxInformation[HTMLToTree] = {"ArgumentsPattern" -> {_, _., OptionsPattern[]},
+  "OptionNames" -> Join[Keys[Options[HTMLToTree]], ToString /@ Keys[Options[Tree]]]};
 
 End[];
 EndPackage[];
