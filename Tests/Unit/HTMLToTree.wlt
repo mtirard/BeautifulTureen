@@ -446,6 +446,143 @@ TestCreate[
   TestID -> "htt-hide-wins-over-focus-same-element"
 ];
 
+(* ---- Focus with depth ----
+   Depth counts from the nearest Focused element above. A Focused element
+   inside a Cut element is still drawn, with its own depth, under a Collapsed
+   edge from the Cut element; the rest of the contents become Collapsed runs. *)
+
+$focusDepth1 = HTMLToTree[$cmpBody, 1, "Focus" -> "section"];
+
+(* Configuration 9 of the prototype's comparison. div is a Cut element that
+   holds section#b, which skips aside; p and its text are one run. *)
+TestCreate[
+  shape[$focusDepth1],
+  e["body"] -> {
+    collapsed[4],
+    e["section", {"id" -> "a"}] -> {
+      e["h2"] -> {"Intro"},
+      e["p"] -> {collapsed[1]},
+      e["div"] -> {e["section", {"id" -> "b"}] -> {e["h2"] -> {"Note"}}, collapsed[1]}},
+    collapsed[4]},
+  TestID -> "htt-focus-depth-comparison"
+];
+
+TestCreate[
+  edge /@ {TreeExtract[$focusDepth1, {2}], TreeExtract[$focusDepth1, {2, 3, 1}]},
+  {{Dashed, Placed["main", Tooltip]}, {Dashed, Placed["aside", Tooltip]}},
+  TestID -> "htt-focus-depth-edge-from-cut-element"
+];
+
+(* Depth 0: each Focused element with one Collapsed leaf. One that holds a
+   Focused element is a Cut element like any other: the inner one is drawn
+   from it, past div and aside, with runs around it. *)
+TestCreate[
+  shape /@ {HTMLToTree[$cmpBody, 0, "Focus" -> "nav, footer"], HTMLToTree[$cmpBody, 0, "Focus" -> "section"]},
+  {e["body"] -> {e["nav"] -> {collapsed[2]}, collapsed[13], e["footer"] -> {collapsed[1]}},
+    e["body"] -> {
+      collapsed[4],
+      e["section", {"id" -> "a"}] -> {collapsed[3], e["section", {"id" -> "b"}] -> {collapsed[1]}, collapsed[1]},
+      collapsed[4]}},
+  TestID -> "htt-focus-depth-zero"
+];
+
+TestCreate[
+  edge[TreeExtract[HTMLToTree[$cmpBody, 0, "Focus" -> "section"], {2, 2}]],
+  {Dashed, Placed["div > aside", Tooltip]},
+  TestID -> "htt-focus-depth-zero-edge"
+];
+
+(* ---- Paths drawn in full ----
+   With "CollapsePaths" -> False, the elements on the path to each Focused
+   element are drawn as ordinary nodes, with Collapsed runs under them in
+   place, so a run no longer joins elements from several depths. Path elements
+   do not count towards depth. *)
+
+(* Configuration 7 of the prototype's comparison: nav and h1 are now runs at
+   their own depths, and no edge is dashed. *)
+$fullPaths = HTMLToTree[$cmpBody, "Focus" -> "section", "CollapsePaths" -> False];
+
+TestCreate[
+  shape[$fullPaths],
+  e["body"] -> {
+    collapsed[3],
+    e["main"] -> {
+      collapsed[1],
+      e["section", {"id" -> "a"}] -> {
+        e["h2"] -> {"Intro"},
+        e["p"] -> {"Some ", e["b"] -> {"bold"}, " text"},
+        e["div"] -> {
+          e["aside"] -> {e["section", {"id" -> "b"}] -> {e["h2"] -> {"Note"}}},
+          e["p"] -> {"More"}}},
+      collapsed[2]},
+    collapsed[2]},
+  TestID -> "htt-full-paths-comparison"
+];
+
+(* Every subtree below the root, depth first *)
+subtrees[t_Tree] := Join @@ ({#, Splice[subtrees[#]]} & /@ Replace[TreeChildren[t], None -> {}]);
+
+TestCreate[
+  {Length[subtrees[$fullPaths]], Union[edge /@ subtrees[$fullPaths]]},
+  {20, {{None, None}}},
+  TestID -> "htt-full-paths-no-collapsed-edges"
+];
+
+(* Configuration 11: with depth 1, the path from the Cut element div to
+   section#b is drawn, aside, and p beside it is a run. *)
+TestCreate[
+  shape[HTMLToTree[$cmpBody, 1, "Focus" -> "section", "CollapsePaths" -> False]],
+  e["body"] -> {
+    collapsed[3],
+    e["main"] -> {
+      collapsed[1],
+      e["section", {"id" -> "a"}] -> {
+        e["h2"] -> {"Intro"},
+        e["p"] -> {collapsed[1]},
+        e["div"] -> {e["aside"] -> {e["section", {"id" -> "b"}] -> {e["h2"] -> {"Note"}}}, collapsed[1]}},
+      collapsed[2]},
+    collapsed[2]},
+  TestID -> "htt-full-paths-depth-comparison"
+];
+
+(* Path elements do not count towards depth: at depth 0, article is still
+   drawn with one Collapsed leaf, two path elements below the root; and so is
+   section#b, below a path from its Cut element. *)
+$deeper = XMLElement["div", {}, {XMLElement["main", {"id" -> "m"}, {
+  XMLElement["article", {}, {XMLElement["p", {}, {"deep"}]}], XMLElement["hr", {}, {}]}]}];
+
+TestCreate[
+  shape /@ {HTMLToTree[$deeper, 0, "Focus" -> "article", "CollapsePaths" -> False],
+    HTMLToTree[$cmpBody, 0, "Focus" -> "section", "CollapsePaths" -> False]},
+  {e["div"] -> {e["main", {"id" -> "m"}] -> {e["article"] -> {collapsed[1]}, collapsed[1]}},
+    e["body"] -> {
+      collapsed[3],
+      e["main"] -> {
+        collapsed[1],
+        e["section", {"id" -> "a"}] -> {
+          collapsed[3],
+          e["div"] -> {e["aside"] -> {e["section", {"id" -> "b"}] -> {collapsed[1]}}, collapsed[1]}},
+        collapsed[2]},
+      collapsed[2]}},
+  TestID -> "htt-full-paths-not-counted"
+];
+
+(* A document's path starts at its root element *)
+TestCreate[
+  shape[HTMLToTree[ImportString["<p>Hi</p><p>Bye</p>", {"HTML", "XMLObject"}],
+    "Focus" -> "p:last-child", "CollapsePaths" -> False]],
+  "#document" -> {e["html", {{"http://www.w3.org/2000/xmlns/", "xmlns"} -> "http://www.w3.org/1999/xhtml"}] -> {
+    e["body"] -> {collapsed[1], e["p"] -> {"Bye"}}}},
+  TestID -> "htt-full-paths-document"
+];
+
+(* True is the default *)
+TestCreate[
+  shape[HTMLToTree[$cmpBody, 1, "Focus" -> "section", "CollapsePaths" -> True]],
+  shape[$focusDepth1],
+  TestID -> "htt-collapse-paths-true-is-default"
+];
+
 (* ---- Readings ----
    "AttributeReadings" applies to both queries. *)
 $tokens = XMLElement["ul", {}, {XMLElement["li", {"data-k" -> "a b"}, {"1"}],
