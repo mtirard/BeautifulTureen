@@ -1486,6 +1486,15 @@ queryDelete[c_, tree_] :=
       treeRefusedQ[c, tree], $Failed,
       True, runCompiled[runnerOf[c, unionDelete, chainDelete, deleteC], tree, c]]];
 
+(* The sites the query selects, at most the first n, in document order: the
+   positions in the tree of the elements queryCases gives, a rule's values
+   aside. Equal elements at two sites are two sites, so these are not found
+   from the elements. Materialising moves no element, so the positions in the
+   materialised tree are positions in the tree. *)
+queryPositions[$Failed, _, _] := $Failed;
+queryPositions[c_, tree_, n_] :=
+  If[treeRefusedQ[c, tree], $Failed, runCompiled[runnerOf[c, unionPositions, chainPositions, plainPositions], tree, c, n]];
+
 (* A query of alternatives holding a combinator runs as their chains, any
    other combinator as one chain. *)
 runnerOf[c_, onUnion_, onChain_, onPlain_] := Which[unionQ[c], onUnion, chainQ[c], onChain, True, onPlain];
@@ -2040,14 +2049,14 @@ namesIn[s_] :=
 (* The plain form picks the last element of a matching tuple rather than binding
    the tuple: a rule's right-hand side re-evaluates what it is given, and a
    tuple may hold a large element. *)
-chainCases[tree_, q_, n_] /; bodyRejectsQ[q] := Block[{$chainTree = tree}, Take[ruleValues[q], UpTo[n]]];
+chainCases[tree_, q_, n_] /; bodyRejectsQ[q] := Block[{$chainTree = tree}, Take[Last /@ ruleTuples[q], UpTo[n]]];
 chainCases[tree_, q_, n_] /; q["Body"] =!= None :=
   Block[{$chainTree = tree}, Cases[tuplesElements[q, matchedSites[q]], q["TupleRule"], {1}, n]];
 chainCases[tree_, q_, n_] :=
   Block[{$chainTree = tree}, atAll[Last /@ Take[matchedSites[q], UpTo[n]]]];
 
 chainFirst[tree_, q_, default_] /; bodyRejectsQ[q] :=
-  Block[{$chainTree = tree}, Replace[ruleValues[q], {{v_, ___} :> v, {} -> default}]];
+  Block[{$chainTree = tree}, Replace[ruleTuples[q], {{{_, v_}, ___} :> v, {} -> default}]];
 chainFirst[tree_, q_, default_] /; q["Body"] =!= None :=
   Block[{$chainTree = tree},
     FirstCase[tuplesElements[q, matchedSites[q]], q["TupleRule"], default, {1}]];
@@ -2059,13 +2068,20 @@ chainFirst[tree_, q_, default_] :=
    choosing one, as a Condition on the combinator does: as Cases gives the
    places where a rule gives a value, a tuple is accepted when the rule gives
    it one. The value is kept, so the body is not evaluated again once the tuple
-   is chosen. *)
-ruleValues[q_] :=
+   is chosen. Each accepted tuple is given as {tuple, value}, in document order
+   of its last site. *)
+ruleTuples[q_] :=
   Module[{rule = q["TupleRule"], elements = tupleElements[q], values = <||>, tuples},
     tuples = siteTuples[q["Chain"],
       Function[t, With[{v = Replace[elements[t], {rule, _ :> $unmatched}]},
         v =!= $unmatched && (values[t] = v; True)]]];
-    Lookup[values, Key /@ tuples]];
+    {#, values[#]} & /@ tuples];
+
+(* The sites chainCases takes its elements from, or its values: the last sites
+   of the tuples it accepts. *)
+chainPositions[tree_, q_, n_] /; bodyRejectsQ[q] :=
+  Block[{$chainTree = tree}, Last @* First /@ Take[ruleTuples[q], UpTo[n]]];
+chainPositions[tree_, q_, n_] := Block[{$chainTree = tree}, Last /@ Take[matchedSites[q], UpTo[n]]];
 
 (* A chain deletes the elements its last stage selects. Delete removes
    positions nested in one another together. *)
@@ -2095,8 +2111,7 @@ alternativeSites[a_, test_] /; a["Links"] === {} :=
 alternativeSites[a_, test_] := siteTuples[a["Chain"], test];
 
 (* The sites below the root that s matches, in document order. *)
-elementSites[s_] :=
-  Replace[Position[$chainTree, s, Infinity, Heads -> False], {{} -> {}, ps_ :> fromCasesOrder[ps]}];
+elementSites[s_] := positionsInOrder[$chainTree, s];
 
 (* The accepted tuples of alternative a whose last site keep accepts, each
    {tuple}, or {tuple, value} when the body can reject and so is evaluated in
@@ -2136,6 +2151,10 @@ unionCases[tree_, q_, n_] :=
   Block[{$chainTree = tree},
     With[{es = Take[inSiteOrder[unionEntries[q]], UpTo[n]]},
       If[q["Body"] === None, atAll[es[[All, 2, -1]]], entryResult[q, entryRules[q]] /@ es]]];
+
+(* The sites unionCases takes its elements or values from. *)
+unionPositions[tree_, q_, n_] :=
+  Block[{$chainTree = tree}, Take[inSiteOrder[unionEntries[q]], UpTo[n]][[All, 2, -1]]];
 
 (* Each alternative stops at its first accepted entry before the best so far:
    the answer is the earliest, ties going to the earlier alternative, as one
@@ -2232,6 +2251,14 @@ casesC[tree_, r : Verbatim[RuleDelayed][lhs_, _], n_] :=
     r, {1}, n];
 casesC[tree_, pat_, n_] := firstMatches[tree, pat, n];
 
+(* The sites casesC takes its elements from: those of a rule's left-hand side,
+   less those its body rejects, the body evaluated as casesC evaluates it. *)
+plainPositions[tree_, r : Verbatim[RuleDelayed][lhs_, _], n_] /; bodyConditionQ[Extract[r, {2}, Hold]] :=
+  Select[positionsInOrder[tree, lhs], Replace[Extract[tree, #], {r, _ :> $unmatched}] =!= $unmatched &, n];
+plainPositions[tree_, Verbatim[RuleDelayed][lhs_, _], n_] := plainPositions[tree, lhs, n];
+plainPositions[tree_, pat_, Infinity] := positionsInOrder[tree, pat];
+plainPositions[tree_, pat_, n_] := firstMatchPositions[tree, pat, n];
+
 (* The first n elements of tree, below its root, that match pat, in document
    order, the search stopping early. *)
 firstMatches[tree_, pat_, Infinity] := matchesInOrder[tree, pat];
@@ -2251,9 +2278,11 @@ firstMatchPositions[tree_, pat_, n_] :=
 (* The elements of tree, below its root, that match pat, in document order.
    Extract reads {} as the whole tree, not as no positions. *)
 matchesInOrder[tree_, pat_] :=
-  Replace[Position[tree, pat, Infinity, Heads -> False], {
-    {} -> {},
-    ps_ :> Extract[tree, fromCasesOrder[ps]]}];
+  Replace[positionsInOrder[tree, pat], {{} -> {}, ps_ :> Extract[tree, ps]}];
+
+(* The positions of those elements. *)
+positionsInOrder[tree_, pat_] :=
+  Replace[Position[tree, pat, Infinity, Heads -> False], {{} -> {}, ps_ :> fromCasesOrder[ps]}];
 
 (* Positions in Cases order, as Position gives them, put in document order.
    Cases visits an element right after the elements nested in it, so the
