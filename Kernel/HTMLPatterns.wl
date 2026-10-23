@@ -23,7 +23,7 @@ FromCSSSelector::usage = "FromCSSSelector[\"selector\"] gives the XML pattern th
 HTMLTextContent::usage ="HTMLTextContent[tree] gives the text of an XML tree: all the strings it contains, joined in document order. No whitespace is added or removed, so source indentation and the whitespace in <pre> are kept. tree can be an XMLElement, an XMLObject document, a list, or a string.";
 HTMLInnerText::usage = "HTMLInnerText[tree] gives the readable text of an XML tree. Runs of whitespace are collapsed, block-level elements go on their own lines, <br> becomes a newline, <pre> content is kept as written, tags such as script and style are dropped, and the result is trimmed. How each element is treated depends only on its tag, as given by the built-in user-agent stylesheet. HTMLInnerText[tree, \"Roles\" -> rules] changes this, with rules of the form pattern -> role, where pattern is an XMLPattern or a CSS selector string and role is \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\" or \"Skip\". \"BlockSeparator\" -> sep sets the string inserted between blocks (default \"\\n\"). \"AttributeReadings\" -> readings adds readings to $AttributeReadings for this call. tree can be an XMLElement, an XMLObject document, a list, or a string.";
 HTMLToNotebook::usage = "HTMLToNotebook[tree] converts an HTML or XML tree to a Notebook expression, which can be displayed or exported with Export to Markdown, PDF, RTF, etc. Block-level tags become cells, such as headings -> Title, Chapter, Section, etc., p -> Text, li -> Item, Subitem, etc., blockquote -> a framed quote, pre -> a Program cell, and table -> a Dataset or Grid, with its caption as a Text cell before it. Inline tags become boxes in the surrounding cell, such as b -> bold, i -> italic, code -> inline code, a -> a hyperlink and img -> its alt text, linked to its src. How each element is treated depends only on its tag, as given by the built-in user-agent stylesheet. HTMLToNotebook[tree, \"Roles\" -> rules] changes the role of elements, such as block or inline. \"Constructs\" -> rules changes what an element becomes: an inline style such as \"Bold\", a cell style, or a function that is applied to the element and gives a Cell or boxes. The left-hand side of each rule is an XMLPattern or a CSS selector string. \"AttributeReadings\" -> readings adds readings to $AttributeReadings for this call. tree can be an XMLElement, an XMLObject document, a list, or a string.";
-HTMLToTree::usage = "HTMLToTree[tree] draws an HTML or XML tree as a Tree, with one node per element and per text string. A document or a list is drawn under a \"#document\" root, and an XMLElement is its own root. Each element is labelled with its tag name, and its tooltip gives its compound selector, such as div#main.note, and its attributes. Each text string is a leaf, labelled with its text, whitespace collapsed and cut to 40 characters. Whitespace-only strings are left out unless \"IncludeWhitespace\" -> True is given. The data of an element node is the element with no contents, XMLElement[tag, attrs, {}], and the data of a text node is the string. Options of Tree, such as TreeElementLabelFunction, TreeLayout, MaxDisplayedChildren and ImageSize, can be given and are passed to Tree. The default layout is TreeLayout -> Left, and MaxDisplayedChildren -> m limits the children of every node. tree can be an XMLElement, an XMLObject document, or a list.";
+HTMLToTree::usage = "HTMLToTree[tree] draws an HTML or XML tree as a Tree, with one node per element and per text string. A document or a list is drawn under a \"#document\" root, and an XMLElement is its own root. Each element is labelled with its tag name, and its tooltip gives its compound selector, such as div#main.note, and its attributes. Each text string is a leaf, labelled with its text, whitespace collapsed and cut to 40 characters. Whitespace-only strings are left out unless \"IncludeWhitespace\" -> True is given. The data of an element node is the element with no contents, XMLElement[tag, attrs, {}], and the data of a text node is the string. Options of Tree, such as TreeElementLabelFunction, TreeLayout, MaxDisplayedChildren and ImageSize, can be given and are passed to Tree. The default layout is TreeLayout -> Left, and MaxDisplayedChildren -> m limits the children of every node. tree can be an XMLElement, an XMLObject document, or a list. HTMLToTree[tree, n] draws elements down to DOM depth n, counted in generations of elements from the root at depth 0; n is a non-negative integer or Infinity, the default. An element at depth n with element children has a single \[Ellipsis] child in place of all its contents, with data Missing[\"Collapsed\", k], where k is the number of elements not drawn.";
 
 (* === Messages === *)
 
@@ -4006,29 +4006,39 @@ unknownTreeOptions[opts_List] := Select[Flatten[opts], !optionRuleQ[HTMLToTree][
 
 (* ---- The tree that is built ----
    The walk carries each node's position in the input, for the queries that
-   later select sites by position. contentNodes gives the nodes an item is
-   drawn as: none, one, or (later) several. *)
+   later select sites by position, and each element's DOM depth d: the
+   generations of elements from the root, not WL levels. contentNodes
+   gives the nodes an item is drawn as: none, one, or (later) several. *)
 
 treeShell[XMLElement[tag_, attrs_, _]] := XMLElement[tag, attrs, {}];
 
-elementNode[el : XMLElement[_, _, ch_], pos_, s_] :=
-  Tree[treeShell[el], Replace[childNodes[ch, Join[pos, {3}], s], {} -> None]];
+elementNode[el : XMLElement[_, _, ch_], pos_, d_, s_] :=
+  Tree[treeShell[el], belowNode[ch, d, s, childNodes[ch, Join[pos, {3}], d + 1, s] &]];
 
-childNodes[items_List, pos_, s_] :=
-  Join @@ MapIndexed[contentNodes[#1, Join[pos, #2], s] &, items];
+(* The children of a node at depth d with contents items. A Cut element, at
+   the depth limit with element children, has one Collapsed leaf for all its
+   contents, text included, counting the elements in them; contents that are
+   only text are kept, since nothing is cut. *)
+belowNode[items_, d_, s_, draw_] := Replace[
+  If[d == s["Depth"] && MemberQ[items, _XMLElement],
+    {Tree[Missing["Collapsed", Count[items, _XMLElement, Infinity]], None]}, draw[]],
+  {} -> None];
 
-contentNodes[el_XMLElement, pos_, s_] := {elementNode[el, pos, s]};
-contentNodes[str_String, _, s_] :=
+childNodes[items_List, pos_, d_, s_] :=
+  Join @@ MapIndexed[contentNodes[#1, Join[pos, #2], d, s] &, items];
+
+contentNodes[el_XMLElement, pos_, d_, s_] := {elementNode[el, pos, d, s]};
+contentNodes[str_String, _, _, s_] :=
   If[!s["IncludeWhitespace"] && StringMatchQ[str, "" | HTMLWhitespace], {}, {Tree[str, None]}];
-contentNodes[XMLObject["CDATASection"][str_String], pos_, s_] := contentNodes[str, pos, s];
-contentNodes[_, _, _] := {};
+contentNodes[XMLObject["CDATASection"][str_String], pos_, d_, s_] := contentNodes[str, pos, d, s];
+contentNodes[_, _, _, _] := {};
 
 (* A document or a list is drawn under a "#document" root (ADR 0018), whose
-   children are its top elements and top-level strings. *)
+   children are its top elements and top-level strings, at depth 1. *)
 rootNode[XMLObject["Document"][_, root_, _], s_] :=
-  Tree["#document", Replace[contentNodes[root, {2}, s], {} -> None]];
-rootNode[el_XMLElement, s_] := elementNode[el, {}, s];
-rootNode[l_List, s_] := Tree["#document", Replace[childNodes[l, {}, s], {} -> None]];
+  Tree["#document", belowNode[{root}, 0, s, contentNodes[root, {2}, 1, s] &]];
+rootNode[el_XMLElement, s_] := elementNode[el, {}, 0, s];
+rootNode[l_List, s_] := Tree["#document", belowNode[l, 0, s, childNodes[l, {}, 1, s] &]];
 
 (* ---- Labels ----
    One label function for every node, given as All -> treeLabel after the
@@ -4192,11 +4202,15 @@ HTMLToTree[tree_, n : _?notRuleQ : Infinity, opts : OptionsPattern[]] /;
     Replace[treeSettings[AssociationThread[Keys[Options[HTMLToTree]], OptionValue[HTMLToTree,
         FilterRules[{opts}, Options[HTMLToTree]], Keys[Options[HTMLToTree]]]]], {
       $Failed -> $Failed,
-      settings_ :> With[{t = rootNode[tree, settings]},
+      settings_ :> With[{t = rootNode[tree, Append[settings, "Depth" -> n]]},
         Tree[TreeData[t], TreeChildren[t], Sequence @@ treeOptions[t, {opts}]]]}]];
 
 HTMLToTree[args___] /; (treeCallMessage[{args}]; False) := Null;
 
+(* A depth that is not valid gives innf, as XMLCases's count does (ADR 0019),
+   before any unknown option after it. *)
+treeCallMessage[{tree_, n_?notRuleQ, opts___}] /; !countQ[n] && NoneTrue[{opts}, notRuleQ] :=
+  Message[HTMLToTree::innf, Unevaluated[HTMLToTree[tree, n, opts]], 2];
 treeCallMessage[args : {tree_, rest___}] :=
   Replace[unknownTreeOptions[Select[{rest}, !notRuleQ[#] &]], {
     {} :> countMessage[HTMLToTree, args, {1, 2}],
