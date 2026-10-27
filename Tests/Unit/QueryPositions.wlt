@@ -14,8 +14,8 @@ $positionsRoot = $positionsDoc[[2]];
 $positionsList = With[{body = $positionsRoot[[3, 1]]}, {"text", body[[3, 1]], "more", body[[3, 2]]}];
 
 positionsOf[tree_, q_, n_ : Infinity] :=
-  MaximilienTirard`HTMLPatterns`Private`queryPositions[
-    MaximilienTirard`HTMLPatterns`Private`compileQuery[q, XMLCases], tree, n];
+  MaximilienTirard`HTMLPatterns`Implementation`Private`queryPositions[
+    MaximilienTirard`HTMLPatterns`Implementation`Private`compileQuery[q, XMLCases], tree, n];
 
 (* Whether the positions of q in tree give XMLCases's elements, each site once,
    in document order, and give some. *)
@@ -23,7 +23,7 @@ agreesQ[tree_, q_, n_ : Infinity] :=
   MemoryConstrained[TimeConstrained[
     With[{ps = positionsOf[tree, q, n], cs = XMLCases[tree, q, n]},
       ListQ[ps] && ps =!= {} && Extract[tree, ps] === cs && DuplicateFreeQ[ps] &&
-        MaximilienTirard`HTMLPatterns`Private`documentOrdering[ps] === Range[Length[ps]]],
+        MaximilienTirard`HTMLPatterns`Implementation`Private`documentOrdering[ps] === Range[Length[ps]]],
     30, "time"], 2*^9, "memory"];
 
 (* The queries that select something on each input form. *)
@@ -78,7 +78,7 @@ TestCreate[
 (* List stages, on WL's matcher and by a recognised shape (ADR 0020), and a
    list stage with a context entry. *)
 SetAttributes[unrecognised, HoldFirst];
-unrecognised[expr_] := Block[{MaximilienTirard`HTMLPatterns`Private`$recogniseShapes = False}, expr];
+unrecognised[expr_] := Block[{MaximilienTirard`HTMLPatterns`Implementation`Private`$recogniseShapes = False}, expr];
 
 $listStageQueries = {
   "li:nth-child(2n+1)",

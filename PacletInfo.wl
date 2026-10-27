@@ -14,7 +14,7 @@ PacletObject[
       {
         "Kernel",
         "Root" -> "Kernel",
-        "Context" -> {"MaximilienTirard`HTMLPatterns`"}
+        "Context" -> {{"MaximilienTirard`HTMLPatterns`", "init.wl"}}
       },
       {
         "Documentation",

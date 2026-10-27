@@ -8,7 +8,7 @@ ids[tree_, sel_String, opts___] := Lookup[#[[2]], "id", None] & /@ XMLCases[tree
 
 (* The output holds no symbol of the paclet's private context. *)
 privateFreeQ[x_] :=
-  FreeQ[x, s_Symbol /; Context[s] === "MaximilienTirard`HTMLPatterns`Private`", {0, Infinity}, Heads -> True];
+  FreeQ[x, s_Symbol /; Context[s] === "MaximilienTirard`HTMLPatterns`Implementation`Private`", {0, Infinity}, Heads -> True];
 
 element[html_String] := XMLFirstCase[ImportString[html, {"HTML", "XMLObject"}], XMLPattern["div"]];
 
