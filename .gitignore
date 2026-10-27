@@ -10,3 +10,6 @@ Tests/**/last_test_run.wxf
 # Agent instructions: local only
 CLAUDE.md
 docs/agents/
+
+# Machine-specific make settings (publish destination)
+local.mk
