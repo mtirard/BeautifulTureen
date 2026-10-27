@@ -37,7 +37,7 @@ Requires Wolfram Language 13.2 or later and `wolframscript`. Clone the repositor
 make install
 ```
 
-This builds the paclet with `PacletTools`PacletBuild` into `build/` and installs the archive. The build turns the author notebooks in `Documentation/` into the reference pages, guide page and tutorial that the Documentation Center reads; start from the guide page "HTMLPatterns".
+This builds the paclet with ``PacletTools`PacletBuild`` into `build/` and installs the archive. The build turns the author notebooks in `Documentation/` into the reference pages, guide page and tutorial that the Documentation Center reads; start from the guide page "HTMLPatterns".
 
 To try the code without installing, load the clone for the current session instead. This does not give the built documentation.
 
