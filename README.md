@@ -31,16 +31,20 @@ HTMLInnerText[XMLFirstCase[html, "ul.menu"]]
 
 ## Installing
 
-Requires Wolfram Language 13.2 or later. Clone the repository, then either load it for the current session:
+Requires Wolfram Language 13.2 or later and `wolframscript`. Clone the repository and run:
+
+```sh
+make install
+```
+
+This builds the paclet with `PacletTools`PacletBuild` into `build/` and installs the archive. The build turns the author notebooks in `Documentation/` into the reference pages, guide page and tutorial that the Documentation Center reads; start from the guide page "HTMLPatterns".
+
+To try the code without installing, load the clone for the current session instead. This does not give the built documentation.
 
 ```wl
 PacletDirectoryLoad["/path/to/HTMLPatterns"];
 Needs["MaximilienTirard`HTMLPatterns`"]
 ```
-
-or build and install it with `make install`, which needs `wolframscript`.
-
-The reference pages, the guide page and the tutorial are in `Documentation/`. Once the paclet is installed they are in the Documentation Center; start from the guide page "HTMLPatterns".
 
 ## Tests
 
