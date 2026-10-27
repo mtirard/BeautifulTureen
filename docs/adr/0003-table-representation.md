@@ -6,7 +6,7 @@ A table's rows are the `<tr>` elements that are its children or children of its 
 
 **Why not `Tabular`** (the newer, semantically-truer table type): the paclet floor is `WolframVersion -> "12.3+"` and `Tabular` is 14.1+. Emitting `Tabular` would put an undefined symbol in the returned `Notebook[…]` on 12.3–14.0 kernels, breaking the notebook-as-primitive use (display/PDF) even though it would be fine for a 14+ user exporting to Markdown. `Dataset` (11+) and `Grid` keep the notebook well-formed everywhere ≥12.3 and export to identical GFM.
 
-The floor is now `"13.2+"` (HTMLToTree needs `MaxDisplayedChildren`), and the reason still holds: `Tabular` is 14.1+.
+The floor is now `"15.0+"` (the package uses the Structured Package Format), so `Tabular` is available and this reason no longer applies; the choice has not been revisited.
 
 **Why the no-silent-loss header rule:** the exporter derives the GFM header row solely from the table's _column names_, and column names come from association keys, which are necessarily unique. So named-column constructs give a header but silently **collapse duplicate header labels into one column** — real data loss. Positional constructs (matrix → `Grid`) never lose data but have a blank header. There is no construct that does both. We default to the lossless representation and promote to a real header only when it is faithful (unique labels), rather than dropping a column for prettiness.
 

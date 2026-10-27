@@ -3878,8 +3878,9 @@ hrConstruct[_] := Cell["", "Text", CellFrame -> {{0, 0}, {0, 1}}];
    idiomatic GFM header), at least one body row follows it and none is wider
    than it, else Grid (positional, blank header, every row kept). The header
    row is the one row of a <thead>, or with no <thead> a leading all-<th> row.
-   Dataset/Grid over Tabular because Tabular needs 14.1, above the paclet
-   floor of 13.2. Cells degrade to plain text, which is what HTMLInnerText
+   Dataset/Grid over Tabular was chosen when Tabular (14.1) was above the
+   paclet floor; the floor is now 15.0 and the choice has not been revisited.
+   Cells degrade to plain text, which is what HTMLInnerText
    gives for the cell under the call's "Roles"; in the Grid form a <th> cell
    is bold. See ADR 0003. *)
 cellText[cell_XMLElement, ctx_] := innerText[cell, nodeRole[#, ctx] &, "\n"];
