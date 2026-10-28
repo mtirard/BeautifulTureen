@@ -228,12 +228,17 @@ drawnTextQ[_, _] := False;
    merged either, so that the inline elements keep their nodes. *)
 mergedChildren[el_, pos_, sites_, s_] /;
     s["MergeText"] === None || onFocusPathQ[pos, s] || FreeQ[sites, {_XMLElement, _}, {1}] := Missing[];
-mergedChildren[el_, pos_, _, s_] := With[{v = visibleElement[el, pos, s]},
+mergedChildren[el_, pos_, _, s_] := With[{v = visibleElement[markedAt[pos, s], pos, s]},
   If[AllTrue[Cases[Last[v], _XMLElement, Infinity], treeRole[#, s] === "Inline" &],
     Replace[mergedText[s["MergeText"], v, s], {
       text_ /; text =!= "" && drawnTextQ[text, s] :> {Tree[text, None]},
       _ -> Missing[]}],
     Missing[]]];
+
+(* The element at pos as the "Roles" lookup reads it, with the marks of the
+   rules that select it and its descendants (ruleLookups). Marks are
+   attributes, so its contents are at the same positions. *)
+markedAt[pos_, s_] := s["Marked"][[Sequence @@ pos]];
 
 (* The text HTMLInnerText or HTMLTextContent gives for el under the call's
    "Roles" and readings. HTMLInnerText's own walk is run here with HTMLToTree's
@@ -472,10 +477,10 @@ HTMLToTree[args___] /; (treeCallMessage[{args}]; False) := Null;
    every call, merging or not, then both queries. *)
 drawnTree[tree_, n_, s_, opts_] := Replace[ruleLookups[{s["Roles"]}, HTMLToTree, tree], {
   $Failed -> $Failed,
-  {roles_} :> Replace[treeSites[tree, s], {
+  {marked_, {roles_}} :> Replace[treeSites[tree, s], {
     $Failed -> $Failed,
     sites_ :> Block[{$treeRoles = <||>},
-      With[{drawn = rootNode[tree, Join[s, sites, <|"DOMDepth" -> n, "RoleLookup" -> roles|>]]},
+      With[{drawn = rootNode[tree, Join[s, sites, <|"DOMDepth" -> n, "RoleLookup" -> roles, "Marked" -> marked|>]]},
         Tree[TreeData[drawn], TreeChildren[drawn], Sequence @@ treeOptions[drawn, opts]]]]}]}];
 
 (* A depth that is not valid gives innf, as XMLCases's count does (ADR 0019),

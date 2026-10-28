@@ -31,7 +31,7 @@ $styleTokens = {"Bold", "Italic", "Underline", "StrikeThrough", "Code"};
 
 (* A construct value that is neither a string nor None is a constructor
    function, applied to the matched element (the universal escape hatch) as it
-   is in the tree: the element is stripped of any materialised token lists. *)
+   is in the tree, without the marks of the rules that select it. *)
 functionConstructQ[c_] := c =!= None && !StringQ[c];
 (* A string construct destined for a block cell-style (not an inline token). *)
 blockStyleQ[c_String] := !MemberQ[$inlineConstructs, c];
@@ -258,10 +258,10 @@ listStyleName[ctx_] :=
 preText[el_] :=
   StringReplace[textContentWalk[el], StartOfString ~~ "\n" -> ""];
 
-(* A constructor function is applied to the element alone; a built-in one
-   wrapped in contextConstruct also takes the context. *)
+(* A constructor function is applied to the element alone, unmarked; a
+   built-in one wrapped in contextConstruct also takes the context. *)
 applyConstruct[contextConstruct[f_], el_, ctx_] := f[el, ctx];
-applyConstruct[f_, el_, _] := f[el];
+applyConstruct[f_, el_, _] := f[unmarked[el]];
 
 (* Normalize a constructor-function result to a list of cells. *)
 wrapCells[c_Cell] := {c};
@@ -429,14 +429,13 @@ HTMLToNotebook::usage = "HTMLToNotebook[tree] converts an HTML or XML tree to a 
 
 Options[HTMLToNotebook] = {"Roles" -> {}, "Constructs" -> {}, "AttributeReadings" -> <||>};
 
-HTMLToNotebook[XMLObject["Document"][_, root_, _], opts : OptionsPattern[]] :=
-  HTMLToNotebook[root, opts];
-
+(* The "Roles" and "Constructs" queries run on the input as given, a document
+   included; the walk starts from its root. *)
 HTMLToNotebook[tree_, opts : OptionsPattern[]] :=
   withReadings[OptionValue["AttributeReadings"],
     Replace[ruleLookups[{OptionValue["Roles"], OptionValue["Constructs"]}, HTMLToNotebook, tree], {
       $Failed -> $Failed,
-      {roles_, cons_} :> Notebook[blockEmit[toChildList[tree], initCtx[roles, cons]]]}]
+      {marked_, {roles_, cons_}} :> Notebook[blockEmit[toChildList[documentRoot[marked]], initCtx[roles, cons]]]}]
   ] /; validTextInputQ[tree];
 
 HTMLToNotebook[tree_, OptionsPattern[]] :=

@@ -1,9 +1,6 @@
 (* ::Package:: *)
 (* HTMLPatterns: readings and materialisation (ADR 0012) *)
 
-(* Used by DisplayRoles.wl *)
-PackageScoped[materialiser]
-
 (* Used by DisplayRoles.wl, Query/Compiler.wl and Query/TreePatterns.wl *)
 PackageScoped[readingsInForce]
 
@@ -171,16 +168,6 @@ materialiseKey[tree_, reading : {key_, _}, level_] :=
       XMLElement[t_, a_List, c_] :>
         XMLElement[t, Append[a, tok[key] -> Lookup[map, Lookup[a, key, None], {}]], c],
       level]];
-
-(* An element materialised when it is asked for, the distinct raw values on
-   tree split once, up front: for rules tried on one element at a time. *)
-materialiser[_, {}] := Identity;
-materialiser[tree_, readings_] :=
-  With[{maps = {First[#], tokenMap[tree, #, {0, Infinity}]} & /@ readings},
-    attachTokens[maps, #] &];
-
-attachTokens[maps_, XMLElement[t_, a_List, c_]] :=
-  XMLElement[t, Join[a, Function[{key, map}, tok[key] -> Lookup[map, Lookup[a, key, None], {}]] @@@ maps], c];
 
 (* Every token list removed, at any depth, from whatever a name or a test can
    see: an element, an attribute list, a list of copied attribute lists, or a

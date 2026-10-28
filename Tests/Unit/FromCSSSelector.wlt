@@ -553,11 +553,14 @@ TestCreate[
 ];
 
 (* A string giving alternatives of combinators is refused where one element is
-   tested: it looks above the element. *)
+   tested: it looks above the element. As a "Roles" key it is a query
+   (spec section 6). *)
 TestCreate[
-  {XMLMatchQ[XMLElement["d", {}, {}], "a > b, c > d"], HTMLInnerText[XMLElement["d", {}, {}], "Roles" -> {"a > b, c" -> "Skip"}]},
-  {$Failed, $Failed},
-  {XMLMatchQ::badpat, HTMLInnerText::badpat},
+  {XMLMatchQ[XMLElement["d", {}, {}], "a > b, c > d"],
+   HTMLInnerText[XMLElement["d", {}, {XMLElement["a", {}, {XMLElement["b", {}, {"1"}]}], XMLElement["c", {}, {"2"}], "3"}],
+     "Roles" -> {"a > b, c" -> "Skip"}]},
+  {$Failed, "3"},
+  {XMLMatchQ::badpat},
   TestID -> "css-selector-list-of-shapes-refused-for-one-element"
 ];
 
@@ -844,11 +847,14 @@ TestCreate[
   TestID -> "css-string-in-roles"
 ];
 
+(* A context selector is a query key, whose subjects get the value (spec
+   section 6). *)
 TestCreate[
-  {HTMLInnerText[$note, "Roles" -> {"div > p" -> "Block"}], HTMLToNotebook[$note, "Constructs" -> {"div > p" -> "Bold"}]},
-  {$Failed, $Failed},
-  {HTMLInnerText::badpat, HTMLToNotebook::badpat},
-  TestID -> "css-string-combinator-refused-in-roles-and-constructs"
+  {HTMLInnerText[$note, "Roles" -> {"div.note > p" -> "Inline"}], HTMLToNotebook[$note, "Constructs" -> {"div > p" -> "Section"}]},
+  {"a xb\nc\nH",
+   Notebook[{Cell[TextData[{"a ", "x"}], "Section"], Cell[TextData[{"b"}], "Section"], Cell[TextData[{"c"}], "Section"],
+     Cell[TextData[{"H"}], "Chapter"]}]},
+  TestID -> "css-string-context-selector-in-roles-and-constructs"
 ];
 
 TestCreate[
