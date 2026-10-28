@@ -26,7 +26,20 @@ $oracleCases = {
   {"//*[a][nav]/li", XMLPattern[_, _, Descendant[XMLPattern["a"], {1}], Descendant[XMLPattern["nav"], {1}], {___, x : XMLPattern["li"], ___}] :> x},
   {"//div/p | //nav/a", (XMLPattern["div", _, {___, x : XMLPattern["p"], ___}] | XMLPattern["nav", _, {___, x : XMLPattern["a"], ___}]) :> x},
   {"//li[count(*) = 2]", XMLPattern["li", _, {_, _}]},
-  {"//p[not(*)]", XMLPattern["p", _, {}]}
+  {"//p[not(*)]", XMLPattern["p", _, {}]},
+  (* Context above an element: XMLDocument roots and path tests. *)
+  {"//a[not(ancestor::nav)]", XMLDocument[Descendant[x : XMLPattern["a"]]?(NoneTrue[XMLMatchQ["nav"]])] :> x},
+  {"//a[ancestor::nav and ancestor::li]", XMLDocument[Descendant[x : XMLPattern["a"]]?(AnyTrue[XMLMatchQ["nav"]][#] && AnyTrue[XMLMatchQ["li"]][#] &)] :> x},
+  {"//p[count(ancestor::div) = 1]", XMLDocument[Descendant[x : XMLPattern["p"]]?(Count[#, _?(XMLMatchQ["div"])] == 1 &)] :> x},
+  (* some div above the a with no ul between: a div below the nearest ul *)
+  {"//a[ancestor::div and (not(ancestor::ul) or count(ancestor::div) > count(ancestor::ul[1]/ancestor::div))]", XMLPattern["div", _, Descendant[x : XMLPattern["a"]]?(NoneTrue[XMLMatchQ["ul"]])] :> x},
+  {"//*[not(parent::*)]", XMLDocument[{x_}] :> x},
+  {"/*/*/span", XMLDocument[Descendant[x : XMLPattern["span"], {3}]] :> x},
+  {"//nav//a", XMLPattern["nav", _, Shortest@Descendant[x : XMLPattern["a"]]] :> x},
+  (* the nearest and the outermost nav above an a *)
+  {"//a/ancestor::nav[1]", n : XMLPattern["nav", _, Shortest@Descendant[XMLPattern["a"]]] :> n},
+  {"//a/ancestor::nav[last()]", n : XMLPattern["nav", _, Longest@Descendant[XMLPattern["a"]]] :> n},
+  {"//li/ancestor::div[span][1]", n : XMLPattern["div", _, {___, XMLPattern["span"], ___}, Shortest@Descendant[XMLPattern["li"]]] :> n}
 };
 
 $oracleInputs = oracleTrees[20261028, 12];
