@@ -6,9 +6,13 @@
 (* The ids of what a selector selects, run through its translation. *)
 ids[tree_, sel_String, opts___] := Lookup[#[[2]], "id", None] & /@ XMLCases[tree, FromCSSSelector[sel], opts];
 
-(* The output holds no symbol of the paclet's private context. *)
+(* The output holds no symbol of the paclet's private contexts: only symbols
+   of the public context. *)
 privateFreeQ[x_] :=
-  FreeQ[x, s_Symbol /; Context[s] === "MaximilienTirard`HTMLPatterns`Private`", {0, Infinity}, Heads -> True];
+  FreeQ[x,
+    s_Symbol /; With[{c = Context[s]},
+      StringStartsQ[c, "MaximilienTirard`HTMLPatterns`"] && c =!= "MaximilienTirard`HTMLPatterns`"],
+    {0, Infinity}, Heads -> True];
 
 element[html_String] := XMLFirstCase[ImportString[html, {"HTML", "XMLObject"}], XMLPattern["div"]];
 

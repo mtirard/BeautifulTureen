@@ -31,7 +31,7 @@ HTMLInnerText[XMLFirstCase[html, "ul.menu"]]
 
 ## Installing
 
-Requires Wolfram Language 13.2 or later and `wolframscript`. Clone the repository and run:
+Requires Wolfram Language 15.0 or later and `wolframscript`. Clone the repository and run:
 
 ```sh
 make install

@@ -27,19 +27,19 @@ $compiledQueries = {
 SetAttributes[withRewriteCount, HoldFirst];
 withRewriteCount[expr_] :=
   Module[{n = 0},
-    Internal`InheritedBlock[{MaximilienTirard`HTMLPatterns`Private`solvable},
-      PrependTo[DownValues[MaximilienTirard`HTMLPatterns`Private`solvable],
-        HoldPattern[MaximilienTirard`HTMLPatterns`Private`solvable[_]] /; (n++; False) :> Null];
+    Internal`InheritedBlock[{MaximilienTirard`HTMLPatterns`PackageScope`solvable},
+      PrependTo[DownValues[MaximilienTirard`HTMLPatterns`PackageScope`solvable],
+        HoldPattern[MaximilienTirard`HTMLPatterns`PackageScope`solvable[_]] /; (n++; False) :> Null];
       {expr, n}]];
 
 TestCreate[
   Module[{compiled, runs},
-    compiled = MaximilienTirard`HTMLPatterns`Private`compileQuery[#, XMLCases] & /@ $compiledQueries;
+    compiled = MaximilienTirard`HTMLPatterns`PackageScope`compileQuery[#, XMLCases] & /@ $compiledQueries;
     runs = withRewriteCount @ Table[
       MapThread[
-        {MaximilienTirard`HTMLPatterns`Private`queryCases[#2, $compiledTree, Infinity],
-         MaximilienTirard`HTMLPatterns`Private`queryFirst[#2, $compiledTree, None],
-         If[MatchQ[#1, _RuleDelayed], None, MaximilienTirard`HTMLPatterns`Private`queryDelete[#2, $compiledTree]]} &,
+        {MaximilienTirard`HTMLPatterns`PackageScope`queryCases[#2, $compiledTree, Infinity],
+         MaximilienTirard`HTMLPatterns`PackageScope`queryFirst[#2, $compiledTree, None],
+         If[MatchQ[#1, _RuleDelayed], None, MaximilienTirard`HTMLPatterns`PackageScope`queryDelete[#2, $compiledTree]]} &,
         {$compiledQueries, compiled}],
       3];
     {Last[runs],
@@ -53,9 +53,9 @@ TestCreate[
 
 (* The per-element matcher behind XMLMatchQ, from a query compiled once. *)
 TestCreate[
-  With[{c = MaximilienTirard`HTMLPatterns`Private`compileQuery[First[$compiledQueries], XMLMatchQ]},
+  With[{c = MaximilienTirard`HTMLPatterns`PackageScope`compileQuery[First[$compiledQueries], XMLMatchQ]},
     withRewriteCount[
-      MaximilienTirard`HTMLPatterns`Private`elementMatcher[c] /@ Table[$compiledTree[[3, 1]], 3]]],
+      MaximilienTirard`HTMLPatterns`PackageScope`elementMatcher[c] /@ Table[$compiledTree[[3, 1]], 3]]],
   {{True, True, True}, 0},
   TestID -> "compiled-query-element-matcher-without-rewriting"
 ];
