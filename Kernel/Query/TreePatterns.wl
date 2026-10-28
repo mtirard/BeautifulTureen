@@ -14,6 +14,9 @@ PackageScoped[treeFreeQ]
 PackageScoped[treeQueryQ]
 PackageScoped[treeCases]
 
+(* Used by Positions.wl *)
+PackageScoped[treePositions]
+
 (* =========================================================== *)
 (* Tree patterns (ADR 0023, 0024, 0025)                         *)
 (*                                                              *)
@@ -101,6 +104,12 @@ treeCases[head_, tree_, q_, n_] :=
         indexTree[tree];
         results[root, rhs, all, counted, testNames, MatchQ[tree, _XMLElement], n]]],
     $refusal];
+
+(* What XMLPosition gives: the results of q with each counted name replaced
+   by its position (resultOf). *)
+treePositions[head_, tree_, q_] := Block[{$positionsOut = True}, treeCases[head, tree, q, Infinity]];
+
+$positionsOut = False;
 
 (* query -> {Hold[lhs], Hold[rhs]}. A bare pattern is erased to r$ : p :> r$.
    A Rule's right-hand side was evaluated when the query was given, as in
@@ -1040,7 +1049,7 @@ rootMatches[root_, rhs_, all_, bare_, n_] :=
         While[count < n && k <= Length[cands],
           i = cands[[k++]];
           If[exactQ || match[sub, i] =!= {},
-            r = If[rhs === Hold @@ name, elemOf[i], evaluated[substituted[rhs, all, <|name -> elemBinding[i]|>]]];
+            r = If[rhs === Hold @@ name && !$positionsOut, elemOf[i], resultOf[rhs, all, <|name -> elemBinding[i]|>]];
             If[r =!= $noResult, count++; Sow[r, $resultTag]]]]]]];
 
 (* Every solution of the pattern root, at each element that can match it.
@@ -1075,7 +1084,28 @@ groupResult[rhs_, all_, testNames_, group_] :=
   With[{ordered = If[testNames === {}, group,
       With[{names = SortBy[testNames, $order]},
         SortBy[group, Function[sol, Join @@ (padded[bindKeyOrPad[Lookup[sol, Key[#], None]]] & /@ names)]]]]},
-    FirstCase[ordered, sol_ :> With[{v = evaluated[substituted[rhs, all, sol]]}, v /; v =!= $noResult], $noResult]];
+    FirstCase[ordered, sol_ :> With[{v = resultOf[rhs, all, sol]}, v /; v =!= $noResult], $noResult]];
+
+(* The right-hand side evaluated for one solution. For XMLPosition, its
+   Conditions are run as for XMLCases, on the values, and then the code they
+   guard is evaluated with each name replaced by its position instead, so a
+   right-hand side with a test is evaluated twice. A repeated name, which has
+   several positions, gives the first it was bound at, in pattern order; a
+   name that is absent, Sequence[]. *)
+resultOf[rhs_, all_, sol_] /; !$positionsOut := evaluated[substituted[rhs, all, sol]];
+resultOf[rhs_, all_, sol_] :=
+  With[{body = guardedBody[rhs]},
+    If[body =!= rhs && evaluated[substituted[rhs, all, sol]] === $noResult, $noResult,
+      evaluated[body /. (Replace[#, Hold[s_] :> (HoldPattern[s] -> positionOf[Lookup[sol, Key[#], None]])] & /@ all)]]];
+
+positionOf[None] := Sequence[];
+positionOf[b_] := First[bindPos[b]];
+
+(* Held code without the Conditions a rule's right-hand side tests: at the
+   top, or at the top of a With, Module or Block (rhsParts). *)
+guardedBody[Hold[Verbatim[Condition][b_, _]]] := guardedBody[Hold[b]];
+guardedBody[Hold[(h : With | Module | Block)[vs_, b_]]] := Replace[guardedBody[Hold[b]], Hold[c_] :> Hold[h[vs, c]]];
+guardedBody[held_] := held;
 
 (* Held code evaluated as a rule's right-hand side: a Condition that fails
    gives $noResult. *)
