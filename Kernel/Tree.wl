@@ -75,8 +75,7 @@ unknownTreeOptions[opts_List] := Select[Flatten[opts], !optionRuleQ[HTMLToTree][
    query that is refused gives $Failed before hide is matched.
 
    A tree pattern or rule runs on the tree engine, which gives positions
-   (spec section 4); they are turned into the walk's WL positions here. A
-   query with a combinator keeps the chain runners until they go. *)
+   (spec section 4); they are turned into the walk's WL positions here. *)
 
 (* The sites the walk reads: "Hidden", the positions of Hidden items;
    "Focused", those of Focused elements, or All; and "FocusPaths", every
@@ -96,18 +95,7 @@ prefixes[pos_] := FoldList[Append, {}, pos];
 (* The WL positions a query selects, All for no focus, or a throw of $Failed *)
 querySites["Focus", _, All] := All;
 querySites["Hide", _, None] := {};
-querySites[name_, tree_, q_] /; treeQueryQ[q] := targetSites[name, tree, q];
-querySites[name_, tree_, q_] :=
-  Replace[chainSites[name, tree, Block[{$queryOption = name}, compileQuery[q, HTMLToTree]]],
-    $Failed :> Throw[$Failed, treeSites]];
-
-(* XMLCases does not select a bare element root, so the query is matched in a
-   list around it, where it can; a root it selects is kept, with root. *)
-chainSites[_, _, $Failed] := $Failed;
-chainSites["Hide", el_XMLElement, c_] := Replace[queryPositions[c, {el}, Infinity], {
-  $Failed -> $Failed,
-  ps_ :> (If[MemberQ[ps, {1}], Message[HTMLToTree::root]]; Rest /@ DeleteCases[ps, {1}])}];
-chainSites[_, tree_, c_] := queryPositions[c, tree, Infinity];
+querySites[name_, tree_, q_] := targetSites[name, tree, q];
 
 (* The sites of a tree query's targets: the positions of the names its
    right-hand side uses, over all its results. A target of a kind the option

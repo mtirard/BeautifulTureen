@@ -18,16 +18,8 @@ TestCreate[
   TestID -> "perf-classlist-query-5000-elements"
 ];
 
-(* Combinator stages share one materialisation. *)
-TestCreate[
-  Length @ XMLCases[$big,
-    Child[XMLPattern["body", "classList" -> {}], XMLPattern["div", "classList" -> {___, "lead"}]]],
-  5000,
-  TimeConstraint -> 0.5,
-  TestID -> "perf-classlist-combinator-5000-elements"
-];
-
-(* Its tree-pattern counterpart: 19 ms on the chains, 71 ms. *)
+(* Elements and their children share one materialisation: 19 ms in 3.0.0,
+   71 ms. *)
 TestCreate[
   Length @ XMLCases[$big,
     XMLPattern["body", "classList" -> {}, {___, n : XMLPattern["div", "classList" -> {___, "lead"}], ___}] :> n],
@@ -36,7 +28,7 @@ TestCreate[
   TestID -> "perf-tree-classlist-list-5000-elements"
 ];
 
-(* Deletion strips the whole tree. 19 ms on the chains; 79 ms on the tree
+(* Deletion strips the whole tree. 19 ms in 3.0.0; 79 ms on the tree
    engine, which deletes the elements it targets with Delete, and took 143 ms
    rewriting each through the opened nodes. *)
 TestCreate[
@@ -46,17 +38,7 @@ TestCreate[
   TestID -> "perf-classlist-delete-5000-elements"
 ];
 
-(* A chain (a combinator as a stage) runs on positions in the one materialised
-   tree, as an unnested combinator does. Measured at about 17 ms here. *)
-TestCreate[
-  Length @ XMLCases[$big,
-    Descendant[XMLPattern["html"], Child[XMLPattern["body"], XMLPattern["div", "classList" -> "c3"]]]],
-  714,
-  TimeConstraint -> 0.5,
-  TestID -> "perf-classlist-nested-chain-5000-elements"
-];
-
-(* As a tree pattern, a list below a Descendant: 18 ms, 40 ms. *)
+(* A contents list below a Descendant: 18 ms in 3.0.0, 40 ms. *)
 TestCreate[
   Length @ XMLCases[$big, "html body > div.c3"],
   714,
@@ -64,18 +46,8 @@ TestCreate[
   TestID -> "perf-tree-classlist-nested-5000-elements"
 ];
 
-(* Every combinator runs as a chain. A sibling relation reads each site's next
-   sibling from a table built once per list of siblings: scanning the list per
-   site is quadratic in these 5000 siblings. Measured at about 12 ms, against
-   about 6 ms before combinators shared one path. *)
-TestCreate[
-  Length @ XMLCases[$big, Adjacent[XMLPattern["div"], XMLPattern["div", "class" -> "c3 lead"]]],
-  714,
-  TimeConstraint -> 0.5,
-  TestID -> "perf-adjacent-5000-siblings"
-];
-
-(* As a tree pattern, a contents list: 18 ms, 37 ms. *)
+(* A sibling relation is a contents list, walked once over the 5000
+   siblings: 18 ms in 3.0.0, 37 ms. *)
 TestCreate[
   Length @ XMLCases[$big, "div + div[class='c3 lead']"],
   714,
@@ -83,17 +55,7 @@ TestCreate[
   TestID -> "perf-tree-adjacent-5000-siblings"
 ];
 
-(* Sibling starts, within each list of siblings, from the first site its earlier
-   stage selects: pairing every earlier site with every later one is quadratic
-   in these 5000 siblings. Measured at about 15 ms. *)
-TestCreate[
-  Length @ XMLCases[$big, Sibling[XMLPattern["div"], XMLPattern["div", "class" -> "c3 lead"]]],
-  714,
-  TimeConstraint -> 0.5,
-  TestID -> "perf-sibling-5000-siblings"
-];
-
-(* As a tree pattern, a contents list with a ___ gap: 18 ms, 40 ms. *)
+(* A contents list with a ___ gap: 18 ms in 3.0.0, 40 ms. *)
 TestCreate[
   Length @ XMLCases[$big, "div ~ div[class='c3 lead']"],
   714,
@@ -101,27 +63,18 @@ TestCreate[
   TestID -> "perf-tree-sibling-5000-siblings"
 ];
 
-(* Descendant gives each element once. When the stages' own matches decide, it
-   searches below the outermost matching ancestors only: searching below every
-   matching ancestor costs the depth times the elements, here 127 500 pairs from
-   50 nested divs of 100 p each. Measured at about 18 ms, against about 600 ms
-   searching below every ancestor. *)
+(* Descendant gives each element once: searching below every matching
+   ancestor costs the depth times the elements, here 127 500 pairs from 50
+   nested divs of 100 p each. *)
 $deep = XMLObject["Document"][{},
   XMLElement["body", {}, {Nest[XMLElement["div", {}, Append[Table[XMLElement["p", {}, {"x"}], 100], #]] &,
     XMLElement["div", {}, {}], 50]}], {}];
 
-TestCreate[
-  Length @ XMLCases[$deep, Descendant[XMLPattern["div"], XMLPattern["p"]]],
-  5000,
-  TimeConstraint -> 0.5,
-  TestID -> "perf-descendant-50-deep"
-];
-
-(* As a tree pattern, XMLPattern["div", _, Descendant[n : XMLPattern["p"]]]:
-   only the outermost matching div is searched below, as a pattern root
-   whose every constraint is a Descendant has a subset of its solutions at an
-   element inside another it matches. 18 ms on the chains, 143 ms; 3.2 s
-   searching below every div. *)
+(* As XMLPattern["div", _, Descendant[n : XMLPattern["p"]]]: only the
+   outermost matching div is searched below, as a pattern root whose every
+   constraint is a Descendant has a subset of its solutions at an element
+   inside another it matches. 18 ms in 3.0.0, 143 ms; 3.2 s searching below
+   every div. *)
 TestCreate[
   Length @ XMLCases[$deep, "div p"],
   5000,
@@ -135,8 +88,8 @@ TestCreate[
    binds every name, costs the factorial of the attribute count: about 18 s
    here at six rules, against about 60 ms. On the tree engine a Condition
    that sees only names bound by "key" -> name_ is a function of the
-   attribute values: 39 ms, against 78 ms on the chains and 356 ms matching
-   each element. *)
+   attribute values: 39 ms, against 78 ms in 3.0.0 and 356 ms matching each
+   element. *)
 $wide = XMLElement["div", {}, Table[
   XMLElement["a", Join[
     {"href" -> "/p/" <> ToString[i], "class" -> "c", "id" -> "n" <> ToString[i],
@@ -153,24 +106,13 @@ TestCreate[
   TestID -> "perf-condition-on-six-attribute-names"
 ];
 
-(* A condition on a list stage is tested once for each way the list splits, so
-   it restores, when the query names a list key, only the names it sees: here
-   neither g1 nor g2, whose restoring made each test linear in the 1000
-   siblings. Measured at about 10 ms on a 2026 laptop, against about 2.3 s
-   restoring every name. *)
+(* A Condition on a contents list sees c alone, so g1 and g2 are never
+   bound: restoring them, when the query names a list key, made each test
+   linear in the 1000 siblings (about 2.3 s in all). *)
 $trs = XMLElement["tbody", {}, Table[
   XMLElement["tr", If[OddQ[i], {"class" -> "a"}, {}], {XMLElement["td", {}, {ToString[i]}]}], {i, 1000}]];
 
-TestCreate[
-  Length @ XMLCases[$trs,
-    Child[XMLPattern["tbody"], {g1___, c : XMLPattern["tr", "classList" -> "a"], g2___} /; c[[3, 1, 3, 1]] === "501"]],
-  1,
-  TimeConstraint -> 0.5,
-  TestID -> "perf-list-condition-unused-names-1000-siblings"
-];
-
-(* As a tree pattern, the Condition sees c alone, so g1 and g2 are never
-   bound: 9 ms on the chains, 9 ms. *)
+(* 9 ms in 3.0.0, 9 ms. *)
 TestCreate[
   Length @ XMLCases[$trs,
     XMLPattern["tbody", _, {g1___, c : XMLPattern["tr", "classList" -> "a"], g2___} /; c[[3, 1, 3, 1]] === "501"] :> c],
@@ -188,7 +130,7 @@ TestCreate[
    they are tighter than the others in this file. Each rule now runs as a
    query on the tree engine, whose tag and attribute test is run once for
    each distinct tag and attribute list: 58 ms and 159 ms, against 93 ms and
-   259 ms on the chains, and 117 ms and 280 ms testing each element. *)
+   259 ms in 3.0.0, and 117 ms and 280 ms testing each element. *)
 $longClasses = ImportString[
   "<body>" <> StringJoin @ Table[
     "<div class=\"" <> StringRiffle[Table["t" <> ToString[k], {k, 1000}]] <>
@@ -214,8 +156,10 @@ TestCreate[
 ];
 
 (* XMLMatchQ[pattern] compiles its query once, not once for each element it
-   is applied to (issue #2). Measured at about 60 ms on a 2026 laptop, against
-   about 0.6 s compiling once per element. *)
+   is applied to (issue #2), and a pattern root with no constraints is one
+   MatchQ, about a hundred times faster per element than the tree engine.
+   Measured at about 60 ms on a 2026 laptop, against about 0.6 s compiling
+   once per element. *)
 $ps = XMLCases[$big, XMLPattern["div"]];
 
 TestCreate[

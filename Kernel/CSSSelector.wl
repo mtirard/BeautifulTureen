@@ -1,16 +1,15 @@
 (* ::Package:: *)
 (* HTMLPatterns: FromCSSSelector, a CSS selector to the XML pattern it says
-   (ADR 0017; tree-pattern spec section 7, draft ADR 0026) *)
+   (tree-pattern spec section 7, ADR 0026) *)
 
-(* Used by Query/Compiler.wl, until the combinators go *)
-PackageScoped[cssChainTranslation]
+(* Used by Query/Compiler.wl and Query/TreePatterns.wl *)
+PackageScoped[cssTree]
 
 (* Used by Query/TreePatterns.wl *)
-PackageScoped[cssTree]
 PackageScoped[cssNamedTree]
 
 (* =========================================================== *)
-(* FromCSSSelector (ADR 0017, draft ADR 0026)                   *)
+(* FromCSSSelector (ADR 0026)                                   *)
 (*                                                              *)
 (* A CSS selector, tokenised by CSS Syntax 3 and read as static *)
 (* Selectors Level 4, to the XML pattern it says. The string is *)
@@ -25,12 +24,9 @@ PackageScoped[cssNamedTree]
 (* The output holds only public symbols and the names made by   *)
 (* cssFreshName, so it can be spliced into a larger pattern.    *)
 (*                                                              *)
-(* The parsed tree has two translations. FromCSSSelector gives  *)
-(* the tree one (spec section 7): a one-element selector is its *)
-(* pattern, and a context selector is the tree pattern rooted   *)
-(* at its first compound, with its subject named by the caller. *)
-(* The one to combinators is kept for the chain compiler only,  *)
-(* and goes with the combinators.                               *)
+(* A one-element selector is its pattern, and a context         *)
+(* selector is the tree pattern rooted at its first compound,   *)
+(* with its subject named by the caller (spec section 7).       *)
 (* =========================================================== *)
 
 PackageExported[FromCSSSelector]
@@ -50,20 +46,13 @@ FromCSSSelector[args___] := (argumentCountMessage[FromCSSSelector, Length[{args}
 (* {"one", pattern} for a one-element selector, {"context", pattern} for a
    context selector, whose subject is named cssSubject, or $Failed after the
    message. *)
-cssTree[s_String] := Block[{$cssTree = True}, cssTranslate[s, cssTreeList]];
+cssTree[s_String] := cssTranslate[s, cssTreeList];
 
 (* The translation with its subject named n, which is held, so that a value
    of n cannot leak in. *)
 SetAttributes[cssNamedTree, HoldRest];
 cssNamedTree[s_String, n_Symbol] :=
   Replace[cssTree[s], {{"one", p_} :> Pattern @@ Hold[n, p], {"context", p_} :> (p /. cssSubject :> n)}];
-
-(* The combinators the chain compiler takes. *)
-cssChainTranslation[s_String] := Block[{$cssTree = False}, cssTranslate[s, cssListPattern]];
-
-(* Whether the tree translation is being made: the two share the compounds,
-   which differ only in how a compound's tests are written. *)
-$cssTree = False;
 
 (* An invalid selector is caught before any translation, as the whole string
    is parsed first. *)
@@ -225,7 +214,7 @@ cssNonEmpty[{seg_, _}, _] := seg;
    descendant combinator, and whitespace around >, +, ~ and || is ignored. A
    relative selector, in :has(), may start with a combinator. *)
 cssComplex[items_, relative_] :=
-  Module[{runs = SplitBy[cssColumns[items], cssSeparatorQ], lead = Descendant, compounds},
+  Module[{runs = SplitBy[cssColumns[items], cssSeparatorQ], lead = cssDescendant, compounds},
     If[cssSeparatorQ[runs[[1, 1]]],
       If[!relative,
         cssInvalid["a selector cannot start with " <> cssShown[runs[[1, 1]]], cssStart[runs[[1, 1]]]]];
@@ -251,13 +240,13 @@ cssSeparatorQ[t_] := cssWSQ[t] || cssCombinatorQ[t];
 cssLink[run_] :=
   With[{cs = Select[run, cssCombinatorQ]},
     Switch[Length[cs],
-      0, Descendant,
+      0, cssDescendant,
       1, cssLinkOf[First[cs]],
       _, cssInvalid["two combinators in a row", cssStart[cs[[2]]]]]];
 
-cssLinkOf[tk["delim", ">", __]] := Child;
-cssLinkOf[tk["delim", "+", __]] := Adjacent;
-cssLinkOf[tk["delim", "~", __]] := Sibling;
+cssLinkOf[tk["delim", ">", __]] := cssChild;
+cssLinkOf[tk["delim", "+", __]] := cssAdjacent;
+cssLinkOf[tk["delim", "~", __]] := cssSibling;
 cssLinkOf[tk["column", __]] := cssColumn;
 
 (* A pseudo-element can only end the last compound of a selector, and is
@@ -339,7 +328,7 @@ cssAttributeOf[{_, t_, ___}, _] := cssInvalid["unexpected " <> cssShown[t] <> " 
 (* ---- Pseudo-classes and pseudo-elements ---- *)
 
 (* Translated. The child-indexed ones are positions among the parent's
-   element children (ADR 0016): each is cssPos[fromEnd, a, b, of, text], the
+   element children (spec section 7): each is cssPos[fromEnd, a, b, of, text], the
    index a k + b, k >= 0, counted from the start or the end, among all the
    children (of None), those of the compound's type ("type"), or those that
    match a selector ("of", then the pattern). *)
@@ -484,17 +473,10 @@ $cssComplexIsHow = "Its arguments can hold a combinator only when its compound i
 
 (* ---- Translation: selector lists ---- *)
 
-(* A selector list whose selectors have the same links and differ, as parsed,
-   in at most one compound, which has no position, is the shared chain, with
-   the alternatives at that compound. Any other is the alternatives of its
-   selectors' chains, in written order (ADR 0015). *)
-cssListPattern[cs_] :=
-  Replace[cssDistinctSelectors[cs], {
-    {c_} :> cssChainPattern[c],
-    u_ :> cssAlternatives[cssChainPattern /@ u]}];
-
 (* The selectors of a list, each once, as one shared selector where they
-   share one. *)
+   share one: selectors that have the same links and differ, as parsed, in at
+   most one compound, which has no position, are one selector with the
+   alternatives at that compound. *)
 cssDistinctSelectors[cs_] :=
   Replace[DeleteDuplicatesBy[Join @@ (cssSpreadIs /@ cs), cssShape],
     u : {_, __} :> Replace[cssSharedSelector[u], {None -> u, c_ :> {c}}]];
@@ -509,14 +491,14 @@ cssSharedSelector[u_] :=
             Last[First[u]]]]]]];
 
 cssPositionedQ[cp[nodes_, _]] :=
-  MemberQ[nodes, _sNth | sHas[{___, rel[Adjacent | Sibling, _], ___}, _]] || AnyTrue[Cases[nodes, sPseudo[c_, _] :> c], KeyExistsQ[$cssPositions, #] || MatchQ[#, $cssRootPseudoClasses] &];
+  MemberQ[nodes, _sNth | sHas[{___, rel[cssAdjacent | cssSibling, _], ___}, _]] || AnyTrue[Cases[nodes, sPseudo[c_, _] :> c], KeyExistsQ[$cssPositions, #] || MatchQ[#, $cssRootPseudoClasses] &];
 
 (* A selector of one compound whose :is() or :where() has an argument with a
    combinator is a selector list: each argument with the rest of the compound
    merged into its last compound, as p:is(div p) is div p.p. With a compound
    before it, x :is(a b) is an element with ancestors x and a in either order,
-   whose expansion grows with the chains: the chains refuse it, and the tree
-   translation tests the element's path (cssPathBranches). *)
+   whose expansion grows with the selectors, so the element's path is tested
+   instead (cssPathBranches). *)
 cssSpreadIs[cx[{cp[nodes_, text_]}, {}]] /; Count[nodes, _?cssComplexIsQ] == 1 :=
   With[{k = First[FirstPosition[nodes, _?cssComplexIsQ, None, {1}, Heads -> False]]},
     cssMergeInto[#, Delete[nodes, k], text] & /@ First[nodes[[k]]]];
@@ -534,91 +516,41 @@ cssMergeInto[cx[comps_, links_], rest_, text_] :=
 cssShape[x_] := x //. {cp[n_, _String] :> cp[n], sPseudo[n_, _String] :> sPseudo[n], sNot[a_, _String] :> sNot[a],
   sIs[a_, _String] :> sIs[a], sHas[r_, _String] :> sHas[r], sPseudoElement[_String, _Integer, n_] :> sPseudoElement[n]};
 
-(* ---- Translation: chains ---- *)
+(* ---- Translation: positions among siblings ----
 
-(* The stages and the links between them. A run of compounds joined by + or ~
-   in which one has a child-indexed pseudo-class is one list stage over their
-   parent's children (ADR 0016), as Adjacent and Sibling are shorthands for
-   lists: after > or a descendant combinator it follows that link, and at the
-   start of a chain it lists the children of any element or of the document
-   (ADR 0018), so that it reaches the top elements. *)
-cssChainPattern[cx[comps_, links_]] :=
-  Module[{ts = cssCompoundT /@ comps, runs},
-    If[MemberQ[links, cssColumn], cssRefuse["unsupported", "the column combinator ||", "Columns are not supported."]];
-    runs = Split[Transpose[{ts, Prepend[links, None]}], MatchQ[Last[#2], Adjacent | Sibling] &];
-    Apply[cssChain, Fold[cssAddRun, {{}, {}}, runs]]];
+   The entries that place a compound among its siblings, shared by the
+   contents lists of runs (cssTreeRun). *)
 
-(* :root and :scope: the first compound, alone in its run, is the only child
-   of the document, and its positions among its siblings are each 1 or never
-   hold. *)
-cssAddRun[{stages_, links_}, run_] /; AnyTrue[run[[All, 1]], MemberQ[Last[#], _cssRoot] &] :=
-  If[stages === {} && Length[run] == 1,
-    With[{part = run[[1, 1]]},
-      {{XMLDocument[], If[AllTrue[Last[part], cssFirstQ], {}, {Except[_]}] ~Append~ First[part]}, {Child}}],
-    cssRefuse["unsupported", First[FirstCase[Join @@ run[[All, 1, 3]], _cssRoot]], $cssRootHow]];
-
+(* Whether a position holds for the only top element, at index 1: :root and
+   :scope, whose element is the only child of the document. *)
 cssFirstQ[_cssRoot] := True;
 (* The only top element has no sibling. *)
 cssFirstQ[_sibHas] := False;
 cssFirstQ[cssPos[_, a_, b_, _, _]] :=
   Which[a == 0, b == 1, a > 0, b <= 1 && Mod[1 - b, a] == 0, True, b >= 1 && Mod[b - 1, -a] == 0];
 
-cssAddRun[{stages_, links_}, run_] :=
-  With[{lead = run[[1, 2]], parts = run[[All, 1]], within = Rest[run[[All, 2]]]},
-    Which[
-      AllTrue[parts, Last[#] === {} &],
-        {Join[stages, First /@ parts], Join[links, DeleteCases[{lead}, None], within]},
-      lead === None,
-        {Join[stages, {XMLDocument[] | XMLPattern[_], cssRunList[parts, within]}], Append[links, Child]},
-      True,
-        {Append[stages, cssRunList[parts, within]], Append[links, lead]}]];
-
-(* A run as a list: its compounds in order, + adding nothing between two and ~
-   a ___, with a position of the first compound written as the entries before
-   it and one of the last as the entries after it. A position among all the
-   siblings of a compound joined to the first by + alone is one of the first,
-   less the compounds between (.b + .a:nth-child(5) is .b at 4), and the same
-   from the end. Where positions need more than that, the general form names
-   every gap and compound, and tests the positions in a condition on the list.
-   A position among the siblings of a type or that match a selector is
-   written with plain entries too, in a run of one compound, where the
-   compiler recognises the list (ADR 0020, shapes 4 and 5); in a longer run
-   only the first or the last is, as WL's matcher backtracks without bound on
-   repeats of Except[s] ..., s beside other XML patterns (over 20 s for
-   tr:nth-of-type(50) among 1,000 rows, against 0.06 s as a condition). The
-   siblings of the element's own type, for a compound with no type, are not a
-   pattern, and are counted in a condition. *)
-cssRunList[parts_, within_] :=
-  With[{k = Length[parts]},
-    With[{
-        forward = Join @@ MapIndexed[cssShifted[#1, First[#2] - 1, Take[within, First[#2] - 1]] &, Select[#[[3]], !First[#] &] & /@ parts],
-        backward = Join @@ MapIndexed[cssShifted[#1, k - First[#2], Drop[within, First[#2] - 1]] &, Select[#[[3]], First] & /@ parts]},
-      If[Length[forward] <= 1 && Length[backward] <= 1 && FreeQ[{forward, backward}, None, {2}] &&
-          FreeQ[{forward, backward}, cssOwnType | (cssPos[_, a_, b_, Except[None], _] /; k > 1 && !(a == 0 && b == 1))],
-        Join[cssPositionEntries[forward, False], cssRunEntries[First /@ parts, within], cssPositionEntries[backward, True]],
-        cssGeneralList[parts, within]]]];
-
-(* The positions of a compound s compounds from an end of its run, moved to
-   that end over the links between, or None when they cannot move. *)
-cssShifted[ps_, 0, _] := ps;
-cssShifted[{}, _, _] := {};
-cssShifted[ps_, s_, links_] /; MatchQ[links, {Adjacent ..}] && MatchQ[ps, {cssPos[_, _, _, None, _] ..}] :=
-  Replace[ps, cssPos[e_, a_, b_, None, t_] :> cssPos[e, a, b - s, None, t], {1}];
-cssShifted[_, _, _] := {None};
-
 (* Each compound but the last, with the gap after it. *)
 cssRunEntries[ps_, within_] := Append[Join @@ MapThread[Prepend[cssGap[#2], #1] &, {Most[ps], within}], Last[ps]];
 
-cssGap[Adjacent] := {};
-cssGap[Sibling] := {___};
+cssGap[cssAdjacent] := {};
+cssGap[cssSibling] := {___};
+
+(* The entries with each PatternSequence among them spliced in. *)
+spliced[es_List] := Replace[es, Verbatim[PatternSequence][ps___] :> Sequence @@ spliced[{ps}], {1}];
+
+(* The entries in reverse order, each PatternSequence in them reversed too,
+   so that the entries after a compound read as the entries before it do. *)
+mirrored[es_List] := Reverse[mirroredEntry /@ es];
+mirroredEntry[Verbatim[PatternSequence][ps___]] := PatternSequence @@ mirrored[{ps}];
+mirroredEntry[(h : Repeated | RepeatedNull)[p_, r___]] := h[mirroredEntry[p], r];
+mirroredEntry[e_] := e;
 
 (* The entries before a compound at index a k + b, k >= 0 among its siblings,
    or after it, as their mirror, when counted from the end. Among all the
    siblings, each one before it is a unit _. Among those that match a
    selector s, which the compound matches too, the siblings before it are
    those that do not, Except[s] ..., then a unit PatternSequence[s, Except[s]
-   ...] for each that does (ADR 0020, shapes 4 and 5). An index that no k
-   gives never matches. *)
+   ...] for each that does. An index that no k gives never matches. *)
 cssPositionEntries[{}, _] := {___};
 cssPositionEntries[{cssPos[_, a_, b_, of_, _]}, fromEnd_] :=
   If[fromEnd, mirrored, Identity] @ If[a <= 0 && b < 1, {Except[_]},
@@ -679,7 +611,7 @@ cssGeneralList[parts_, within_] :=
   Module[{names = Replace[parts[[All, 2]], None :> cssFreshName["c"], {1}], entries, seq, places},
     entries = MapThread[If[#2 === None, Pattern @@ {#3, First[#1]}, First[#1]] &, {parts, parts[[All, 2]], names}];
     seq = Join[{cssFreshName["g"]},
-      Join @@ MapThread[Prepend[If[#2 === Sibling, {cssFreshName["g"]}, {}], #1] &, {Most[names], within}],
+      Join @@ MapThread[Prepend[If[#2 === cssSibling, {cssFreshName["g"]}, {}], #1] &, {Most[names], within}],
       {Last[names], cssFreshName["g"]}];
     places = Flatten[Position[seq, #, {1}, Heads -> False] & /@ names];
     conditionWith[
@@ -703,13 +635,6 @@ cssIndexHeld[cssOwnType, n_, side_] := With[{l = side, e = n}, Hold[Count[l, XML
    for tr:nth-of-type(500) among 1,000 rows, against 0.06 s. *)
 cssIndexHeld[XMLPattern[t_String], _, side_] := With[{l = side}, Hold[Count[l, XMLElement[t, _, _]] + 1]];
 cssIndexHeld[of_, _, side_] := With[{l = side, m = XMLMatchQ[of]}, Hold[Count[l, _?m] + 1]];
-
-(* Runs of one link use the n-ary form; mixed links are right-nested. *)
-cssChain[{s_}, {}] := s;
-cssChain[ss_, links_] :=
-  With[{k = LengthWhile[links, # === First[links] &]},
-    If[k == Length[links], First[links] @@ ss,
-      First[links] @@ Append[Take[ss, k], cssChain[Drop[ss, k], Drop[links, k]]]]];
 
 (* ---- Translation to tree patterns (spec section 7) ---- *)
 
@@ -741,7 +666,7 @@ cssTreeSelector[c_cx] :=
 cssRuns[cx[comps_, links_]] := (
   If[MemberQ[links, cssColumn], cssRefuse["unsupported", "the column combinator ||", "Columns are not supported."]];
   {#[[1, 2]], #[[All, 1]], Rest[#[[All, 2]]]} & /@
-    Split[Transpose[{cssCompoundT /@ comps, Prepend[links, None]}], MatchQ[Last[#2], Adjacent | Sibling] &]);
+    Split[Transpose[{cssCompoundT /@ comps, Prepend[links, None]}], MatchQ[Last[#2], cssAdjacent | cssSibling] &]);
 
 (* The first run, the last compound of each run constrained by what the
    runs after it say, and the last compound of all named subject. *)
@@ -756,8 +681,8 @@ cssLinked[{run_, rest__}, subject_] := MapAt[cssConstrained[#, cssBelow[cssLinke
 cssBelow[{lead_, parts_, within_}] := (
   cssNoRoot[parts];
   If[MatchQ[parts, {{_, _, {}}}],
-    With[{p = parts[[1, 1]]}, If[lead === Child, {___, p, ___}, Descendant[p]]],
-    With[{l = cssTreeRun[parts, within]}, If[lead === Child, l, l | Descendant[XMLPattern[_, _, l]]]]]);
+    With[{p = parts[[1, 1]]}, If[lead === cssChild, {___, p, ___}, Descendant[p]]],
+    With[{l = cssTreeRun[parts, within]}, If[lead === cssChild, l, l | Descendant[XMLPattern[_, _, l]]]]]);
 
 (* The pattern root, from the first run: its one compound; for :root and
    :scope, that compound as the only top element (ADR 0018), its positions
@@ -806,7 +731,7 @@ cssMovedAll[parts_, within_, fromEnd_] :=
 
 cssMoved[ps_, 0, _, _] := ps;
 cssMoved[{}, _, _, _] := {};
-cssMoved[ps_, s_, crossed_, links_] /; MatchQ[links, {Adjacent ..}] := cssMovedOne[#, s, crossed] & /@ ps;
+cssMoved[ps_, s_, crossed_, links_] /; MatchQ[links, {cssAdjacent ..}] := cssMovedOne[#, s, crossed] & /@ ps;
 cssMoved[_, _, _, _] := {cssUnmoved};
 
 cssMovedOne[cssPos[e_, a_, b_, None, t_], s_, _] := cssPos[e, a, b - s, None, t];
@@ -888,7 +813,7 @@ cssConstrained[cssPathed[p_, ts_, t_], c_] := cssPathed[cssConstrained[p, c], ts
 
 (* :has() of a relative selector that starts below the element: the
    constraint its runs put on the element. *)
-cssHasConstraint[rel[Adjacent | Sibling | cssColumn, _], text_] :=
+cssHasConstraint[rel[cssAdjacent | cssSibling | cssColumn, _], text_] :=
   cssRefuse["unsupported", text, "A relative selector in :has() can only start with a descendant combinator or >."];
 cssHasConstraint[rel[link_, c_cx], _] := cssBelow[cssLinked[ReplacePart[cssRuns[c], {1, 1} -> link], None]];
 
@@ -917,7 +842,7 @@ cssTreeRun[parts_, within_] /; !FreeQ[parts[[All, 3]], _sibHas] :=
     With[{base = MapAt[DeleteCases[#, _sibHas] &, parts, {-1, 3}]},
       cssAlternatives[cssSiblingRun[base, within, #, Last[First[hs]]] & /@ First[First[hs]]]]];
 
-cssSiblingRun[parts_, within_, r : rel[Descendant | Child, _], text_] :=
+cssSiblingRun[parts_, within_, r : rel[cssDescendant | cssChild, _], text_] :=
   cssTreeRun[MapAt[cssConstrained[#, cssHasConstraint[r, text]] &, parts, {-1, 1}], within];
 cssSiblingRun[parts_, within_, rel[link_, c_cx], _] :=
   With[{first = cssLinked[cssRuns[c], None]},
@@ -940,14 +865,14 @@ cssComplexQ[cx[comps_, _]] := Length[comps] > 1;
 cssComplexQ[_] := False;
 
 cssPathList[cx[comps_, links_], text_] := (
-  If[!MatchQ[links, {(Descendant | Child) ..}], cssRefuse["unsupported", text, $cssPathLinksHow]];
+  If[!MatchQ[links, {(cssDescendant | cssChild) ..}], cssRefuse["unsupported", text, $cssPathLinksHow]];
   cssAncestorList[cssArgPattern[cx[{#}, {}], text] & /@ Most[comps], links]);
 
 (* The compounds, each linked to the next, ending at the element. *)
 cssAncestorList[ps_, links_] := Join[{___}, Join @@ MapThread[Prepend[cssPathGap[#2], #1] &, {ps, links}]];
 
-cssPathGap[Descendant] := {___};
-cssPathGap[Child] := {};
+cssPathGap[cssDescendant] := {___};
+cssPathGap[cssChild] := {};
 
 cssPathT[l_, True, text_] := br[tg[All, {}], <||>, {pathT[Hold[XMLMatchQ[l][cssSelf]], text]}];
 cssPathT[l_, False, text_] := br[tg[All, {}], <||>, {pathT[Hold[! XMLMatchQ[l][cssSelf]], text]}];
@@ -1007,11 +932,10 @@ $cssPathPlaceHow = "A :not(), :is() or :where() with a combinator inside tests t
    held, with cssSelf for the compound's element. cssCompoundT gives {pattern,
    name or None, its positions among its siblings, each a cssPos, and
    cssRoot[text] for :root or :scope}. *)
-cssCompoundT[cpAnchor] := {XMLPattern[$cssAnchor], None, {}};
 (* The compounds that differ between the selectors of a list have no position
    (cssSharedSelector checks their own nodes; a position inside :is() or
    :not() is refused when its branches are made). *)
-cssCompoundT[cpAlt[cps_]] := {If[$cssTree, cssMergedAlternatives, cssAlternatives][First @* cssCompoundT /@ cps], None, {}};
+cssCompoundT[cpAlt[cps_]] := {cssMergedAlternatives[First @* cssCompoundT /@ cps], None, {}};
 cssCompoundT[c : cp[nodes_, _]] :=
   With[{type = FirstCase[nodes, sType[n_] :> n, _]},
     Replace[cssBranches[c], {bs_, counts_} :>
@@ -1021,10 +945,6 @@ cssCompoundT[c : cp[nodes_, _]] :=
    when it has none, those of the element's own tag. *)
 cssOfType[type_String] := XMLPattern[type];
 cssOfType[_] := cssOwnType;
-
-(* The anchor wraps an element's children in :has(), so that they have a
-   parent; its namespaced tag is in no document. *)
-$cssAnchor = {"urn:x-htmlpatterns:anchor", "anchor"};
 
 $cssAny = br[tg[All, {}], <||>, {}];
 
@@ -1054,7 +974,7 @@ cssApply[bs_, sPseudo["empty", _]] := cssWith[bs, cssTest[$cssEmptyTest]];
 cssApply[bs_, sPseudo["checked", _]] := Flatten[Outer[cssMerge, bs, $cssChecked], 1];
 cssApply[bs_, sPseudo[c_, text_]] /; KeyExistsQ[$cssPositions, c] :=
   (Scan[Sow[cssPos[Sequence @@ #, text], cssPosTag] &, $cssPositions[c]]; bs);
-(* A place in the tree, as a position is: the compound is a list stage. *)
+(* A place in the tree, as a position is: the compound is a contents-list entry. *)
 cssApply[bs_, sPseudo[$cssRootPseudoClasses, text_]] := (Sow[cssRoot[text], cssPosTag]; bs);
 (* of S: the element matches S, and is counted among the siblings that do. *)
 cssApply[bs_, sNth[p_, None]] := (Sow[p, cssPosTag]; bs);
@@ -1062,20 +982,18 @@ cssApply[bs_, sNth[cssPos[e_, a_, b_, "of", text_], args_]] := (
   Sow[cssPos[e, a, b, cssAlternatives[cssArgPattern[#, text] & /@ args], text], cssPosTag];
   Flatten[Outer[cssMerge, bs, Join @@ (cssArgBranches[#, text] & /@ args)], 1]);
 cssApply[bs_, sNot[args_, text_]] := cssNot[bs, args, text];
-(* In a tree pattern, an argument with a combinator is its last compound and a
-   test on the element's path (cssPathBranches). *)
-cssApply[bs_, sIs[args_, text_]] /; $cssTree :=
+(* An argument with a combinator is its last compound and a test on the
+   element's path (cssPathBranches). *)
+cssApply[bs_, sIs[args_, text_]] :=
   Flatten[Outer[cssMerge, bs, Join @@ (If[cssComplexQ[#], cssPathBranches[#, text], cssArgBranches[#, text]] & /@ args)], 1];
-cssApply[bs_, sIs[args_, text_]] := Flatten[Outer[cssMerge, bs, Join @@ (cssArgBranches[#, text] & /@ args)], 1];
-(* In a tree pattern, :has() is a constraint, alternatives of one for each
-   relative selector. One that starts with + or ~ looks beside the element, so
-   the whole :has() is kept with its positions, and its run extends the
-   element's (cssSiblingRuns). *)
-cssApply[bs_, sHas[rels_, text_]] /; $cssTree && MemberQ[rels, rel[Adjacent | Sibling, _]] :=
+(* :has() is a constraint, alternatives of one for each relative selector.
+   One that starts with + or ~ looks beside the element, so the whole :has()
+   is kept with its positions, and its run extends the element's
+   (cssSiblingRuns). *)
+cssApply[bs_, sHas[rels_, text_]] /; MemberQ[rels, rel[cssAdjacent | cssSibling, _]] :=
   (Sow[sibHas[rels, text], cssPosTag]; bs);
-cssApply[bs_, sHas[rels_, text_]] /; $cssTree :=
+cssApply[bs_, sHas[rels_, text_]] :=
   cssWith[bs, br[tg[All, {}], <||>, {hasC[cssAlternatives[cssHasConstraint[#, text] & /@ rels]]}]];
-cssApply[bs_, sHas[rels_, text_]] := cssWith[bs, cssTest[cssOr[cssHasTest[#, text] & /@ rels]]];
 cssApply[_, sRefuse[kind_, part_, how_]] := cssRefuse[kind, part, how];
 cssApply[_, sPseudoElement[text_, _, name_]] := cssRefuse["impossible", text, cssPseudoElementHow[name]];
 
@@ -1101,7 +1019,7 @@ cssArgPattern[cx[{c_}, {}], text_] :=
 cssArgPattern[_, text_] := cssRefuse["unsupported", text, $cssComplexHow];
 
 (* A compound's pattern or branches, which must have no position: a compound
-   with one is a list stage, not an element pattern. *)
+   with one is an entry of its parent's contents list, not an element pattern. *)
 cssUnpositioned[{x_, {}}, _, _] := x;
 cssUnpositioned[{x_, _, {}}, _, _] := x;
 cssUnpositioned[{__, counts_List}, where_, how_] :=
@@ -1115,14 +1033,13 @@ cssUnpositioned[{__, counts_List}, where_, how_] :=
    Except at a raw key, which would require the attribute. The operator form
    keeps its compiled matcher, for the readings in force, so the argument is
    compiled once per query rather than once per candidate. *)
-cssNot[bs_, args_, text_] /; $cssTree :=
+cssNot[bs_, args_, text_] :=
   With[{complex = Select[args, cssComplexQ], free = Select[args, cssDownHasQ]},
     Fold[cssNotPath[#1, #2, text] &,
       Fold[cssWith[#1, cssTest[cssFreeTest[#2, text]]] &,
         Replace[Select[args, !cssComplexQ[#] && !cssDownHasQ[#] &], {{} -> bs, rest_ :> cssNotCompounds[bs, rest, text]}],
         Join @@ Cases[free, cx[{cp[nodes_, _]}, {}] :> FirstCase[nodes, sHas[rels_, _] :> rels]]],
       complex]];
-cssNot[bs_, args_, text_] := cssNotCompounds[bs, args, text];
 
 cssNotCompounds[bs_, {cx[{cp[{sClass[c_]}, _]}, {}]}, _] := cssWith[bs, cssAttr["classList", lacks[c]]];
 cssNotCompounds[bs_, {cx[{cp[{sType[n_]}, _]}, {}]}, _] := cssWith[bs, br[tg[All, {n}], <||>, {}]];
@@ -1131,7 +1048,7 @@ cssNotCompounds[bs_, args_, text_] :=
     cssWith[bs, cssTest[Hold[! XMLMatchQ[p][cssSelf]]]]];
 
 (* :not(:has(...)) whose relative selectors all start below the element. *)
-cssDownHasQ[cx[{cp[nodes_, _]}, {}]] := MatchQ[DeleteCases[nodes, _sUniversal], {sHas[{rel[Descendant | Child, _] ..}, _]}];
+cssDownHasQ[cx[{cp[nodes_, _]}, {}]] := MatchQ[DeleteCases[nodes, _sUniversal], {sHas[{rel[cssDescendant | cssChild, _] ..}, _]}];
 cssDownHasQ[_] := False;
 
 (* No element below matches what the relative selector says of it: XMLFreeQ
@@ -1143,56 +1060,23 @@ cssFreeTest[r_rel, text_] :=
     {Verbatim[___], p_, Verbatim[___]} :> Hold[XMLFreeQ[cssSelf, p, {1}]],
     c_ :> With[{q = XMLPattern[_, _, c]}, Hold[! XMLMatchQ[q][cssSelf]]]}];
 
-(* :has(s) and :has(> s) for one compound test the children; any other
-   relative selector runs as a chain from an anchor around the children, so
-   that siblings among them are siblings. *)
-cssHasTest[rel[Adjacent | Sibling | cssColumn, _], text_] :=
-  cssRefuse["unsupported", text, "A relative selector in :has() can only start with a descendant combinator or >."];
-cssHasTest[rel[link_, cx[comps_, links_]], _] :=
-  Replace[If[links === {}, cssCompoundT[First[comps]], None], {
-    {p_, _, {}} :> cssHasChild[link, p],
-    _ :> With[{chain = cssChainPattern[cx[Prepend[comps, cpAnchor], Prepend[links, link]]], a = $cssAnchor},
-      Hold[! MissingQ[XMLFirstCase[XMLElement[a, {}, Last[cssSelf]], chain]]]]}];
-
-(* The children are filtered to elements, as a list given to XMLFirstCase can
-   hold only elements and strings, and an XML document's can hold comments. *)
-cssHasChild[Child, p_] := Hold[AnyTrue[Last[cssSelf], XMLMatchQ[p]]];
-cssHasChild[Descendant, p_] := Hold[! MissingQ[XMLFirstCase[Cases[Last[cssSelf], _XMLElement], p]]];
-
 cssAnd[{t_}] := t;
 cssAnd[ts_] := Replace[Join @@ ts, Hold[xs___] :> Hold[And[xs]]];
-cssOr[{t_}] := t;
-cssOr[ts_] := Replace[Join @@ ts, Hold[xs___] :> Hold[Or[xs]]];
 
 cssAlternatives[{p_}] := p;
 cssAlternatives[ps_] := Alternatives @@ ps;
 
 (* The pattern of a compound, from its branches: a branch whose tag can never
-   match is dropped, and with none left the compound never matches. In a tree
-   pattern, the tests are a PatternTest, so that the translation invents no
-   name (spec section 7). *)
-cssFinish[bs_, type_] /; $cssTree :=
+   match is dropped, and with none left the compound never matches. The tests
+   are a PatternTest, so that the translation invents no name (spec section
+   7). *)
+cssFinish[bs_, type_] :=
   With[{live = Select[bs, cssTagPattern[First[#]] =!= cssNever &]},
     {Which[
       live === {}, cssTested[XMLPattern[type], {Hold[False]}],
       SameQ @@ (Last /@ live), cssTested[cssMergedAlternatives[cssElement /@ live], Last[First[live]]],
       True, Alternatives @@ (cssTested[cssElement[#], Last[#]] & /@ live)],
      None}];
-(* For the chains, the tests of a compound are a Condition on one name. *)
-cssFinish[bs_, type_] :=
-  Module[{live = Select[bs, cssTagPattern[First[#]] =!= cssNever &], name},
-    name = If[AnyTrue[live, Last[#] =!= {} &], cssFreshName["e"], None];
-    {Which[
-      live === {}, cssConditioned[XMLPattern[type], name, {Hold[False]}],
-      SameQ @@ (Last /@ live), cssConditioned[cssAlternatives[cssElement /@ live], name, Last[First[live]]],
-      True, Alternatives @@ (cssConditioned[cssElement[#], name, Last[#]] & /@ live)],
-     name}];
-
-cssConditioned[p_, None, {}] := p;
-cssConditioned[p_, None, ts_] := conditionWith[p, cssAnd[ts]];
-cssConditioned[p_, n_, {}] := Pattern @@ {n, p};
-cssConditioned[p_, n_, ts_] := conditionWith[Pattern @@ {n, p}, cssAnd[ts] /. cssSelf -> n];
-
 cssElement[br[t_, a_, _]] :=
   With[{tag = cssTagPattern[t], rules = KeyValueMap[cssRule, a]},
     Switch[Length[rules], 0, XMLPattern[tag], 1, XMLPattern[tag, First[rules]], _, XMLPattern[tag, rules]]];

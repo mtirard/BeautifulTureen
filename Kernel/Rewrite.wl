@@ -340,7 +340,6 @@ treeReplace[tree_, q_] :=
         rewritten[tree, KeyValueMap[#1 -> replacer[#1, #2] &, edits]]]],
     $refusal];
 
-checkReplacement[(Rule | RuleDelayed)[lhs_, _]] /; !treeQueryQ[lhs] := refuse[XMLReplace::badpat, lhs];
 checkReplacement[_Rule | _RuleDelayed] := Null;
 checkReplacement[p_] := refuse[XMLReplace::bare, p];
 

@@ -92,12 +92,6 @@ ruleTable[rules_, head_, tree_] :=
 
 refuseRule[] := Throw[$Failed, $ruleRefusal];
 
-(* A key holding a combinator gets its refusal from the chain compiler until
-   the combinators go; any key it would take is refused here. *)
-ruleSites[(Rule | RuleDelayed)[key_, _], head_, _] /; !treeQueryQ[key] :=
-  (If[elementQuery[compileWith[key, head, readingsInForce[]], key, head, "badpat"] =!= $Failed,
-    Message[MessageName[head, "badpat"], key]];
-   refuseRule[]);
 ruleSites[r : (Rule | RuleDelayed)[key_, _], head_, tree_] :=
   If[queryKeyQ[key], queryKeySites, testKeySites][key, heldValue[r], head, tree];
 ruleSites[x_, head_, _] := (Message[MessageName[head, "notrule"], x]; refuseRule[]);

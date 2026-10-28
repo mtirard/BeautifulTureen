@@ -25,32 +25,6 @@ $msgTree = ImportString[
   "<article><p>Top.</p><section><p>Nested.</p></section></article>",
   {"HTML", "XMLObject"}];
 
-TestCreate[
-  capturedMessages[
-    XMLMatchQ[XMLElement["p", {}, {"x"}], Child[XMLPattern["div"], XMLPattern["p"]]]],
-  {"Child[XMLPattern[\"div\"], XMLPattern[\"p\"]] relates an element to its parent or siblings, which a lone element does not have. Use XMLCases or XMLFirstCase to search a tree with it."},
-  TestID -> "message-names-the-pattern-as-written"
-];
-
-(* Named alternatives holding a combinator are refused as a whole: the message
-   names the pattern the caller wrote, not the alternative that tripped it. *)
-TestCreate[
-  StringReplace[capturedMessages[
-    XMLCases[$msgTree,
-      u : (Child[XMLPattern["article"], XMLPattern["p"]] | Child[XMLPattern["section"], XMLPattern["p"]])]],
-    StartOfString ~~ __ ~~ "Got " -> "Got "],
-  {"Got u:Child[XMLPattern[\"article\"], XMLPattern[\"p\"]] | Child[XMLPattern[\"section\"], XMLPattern[\"p\"]]."},
-  TestID -> "message-names-whole-named-alternatives-with-combinator"
-];
-
-(* A combinator with one stage is refused with a message that says it needs two,
-   named for the combinator written. *)
-TestCreate[
-  capturedMessages[XMLCases[$msgTree, Sibling[XMLPattern["p"]]]],
-  {"Sibling needs at least two stages, as in Sibling[a, b] or Sibling[a, b, c]. Got Sibling[XMLPattern[\"p\"]]."},
-  TestID -> "message-one-stage-combinator-names-two-stage-minimum"
-];
-
 (* Descendant with one argument is a constraint, which says where it goes. *)
 TestCreate[
   capturedMessages[XMLCases[$msgTree, Descendant[XMLPattern["p"]]]],
@@ -65,18 +39,11 @@ TestCreate[
   TestID -> "message-document-placement"
 ];
 
-(* A test on a combinator names it, and says where the test goes. *)
-TestCreate[
-  capturedMessages[XMLCases[$msgTree, Child[XMLPattern["section"], XMLPattern["p"]]?(True &)]],
-  {"A test (?) can apply to an XMLPattern or alternatives of them, but not to a Child combinator. Put it on the stage it tests, as in Child[a, b?f]. Got (Child[XMLPattern[\"section\"], XMLPattern[\"p\"]])?(True & )."},
-  TestID -> "message-test-on-combinator-names-it"
-];
-
 (* Descendant alone is a constraint, not a pattern to test (spec section 8). *)
 TestCreate[
   capturedMessages[XMLMatchQ[XMLElement["p", {}, {"x"}], Descendant[XMLPattern["p"]]]],
   {"Descendant[XMLPattern[\"p\"]] is a constraint, which can only be an argument of XMLPattern after the attributes, as in XMLPattern[\"nav\", _, Descendant[XMLPattern[\"a\"]]]. To find matching elements at any depth, give the pattern alone."},
-  TestID -> "message-one-stage-combinator-in-xmlmatchq"
+  TestID -> "message-descendant-in-xmlmatchq"
 ];
 
 (* ---- The tree argument ----
@@ -248,10 +215,10 @@ TestCreate[
 TestCreate[
   Lookup[SyntaxInformation /@ {XMLCases, XMLFirstCase, XMLDeleteCases, XMLMatchQ,
     HTMLInnerText, HTMLTextContent, HTMLToNotebook, HTMLClassList,
-    XMLPattern, Child, Descendant, Adjacent, Sibling}, "ArgumentsPattern"],
+    XMLPattern, Descendant}, "ArgumentsPattern"],
   {{_, _, _., OptionsPattern[]}, {_, _, _., OptionsPattern[]}, {_, _, OptionsPattern[]},
     {_, _., OptionsPattern[]}, {_, OptionsPattern[]}, {_}, {_, OptionsPattern[]}, {_},
-    {_, _.}, {_, _, ___}, {_, _, ___}, {_, _, ___}, {_, _, ___}},
+    {_, _., ___}, {_, _.}},
   TestID -> "syntax-information-arguments-pattern"
 ];
 
@@ -314,12 +281,3 @@ TestCreate[
   TestID -> "message-css-string-combinator-names-the-string"
 ];
 
-(* A blank, as a stage or as a list with no XML-pattern entry, points to
-   XMLPattern[_], and to the text functions for the text in an element. *)
-TestCreate[
-  {capturedMessages[XMLCases[$msgTree, Child[XMLPattern["section"], _]]],
-   capturedMessages[XMLCases[$msgTree, Child[XMLPattern["section"], {_}]]]},
-  {{"_ is a blank, which is not an XML pattern. Any element is XMLPattern[_]. An XML pattern matches elements only; for the text inside an element, use HTMLTextContent or HTMLInnerText."},
-   {"{_} is a list of patterns for an element's children. \"It needs an entry that is an XML pattern, which selects the child in its place, as XMLPattern[_] does in {___, XMLPattern[_]}. Entries such as _, ___, Repeated and Except only describe the other children. A list sees element children only; for the text inside an element, use HTMLTextContent or HTMLInnerText.\""}},
-  TestID -> "message-blank-stage-and-blank-list"
-];

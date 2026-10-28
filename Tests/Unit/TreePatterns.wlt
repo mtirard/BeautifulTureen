@@ -335,11 +335,4 @@ TestCreate[
   TestID -> "message-blank-narrowed"
 ];
 
-(* === Combinator queries keep their meaning === *)
 
-TestCreate[
-  {XMLCases[links, Child[XMLPattern["p"], x : XMLPattern["a"]] :> 1],
-    XMLCases[nav, Descendant[XMLPattern["nav"], x : XMLPattern["a"]] :> id[x]]},
-  {{1, 1, 1}, {"a1", "a2", "a3"}},
-  TestID -> "combinators-unchanged"
-];

@@ -66,38 +66,39 @@ TestCreate[
 ];
 
 TestCreate[
-  XMLCases[$countNested, Descendant[XMLPattern["body"], XMLPattern["div", "id" -> id_]] :> id, 3],
+  XMLCases[$countNested, XMLPattern["body", _, Descendant[XMLPattern["div", "id" -> id_]]] :> id, 3],
   {"a", "b", "c"},
-  TestID -> "count-combinator-first-n"
+  TestID -> "count-tree-pattern-first-n"
 ];
 
 TestCreate[
-  XMLCases[$tree, Child[XMLPattern["div"], XMLPattern["p"]], 2],
-  Take[XMLCases[$tree, Child[XMLPattern["div"], XMLPattern["p"]]], 2],
-  TestID -> "count-combinator-plain-gives-elements"
+  XMLCases[$tree, XMLPattern["div", _, {___, x : XMLPattern["p"], ___}] :> x, 2],
+  Take[XMLCases[$tree, XMLPattern["div", _, {___, x : XMLPattern["p"], ___}] :> x], 2],
+  TestID -> "count-tree-pattern-gives-elements"
 ];
 
 TestCreate[
-  Reap[XMLCases[$countFlat, Child[XMLPattern["ul"], x : XMLPattern["li"]] :> (Sow[HTMLTextContent[x]]; HTMLTextContent[x]), 2]],
+  Reap[XMLCases[$countFlat, XMLPattern["ul", _, {___, x : XMLPattern["li"], ___}] :> (Sow[HTMLTextContent[x]]; HTMLTextContent[x]), 2]],
   {{"1", "2"}, {{"1", "2"}}},
-  TestID -> "count-combinator-body-evaluated-only-for-returned-matches"
+  TestID -> "count-tree-pattern-body-evaluated-only-for-returned-matches"
 ];
 
 TestCreate[
   XMLCases[$countFlat,
-    Child[XMLPattern["ul"], x : XMLPattern["li"]] :> HTMLTextContent[x] /; EvenQ[ToExpression[HTMLTextContent[x]]], 1],
+    XMLPattern["ul", _, {___, x : XMLPattern["li"], ___}] :> HTMLTextContent[x] /; EvenQ[ToExpression[HTMLTextContent[x]]], 1],
   {"2"},
-  TestID -> "count-combinator-body-condition"
+  TestID -> "count-tree-pattern-body-condition"
 ];
 
-(* Known issue: a combinator collects every candidate before the first n are
-   taken, so a test on a stage still sees the elements past the nth result.
-   ADR 0019 records the gap; this passes once combinators stop early. *)
+(* Known issue: a tree pattern collects every candidate before the first n
+   are taken, so a test on an entry still sees the elements past the nth
+   result. ADR 0019 records the gap; this passes once the engine stops
+   early. *)
 TestCreate[
   Reap[XMLCases[$countFlat,
-    Child[XMLPattern["ul"], XMLPattern["li"]?((Sow[First[Last[#]]]; True) &)], 2]][[2]],
+    XMLPattern["ul", _, {___, x : XMLPattern["li"]?((Sow[First[Last[#]]]; True) &), ___}] :> x, 2]][[2]],
   {{"1", "2"}},
-  TestID -> "count-combinator-traversal-stops-at-nth-match"
+  TestID -> "count-tree-pattern-traversal-stops-at-nth-match"
 ] // TagTest["KnownIssue"];
 
 (* Options come after n. *)

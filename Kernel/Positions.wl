@@ -20,7 +20,7 @@ Options[XMLPosition] = {"AttributeReadings" -> <||>};
 
 XMLPosition[tree_, q : Except[_?(optionRuleQ[XMLPosition])], opts : OptionsPattern[]] :=
   withReadings[OptionValue["AttributeReadings"],
-    If[treeQueryQ[q], treePositions[XMLPosition, tree, q], Message[XMLPosition::badpat, q]; $Failed]];
+    treePositions[XMLPosition, tree, q]];
 
 XMLPosition[args___] /; (countMessage[XMLPosition, {args}, {2, 2}]; False) := Null;
 

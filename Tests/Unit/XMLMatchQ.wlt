@@ -88,14 +88,6 @@ TestCreate[
   TestID -> "xmlmatchq-operator-form-is-inert"
 ];
 
-(* A combinator relates an element to a parent or siblings a lone element lacks. *)
-TestCreate[
-  XMLMatchQ[$lead, Child[XMLPattern["p"], XMLPattern["b"]]],
-  $Failed,
-  {XMLMatchQ::combinator},
-  TestID -> "xmlmatchq-refuses-combinator"
-];
-
 TestCreate[
   XMLMatchQ[$lead, XMLPattern["p", "a", "b"]],
   $Failed,

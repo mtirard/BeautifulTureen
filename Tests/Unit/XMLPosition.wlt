@@ -142,13 +142,6 @@ TestCreate[
 ];
 
 TestCreate[
-  XMLPosition[nav, Child[XMLPattern["nav"], XMLPattern["a"]]],
-  $Failed,
-  {XMLPosition::badpat},
-  TestID -> "position-combinator"
-];
-
-TestCreate[
   {XMLPosition[nav], XMLExtract[nav, {}, 3]},
   {XMLPosition[nav], XMLExtract[nav, {}, 3]},
   {XMLExtract::argrx},

@@ -1,27 +1,26 @@
 (* ::Package:: *)
 (* HTMLPatterns: tree patterns, the result rule and positions *)
 
-(* Used by Query/Compiler.wl *)
-PackageScoped[constraintFormQ]
+(* Used by DisplayRoles.wl, Query/Compiler.wl and Rewrite.wl *)
+PackageScoped[namesIn]
 
 (* Used by XMLFunctions.wl, for XMLMatchQ and XMLFreeQ *)
-PackageScoped[elementChainQ]
+PackageScoped[plainRootQ]
 PackageScoped[treeMatcher]
 PackageScoped[treeMatchQ]
 PackageScoped[treeFreeQ]
 
 (* Used by XMLFunctions.wl *)
-PackageScoped[treeQueryQ]
 PackageScoped[treeCases]
 PackageScoped[treeResults]
 
 (* Used by Positions.wl *)
 PackageScoped[treePositions]
 
-(* Used by Rewrite.wl and Tree.wl *)
+(* Used by DisplayRoles.wl, Rewrite.wl and Tree.wl *)
 PackageScoped[treeTargets]
 
-(* Used by Rewrite.wl *)
+(* Used by DisplayRoles.wl and Rewrite.wl *)
 PackageScoped[treeSolutions]
 
 (* =========================================================== *)
@@ -36,10 +35,6 @@ PackageScoped[treeSolutions]
 (* names its right-hand side uses; a bare pattern p is first    *)
 (* r$ : p :> r$.                                                *)
 (*                                                              *)
-(* This engine runs beside the combinator chains: a query that  *)
-(* holds no combinator or list stage goes here (treeQueryQ),    *)
-(* any other keeps the chain runners until the combinators go.  *)
-(*                                                              *)
 (* The input is indexed once: node 0 is the document, elements  *)
 (* are numbered in preorder from 1. The query compiles to a     *)
 (* tree of nodes. Matching a node at a document node gives its  *)
@@ -47,43 +42,27 @@ PackageScoped[treeSolutions]
 (* onto the names something above it needs ("Keep"), so an      *)
 (* unnamed part, or a name nothing uses, costs a test and never  *)
 (* an enumeration. The element's tag and attributes are tested  *)
-(* by today's compiled XMLPattern; everything below it is this  *)
-(* engine's own: contents lists are walked as reachability over *)
-(* 0/1 vectors of the places between children, branching only   *)
-(* at entries that bind a needed name, so ___ gaps and ordered  *)
-(* entries stay linear.                                         *)
+(* by a plain WL pattern (Query/Compiler.wl); everything below  *)
+(* it is this engine's own: contents lists are walked as        *)
+(* reachability over 0/1 vectors of the places between          *)
+(* children, branching only at entries that bind a needed name, *)
+(* so ___ gaps and ordered entries stay linear.                 *)
 (* =========================================================== *)
 
-(* ---- Which engine a query goes to ---- *)
+(* ---- The pattern as written ---- *)
 
-(* A query with a combinator or a list stage anywhere a stage can be keeps
-   the chain runners. A CSS string is a tree pattern (spec section 7). *)
-treeQueryQ[q_] := !chainStageQ[queryLHS[q]];
-
-queryLHS[(Rule | RuleDelayed)[l_, _]] := l;
-queryLHS[q_] := q;
-
-chainStageQ[(Child | Adjacent | Sibling)[___]] := True;
-(* Descendant[p, levelspec] is a constraint, which is refused as a query by
-   this engine; Descendant of patterns is the combinator. *)
-chainStageQ[Descendant[_, s_]] := !levelSpecFormQ[s];
-chainStageQ[Descendant[_, _, __]] := True;
-chainStageQ[_List] := True;
-chainStageQ[Verbatim[Pattern][_, p_]] := chainStageQ[p];
-chainStageQ[Verbatim[Condition][p_, _]] := chainStageQ[p];
-chainStageQ[Verbatim[PatternTest][p_, _]] := chainStageQ[p];
-chainStageQ[alts_Alternatives] := AnyTrue[List @@ alts, chainStageQ];
-chainStageQ[_] := False;
-
-(* What reads as a level spec, valid or not, rather than a list stage. *)
+(* What reads as a level spec, valid or not. *)
 levelSpecFormQ[s_] := MatchQ[s, _Integer | DirectedInfinity[1] | {(_Integer | DirectedInfinity[1]) ..}];
 
 (* A constraint as written: a list pattern, a Descendant, or alternatives of
-   these, any of them named, conditioned or tested. Also read by the chain
-   compiler, which takes none. *)
+   these, any of them named, conditioned or tested. *)
 constraintFormQ[c_] := MatchQ[c, _List | _Descendant | _Shortest | _Longest] ||
   MatchQ[c, Verbatim[Pattern][_, x_] | Verbatim[Condition][x_, _] | Verbatim[PatternTest][x_, _] /; constraintFormQ[x]] ||
   MatchQ[c, _Alternatives] && AllTrue[List @@ c, constraintFormQ];
+
+(* The names a held pattern binds, each Hold[name]. *)
+namesIn[s_] :=
+  DeleteDuplicates @ Cases[s, Verbatim[Pattern][n_Symbol, _] :> Hold[n], {0, Infinity}, Heads -> True];
 
 (* =========================================================== *)
 (* Running a query                                              *)
@@ -173,9 +152,6 @@ rootStrings[_] := {};
 
 cssContextQ[s_] := MatchQ[Quiet[cssTree[s]], {"context", _}];
 
-(* namesIn (Query/Chains.wl) gives the names a held pattern binds, each
-   Hold[name]. *)
-
 (* Those of names that held code mentions. *)
 mentioned[held_, names_] := Select[names, !FreeQ[held, Replace[#, Hold[s_] :> HoldPattern[s]]] &];
 
@@ -263,7 +239,7 @@ repeatedInsideQ[h_, p_] :=
 (* MessageName holds its first argument, so the consumer head is injected. *)
 refuseHere[tag_, args___] := With[{h = $head}, refuse[MessageName[h, tag], args]];
 (* A query of HTMLToTree's "Focus" or "Hide" that is not a pattern is the
-   option's mistake, badquery, as in the chain compiler. *)
+   option's mistake, badquery. *)
 refuseHere["badpat" | "blank", x_] /; $queryOption =!= None := (badQuery[$queryOption, x]; Throw[$Failed, $refusal]);
 
 (* =========================================================== *)
@@ -1828,28 +1804,17 @@ pathTo[nd_, id_] :=
 (* input that reaches no deeper than the pattern does.          *)
 (* =========================================================== *)
 
-(* A pattern XMLMatchQ leaves to the chain compiler: one holding a combinator
-   at the top, which it refuses, or a pattern root of XMLPatterns without
-   constraints. The chain compiler tests those with one MatchQ, about a
-   hundred times faster per element than this engine, which matters in the
-   operator form, applied to every element. A string or a list is not a
-   combinator here: a context selector is refused by this engine, and a list
-   is a list pattern. *)
-elementChainQ[q_] := combinatorRootQ[q] || flatRootQ[q];
-
-combinatorRootQ[(Child | Adjacent | Sibling)[___]] := True;
-combinatorRootQ[d_Descendant] := chainStageQ[d];
-combinatorRootQ[Verbatim[Pattern][_, p_] | Verbatim[Condition][p_, _] | Verbatim[PatternTest][p_, _]] := combinatorRootQ[p];
-combinatorRootQ[alts_Alternatives] := AnyTrue[List @@ alts, combinatorRootQ];
-combinatorRootQ[_] := False;
-
-flatRootQ[x : XMLPattern[_] | XMLPattern[_, _]] := FreeQ[x, _Descendant | _XMLDocument];
-(* A selector that is not translated gets its message from the chain
-   compiler; a context selector is refused by this engine. *)
-flatRootQ[s_String] := Replace[Quiet[cssTree[s]], {$Failed -> True, {"one", t_} :> flatRootQ[t], _ -> False}];
-flatRootQ[Verbatim[Pattern][_, p_] | Verbatim[Condition][p_, _] | Verbatim[PatternTest][p_, _]] := flatRootQ[p];
-flatRootQ[alts_Alternatives] := AllTrue[List @@ alts, flatRootQ];
-flatRootQ[_] := False;
+(* A pattern root of XMLPatterns without constraints, which XMLMatchQ tests
+   with one MatchQ of a plain WL pattern (Query/Compiler.wl), about a
+   hundred times faster per element than this engine; that matters in the
+   operator form, applied to every element. A selector that is not
+   translated, or a context selector, is left to this engine, which gives
+   its message. *)
+plainRootQ[x : XMLPattern[_] | XMLPattern[_, _]] := FreeQ[x, _Descendant | _XMLDocument];
+plainRootQ[s_String] := MatchQ[Quiet[cssTree[s]], {"one", t_} /; plainRootQ[t]];
+plainRootQ[Verbatim[Pattern][_, p_] | Verbatim[Condition][p_, _] | Verbatim[PatternTest][p_, _]] := plainRootQ[p];
+plainRootQ[alts_Alternatives] := AllTrue[List @@ alts, plainRootQ];
+plainRootQ[_] := False;
 
 (* The test of pattern q under head, or $Failed after a message. A rule is
    refused: it gives a value, not a test. listsQ: whether a list pattern, in

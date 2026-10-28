@@ -143,30 +143,11 @@ TestCreate[
   TestID -> "cond-deletecases"
 ];
 
-(* A Condition may wrap a combinator where the consumer takes one; its test sees
-   every stage's names. XMLMatchQ and the Roles take an element pattern, and
-   refuse it. *)
+(* A Condition on a tree pattern sees the names bound in its constraints. *)
 TestCreate[
-  XMLCases[$treeCond, Child[XMLPattern["div"], s : XMLPattern["span"]] /; HTMLTextContent[s] === "y"],
+  XMLCases[$treeCond, XMLPattern["div", _, {___, s : XMLPattern["span"], ___}] /; HTMLTextContent[s] === "y" :> s],
   {XMLElement["span", {}, {"y"}]},
-  TestID -> "cond-combinator"
-];
-
-TestCreate[
-  {XMLMatchQ[XMLElement["span", {}, {}], Child[XMLPattern["div"], XMLPattern["span"]] /; True],
-   HTMLInnerText[$treeCond, "Roles" -> {(Child[XMLPattern["div"], XMLPattern["span"]] /; True) -> "Block"}]},
-  {$Failed, $Failed},
-  {XMLMatchQ::condcombinator, HTMLInnerText::condcombinator},
-  TestID -> "cond-combinator-refused-for-an-element-pattern"
-];
-
-(* Alternatives of combinators, or a combinator inside alternatives, are a
-   query, tested or not (ADR 0015). *)
-TestCreate[
-  {HTMLTextContent /@ XMLCases[$treeCond, (Child[XMLPattern["div"], XMLPattern["span"]] | Child[XMLPattern["section"], XMLPattern["p"]]) /; True],
-   HTMLTextContent /@ XMLCases[$treeCond, Child[XMLPattern["section"], XMLPattern["p"] | Child[XMLPattern["div"], XMLPattern["span"]]] /; True]},
-  {{"C", "x", "y"}, {"C", "x", "y"}},
-  TestID -> "cond-combinator-alternatives"
+  TestID -> "cond-tree-pattern"
 ];
 
 (* === Named whole-element conditions (el : pat /; test) === *)
@@ -209,14 +190,6 @@ TestCreate[
     (el : (XMLPattern["h1"] | XMLPattern["h2"])) /; StringLength[HTMLTextContent[el]] === 1][[All, 1]],
   {"h1", "h2"},
   TestID -> "cond-named-alternatives"
-];
-
-(* A combinator binds no name: a named combinator is refused, tested or not. *)
-TestCreate[
-  XMLCases[$treeCond, (x : Child[XMLPattern["div"], XMLPattern["span"]]) /; True],
-  $Failed,
-  {XMLCases::badpat},
-  TestID -> "cond-named-combinator-rejected"
 ];
 
 (* === A condition sees every attribute name ===
@@ -329,15 +302,15 @@ TestCreate[
 ];
 
 TestCreate[
-  XMLCases[$cross, Child[XMLPattern["div"], $crossPattern] /; StringContainsQ[h, d]][[All, 3]],
+  XMLCases[$cross, XMLPattern["div", _, {___, x : $crossPattern, ___}] /; StringContainsQ[h, d] :> x][[All, 3]],
   {{"x"}},
-  TestID -> "cond-cross-field-combinator"
+  TestID -> "cond-cross-field-tree-pattern"
 ];
 
 TestCreate[
-  XMLCases[$cross, Child[XMLPattern["div"], $crossPattern /; StringContainsQ[h, d]] :> h],
+  XMLCases[$cross, XMLPattern["div", _, {___, $crossPattern /; StringContainsQ[h, d], ___}] :> h],
   {"/buy"},
-  TestID -> "cond-cross-field-combinator-stage"
+  TestID -> "cond-cross-field-contents-entry"
 ];
 
 TestCreate[
@@ -449,24 +422,25 @@ TestCreate[
   TestID -> "rule-conditioned-pattern"
 ];
 
-(* A combinator rule, with a Condition on the combinator. *)
+(* A rule over a tree pattern, with a Condition on the pattern root. A
+   right-hand side that uses no name gives at most one result. *)
 TestCreate[
   XMLCases[$ruleTree,
-    (Child[XMLPattern["div"], XMLPattern["a", "href" -> h_]] /; StringEndsQ[h, "two"]) -> h],
+    (XMLPattern["div", _, {___, XMLPattern["a", "href" -> h_], ___}] /; StringEndsQ[h, "two"]) -> h],
   {"/two"},
-  TestID -> "rule-combinator-condition"
+  TestID -> "rule-tree-pattern-condition"
 ];
 
 TestCreate[
-  XMLCases[$ruleTree, Adjacent[XMLPattern["p", "id" -> i_], XMLPattern["a", "href" -> h_]] -> {i, h}],
+  XMLCases[$ruleTree, XMLPattern[_, _, {___, XMLPattern["p", "id" -> i_], XMLPattern["a", "href" -> h_], ___}] -> {i, h}],
   {{"a", "/one"}, {"b", "/two"}},
-  TestID -> "rule-combinator-bindings"
+  TestID -> "rule-tree-pattern-bindings"
 ];
 
 TestCreate[
-  XMLCases[$ruleTree, Child[XMLPattern["div"], XMLPattern["p"]] -> 1],
-  {1, 1},
-  TestID -> "rule-combinator-constant-rhs"
+  XMLCases[$ruleTree, XMLPattern["div", _, {___, XMLPattern["p"], ___}] -> 1],
+  {1},
+  TestID -> "rule-tree-pattern-constant-rhs"
 ];
 
 (* === PatternTest over an XML pattern (pat?f), issue #33 === *)
@@ -513,14 +487,14 @@ TestCreate[
 ];
 
 TestCreate[
-  Reap[XMLCases[$testedTree, Child[XMLPattern["p"], XMLPattern["sup", "classList" -> "ref"]?((Sow[#]; True) &)]]],
+  Reap[XMLCases[$testedTree, XMLPattern["p", _, {___, x : XMLPattern["sup", "classList" -> "ref"]?((Sow[#]; True) &), ___}] :> x]],
   {{$testedSup1}, {{$testedSup1}}},
-  TestID -> "patterntest-stage-sees-original-element"
+  TestID -> "patterntest-entry-sees-original-element"
 ];
 
-(* As a stage, around alternatives, with names and Conditions. *)
+(* As a contents-list entry, around alternatives, with names and Conditions. *)
 TestCreate[
-  {XMLCases[$testedTree, Child[XMLPattern["p", "id" -> i_], XMLPattern["sup"]?$testedHasLink] :> i],
+  {XMLCases[$testedTree, XMLPattern["p", "id" -> i_, {___, XMLPattern["sup"]?$testedHasLink, ___}] :> i],
    XMLCases[$testedTree, (XMLPattern["sup"] | XMLPattern["p"])?$testedHasLink],
    XMLCases[$testedTree, e : XMLPattern["sup"]?$testedHasLink :> e],
    XMLCases[$testedTree, (e : XMLPattern["sup", "classList" -> "note"])?$testedHasLink :> e],
@@ -549,7 +523,7 @@ $testedA = XMLElement["div", {}, {XMLElement["a", {"x" -> "1", "y" -> "2"}, {}]}
 TestCreate[
   {XMLCases[$testedA, (($testedXY?(False &)) | $testedX) /; True :> {h, i, j}],
    XMLCases[$testedA, ((n : $testedXY /; False) | $testedX) /; True :> {h, i, j}],
-   XMLCases[$testedA, Child[XMLPattern["div"], (($testedXY?(False &)) | $testedX) /; True] :> {h, i, j}],
+   XMLCases[$testedA, XMLPattern["div", _, {___, (($testedXY?(False &)) | $testedX) /; True, ___}] :> {h, i, j}],
    XMLCases[$testedA, (($testedXY?(True &)) | $testedX) /; True :> {h, i, j}]},
   {{{"1"}}, {{"1"}}, {{"1"}}, {{"1", "2"}, {"1"}}},
   TestID -> "patterntest-two-step-failed-branch"
@@ -561,42 +535,3 @@ TestCreate[
   TestID -> "patterntest-role-rule"
 ];
 
-(* A test on a combinator is refused for now: put it on the stage it tests. *)
-$testedComb = Child[XMLPattern["p"], XMLPattern["sup"]];
-TestCreate[
-  {XMLCases[$testedTree, $testedComb?$testedHasLink],
-   XMLFirstCase[$testedTree, $testedComb?$testedHasLink],
-   XMLDeleteCases[$testedTree, $testedComb?$testedHasLink],
-   XMLMatchQ[$testedSup1, $testedComb?$testedHasLink],
-   HTMLInnerText[$testedTree, "Roles" -> {$testedComb?$testedHasLink -> "Skip"}],
-   HTMLToNotebook[$testedTree, "Constructs" -> {$testedComb?$testedHasLink -> "Bold"}]},
-  {$Failed, $Failed, $Failed, $Failed, $Failed, $Failed},
-  {Child::testcombinator, Child::testcombinator, Child::testcombinator, General::stop,
-   XMLMatchQ::testcombinator, HTMLInnerText::testcombinator, HTMLToNotebook::testcombinator},
-  TestID -> "patterntest-on-combinator-refused"
-];
-
-TestCreate[
-  {XMLCases[$testedTree, Descendant[XMLPattern["div"], $testedComb?$testedHasLink]],
-   XMLCases[$testedTree, ($testedComb /; True)?$testedHasLink]},
-  {$Failed, $Failed},
-  {Child::testcombinator, Child::testcombinator},
-  TestID -> "patterntest-on-combinator-refused-anywhere"
-];
-
-TestCreate[
-  {XMLCases[$testedTree, ($testedComb?$testedHasLink) /; True],
-   XMLCases[$testedTree, $testedComb?$testedHasLink :> 1]},
-  {$Failed, $Failed},
-  {Child::testcombinator, Child::testcombinator},
-  TestID -> "patterntest-on-combinator-refused-in-rule"
-];
-
-(* A test on alternatives that hold combinators is refused under the first of
-   them as written. *)
-TestCreate[
-  XMLCases[$testedTree, (Descendant[XMLPattern["div"], XMLPattern["p"]] | $testedComb)?$testedHasLink],
-  $Failed,
-  {Descendant::testcombinator},
-  TestID -> "patterntest-on-alternatives-names-first-combinator"
-];

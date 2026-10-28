@@ -290,7 +290,7 @@ TestCreate[
   TestID -> "css-only-exact"
 ];
 
-(* :only-child after a descendant combinator, + or ~ translates (ADR 0016). *)
+(* :only-child after a descendant combinator, + or ~ translates. *)
 TestCreate[
   {ids[$only, "div li:only-child"], ids[$only, "div li:only-child > a"], ids[$only, "ul + ul > li:only-of-type"],
     ids[$only, "ul ~ ol:only-of-type"], ids[$only, "li ~ p:only-of-type"]},
@@ -355,7 +355,7 @@ TestCreate[
     MatchQ[FromCSSSelector[n : ":has(i):nth-of-type(1)"],
       Verbatim[Alternatives][XMLPattern[Verbatim[_], Verbatim[_], l : {Verbatim[RepeatedNull][Verbatim[Except][XMLPattern[Verbatim[Pattern][t_Symbol, Verbatim[_]]]]],
         Verbatim[Pattern][n, XMLPattern[Verbatim[Pattern][t_Symbol, Verbatim[_]], Verbatim[_], Descendant[XMLPattern["i"]]]], Verbatim[___]}], XMLDocument[l_]]],
-    Lookup[XMLCases[$kids, Child[":has(i):nth-child(5):first-of-type", e : XMLPattern["i"]] :> e][[All, 2]], "id"]},
+    Lookup[XMLCases[$kids, ":has(i):nth-child(5):first-of-type > i"][[All, 2]], "id"]},
   {True, True, True, {"i1"}},
   TestID -> "css-child-indexed-general-form"
 ];
@@ -762,7 +762,6 @@ TestCreate[
 
 (* === The messages === *)
 
-
 TestCreate[
   kindOf /@ {"body :root", "p > :scope", "a:lang(fr)", ":dir(ltr)", ":enabled", ":disabled", ":required", ":defined",
     "svg|rect", "*|a", "|a", "[xlink|href]", "a || b", "x :is(a + b)", "x > p:is(a ~ b)", ":not(:has(+ a))", ":is(:has(~ a))",
@@ -809,24 +808,13 @@ $note = ImportString["<div class='note' id='n1'><p id='q1'>a <span id='t1'>x</sp
 (* A context selector on the left of a rule is named; a right-hand side that
    uses no name gives one result (spec section 3). *)
 TestCreate[
-  {XMLCases[$note, "div.note > p"] ===XMLCases[$note, Child[XMLPattern["div", "classList" -> "note"], XMLPattern["p"]]],
+  {XMLCases[$note, "div.note > p"] === XMLCases[$note, XMLPattern["div", "classList" -> "note", {___, x : XMLPattern["p"], ___}] :> x],
     Length[XMLCases[$note, "div.note > p"]],
     XMLCases[$note, n : "div.note > p" :> 1], XMLCases[$note, "p" -> 2],
     XMLFirstCase[$note, "div:not(.note) p"][[2]], Length[XMLCases[XMLDeleteCases[$note, "div.note"], "p"]],
     XMLMatchQ[XMLElement["p", {"class" -> "a b"}, {}], ".b"], XMLMatchQ[".b"][XMLElement["p", {"class" -> "a"}, {}]]},
   {True, 2, {1}, {2}, {"id" -> "q3"}, 1, True, False},
   TestID -> "css-string-in-the-consumers"
-];
-
-(* A string stage that gives a combinator is spliced into the chain. *)
-TestCreate[
-  {XMLCases[$note, Child["div p", x : XMLPattern["span"]] :> x] ===
-      XMLCases[$note, Child[Descendant[XMLPattern["div"], XMLPattern["p"]], x : XMLPattern["span"]] :> x],
-    Lookup[XMLCases[$note, Child["div p", x : XMLPattern["span"]] :> x][[All, 2]], "id"],
-    Lookup[XMLCases[$note, Descendant["div.note", "span"]][[All, 2]], "id"],
-    Lookup[XMLCases[$note, Descendant["body", "div > p" /; True]][[All, 2]], "id"]},
-  {True, {"t1"}, {"t1"}, {"q1", "q2", "q3"}},
-  TestID -> "css-string-stage-splices"
 ];
 
 TestCreate[
@@ -899,7 +887,6 @@ TestCreate[
   TestID -> "css-string-readings-reach-nested-queries"
 ];
 
-
 (* === :root and :scope (ADR 0018) ===
    The only top element under the document, as the one entry of the
    document's list, its positions among its siblings each 1 or never true. *)
@@ -954,9 +941,9 @@ TestCreate[
 ];
 
 TestCreate[
-  {XMLCases[$rootDoc, Child[XMLPattern["html"], ":root"]], XMLCases[$rootDoc, Descendant[XMLPattern["html"], ":scope > p"]],
+  {XMLCases[$rootDoc, XMLPattern["html", _, {___, x : ":root", ___}] :> x], XMLCases[$rootDoc, XMLPattern["html", _, Descendant[x : ":scope > p"]] :> x],
    XMLMatchQ[XMLElement["html", {}, {}], ":root"]},
   {$Failed, $Failed, $Failed},
   {XMLCases::badpat, XMLCases::badpat, XMLMatchQ::badpat},
-  TestID -> "css-root-as-later-stage-refused"
+  TestID -> "css-root-below-the-pattern-root-refused"
 ];

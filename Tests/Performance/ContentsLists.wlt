@@ -1,25 +1,15 @@
 (* Contents lists over many siblings. A CSS string runs as its translation, a
-   tree pattern; each combinator test keeps the chain runners' recognised
-   shapes (ADR 0020) covered until the combinators go, beside a tree-pattern
-   counterpart. Times are the least of three runs on a 2026 laptop under the
-   load of other work: the chain runners' (main), then the tree engine's. The
-   bounds are about three times the tree engine's time, to catch a walk that
-   has become quadratic, not to benchmark. *)
+   tree pattern. Times are the least of three runs on a 2026 laptop under the
+   load of other work: 3.0.0's, which ran these on recognised shapes (ADR
+   0020), then the tree engine's. The bounds are about three times the tree
+   engine's time, to catch a walk that has become quadratic, not to
+   benchmark. The test IDs keep the shape names of 3.0.0. *)
 
 (* 10,000 sibling li, one in four of class a. *)
 $tenThousand = XMLElement["body", {}, {XMLElement["ul", {},
   Table[XMLElement["li", If[Mod[i, 4] == 0, {"class" -> "a"}, {}], {"x"}], {i, 10000}]]}];
 
-(* Shape 1, anywhere: 30 ms on the chains, against about 450 ms on WL's
-   matcher, which builds the sequence before each child. *)
-TestCreate[
-  Length @ XMLCases[$tenThousand, Child[XMLPattern["ul"], {___, XMLPattern["li", "classList" -> "a"], ___}]],
-  2500,
-  TimeConstraint -> 0.2,
-  TestID -> "perf-shape-anywhere-10000-siblings"
-];
-
-(* 25 ms, 50 ms. *)
+(* Anywhere among the children: 25 ms, 50 ms. *)
 TestCreate[
   Length @ XMLCases[$tenThousand, "ul > li.a"],
   2500,
@@ -76,17 +66,8 @@ TestCreate[
 $fiveThousandSections = XMLElement["body", {}, {XMLElement["section", {},
   Table[XMLElement[{"h2", "p", "div"}[[Mod[i - 1, 3] + 1]], {}, {"x"}], {i, 5000}]]}];
 
-(* Shape 6, ordered element-pattern entries, each p after the first h2: 10 ms
-   on the chains, against 1.2 s at 1,000 siblings and 9.9 s at 2,000 on WL's
-   matcher. *)
-TestCreate[
-  Length @ XMLCases[$fiveThousandSections, Child[XMLPattern["section"], {___, XMLPattern["h2"], ___, XMLPattern["p"], ___}]],
-  1667,
-  TimeConstraint -> 0.2,
-  TestID -> "perf-shape-ordered-5000-siblings"
-];
-
-(* 10 ms (240 ms as the CSS string on the chains), 27 ms. *)
+(* Ordered entries, each p after the first h2: 10 ms (240 ms as the CSS
+   string), 27 ms. *)
 TestCreate[
   Length @ XMLCases[$fiveThousandSections, "section > h2 ~ p"],
   1667,
@@ -94,21 +75,11 @@ TestCreate[
   TestID -> "perf-tree-ordered-5000-siblings"
 ];
 
-(* A rule body using the selected entry's name binds it from the selected
-   child, so it costs about what the query without a body does. Each test is
-   bounded in memory too: matching such a list again on WL's matcher, as the
-   body did before, grows about as the cube of the number of siblings, and a
-   time limit does not stop it. *)
-TestCreate[
-  MemoryConstrained[
-    Length @ XMLCases[$fiveThousandSections, Child[XMLPattern["section"], {___, XMLPattern["h2"], ___, c : XMLPattern["p"], ___}] :> c[[1]]],
-    2*^9, $Failed],
-  1667,
-  TimeConstraint -> 0.3,
-  TestID -> "perf-shape-ordered-body-5000-siblings"
-];
-
-(* 10 ms, 55 ms. *)
+(* A rule body using the entry's name binds it from the matched child, so
+   it costs about what the query without a body does. Each test is bounded in
+   memory too: matching such a list again on WL's matcher grows about as the
+   cube of the number of siblings, and a time limit does not stop it. 10 ms,
+   55 ms. *)
 TestCreate[
   MemoryConstrained[
     Length @ XMLCases[$fiveThousandSections, XMLPattern["section", _, {___, XMLPattern["h2"], ___, c : XMLPattern["p"], ___}] :> c[[1]]],
@@ -118,17 +89,7 @@ TestCreate[
   TestID -> "perf-tree-ordered-body-5000-siblings"
 ];
 
-(* With a Condition in the body, which takes part in choosing (ADR 0014). *)
-TestCreate[
-  MemoryConstrained[
-    Length @ XMLCases[$fiveThousandSections, Child[XMLPattern["section"], {_, PatternSequence[_, _, _]..., c : XMLPattern["p"], ___}] :> c[[1]] /; True],
-    2*^9, $Failed],
-  1667,
-  TimeConstraint -> 0.3,
-  TestID -> "perf-shape-from-start-body-5000-siblings"
-];
-
-(* 15 ms, 53 ms. *)
+(* With a Condition in the body: 15 ms, 53 ms. *)
 TestCreate[
   MemoryConstrained[
     Length @ XMLCases[$fiveThousandSections, XMLPattern["section", _, {_, PatternSequence[_, _, _]..., c : XMLPattern["p"], ___}] :> c[[1]] /; True],
@@ -172,23 +133,11 @@ TestCreate[
 
 $fiveThousandIds = Replace[$fiveThousandClassed, XMLElement[t_, a_, c_] :> XMLElement[t, Append[a, "id" -> "i"], c], {4}];
 
-(* The selected entry naming two attribute values, as a Condition on the
-   list: 11 ms on the chains, which match it in two steps. *)
-TestCreate[
-  MemoryConstrained[TimeConstrained[
-    XMLCases[$fiveThousandIds,
-      Child[XMLPattern["ul"], {g___, c : XMLPattern[_, {"class" -> k_, "id" -> i_}], ___} /;
-        Count[{g}, XMLElement[First[c], _, _]] + 1 == 2] :> First[c]],
-    5, $Failed], 2*^9, $Failed],
-  {"li"},
-  TimeConstraint -> 0.25,
-  TestID -> "perf-shape-split-two-step-5000-siblings"
-];
-
-(* Its tree-pattern counterpart is the list FromCSSSelector writes, the tag
-   name shared into Except: 45 ms. The Condition itself, on a tree pattern,
-   tests each split of the list and takes 2.2 s; the translations write none
-   but for two An+B positions on one compound. *)
+(* The entry naming two attribute values, at a counted position: the list
+   FromCSSSelector writes, the tag name shared into Except, 45 ms against 11 ms
+   in 3.0.0. A Condition over the run instead tests each split of the list and
+   takes 2.2 s; the translations write none but for two An+B positions on one
+   compound. *)
 TestCreate[
   MemoryConstrained[TimeConstrained[
     XMLCases[$fiveThousandIds,
@@ -199,8 +148,8 @@ TestCreate[
   TestID -> "perf-tree-of-type-two-names-5000-siblings"
 ];
 
-(* The other counted positions the chains wrote as a split condition, with
-   the chains' time, then the tree engine's. Each is linear: *:first-of-type
+(* The other counted positions 3.0.0 wrote as a split condition, with its
+   time, then the tree engine's. Each is linear: *:first-of-type
    took 1.6 s and .x:nth-of-type(2) + p 1.9 s with recorded Excepts, and
    p ~ li:nth-child(3) 3.8 s and p + li + p:nth-of-type(2) 4.0 s as a
    Condition over the run before the subject, now a prefix of two and a plain
@@ -223,8 +172,8 @@ Function[{css, n, id}, TestCreate[
 
 (* A counted position before ~ (issue #40), on 5,000 siblings: a, b, p, a.x,
    p, b, then a, b and p chosen at random, so that the second a, of class x,
-   is fourth and every b after it is selected. Over 60 s each on the chains
-   with a, b and p at random and three in ten of class x; on the tree engine
+   is fourth and every b after it is selected. Over 60 s each in 3.0.0 with
+   a, b and p at random and three in ten of class x; on the tree engine
    0.26 s and 46 ms there. *)
 SeedRandom[40];
 $randomRest = Table[XMLElement[RandomChoice[{"a", "b", "p"}], {}, {"x"}], 4994];

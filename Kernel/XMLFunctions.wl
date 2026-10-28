@@ -14,13 +14,10 @@ XMLCases::usage = "XMLCases[tree, pattern] gives a list of the elements of tree,
 Options[XMLCases] = {"AttributeReadings" -> <||>};
 
 (* The count n is a ceiling, as in StringCases (ADR 0019). A third argument
-   that is not an option is a count, and one that is not valid gives innf. *)
-(* A query holding no combinator or list stage is a tree pattern
-   (Query/TreePatterns.wl); the others keep the chain runners until the
-   combinators go. *)
+   that is not an option is a count, and one that is not valid gives innf.
+   Every query is a tree pattern (Query/TreePatterns.wl). *)
 XMLCases[tree_, q_, n : Except[_?(optionQ[XMLCases])] : Infinity, opts : OptionsPattern[]] /; countQ[n] :=
-  withReadings[OptionValue["AttributeReadings"],
-    If[treeQueryQ[q], treeCases[XMLCases, tree, q, n], queryCases[compileQuery[q, XMLCases], tree, n]]];
+  withReadings[OptionValue["AttributeReadings"], treeCases[XMLCases, tree, q, n]];
 
 XMLCases[tree_, q_, n : Except[_?(optionQ[XMLCases])], opts : OptionsPattern[]] /;
     (Message[XMLCases::innf, Unevaluated[XMLCases[tree, q, n, opts]], 3]; False) := Null;
@@ -43,16 +40,13 @@ Options[XMLFirstCase] = {"AttributeReadings" -> <||>};
 XMLFirstCase[tree_, q_, default : Except[_?(optionRuleQ[XMLFirstCase])] : Missing["NotFound"],
     opts : OptionsPattern[]] :=
   withReadings[OptionValue["AttributeReadings"],
-    If[treeQueryQ[q],
-      Replace[treeResults[XMLFirstCase, tree, q, 1], {{r_} :> Sequence @@ r, {} :> default}],
-      queryFirst[compileQuery[q, XMLFirstCase], tree, default]]];
+    Replace[treeResults[XMLFirstCase, tree, q, 1], {{r_} :> Sequence @@ r, {} :> default}]];
 
 XMLFirstCase[args___] /; (countMessage[XMLFirstCase, {args}, {2, 3}]; False) := Null;
 
 (* =========================================================== *)
 (* XMLDeleteCases                                               *)
-(* Tree patterns: the positions of the counted names deleted    *)
-(* (Rewrite.wl). Combinators: the chain's last-stage elements.  *)
+(* The positions of the counted names deleted (Rewrite.wl).     *)
 (* =========================================================== *)
 
 PackageExported[XMLDeleteCases]
@@ -62,8 +56,7 @@ XMLDeleteCases::root = "The root element of an XMLObject cannot be deleted; it w
 Options[XMLDeleteCases] = {"AttributeReadings" -> <||>};
 
 XMLDeleteCases[tree_, q_, opts : OptionsPattern[]] :=
-  withReadings[OptionValue["AttributeReadings"],
-    If[treeQueryQ[q], treeDelete[tree, q], queryDelete[compileQuery[q, XMLDeleteCases], tree]]];
+  withReadings[OptionValue["AttributeReadings"], treeDelete[tree, q]];
 
 XMLDeleteCases[args___] /; (countMessage[XMLDeleteCases, {args}, {2, 2}]; False) := Null;
 
@@ -74,7 +67,6 @@ XMLDeleteCases[args___] /; (countMessage[XMLDeleteCases, {args}, {2, 2}]; False)
 
 PackageExported[XMLMatchQ]
 XMLMatchQ::usage = "XMLMatchQ[element, pattern] gives True if element matches pattern, and False otherwise. XMLMatchQ[pattern] is an operator form. pattern can be an XMLPattern, with constraints on what is below the element, an XMLElement pattern, or a CSS selector string that describes one element, such as \"a.external\", or alternatives of these, any of them named, with a condition pat /; test or a test pat?f. XMLMatchQ tests the element itself as the pattern root, not the elements nested in it; use XMLCases to search a tree, or XMLFreeQ to test whether any element in it matches. XMLMatchQ[document, XMLDocument[c...]] tests a document. XMLMatchQ[list, listpattern] tests a list of elements against a list pattern, such as {XMLPattern[\"th\"], ___}, ignoring the strings in the list. An element against a document or list pattern, or a document or list against an element pattern, gives False. The \"AttributeReadings\" option adds readings to $AttributeReadings, in both XMLMatchQ[element, pattern, opts] and XMLMatchQ[pattern, opts].";
-XMLMatchQ::combinator = "`1` relates an element to its parent or siblings, which a lone element does not have. Use XMLCases or XMLFirstCase to search a tree with it.";
 
 Options[XMLMatchQ] = {"AttributeReadings" -> <||>};
 
@@ -94,28 +86,25 @@ XMLMatchQ[args___] /; (countMessage[XMLMatchQ, {args}, {1, 2}]; False) := Null;
 matchWith[$Failed, _] := $Failed;
 matchWith[m_, el_] := m[el];
 
-(* A combinator, which the chain compiler refuses, and an XMLPattern root
-   without constraints, which it tests with one MatchQ, keep the chain
-   compiler until the combinators go (elementChainQ); any other pattern is a
-   tree pattern (Query/TreePatterns.wl). *)
+(* A pattern root of XMLPatterns without constraints is tested with one
+   MatchQ (plainRootQ, Query/Compiler.wl); any other pattern is a tree
+   pattern (Query/TreePatterns.wl). *)
 matcherOf[q_] :=
-  If[elementChainQ[q], elementMatcher[compileQuery[q, XMLMatchQ]],
+  If[plainRootQ[q], elementMatcher[q, XMLMatchQ],
     Replace[treeMatcher[XMLMatchQ, q, True], m : Except[$Failed] :> (treeMatchQ[m, #] &)]];
 
 (* The operator form stays unevaluated, as MatchQ[pattern] does, and is applied
    to each element in turn, so its matcher is kept, keyed on everything the
    compiled query depends on: the function that compiles it, XMLMatchQ's or
-   XMLFreeQ's, the pattern, $AttributeReadings, which the
-   "AttributeReadings" option joins to (issue #2), and whether shapes are
-   recognised, so that a test turning recognition off gets a matcher compiled
-   with it off (ADR 0020). A refused pattern is not
+   XMLFreeQ's, the pattern, and $AttributeReadings, which the
+   "AttributeReadings" option joins to (issue #2). A refused pattern is not
    kept: it gives its message on each call, as the two-argument form does. The
    cache is emptied when it is full. *)
 $matcherCache = <||>;
 $matcherCacheSize = 256;
 
 cachedMatcher[q_, compile_ : matcherOf] :=
-  With[{key = {compile, q, $AttributeReadings, $recogniseShapes}},
+  With[{key = {compile, q, $AttributeReadings}},
     Lookup[$matcherCache, Key[key],
       With[{m = compile[q]},
         If[m =!= $Failed,

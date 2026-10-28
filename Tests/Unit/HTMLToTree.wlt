@@ -232,14 +232,14 @@ TestCreate[
   TestID -> "htt-hide-comparison"
 ];
 
-(* Combinators see the original input: hiding each li after another hides the
+(* Queries see the original input: hiding each li after another hides the
    second and third, not just the second, as it would if the second were
    removed first; and :has() sees a b that is itself hidden. *)
 $list3 = XMLElement["ul", {}, {XMLElement["li", {}, {"1"}], XMLElement["li", {}, {"2"}],
   XMLElement["li", {}, {"3"}]}];
 
 TestCreate[
-  shape[HTMLToTree[$list3, "Hide" -> Adjacent[XMLPattern["li"], XMLPattern["li"]]]],
+  shape[HTMLToTree[$list3, "Hide" -> (XMLPattern["ul", _, {___, XMLPattern["li"], x : XMLPattern["li"], ___}] :> x)]],
   e["ul"] -> {e["li"] -> {"1"}},
   TestID -> "htt-hide-adjacent-original-input"
 ];
@@ -351,9 +351,9 @@ TestCreate[
   TestID -> "htt-focus-text-only-run"
 ];
 
-(* Matching is on the original input, for combinators, CSS and alternatives *)
+(* Matching is on the original input, for rules, CSS and alternatives *)
 TestCreate[
-  shape[HTMLToTree[$list3, "Focus" -> Adjacent[XMLPattern["li"], XMLPattern["li"]]]],
+  shape[HTMLToTree[$list3, "Focus" -> (XMLPattern["ul", _, {___, XMLPattern["li"], x : XMLPattern["li"], ___}] :> x)]],
   e["ul"] -> {collapsed[1], e["li"] -> {"2"}, e["li"] -> {"3"}},
   TestID -> "htt-focus-adjacent"
 ];
@@ -1147,20 +1147,11 @@ TestCreate[
   TestID -> "htt-message-badquery-rule"
 ];
 
-(* A mistake at the query's top level is the option's; one inside a
-   combinator is the combinator's (ADR 0022). *)
+(* A mistake at the query's top level is the option's (ADR 0022). *)
 TestCreate[
   {withMessages[HTMLToTree[$p, "Hide" -> _]], withMessages[HTMLToTree[$p, "Focus" -> {XMLPattern["a"]}]]},
   {{{$badquery["Hide", "None", "_"]}, $Failed}, {{$badquery["Focus", "All", "{XMLPattern[\"a\"]}"]}, $Failed}},
   TestID -> "htt-message-badquery-top-level"
-];
-
-TestCreate[
-  {withMessages[HTMLToTree[$p, "Hide" -> Child[XMLPattern["p"]]]],
-    Replace[withMessages[HTMLToTree[$p, "Focus" -> Child[XMLPattern["p"], _]]], {{m_}, r_} :> {StringTake[m, 22], r}]},
-  {{{"Child needs at least two stages, as in Child[a, b] or Child[a, b, c]. Got Child[XMLPattern[\"p\"]]."}, $Failed},
-    {"_ is a blank, which is", $Failed}},
-  TestID -> "htt-message-query-combinator"
 ];
 
 (* Both queries are refused before either is matched: no root message from a
@@ -1223,14 +1214,10 @@ TestCreate[
 
 (* Bad "Roles" give HTMLToTree's own copies of HTMLInnerText's messages, once,
    on every call, whether merging is on or not, and $Failed. *)
-$badRoles = {{3}, {5 -> "Block"}, {Child[XMLPattern["a"]] -> "Block"},
-  {(Child["a", "b"] /; True) -> "Block"}, {Child["a", "b"]?f -> "Block"}};
+$badRoles = {{3}, {5 -> "Block"}};
 $badRolesMessages = {
   "Each \"Roles\" entry should be a rule pattern -> value or pattern :> value. Got 3.",
-  "The key of a rule should be an element test or a query. An element test is an XMLPattern, an XMLElement pattern, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f; each element is tested as the pattern root, and its names can be used in the value. A query is a rule such as XMLPattern[\"nav\", _, Descendant[x : XMLPattern[\"a\"]]] :> x, or a CSS selector string such as \"nav a\"; the elements it selects get the value. An XMLDocument pattern tests no element: name the elements it finds and give the rule, as in (XMLDocument[Descendant[x : XMLPattern[\"a\"]]] :> x) -> value. Got 5.",
-  "Child[XMLPattern[\"a\"]] is a combinator with fewer than two stages. A combinator needs at least two, but a rule is tried on one element at a time and cannot use one; use an XMLPattern or alternatives of them.",
-  "A condition (/;) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Got Child[\"a\", \"b\"].",
-  "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got (Child[\"a\", \"b\"])?f."};
+  "The key of a rule should be an element test or a query. An element test is an XMLPattern, an XMLElement pattern, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f; each element is tested as the pattern root, and its names can be used in the value. A query is a rule such as XMLPattern[\"nav\", _, Descendant[x : XMLPattern[\"a\"]]] :> x, or a CSS selector string such as \"nav a\"; the elements it selects get the value. An XMLDocument pattern tests no element: name the elements it finds and give the rule, as in (XMLDocument[Descendant[x : XMLPattern[\"a\"]]] :> x) -> value. Got 5."};
 
 TestCreate[
   Table[withMessages[HTMLToTree[$mergeP, "Roles" -> r, "MergeText" -> m]], {m, {Automatic, HTMLInnerText}}, {r, $badRoles}],

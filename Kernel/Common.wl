@@ -1,7 +1,7 @@
 (* ::Package:: *)
-(* HTMLPatterns: validation helpers, the inert public symbols the query
-   compiler gives meaning to, HTMLWhitespace, HTMLClassList, CSSClass,
-   and argument counts and options *)
+(* HTMLPatterns: validation helpers, the inert public symbols the queries
+   give meaning to, HTMLWhitespace, HTMLClassList, CSSClass, and argument
+   counts and options *)
 
 (* Used by CSSSelector.wl *)
 PackageScoped[argumentCountMessage]
@@ -9,7 +9,7 @@ PackageScoped[argumentCountMessage]
 (* Used by Notebook.wl and Text.wl *)
 PackageScoped[validTextInputQ]
 
-(* Used by Notebook.wl, Query/Run.wl, Query/TreePatterns.wl, Text.wl and Tree.wl *)
+(* Used by Notebook.wl, Positions.wl, Query/TreePatterns.wl, Text.wl, Tree.wl and XMLFunctions.wl *)
 PackageScoped[messageTreeRefusal]
 
 (* Used by Notebook.wl, Text.wl, Tree.wl and XMLFunctions.wl *)
@@ -17,18 +17,13 @@ PackageScoped[countMessage]
 
 (* Used by Query/Compiler.wl *)
 PackageScoped[validTagQ]
-PackageScoped[$links]
-PackageScoped[combinatorQ]
 PackageScoped[barePatterns]
-
-(* Used by Query/Compiler.wl and Query/Run.wl *)
-PackageScoped[patternBase]
 
 (* Used by Query/Compiler.wl and Query/TreePatterns.wl *)
 PackageScoped[keyLiterals]
 PackageScoped[literalKeyQ]
 
-(* Used by Query/Run.wl, Query/TreePatterns.wl and Tree.wl *)
+(* Used by Positions.wl, Query/TreePatterns.wl, Tree.wl and XMLFunctions.wl *)
 PackageScoped[validTreeQ]
 
 (* Used by Tree.wl *)
@@ -88,32 +83,11 @@ literalKeyQ[_] := False;
 keyLiterals[Verbatim[Alternatives][ks__]] := Join @@ (keyLiterals /@ {ks});
 keyLiterals[k_] := {k};
 
-(* The four combinator heads, each a link of a chain. *)
-$links = Child | Descendant | Adjacent | Sibling;
-
-PackageExported[Child]
-Child::usage = "Child[parentPat, childPat] is a combinator for XMLCases, XMLFirstCase and XMLDeleteCases that matches elements that match childPat and are direct children of an element that matches parentPat. Child[parentPat, {e1, e2, ...}] matches the list of patterns {e1, e2, ...} against the element children of each element that matches parentPat, leaving out text, and selects the child in the place of the last entry that is an XML pattern: Child[XMLPattern[_], {XMLPattern[\"li\"], ___}] matches each li that is the first element child of its parent, and Child[XMLPattern[_], {PatternSequence[_, _] ..., XMLPattern[\"tr\"], ___}] the odd rows. The other entries are patterns such as _, ___, Repeated, Except and PatternSequence over the children. Names in the list are bound as in a WL list pattern, where the first way the list matches binds them, and a name on the list, s : {...}, binds the List of element children. Child[pat1, pat2, pat3, ...] is Child[pat1, Child[pat2, pat3, ...]], so Child[a, b, c] matches each c that is a child of a b that is a child of an a. Each argument is a stage: an XMLPattern, another combinator, a CSS selector string, or alternatives of these. The first argument can also be XMLDocument[], the parent of the top-level elements of the tree, or alternatives that hold it. After Child or Descendant, a stage can also be a list of patterns for the parent's element children. A stage that is alternatives holding a combinator is each of them in turn, so Child[a, Descendant[b, c] | d] matches each c inside a b that is a child of an a, and each d that is a child of an a. Stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements. A condition on a stage can use the names bound in that stage. A condition on the whole combinator can use the names bound in all its stages.";
-
 PackageExported[Descendant]
 Descendant::usage = "Descendant[ancestorPat, descPat] is a combinator for XMLCases, XMLFirstCase and XMLDeleteCases that matches elements that match descPat and are nested at any depth inside an element that matches ancestorPat. Descendant[ancestorPat, {e1, e2, ...}] matches the list of patterns {e1, e2, ...} against the element children of each element that matches ancestorPat or lies inside one, one parent at a time, as Child does, so Descendant[XMLPattern[\"div\"], {XMLPattern[\"p\"], ___}] matches each p inside a div that is the first element child of its parent. Each such element is given once, however many of its ancestors match. A name bound in ancestorPat, as used in a rule body, gives the outermost matching ancestor. Descendant[pat1, pat2, pat3, ...] is Descendant[pat1, Descendant[pat2, pat3, ...]], so Descendant[a, b, c] matches each c inside a b inside an a. Each argument is a stage: an XMLPattern, another combinator, a CSS selector string, or alternatives of these. The first argument can also be XMLDocument[], the parent of the top-level elements of the tree, or alternatives that hold it. After Child or Descendant, a stage can also be a list of patterns for the parent's element children. A stage that is alternatives holding a combinator is each of them in turn, so Child[a, Descendant[b, c] | d] matches each c inside a b that is a child of an a, and each d that is a child of an a. Stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements. A condition on a stage can use the names bound in that stage. A condition on the whole combinator can use the names bound in all its stages.";
 
 Descendant::place = "`1` is a constraint, which can only be an argument of XMLPattern after the attributes, as in XMLPattern[\"nav\", _, Descendant[XMLPattern[\"a\"]]]. To find matching elements at any depth, give the pattern alone.";
 Descendant::level = "`1` is not a level specification in DOM depth. Use n, {n}, {m, n} or Infinity, with every level at least 1. For an element inside an element inside another, nest the patterns: XMLPattern[a, _, Descendant[XMLPattern[b, _, Descendant[c]]]].";
-
-PackageExported[Adjacent]
-Adjacent::usage = "Adjacent[beforePat, afterPat] is a combinator for XMLCases, XMLFirstCase and XMLDeleteCases that matches elements that match afterPat and immediately follow a sibling that matches beforePat. Only elements count as siblings, not text. Adjacent[beforePat, afterPat] gives the same as Child[XMLDocument[] | XMLPattern[_], {___, beforePat, afterPat, ___}], so the top-level elements of a list are siblings. Adjacent[pat1, pat2, pat3, ...] is Adjacent[pat1, Adjacent[pat2, pat3, ...]], so Adjacent[a, b, c] matches each c that immediately follows a b that immediately follows an a. Each argument is a stage: an XMLPattern, another combinator, a CSS selector string, or alternatives of these. The first argument can also be XMLDocument[], the parent of the top-level elements of the tree, or alternatives that hold it. After Child or Descendant, a stage can also be a list of patterns for the parent's element children. A stage that is alternatives holding a combinator is each of them in turn, so Child[a, Descendant[b, c] | d] matches each c inside a b that is a child of an a, and each d that is a child of an a. Stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements. A condition on a stage can use the names bound in that stage. A condition on the whole combinator can use the names bound in all its stages.";
-
-PackageExported[Sibling]
-Sibling::usage = "Sibling[beforePat, afterPat] is a combinator for XMLCases, XMLFirstCase and XMLDeleteCases that matches elements that match afterPat and follow a sibling that matches beforePat, at any distance. Only elements count as siblings, not text. Each such element is given once. Sibling[beforePat, afterPat] gives the same as Child[XMLDocument[] | XMLPattern[_], {___, beforePat, ___, afterPat, ___}], so the top-level elements of a list are siblings. A name bound in beforePat, as used in a rule body, gives the first matching earlier sibling in document order. Sibling[pat1, pat2, pat3, ...] is Sibling[pat1, Sibling[pat2, pat3, ...]], so Sibling[a, b, c] matches each c that follows a b that follows an a. Each argument is a stage: an XMLPattern, another combinator, a CSS selector string, or alternatives of these. The first argument can also be XMLDocument[], the parent of the top-level elements of the tree, or alternatives that hold it. After Child or Descendant, a stage can also be a list of patterns for the parent's element children. A stage that is alternatives holding a combinator is each of them in turn, so Child[a, Descendant[b, c] | d] matches each c inside a b that is a child of an a, and each d that is a child of an a. Stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements. A condition on a stage can use the names bound in that stage. A condition on the whole combinator can use the names bound in all its stages.";
-
-combinatorQ[$links[___]] := True;
-combinatorQ[_] := False;
-
-(* A name, a Condition or a test around a pattern never changes what it is. *)
-patternBase[Verbatim[Pattern][_, x_]] := patternBase[x];
-patternBase[Verbatim[Condition][x_, _]] := patternBase[x];
-patternBase[Verbatim[PatternTest][x_, _]] := patternBase[x];
-patternBase[x_] := x;
 
 (* Valid tree for XMLCases *)
 validTreeQ[XMLObject["Document"][_, _XMLElement, _]] := True;
