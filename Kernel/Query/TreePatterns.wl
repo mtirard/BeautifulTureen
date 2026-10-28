@@ -101,7 +101,8 @@ treeResults[head_, tree_, q_, n_] :=
   Catch[
     Block[{$head = head, $nodeId = 0, $memo = <||>, $order, $seen = <||>, $slotOf = <||>, $readings,
         $elem, $parent, $depth, $kids, $index, $end, $wlPos, $tops, $posMemo = <||>, $keyMemo = <||>,
-        $matElems = <||>, $keyLength, $local = False, $place = "query", $owner = XMLPattern, $namedPaths = False},
+        $matElems = <||>, $keyLength, $local = False, $place = "query", $owner = XMLPattern, $namedPaths = False, $exceptRefs,
+        $records},
       Module[{lhs, rhs, all, counted, testNames, need, root},
         {lhs, rhs} = splitQuery[q];
         $readings = Replace[readingsInForce[], $Failed :> Throw[$Failed, $refusal]];
@@ -109,8 +110,10 @@ treeResults[head_, tree_, q_, n_] :=
         $order = patternOrder[lhs];
         {counted, testNames} =
           If[$countedGiven === None, rhsNames[rhs, all], {$countedGiven, Complement[mentioned[rhs, all], $countedGiven]}];
+        $exceptRefs = exceptRefs[lhs];
         checkExcept[lhs, If[$countedGiven === None, counted, Union[counted, testNames]]];
-        need = Union[counted, testNames, conditionNames[lhs, all]];
+        need = Union[counted, testNames, conditionNames[lhs, all], bindingNames[lhs]];
+        $records = $exceptRefs =!= {};
         root = compileRoot[lhs, need];
         If[!validTreeQ[tree], messageTreeRefusal[head, tree]; Throw[$Failed, $refusal]];
         indexTree[tree];
@@ -126,8 +129,8 @@ $positionsOut = False;
 (* What Hide and Focus act on: for each result of q, the positions of its
    counted names, whatever the right-hand side does with them. A result its
    Conditions refuse gives none. A no-match is {}, never read as {} the
-   document. A repeated name gives every position it is bound at, since each
-   is in the tuple. *)
+   document. A repeated name compared by value gives every position it is
+   bound at, since each is in the tuple. *)
 treeTargets[head_, tree_, q_] := Block[{$positionsOut = True, $targetsOut = True}, treeCases[head, tree, q, Infinity]];
 
 $targetsOut = False;
@@ -198,11 +201,46 @@ varsReached[held_, inits_] :=
 
 initsOf[inits_, vars_] := Join[Hold[], Sequence @@ Cases[inits, {v_, i_} /; MemberQ[vars, v] :> i]];
 
-(* A name bound inside Except has no value outside it (spec section 3). In
-   Except[c, p] the names in p are bound, as in WL; those in c are not. *)
+(* A name bound only inside Except has no value outside it (spec section 3).
+   In Except[c, p] the names in p are bound, as in WL; those in c are not,
+   unless they are also bound outside every Except's c, and then they refer
+   to that binding (exceptRefs). *)
 checkExcept[lhs_, counted_] :=
-  Replace[Intersection[namesIn[Cases[lhs, Verbatim[Except][c_, ___] :> Hold[c], {0, Infinity}, Heads -> True]], counted],
+  Replace[Complement[Intersection[namesIn[exceptTests[lhs]], counted], $exceptRefs],
     {Hold[s_], ___} :> refuseHere["exceptname", HoldForm[s]]];
+
+(* The c of each Except[c, ...] in a held pattern, held together. *)
+exceptTests[held_] := Join @@ Cases[held, Verbatim[Except][c_, ___] :> Hold[c], {0, Infinity}, Heads -> True];
+
+(* The held pattern without the c of any Except: where names are bound. *)
+outsideExcept[held_] := held /. Verbatim[Except][_, r___] :> Except[Null, r];
+
+(* The names inside an Except's c that are also bound outside every
+   Except's c. *)
+exceptRefs[held_] := Intersection[namesIn[exceptTests[held]], namesIn[outsideExcept[held]]];
+
+(* The names the engine needs whatever the right-hand side uses: a repeated
+   name, to compare its bindings; a name an Except refers to, and the record
+   of each such Except, to settle it. *)
+bindingNames[held_] :=
+  With[{refs = exceptRefs[held]},
+    Union[repeatedNames[held], refs,
+      DeleteCases[exceptKey[Intersection[namesIn[Hold[#]], refs]] & /@ List @@ (Hold /@ exceptTests[held]), exceptKey[{}]]]];
+
+(* The names bound more than once: at two places not in different branches
+   of one Alternatives, or inside Repeated, which binds at each repeat. *)
+repeatedNames[held_] :=
+  With[{h = outsideExcept[held]},
+    Keys @ Select[
+      GroupBy[Position[h, Verbatim[Pattern][_Symbol, _], {0, Infinity}, Heads -> True], Extract[h, Append[#, 1], Hold] &],
+      Length[#] > 1 && AnyTrue[Subsets[#, {2}], !alternativeBranchesQ[h, #] &] || AnyTrue[#, repeatedInsideQ[h, #] &] &]];
+
+alternativeBranchesQ[h_, {p_, q_}] :=
+  MatchQ[Extract[h, Take[p, LengthWhile[Transpose[{Take[p, Min[Length[p], Length[q]]], Take[q, Min[Length[p], Length[q]]]}], Apply[SameQ]]], Hold],
+    Hold[_Alternatives]];
+
+repeatedInsideQ[h_, p_] :=
+  AnyTrue[Range[Length[p] - 1], MatchQ[Extract[h, Take[p, #], Hold], Hold[_Repeated | _RepeatedNull]] && p[[# + 1]] == 1 &];
 
 (* MessageName holds its first argument, so the consumer head is injected. *)
 refuseHere[tag_, args___] := With[{h = $head}, refuse[MessageName[h, tag], args]];
@@ -295,12 +333,14 @@ spanKey[s_, e_] := If[e == s, {s + 1, 0}, {s + 1, 1, -e}];
 padded[pathKey[lower_, upper_]] := Join[PadRight[lower, $keyLength, $pad], PadRight[upper, $keyLength, $pad]];
 padded[k_] := PadRight[k, If[$namedPaths, 2, 1] $keyLength, $pad];
 
-(* A binding: the positions (more than one for a repeated name), the value,
-   and the order key. A sequence's value is seq[list]. *)
-bnd[pos_, val_, key_] := {pos, val, key};
+(* A binding: the positions, the value, and the order key of each position.
+   A repeated name compared by value has several positions, in position
+   order (joined); its order key is its first one's. A sequence's value is
+   seq[list]. *)
+bnd[pos_, val_, key_] := {pos, val, {key}};
 bindPos[b_] := b[[1]];
 bindVal[b_] := b[[2]];
-bindKey[b_] := b[[3]];
+bindKey[b_] := First[b[[3]]];
 
 elemBinding[i_] := bnd[{posOf[i]}, elemOf[i], elemKey[i]];
 
@@ -365,8 +405,10 @@ refuseDocumentIn[x_] := If[!FreeQ[x, _XMLDocument], refuse[XMLDocument::place, F
 cRoot[s_String, need_] :=
   With[{t = Replace[FromCSSSelector[s], $Failed :> Throw[$Failed, $refusal]]},
     If[chainStageQ[t] || !FreeQ[t, XMLDocument], refuseHere["badpat", s],
-      (* the translation's own names are needed only by its own Conditions *)
-      cRoot[t, Union[need, conditionNames[Hold[t], namesIn[Hold[t]]]]]]];
+      (* the translation's own names are needed only by its own Conditions,
+         repeats and Excepts *)
+      Block[{$exceptRefs = Union[$exceptRefs, exceptRefs[Hold[t]]]}, $records = $records || $exceptRefs =!= {};
+        cRoot[t, Union[need, conditionNames[Hold[t], namesIn[Hold[t]]], bindingNames[Hold[t]]]]]]];
 
 (* A blank is any one element child in a contents list; as the whole query,
    or as Descendant's pattern, it is refused, as it reads as matching text. *)
@@ -530,14 +572,18 @@ cItem[Verbatim[Pattern][s_Symbol, p_], need_] /; sequenceQ[p] :=
       {treeNode["Run", Union[{name}, Union @@ Prepend[#["Names"] & /@ inner, {}]], need, "Name" -> name, "Items" -> inner]}]];
 cItem[r : (_Repeated | _RepeatedNull), need_] :=
   With[{inner = cItem[r[[1]], need], bounds = repeatBounds[r]},
-    If[AnyTrue[inner, capQ], refuseHere["badpat", r]];
     {treeNode["Repeat", Union @@ Prepend[#["Names"] & /@ inner, {}], need, "Items" -> inner, "Min" -> bounds[[1]], "Max" -> bounds[[2]]]}];
-(* A name inside Except binds nothing outside it; tests inside it run there. *)
-cItem[Verbatim[Except][p_], need_] :=
-  With[{sub = Block[{$local = True}, $single[p, conditionTestNames[p]]]}, {treeNode["Not", sub["Names"], need, "Sub" -> sub, "Base" -> None]}];
-cItem[Verbatim[Except][p_, q_], need_] :=
-  With[{sub = Block[{$local = True}, $single[p, conditionTestNames[p]]], base = $single[q, need]},
-    {treeNode["Not", Union[sub["Names"], base["Names"]], need, "Sub" -> sub, "Base" -> base]}];
+(* A name inside Except binds nothing outside it; tests inside it run there.
+   A name also bound outside it refers to that binding: the Except records
+   what its pattern binds the name to, its "Record" key (settled). *)
+cItem[Verbatim[Except][p_], need_] := {notNode[p, None, need]};
+cItem[Verbatim[Except][p_, q_], need_] := {notNode[p, $single[q, need], need]};
+
+notNode[p_, base_, need_] :=
+  With[{refs = Intersection[namesIn[Hold[p]], $exceptRefs]},
+    With[{sub = Block[{$local = True}, $single[p, Union[conditionTestNames[p], refs]]], key = exceptKey[refs]},
+      treeNode["Not", Union[Complement[sub["Names"], refs], If[base === None, {}, base["Names"]], If[refs === {}, {}, {key}]], need,
+        "Sub" -> sub, "Base" -> base, "Record" -> If[refs === {}, None, key]]]];
 cItem[alts_Alternatives, need_] /; AnyTrue[List @@ alts, sequenceQ] :=
   With[{branches = cItem[#, need] & /@ List @@ alts},
     {alternativesNode["Branches", branches, (Union @@ Prepend[#["Names"] & /@ #, {}]) & /@ branches, need]}];
@@ -645,12 +691,12 @@ literalSlots[_] := <||>;
 matchKind["XMLPattern" | "Literal" | "Blank", _, 0] := {};
 matchKind["XMLDocument", nd_, i_] :=
   If[i == 0 && Length[childrenOf[0]] >= nd["MinKids"],
-    project[pending[nd, product[matchConstraint[#, 0] & /@ nd["Constraints"]]], nd["Keep"]],
+    project[pending[nd, product[matchConstraint[#, 0] & /@ nd["Constraints"], joinedAcross]], nd["Keep"]],
     {}];
 
 matchKind["XMLPattern", nd_, i_] :=
   If[headVector[nd][[i]] == 1 && Length[childrenOf[i]] >= nd["MinKids"],
-    project[pending[nd, product[Prepend[constraintSolutions[nd, #, i] & /@ nd["Constraints"], headBindings[nd, i]]]], nd["Keep"]],
+    project[pending[nd, product[{headBindings[nd, i], product[constraintSolutions[nd, #, i] & /@ nd["Constraints"], joinedAcross]}]], nd["Keep"]],
     {}];
 
 constraintSolutions[nd_, c_, i_] := If[nearestOf[c] === None, matchConstraint[c, i], nearestFiltered[nd, c, i]];
@@ -936,7 +982,26 @@ reachOne[it_, s_, dir_] := Switch[it["Kind"],
   "Branches", Unitize[Total[reach[#, s, dir] & /@ it["Subs"]]],
   "Repeat", repeatReach[it, s, dir]];
 
-notVector[it_] := (1 - itemVector[it["Sub"]]) If[it["Base"] === None, 1, itemVector[it["Base"]]];
+(* An Except that refers to a binding outside it may match any child, until
+   the binding is known (settled). When the walk has already bound it, in
+   $bound, the children it excludes are known. *)
+notVector[it_] :=
+  Which[
+    it["Record"] === None, 1 - itemVector[it["Sub"]],
+    boundRecordQ[it], 1 - excludedVector[it],
+    True, 1] If[it["Base"] === None, 1, itemVector[it["Base"]]];
+
+$bound = <||>;
+
+boundRecordQ[it_] := it["Kind"] === "Not" && it["Record"] =!= None && AllTrue[First[it["Record"]], KeyExistsQ[$bound, #] &];
+
+excludedVector[it_] :=
+  With[{refs = First[it["Record"]]},
+    With[{b = KeyTake[$bound, refs]},
+      memoised[{"Excluded", it["Id"], $walkId, bindVal /@ Values[b]},
+        Boole[Table[
+          AnyTrue[forbiddenAt[$oneSolutions[it["Sub"], k], refs], joined[#, KeyTake[b, Keys[#]]] =!= $Failed &],
+          {k, $n}]]]]];
 
 shift[s_, t_, 1] := Prepend[Most[s] t, 0];
 shift[s_, t_, -1] := Append[Rest[s] t, 0];
@@ -956,17 +1021,19 @@ repeatReach[it_, s_, dir_] :=
 (* The spans of items from place s0 that end where endOK is 1, each with its
    solution: a list of {end, solution}. Between the entries the walk branches
    at, boolean reachability; at each of them, its spans from each place that
-   can still reach the end. *)
-enumerate[items_, s0_, endOK_] :=
-  Module[{back, caps, frontier = {{s0, <||>}}, prev = 0},
-    back = Reverse @ FoldList[reachOne[#2, #1, -1] &, endOK, Reverse[items]];
+   can still reach the end. An entry sees the names bound before it, $bound.
+   back: where each entry may start, which a repeat computes once for all its
+   repeats. *)
+enumerate[items_, s0_, endOK_] := enumerate[items, s0, endOK, backReach[items, endOK]];
+enumerate[items_, s0_, endOK_, back_] :=
+  Module[{caps, frontier = {{s0, <||>}}, prev = 0},
     caps = Flatten @ Position[capQ /@ items, True];
     Do[
       frontier = Join @@ Function[f,
           With[{r = reach[items[[prev + 1 ;; c - 1]], delta[f[[1]]], 1] back[[c]]},
             Join @@ (Function[s,
                 With[{m = joined[f[[2]], #[[2]]]}, If[m === $Failed, Nothing, {#[[1]], m}]] & /@
-                  entrySpans[items[[c]], s, back[[c + 1]]]] /@ (Flatten @ Position[r, 1] - 1))]] /@ frontier;
+                  boundIn[f[[2]], entrySpans[items[[c]], s, back[[c + 1]]]]] /@ (Flatten @ Position[r, 1] - 1))]] /@ frontier;
       prev = c,
       {c, caps}];
     Join @@ Function[f,
@@ -976,7 +1043,8 @@ entrySpans[it_, s_, next_] := Switch[it["Kind"],
   "One",
     If[s < $n && next[[s + 2]] == 1, {s + 1, #} & /@ $oneSolutions[it["Sub"], s + 1], {}],
   "Not",
-    If[s < $n && next[[s + 2]] == 1 && itemVector[it["Sub"]][[s + 1]] == 0, {s + 1, #} & /@ $oneSolutions[it["Base"], s + 1], {}],
+    If[s < $n && next[[s + 2]] == 1 && (it["Record"] =!= None || itemVector[it["Sub"]][[s + 1]] == 0),
+      {s + 1, #} & /@ notSolutions[it, s + 1], {}],
   "Run",
     With[{inner = enumerate[it["Items"], s, next]},
       projectSpans[If[MemberQ[it["Keep"], it["Name"]], {#[[1]], Append[#[[2]], it["Name"] -> $runBinding[s, #[[1]]]]} & /@ inner, inner], it["Keep"]]],
@@ -986,7 +1054,48 @@ entrySpans[it_, s_, next_] := Switch[it["Kind"],
     projectSpans[Join @@ (Function[b, With[{inner = enumerate[b, s, next]},
       If[it["Slot"] === None, inner, {#[[1]], Append[#[[2]], it["Slot"] -> $runBinding[s, #[[1]]]]} & /@ inner]]] /@ it["Subs"]), it["Keep"]],
   "Repeat",
-    {#, <||>} & /@ (Flatten @ Position[repeatReach[it, delta[s], 1] next, 1] - 1)];
+    If[capQ[it] && !AllTrue[it["Items"], !capQ[#] || boundRecordQ[#] && #["Keep"] === {#["Record"]} &],
+      repeatSpans[it, s, next],
+      {#, <||>} & /@ (Flatten @ Position[repeatReach[it, delta[s], 1] next, 1] - 1)]];
+
+(* An Except entry's solutions at item k: the base's, or one with no names,
+   and, when it refers to bindings outside it, the record of what its
+   pattern binds them to there. *)
+notSolutions[it_, k_] :=
+  With[{sols = If[it["Base"] === None, {<||>}, $oneSolutions[it["Base"], k]]},
+    If[it["Record"] === None, sols,
+      With[{rec = forbiddenAt[$oneSolutions[it["Sub"], k], First[it["Record"]]]},
+        If[rec === {}, sols, DeleteCases[settled[False, Append[#, it["Record"] -> forbidden[rec]]] & /@ sols, $Failed]]]]];
+
+(* A repeat that binds a needed name, one repeat at a time: each binds the
+   names again, and a repeated name compares its values, as in WL. A repeat
+   that matches nothing ends the walk once the minimum is met. *)
+repeatSpans[it_, s_, next_] :=
+  Module[{again = repeatReach[Append[it, "Min" -> 0], next, -1], back, states = {{s, <||>}}, k = 0},
+    back = backReach[it["Items"], again];
+    projectSpans[Select[Join @@ Flatten[Last @ Reap[
+        If[it["Min"] == 0, Sow[states]];
+        While[states =!= {} && k < it["Max"],
+          k++;
+          states = DeleteDuplicatesBy[
+            Join @@ Function[st,
+                With[{m = joined[st[[2]], #[[2]]]}, If[m === $Failed || #[[1]] == st[[1]] && k > it["Min"], Nothing, {#[[1]], m}]] & /@
+                  boundIn[st[[2]], repeatOnce[it["Items"], st[[1]], again, back]]] /@ states,
+            {#[[1]], identity[#[[2]], Keys[#[[2]]]]} &];
+          If[k >= it["Min"], Sow[states]]]], 1],
+      next[[#[[1]] + 1]] == 1 &], it["Keep"]]];
+
+(* One repeat from place s: a repeat of one entry that is one item is that
+   entry's spans, without a walk. *)
+repeatOnce[{it_}, s_, again_, _] /; MatchQ[it["Kind"], "One" | "Not"] := entrySpans[it, s, again];
+repeatOnce[items_, s_, again_, back_] := enumerate[items, s, again, back];
+
+(* What the entries of a walk see as bound before them, when an Except may
+   refer to it. *)
+SetAttributes[boundIn, HoldRest];
+boundIn[sol_, code_] := If[$records, Block[{$bound = Join[$bound, sol]}, code], code];
+
+backReach[items_, endOK_] := Reverse @ FoldList[reachOne[#2, #1, -1] &, endOK, Reverse[items]];
 
 projectSpans[sps_, keep_] := DeleteDuplicatesBy[{#[[1]], KeyTake[#[[2]], keep]} & /@ sps, {#[[1]], identity[#[[2]], keep]} &];
 
@@ -1013,23 +1122,100 @@ directQ[nd_] := nd["Kind"] === "Named" && With[{s = nd["Sub"]}, s["Kind"] === "X
 (* Solutions                                                    *)
 (* =========================================================== *)
 
-(* Two solutions join when a name they share has one value; the joined
-   binding keeps both positions. *)
+(* ---- Repeated names (spec section 3, ticket 28) ----
+
+   A name used twice compares its bindings by what they are and where they
+   sit. A place (an element, a run or gap, a named path or list) bound in
+   two constraints of one tree pattern must be the same position: both
+   constraints range over the same children, so naming one in both pins it,
+   which is how a query intersects two positional tests
+   (li:nth-child(3):nth-last-child(2) is {_, _, n : li, ___} and
+   {___, n : li, _}). Everywhere else the bindings must be equal values, as
+   in WL: two slots of one list, which can never be one place, so that
+   {___, x : tr, ___, x : tr, ___} finds duplicates; an ancestor and a
+   descendant, likewise; and every string (tag, attribute value, token,
+   text), which a test such as "the same tag as n" compares wherever it is
+   bound. Value equality everywhere would leave the intersection without a
+   plain pattern; position equality everywhere would lose the duplicates
+   idiom. So joins inside one constraint compare values (joined), and the
+   join of a tree pattern's constraints compares the positions of places
+   (joinedAcross). A name compared by value keeps all its positions, each in
+   the tuple; compared by position it has one. The branches of one
+   Alternatives are not a repeat: their names are bound once, by the branch
+   that matched (repeatedNames). *)
+
 joined[a_, b_] /; Length[a] == 0 := b;
 joined[a_, b_] /; Length[b] == 0 := a;
-joined[a_, b_] :=
+joined[a_, b_] := joinedIn[False, a, b];
+joinedAcross[a_, b_] /; Length[a] == 0 := b;
+joinedAcross[a_, b_] /; Length[b] == 0 := a;
+joinedAcross[a_, b_] := joinedIn[True, a, b];
+
+joinedIn[across_, a_, b_] :=
   With[{shared = Intersection[Keys[a], Keys[b]]},
-    If[AllTrue[shared, bindVal[a[#]] === bindVal[b[#]] &],
-      Join[b, a, Association[(# -> ReplacePart[a[#], 1 -> DeleteDuplicates @ Join[bindPos[a[#]], bindPos[b[#]]]]) & /@ shared]],
-      $Failed]];
+    Which[
+      shared === {}, If[$records, settled[across, Join[b, a]], Join[b, a]],
+      AllTrue[shared, sameBindingQ[across, a[#], b[#]] &],
+        settled[across, Join[b, a, Association[(# -> mergedBinding[across, a[#], b[#]]) & /@ shared]]],
+      True, $Failed]];
+
+sameBindingQ[_, _forbidden, _forbidden] := True;
+sameBindingQ[True, x_, y_] /; placeQ[x] && placeQ[y] := Union[bindPos[x]] === Union[bindPos[y]];
+sameBindingQ[_, x_, y_] := bindVal[x] === bindVal[y];
+
+mergedBinding[_, forbidden[x_], forbidden[y_]] := forbidden[Union[x, y]];
+mergedBinding[True, x_, y_] /; placeQ[x] := x;
+mergedBinding[_, x_, y_] :=
+  With[{ps = SortBy[DeleteDuplicatesBy[Join[Transpose[{bindPos[x], x[[3]]}], Transpose[{bindPos[y], y[[3]]}]], First], padded @* Last]},
+    {ps[[All, 1]], bindVal[x], ps[[All, 2]]}];
+
+(* A binding of a place: an element, a run or gap of children, a named path
+   or the document; not a tag, attribute, token, text or contents. *)
+placeQ[b_] := AllTrue[bindPos[b], MatchQ[#, _Span | {___Integer?Positive} | {___Integer?Positive, _Span}] &];
 
 joinAll[sols_, extra_] := DeleteCases[joined[#, extra] & /@ sols, $Failed];
 
-product[lists_] := Fold[Function[{acc, l},
+product[lists_] := product[lists, joined];
+product[lists_, join_] := Fold[Function[{acc, l},
     Which[acc === {} || l === {}, {},
       l === {<||>}, acc,
       acc === {<||>}, l,
-      True, DeleteCases[Flatten[Outer[joined, acc, l, 1], 1], $Failed]]], {<||>}, lists];
+      True, DeleteCases[Flatten[Outer[join, acc, l, 1], 1], $Failed]]], {<||>}, lists];
+
+(* ---- Except over a binding outside it (spec section 3, ticket 27) ----
+
+   A name inside Except that is also bound outside it, anywhere in the rule,
+   refers to that binding (exceptRefs). The Except cannot test the child
+   until that binding is known, which in WL's left-to-right reading may be
+   later in the list or above it. So the entry matches any child, and the
+   solution records what the Except's pattern binds those names to there,
+   exceptKey[names] -> forbidden[{binding, ...}]. Once the names are bound,
+   at the join that brings them (settled), the solution fails if a recorded
+   binding is what a second binding of the name there would have to equal:
+   the same value, or the same child when the join is across constraints. A
+   record left at the pattern root, its names bound nowhere in the branch
+   that matched, excludes as a local Except does (unsettled). *)
+
+(* $records: whether the query has such an Except, set when it is compiled. *)
+$records = False;
+
+settled[across_, sol_] :=
+  With[{ks = Cases[Keys[sol], _exceptKey]},
+    If[ks === {}, sol,
+      Fold[Function[{s, k},
+          Which[
+            s === $Failed || !AllTrue[First[k], KeyExistsQ[s, #] &], s,
+            AnyTrue[First[s[k]], joinedIn[across, #, KeyTake[s, Keys[#]]] =!= $Failed &], $Failed,
+            True, KeyDrop[s, Key[k]]]],
+        sol, ks]]];
+
+unsettled[sols_] := Select[sols, FreeQ[Keys[#], _exceptKey] &];
+
+(* What the Except's pattern binds its outside names to at one child. A
+   string is compared by value only, so its position is dropped and equal
+   values are recorded once. *)
+forbiddenAt[sols_, refs_] :=
+  DeleteDuplicates[Map[If[placeQ[#], #, {{Missing["Except"]}, bindVal[#], {{}}}] &, KeyTake[#, refs]] & /@ sols];
 
 (* The distinct solutions on keep. *)
 project[{}, _] := {};
@@ -1039,6 +1225,7 @@ project[sols_, keep_] := DeleteDuplicatesBy[KeyTake[#, keep] & /@ sols, identity
 (* A binding is identified by its positions; one without, by its value. *)
 identity[sol_, names_] := identityOf /@ Lookup[sol, names, None];
 identityOf[None] := None;
+identityOf[forbidden[l_]] := l;
 identityOf[b_] := If[MatchQ[bindPos[b], {_Missing}], {"Value", bindVal[b]}, bindPos[b]];
 
 (* Held code with each name replaced by its value; an absent name is
@@ -1064,7 +1251,8 @@ $noResult = Unique["noResult"];
    its slot, keyed by the first of them the tuple binds, or by where the
    Alternatives matched when it binds none. The bare input's own position is
    never counted. *)
-results[root_, rhs_, all_, counted_, {}, bare_, n_] /; root["Kind"] === "Named" && counted === {root["Name"]} :=
+results[root_, rhs_, all_, counted_, {}, bare_, n_] /;
+    root["Kind"] === "Named" && counted === {root["Name"]} && !MemberQ[root["Sub"]["Names"], root["Name"]] && FreeQ[root["Sub"]["Keep"], _exceptKey] :=
   Block[{$pendingAt = pendingTests[root]}, rootMatches[root, rhs, all, bare, n] /; !KeyExistsQ[$pendingAt, "Top"]];
 results[root_, rhs_, all_, counted_, testNames_, bare_, n_] :=
   Module[{sols, groups, slots, keys, count = 0, k = 1, r},
@@ -1105,8 +1293,8 @@ rootMatches[root_, rhs_, all_, bare_, n_] :=
 rootSolutions[root_, oneQ_] :=
   With[{cands = rootCandidates[root]},
     If[oneQ,
-      Catch[Scan[With[{s = pending[<|"Id" -> "Top"|>, match[root, #]]}, If[s =!= {}, Throw[s, $one]]] &, cands]; {}, $one],
-      pending[<|"Id" -> "Top"|>, Join @@ (match[root, #] & /@ cands)]]];
+      Catch[Scan[With[{s = unsettled @ pending[<|"Id" -> "Top"|>, match[root, #]]}, If[s =!= {}, Throw[s, $one]]] &, cands]; {}, $one],
+      unsettled @ pending[<|"Id" -> "Top"|>, Join @@ (match[root, #] & /@ cands)]]];
 
 (* The nodes a pattern root can match, in document order: the document first
    when the root can be an XMLDocument, then the elements. *)
@@ -1137,9 +1325,9 @@ groupResult[rhs_, all_, testNames_, group_] :=
 (* The right-hand side evaluated for one solution. For XMLPosition, its
    Conditions are run as for XMLCases, on the values, and then the code they
    guard is evaluated with each name replaced by its position instead, so a
-   right-hand side with a test is evaluated twice. A repeated name, which has
-   several positions, gives the first it was bound at, in pattern order; a
-   name that is absent, Sequence[]. For XMLReplace, the Conditions are run in
+   right-hand side with a test is evaluated twice. A repeated name with
+   several positions gives the list of them (positionOf); a name that is
+   absent, Sequence[]. For XMLReplace, the Conditions are run in
    the same way and the solution itself is given, for its replacements to be
    evaluated later, on the tree as rewritten. *)
 resultOf[rhs_, all_, sol_] /; $solutionsOut :=
@@ -1154,8 +1342,10 @@ resultOf[rhs_, all_, sol_] :=
     If[body =!= rhs && evaluated[substituted[rhs, all, sol]] === $noResult, $noResult,
       evaluated[body /. (Replace[#, Hold[s_] :> (HoldPattern[s] -> positionOf[Lookup[sol, Key[#], None]])] & /@ all)]]];
 
+(* A name with several positions, a repeated name compared by value, is the
+   list of them; as a target, each of them. *)
 positionOf[None] := Sequence[];
-positionOf[b_] := If[$targetsOut, Sequence @@ bindPos[b], First[bindPos[b]]];
+positionOf[b_] := Which[$targetsOut, Sequence @@ bindPos[b], Length[bindPos[b]] == 1, First[bindPos[b]], True, bindPos[b]];
 
 (* Held code without the Conditions a rule's right-hand side tests: at the
    top, or at the top of a With, Module or Block (rhsParts). *)
@@ -1231,15 +1421,16 @@ flatRootQ[_] := False;
 treeMatcher[head_, q_, listsQ_] :=
   Catch[
     Block[{$head = head, $nodeId = 0, $order, $seen = <||>, $slotOf = <||>, $readings, $local = False,
-        $place = "query", $owner = XMLPattern, $namedPaths = False},
+        $place = "query", $owner = XMLPattern, $namedPaths = False, $exceptRefs = exceptRefs[Hold[q]], $records},
       Module[{lhs = Hold[q], need, root, listQ = listsQ && listRootQ[q]},
         If[MatchQ[q, _Rule | _RuleDelayed], refuseHere["badpat", q]];
         $readings = Replace[readingsInForce[], $Failed :> Throw[$Failed, $refusal]];
         $order = patternOrder[lhs];
-        need = conditionNames[lhs, namesIn[lhs]];
+        need = Union[conditionNames[lhs, namesIn[lhs]], bindingNames[lhs]];
+        $records = $exceptRefs =!= {};
         root = If[listQ, listRoot[q, need], compileRoot[lhs, need]];
         <|"Head" -> head, "Root" -> root, "Lists" -> listQ, "Readings" -> $readings,
-          "Pending" -> pendingTests[root], "Reach" -> reachBelow[root]|>]],
+          "Pending" -> pendingTests[root], "Reach" -> reachBelow[root], "Records" -> $records|>]],
     $refusal];
 
 (* A list pattern, named, conditioned or tested, or alternatives of these. *)
@@ -1274,11 +1465,11 @@ testNode[m_, x_] :=
 withIndex[m_, x_, depth_, f_] :=
   Block[{$head = m["Head"], $readings = m["Readings"], $pendingAt = m["Pending"], $memo = <||>, $indexDepth = depth,
       $elem, $parent, $depth, $kids, $index, $end, $wlPos, $tops, $posMemo = <||>, $keyMemo = <||>, $matElems = <||>,
-      $keyLength, $namedPaths = False},
+      $keyLength, $namedPaths = False, $records = m["Records"]},
     indexTree[x];
     f[]];
 
-rootMatchQ[m_, i_] := pending[<|"Id" -> "Top"|>, match[m["Root"], i]] =!= {};
+rootMatchQ[m_, i_] := unsettled @ pending[<|"Id" -> "Top"|>, match[m["Root"], i]] =!= {};
 
 (* XMLMatchQ: whether x, as the pattern root, matches. A kind the pattern
    cannot match is not an error: the document under an element pattern, an

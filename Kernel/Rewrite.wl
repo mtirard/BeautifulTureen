@@ -373,20 +373,23 @@ replacementId[code_, sol_] := code /. KeyValueMap[Replace[#1, Hold[s_] :> (HoldP
 replacer[pos_, {code_, names_, sol_}] := Function[Null, replacement[pos, code, names, sol]];
 
 replacement[pos_, code_, names_, sol_] :=
-  With[{held = code /. (Replace[#, Hold[s_] :> (HoldPattern[s] -> Replace[nameValue[#, Lookup[sol, Key[#], None]], {{v_} :> v, l_ :> Sequence @@ l}])] & /@
+  With[{held = code /. (Replace[#, Hold[s_] :> (HoldPattern[s] -> Replace[nameValue[#, Lookup[sol, Key[#], None], pos], {{v_} :> v, l_ :> Sequence @@ l}])] & /@
       Select[names, !FreeQ[code, Replace[#, Hold[s_] :> HoldPattern[s]]] &])},
     With[{v = If[Length[held] == 1, ReleaseHold[held], $several[List @@ held]]},
       If[replacementKindQ[pos, v], v,
         Message[XMLReplace::kind, pos, Replace[v, $several[l_] :> HoldForm[Sequence @@ l]]]; Throw[Null, $unchanged]]]];
 
-(* What a name splices in: its value at its position now, or, when an earlier
-   rewrite removed that position, its original value, with XMLReplace::stale.
-   A repeated name reads its first position; a name with no position, deep in
-   an XMLElement pattern (ticket 16), its original value. *)
-nameValue[_, None] := {};
-nameValue[name_, {ps_, vals_}] :=
-  If[MatchQ[First[ps], _Missing], vals,
-    Replace[valueAt[First[ps]], $stale :> (Message[XMLReplace::stale, Replace[name, Hold[s_] :> HoldForm[s]], First[ps]]; vals)]];
+(* What a name splices in at target pos: its value at its position now, or,
+   when an earlier rewrite removed that position, its original value, with
+   XMLReplace::stale. A repeated name with several positions, its values
+   equal when matched, reads the one being rewritten, or else its first; a
+   name with no position, deep in an XMLElement pattern (ticket 16), its
+   original value. *)
+nameValue[_, None, _] := {};
+nameValue[name_, {ps_, vals_}, pos_] :=
+  With[{p = If[MemberQ[ps, pos], pos, First[ps]]},
+    If[MatchQ[p, _Missing], vals,
+      Replace[valueAt[p], $stale :> (Message[XMLReplace::stale, Replace[name, Hold[s_] :> HoldForm[s]], p]; vals)]]];
 
 (* ---- The tree rewritten so far ---- *)
 
