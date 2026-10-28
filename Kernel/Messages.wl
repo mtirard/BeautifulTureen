@@ -39,8 +39,8 @@ HTMLToTree::condcombinator = "A condition (/;) can apply to an XMLPattern or alt
 HTMLToTree::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
 
 (* A list of patterns for an element's children (ADR 0016), refused where it
-   cannot stand, with the reason. Set here, not with the other messages above,
-   so that h is a private symbol. *)
+   cannot stand, with the reason. Set by one Scan, since every head listed
+   takes the same three messages. *)
 Scan[Function[h,
     MessageName[h, "liststage"] = "`1` is a list of patterns for an element's children. `2`";
     MessageName[h, "listentry"] = "`1` cannot be an entry in a list of patterns for an element's children. `2`";

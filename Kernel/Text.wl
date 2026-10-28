@@ -9,10 +9,11 @@ PackageScoped[textContentWalk]
 (* Lossless tree-fold: concatenate every descendant string in  *)
 (* document order, inserting/removing no whitespace.           *)
 (*                                                              *)
-(* Public arm validates with validTreeQ (same input surface as *)
-(* XMLCases) and delegates to the internal total walk; the      *)
-(* walk never messages, so stray non-element/non-string nodes   *)
-(* (comments, declarations) silently contribute "" mid-tree.    *)
+(* Public arm validates with validTextInputQ (same input       *)
+(* surface as XMLCases) and delegates to the internal total     *)
+(* walk; the walk never messages, so stray non-element/         *)
+(* non-string nodes (comments, declarations) silently           *)
+(* contribute "" mid-tree.                                      *)
 (* =========================================================== *)
 
 PackageExported[HTMLTextContent]
