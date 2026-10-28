@@ -11,7 +11,10 @@
      have $anyLength and $recognisedMethods on their left-hand sides; a
      left-hand side is evaluated when the definition is made.
    - SyntaxInformation.wl loads last: it reads every public function's Options.
-   A misspelt name in "LoadFirstFiles" or "LoadLastFiles" loads no file at all. *)
+   A misspelt name in "LoadFirstFiles" or "LoadLastFiles" loads no file at all.
+   "FileOrderingFunction" -> Order gives the same order for these file names as
+   the default AlphabeticSort, which takes ~0.2 s the first time in a session. *)
 
 PackageInitialize["MaximilienTirard`HTMLPatterns`",
-  <|"LoadFirstFiles" -> {"Common.wl", "Query/Compiler.wl"}, "LoadLastFiles" -> {"SyntaxInformation.wl"}|>]
+  <|"LoadFirstFiles" -> {"Common.wl", "Query/Compiler.wl"}, "LoadLastFiles" -> {"SyntaxInformation.wl"},
+    "FileOrderingFunction" -> Order|>]
