@@ -105,7 +105,7 @@ splitQuery[p_] := Module[{r}, {Hold @@ {Pattern @@ {r, p}}, Hold[r]}];
 (* namesIn (Query/Chains.wl) gives the names a held pattern binds, each
    Hold[name]. *)
 
-(* The names of all that mention any of them, in held code. *)
+(* Those of names that held code mentions. *)
 mentioned[held_, names_] := Select[names, !FreeQ[held, Replace[#, Hold[s_] :> HoldPattern[s]]] &];
 
 (* Pattern order: the order names first appear, reading the pattern as written. *)
@@ -148,8 +148,8 @@ varsReached[held_, inits_] :=
 
 initsOf[inits_, vars_] := Join[Hold[], Sequence @@ Cases[inits, {v_, i_} /; MemberQ[vars, v] :> i]];
 
-(* A name bound inside Except has no value outside it (spec section 3). *)
-(* In Except[c, p] the names in p are bound, as in WL; those in c are not. *)
+(* A name bound inside Except has no value outside it (spec section 3). In
+   Except[c, p] the names in p are bound, as in WL; those in c are not. *)
 checkExcept[lhs_, counted_] :=
   Replace[Intersection[namesIn[Cases[lhs, Verbatim[Except][c_, ___] :> Hold[c], {0, Infinity}, Heads -> True]], counted],
     {Hold[s_], ___} :> refuseHere["exceptname", HoldForm[s]]];
@@ -174,7 +174,7 @@ indexTree[input_] :=
     $wlPos = ps;
     $elem = Prepend[Extract[$tops, ps], input];
     $parent = Prepend[Lookup[pid, Key /@ (If[Length[#] == 1, {}, Drop[#, -2]] & /@ ps), 0], -1];
-    $depth = Prepend[Replace[(Length /@ ps + 1)/2, {} -> {}], 0];
+    $depth = Prepend[(Length /@ ps + 1)/2, 0];
     groups = GroupBy[Range[n], $parent[[# + 1]] &];
     $kids = Prepend[Lookup[groups, Range[n], {}], Lookup[groups, 0, {}]];
     $index = ConstantArray[0, n + 1];
@@ -215,10 +215,11 @@ materialElems[r_] := Lookup[$matElems, Key[r], $matElems[r] = Extract[materialis
 (* positions sort, a container before what it holds. An element *)
 (* step is {4, n, 2}; within an element, its tag is {0}, its    *)
 (* attribute map {1}, its j-th attribute {2, j, 0}, a list key  *)
-(* read from it {2, j, 1} and that list's tails {2, j, 2, ...}, *)
+(* read from it {2, j, 1} and that list's tails {2, j, 1, 2,    *)
+(* ...},                                                        *)
 (* its contents {3}, and among its children the gap before n    *)
 (* {4, n, 0}, a run n ;; k {4, n, 1, -k} (longest first), then  *)
-(* child n. Tails order as children do, without the 4.          *)
+(* child n. Tails order as children do, with 2 for the 4.       *)
 (* =========================================================== *)
 
 $pad = -10^9;
@@ -542,9 +543,6 @@ attributeBindings[Verbatim[Pattern][s_Symbol, a_], x_, i_, need_] :=
     attributeBindings[a, x, i, need]];
 attributeBindings[Verbatim[PatternTest][a_, _], x_, i_, need_] := attributeBindings[a, x, i, need];
 attributeBindings[r_Rule, x_, i_, need_] := attributeBindings[{r}, x, i, need];
-(* KeyValuePattern gives each rule a different attribute, so every rule is
-   placed, those that bind nothing too, and a placement that gives two rules
-   one attribute is dropped. *)
 (* With no Alternatives key, the keys are distinct (the compiler refuses a
    duplicate), so each rule has its one attribute, and only the rules that
    bind a needed name are read. *)
@@ -552,6 +550,9 @@ attributeBindings[rules_List, x_, i_, need_] /; FreeQ[rules, Verbatim[Rule][_Alt
   With[{named = Cases[rules, r : Verbatim[Rule][_, v_] /; IntersectingQ[namesIn[Hold[v]], need]]},
     With[{slots = attributeSlots[x, i, Union @@ (keyLiterals[First[#]] & /@ named)]},
       project[product[MapIndexed[ruleBindings[#1, First[#2], slots, need] &, named]], need]]];
+(* KeyValuePattern gives each rule a different attribute, so with an
+   Alternatives key every rule is placed, those that bind nothing too, and a
+   placement that gives two rules one attribute is dropped. *)
 attributeBindings[rules_List, x_, i_, need_] :=
   With[{slots = attributeSlots[x, i, Union @@ (keyLiterals[First[Replace[#, k_?literalKeyQ :> (k -> _)]]] & /@ rules)]},
     project[
@@ -909,7 +910,7 @@ rootMatches[root_, rhs_, all_, bare_, n_] :=
 rootSolutions[root_, oneQ_] :=
   With[{cands = Flatten @ Position[candidateVector[root], 1]},
     If[oneQ,
-      Catch[Scan[With[{s = match[root, #]}, If[s =!= {}, Throw[pending[<|"Id" -> "Top"|>, s], $one]]] &, cands]; {}, $one],
+      Catch[Scan[With[{s = pending[<|"Id" -> "Top"|>, match[root, #]]}, If[s =!= {}, Throw[s, $one]]] &, cands]; {}, $one],
       pending[<|"Id" -> "Top"|>, Join @@ (match[root, #] & /@ cands)]]];
 
 resultKey[sol_, slots_, counted_] :=
