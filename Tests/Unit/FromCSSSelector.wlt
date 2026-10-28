@@ -544,20 +544,23 @@ TestCreate[
 ];
 
 (* A selector list of k selectors of different shapes is k alternatives, and
-   a compound before :is() with a combinator inside is not translated: x
-   :is(a b) is an element with ancestors x and a in either order. *)
+   :is() with + or ~ inside, after a compound, is not translated: siblings
+   are not on the element's path. *)
 TestCreate[
-  {Length[FromCSSSelector[n : "a > b, c d, e + f"]], kindOf["x :is(a b)"]},
+  {Length[FromCSSSelector[n : "a > b, c d, e + f"]], kindOf["x :is(a + b)"]},
   {3, "unsupported"},
   TestID -> "css-selector-list-possible-issues"
 ];
 
 (* A string giving alternatives of combinators is refused where one element is
-   tested: it looks above the element. *)
+   tested: it looks above the element. As a "Roles" key it is a query
+   (spec section 6). *)
 TestCreate[
-  {XMLMatchQ[XMLElement["d", {}, {}], "a > b, c > d"], HTMLInnerText[XMLElement["d", {}, {}], "Roles" -> {"a > b, c" -> "Skip"}]},
-  {$Failed, $Failed},
-  {XMLMatchQ::badpat, HTMLInnerText::badpat},
+  {XMLMatchQ[XMLElement["d", {}, {}], "a > b, c > d"],
+   HTMLInnerText[XMLElement["d", {}, {XMLElement["a", {}, {XMLElement["b", {}, {"1"}]}], XMLElement["c", {}, {"2"}], "3"}],
+     "Roles" -> {"a > b, c" -> "Skip"}]},
+  {$Failed, "3"},
+  {XMLMatchQ::badpat},
   TestID -> "css-selector-list-of-shapes-refused-for-one-element"
 ];
 
@@ -739,8 +742,8 @@ TestCreate[
 
 TestCreate[
   kindOf /@ {"body :root", "p > :scope", "a:lang(fr)", ":dir(ltr)", ":enabled", ":disabled", ":required", ":defined",
-    "svg|rect", "*|a", "|a", "[xlink|href]", "a || b", "x :is(a b)", "x > p:is(a b)", ":has(+ a)", ":has(~ a)",
-    ":not(a b)", ":is(a b):is(c d)", ":not(:only-child)", ":is(li:only-child)", ":not(:nth-child(2))",
+    "svg|rect", "*|a", "|a", "[xlink|href]", "a || b", "x :is(a + b)", "x > p:is(a ~ b)", ":not(:has(+ a))", ":is(:has(~ a))",
+    ":not(a + b)", "a:has(+ b) + c", ":not(:only-child)", ":is(li:only-child)", ":not(:nth-child(2))",
     ":where(:first-of-type)", ":nth-child(1 of a b)", ":nth-child(1 of :first-child)", "div:has(:is(a b))"},
   ConstantArray["unsupported", 26],
   TestID -> "css-messages-unsupported"
@@ -844,11 +847,14 @@ TestCreate[
   TestID -> "css-string-in-roles"
 ];
 
+(* A context selector is a query key, whose subjects get the value (spec
+   section 6). *)
 TestCreate[
-  {HTMLInnerText[$note, "Roles" -> {"div > p" -> "Block"}], HTMLToNotebook[$note, "Constructs" -> {"div > p" -> "Bold"}]},
-  {$Failed, $Failed},
-  {HTMLInnerText::badpat, HTMLToNotebook::badpat},
-  TestID -> "css-string-combinator-refused-in-roles-and-constructs"
+  {HTMLInnerText[$note, "Roles" -> {"div.note > p" -> "Inline"}], HTMLToNotebook[$note, "Constructs" -> {"div > p" -> "Section"}]},
+  {"a xb\nc\nH",
+   Notebook[{Cell[TextData[{"a ", "x"}], "Section"], Cell[TextData[{"b"}], "Section"], Cell[TextData[{"c"}], "Section"],
+     Cell[TextData[{"H"}], "Chapter"]}]},
+  TestID -> "css-string-context-selector-in-roles-and-constructs"
 ];
 
 TestCreate[

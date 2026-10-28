@@ -23,25 +23,34 @@ XMLFreeQ::badtree = "The first argument should be an XMLObject, an XMLElement, o
 HTMLTextContent::badtree = "The first argument should be an XMLObject, an XMLElement, a string, or a list of XMLElement expressions and strings. Got head `1`.";
 HTMLInnerText::badtree = "The first argument should be an XMLObject, an XMLElement, a string, or a list of XMLElement expressions and strings. Got head `1`.";
 HTMLInnerText::badrole = "A \"Roles\" rule gave `1`, which is not \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\" or \"Skip\". The element gets its role from the built-in user-agent stylesheet instead.";
-HTMLInnerText::badpat = "The left-hand side of a rule should be an XMLPattern, alternatives of them, or either with a condition pat /; test or a test pat?f, or a CSS selector string that describes one element. Got `1`.";
 HTMLInnerText::stages = "`1` is a combinator with fewer than two stages. A combinator needs at least two, but a rule is tried on one element at a time and cannot use one; use an XMLPattern or alternatives of them.";
 HTMLInnerText::notrule = "Each \"Roles\" entry should be a rule pattern -> value or pattern :> value. Got `1`.";
 HTMLInnerText::condcombinator = "A condition (/;) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Got `1`.";
 HTMLInnerText::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
 HTMLToNotebook::badtree = "The first argument should be an XMLObject, an XMLElement, a string, or a list of XMLElement expressions and strings. Got head `1`.";
 HTMLToNotebook::badrole = "A \"Roles\" rule gave `1`, which is not \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\" or \"Skip\". The element gets its role from the built-in user-agent stylesheet instead.";
-HTMLToNotebook::badpat = "The left-hand side of a rule should be an XMLPattern, alternatives of them, or either with a condition pat /; test or a test pat?f, or a CSS selector string that describes one element. Got `1`.";
 HTMLToNotebook::stages = "`1` is a combinator with fewer than two stages. A combinator needs at least two, but a rule is tried on one element at a time and cannot use one; use an XMLPattern or alternatives of them.";
 HTMLToNotebook::notrule = "Each \"Roles\" or \"Constructs\" entry should be a rule pattern -> value or pattern :> value. Got `1`.";
 HTMLToNotebook::condcombinator = "A condition (/;) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Got `1`.";
 HTMLToNotebook::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
 HTMLToTree::badtree = "The first argument should be an XMLObject, an XMLElement, or a list of XMLElement expressions and strings. Got head `1`.";
 HTMLToTree::badrole = "A \"Roles\" rule gave `1`, which is not \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\" or \"Skip\". The element gets its role from the built-in user-agent stylesheet instead.";
-HTMLToTree::badpat = "The left-hand side of a rule should be an XMLPattern, alternatives of them, or either with a condition pat /; test or a test pat?f, or a CSS selector string that describes one element. Got `1`.";
 HTMLToTree::stages = "`1` is a combinator with fewer than two stages. A combinator needs at least two, but a rule is tried on one element at a time and cannot use one; use an XMLPattern or alternatives of them.";
 HTMLToTree::notrule = "Each \"Roles\" entry should be a rule pattern -> value or pattern :> value. Got `1`.";
 HTMLToTree::condcombinator = "A condition (/;) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Got `1`.";
 HTMLToTree::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
+
+(* The keys of "Roles" and "Constructs" rules (tree-pattern spec, section 6):
+   an element test, or a query whose counted element positions get the value. *)
+Scan[Function[h,
+    MessageName[h, "badpat"] = "The key of a rule should be an element test or a query. An element test is an XMLPattern, an XMLElement pattern, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f; each element is tested as the pattern root, and its names can be used in the value. A query is a rule such as XMLPattern[\"nav\", _, Descendant[x : XMLPattern[\"a\"]]] :> x, or a CSS selector string such as \"nav a\"; the elements it selects get the value. An XMLDocument pattern tests no element: name the elements it finds and give the rule, as in (XMLDocument[Descendant[x : XMLPattern[\"a\"]]] :> x) -> value. Got `1`.";
+    MessageName[h, "keytarget"] = "A query key selects the position `1`, which is not an element. A \"Roles\" or \"Constructs\" query should select elements only."],
+  {HTMLInnerText, HTMLToNotebook, HTMLToTree}];
+(* HTMLToTree's are with its own messages, for its "Focus" and "Hide" queries. *)
+Scan[Function[h,
+    MessageName[h, "exceptname"] = "The name `1` is bound inside Except, which matches only where its pattern does not, so it has no value in the right-hand side. A name inside Except can be used only by tests inside that Except.";
+    MessageName[h, "text"] = "The name `1` binds text inside an XMLElement pattern, and text has no position, so the name cannot be a result. Name the element that holds the text instead, or use the name only in a test."],
+  {HTMLInnerText, HTMLToNotebook}];
 
 (* A list of patterns for an element's children (ADR 0016), refused where it
    cannot stand, with the reason. Set by one Scan, since every head listed

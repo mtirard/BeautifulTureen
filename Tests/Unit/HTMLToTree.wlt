@@ -1227,7 +1227,7 @@ $badRoles = {{3}, {5 -> "Block"}, {Child[XMLPattern["a"]] -> "Block"},
   {(Child["a", "b"] /; True) -> "Block"}, {Child["a", "b"]?f -> "Block"}};
 $badRolesMessages = {
   "Each \"Roles\" entry should be a rule pattern -> value or pattern :> value. Got 3.",
-  "The left-hand side of a rule should be an XMLPattern, alternatives of them, or either with a condition pat /; test or a test pat?f, or a CSS selector string that describes one element. Got 5.",
+  "The key of a rule should be an element test or a query. An element test is an XMLPattern, an XMLElement pattern, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f; each element is tested as the pattern root, and its names can be used in the value. A query is a rule such as XMLPattern[\"nav\", _, Descendant[x : XMLPattern[\"a\"]]] :> x, or a CSS selector string such as \"nav a\"; the elements it selects get the value. An XMLDocument pattern tests no element: name the elements it finds and give the rule, as in (XMLDocument[Descendant[x : XMLPattern[\"a\"]]] :> x) -> value. Got 5.",
   "Child[XMLPattern[\"a\"]] is a combinator with fewer than two stages. A combinator needs at least two, but a rule is tried on one element at a time and cannot use one; use an XMLPattern or alternatives of them.",
   "A condition (/;) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Got Child[\"a\", \"b\"].",
   "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got (Child[\"a\", \"b\"])?f."};

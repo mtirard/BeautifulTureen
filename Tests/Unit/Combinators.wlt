@@ -990,7 +990,8 @@ TestCreate[
 (* A combinator relates at least two stages; with one or none it is refused,
    wherever it is written, with the message on the innermost combinator
    (ADR 0022). A consumer that takes only an element pattern gives its own.
-   Descendant with one argument is a constraint, misplaced as a query. *)
+   Descendant with one argument is a constraint, misplaced as a query or as
+   a "Roles" key (spec section 8). *)
 TestCreate[
   With[{el = XMLElement["p", {}, {"x"}]},
     {XMLCases[$treeChains, Descendant[XMLPattern["p"]]],
@@ -1002,7 +1003,7 @@ TestCreate[
      HTMLToNotebook[el, "Constructs" -> {Child[XMLPattern["p"]] -> "Bold"}]}],
   ConstantArray[$Failed, 7],
   {Descendant::place, Child::stages, Child::stages, Sibling::stages, XMLMatchQ::stages,
-   HTMLInnerText::stages, HTMLToNotebook::stages},
+   Descendant::place, HTMLToNotebook::stages},
   TestID -> "one-stage-combinator-refused"
 ];
 
