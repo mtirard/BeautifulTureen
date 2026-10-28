@@ -10,6 +10,10 @@
 SetAttributes[unrecognised, HoldFirst];
 unrecognised[expr_] := Block[{MaximilienTirard`HTMLPatterns`PackageScope`$recogniseShapes = False}, expr];
 
+(* The translation to combinators, which the chain compiler takes and the
+   tree translation must agree with until the combinators go. *)
+chainOf[css_String] := MaximilienTirard`HTMLPatterns`PackageScope`cssChainTranslation[css];
+
 SetAttributes[sameEitherWay, HoldFirst];
 sameEitherWay[expr_] := With[{on = expr}, on === unrecognised[expr] && !FreeQ[on, _XMLElement | _String] && FreeQ[on, $Failed]];
 
@@ -252,16 +256,17 @@ TestCreate[
   TestID -> "shape-positions-attribute-readings"
 ];
 
-(* The CSS selectors that translate to shapes 2 and 3 mean their translations,
-   with recognition on and off. Some select nothing on any tree, as :root
-   does below a bare element, which is never a result. *)
+(* The CSS selectors whose chain translations are shapes 2 and 3 select, as
+   tree patterns, what those chains select, with recognition on and off. Some
+   select nothing on any tree, as :root does below a bare element, which is
+   never a result. *)
 $positionSelectors = {"li:first-child", "li:last-child", ":only-child", "p:nth-child(3)", "div > :nth-child(-n+3)",
   "li:nth-child(2n+1)", ".a:nth-child(2n)", ":nth-child(3n-1)", ":nth-child(-2n+4) span", "li:nth-last-child(2)",
   ":nth-last-child(2n+1)", ":nth-last-child(-n+2)", ":nth-child(2):nth-last-child(3)", "li:nth-child(0n+0)", ":root"};
 
 TestCreate[
   sameEitherWay[Map[Function[css, With[{r = XMLCases[#, css] & /@ $trees},
-      If[r === (XMLCases[#, FromCSSSelector[css]] & /@ $trees), r, $Failed]]],
+      If[r === (XMLCases[#, chainOf[css]] & /@ $trees), r, $Failed]]],
     $positionSelectors]],
   True,
   TestID -> "shape-positions-css-means-translation"
@@ -443,8 +448,8 @@ TestCreate[
   TestID -> "shape-counted-attribute-readings"
 ];
 
-(* The CSS selectors that translate to shapes 4 and 5 mean their
-   translations, with recognition on and off. *)
+(* The CSS selectors whose chain translations are shapes 4 and 5 select what
+   those chains select, with recognition on and off. *)
 $countedSelectors = {"li:first-of-type", "p:last-of-type", "span:only-of-type", "li:nth-of-type(2)", "p:nth-of-type(2n+1)",
   "div > li:nth-of-type(-n+2)", "li:nth-last-of-type(2)", "span:nth-last-of-type(2n)", ":nth-child(2 of .a)",
   "p:nth-child(2n+1 of .a)", ":nth-last-child(-n+2 of li, .b)", ":nth-child(2 of :has(span))", "p:nth-of-type(2):last-child",
@@ -452,7 +457,7 @@ $countedSelectors = {"li:first-of-type", "p:last-of-type", "span:only-of-type", 
 
 TestCreate[
   sameEitherWay[Map[Function[css, With[{r = XMLCases[#, css] & /@ $smallTrees},
-      If[r === (XMLCases[#, FromCSSSelector[css]] & /@ $smallTrees), r, $Failed]]],
+      If[r === (XMLCases[#, chainOf[css]] & /@ $smallTrees), r, $Failed]]],
     $countedSelectors]],
   True,
   TestID -> "shape-counted-css-means-translation"
@@ -642,15 +647,15 @@ TestCreate[
   TestID -> "shape-ordered-attribute-readings"
 ];
 
-(* The CSS selectors whose translations are ordered entries, positions moved
-   along a + or ~ run (ADR 0017), mean their translations, with recognition on
-   and off. *)
+(* The CSS selectors whose chain translations are ordered entries, positions
+   moved along a + or ~ run (ADR 0017), select what those chains select, with
+   recognition on and off. *)
 $orderedSelectors = {"li:first-child + p", "p + li:last-child", "li:first-child ~ p", "p ~ li:last-child",
   "li + li + li:first-child", "p:nth-child(2) + li"};
 
 TestCreate[
   sameEitherWay[Map[Function[css, With[{r = XMLCases[#, css] & /@ $smallTrees},
-      If[r === (XMLCases[#, FromCSSSelector[css]] & /@ $smallTrees), r, $Failed]]],
+      If[r === (XMLCases[#, chainOf[css]] & /@ $smallTrees), r, $Failed]]],
     $orderedSelectors]],
   True,
   TestID -> "shape-ordered-css-means-translation"
@@ -685,10 +690,12 @@ TestCreate[
    counted positions it cannot write with plain entries. WL's matcher tests
    the Condition once per child that C matches, so these use the full trees. *)
 
-(* The selectors that translate to shape 7 (FromCSSSelector gives a Condition
-   on a list for each, css-split-forms), each with its mirror from the end:
-   typeless -of-type, two positions on one side, a counted position in a +
-   or ~ run, and one on a compound before the last of its run. *)
+(* The selectors whose chain translations are shape 7 (a Condition on a list
+   for each), each with its mirror from the end: typeless -of-type, two
+   positions on one side, a counted position in a + or ~ run, and one on a
+   compound before the last of its run. As tree patterns, most are plain
+   entries now (tree-pattern spec section 7), and each selects what its chain
+   does (css-split-forms). *)
 $splitSelectors = {".a:nth-of-type(2)", ".a:nth-last-of-type(2)", ":nth-of-type(2)", ":nth-last-of-type(2)",
   "*:first-of-type", "*:last-of-type", "*:only-of-type", ":nth-of-type(2n+1)", ":nth-last-of-type(-n+2)",
   ":nth-child(1 of .a):nth-child(2)", ":nth-last-child(1 of .a):nth-last-child(2)",
@@ -699,8 +706,9 @@ $splitSelectors = {".a:nth-of-type(2)", ".a:nth-last-of-type(2)", ":nth-of-type(
   "p + li:nth-child(2 of .a)", "p + li:nth-last-child(2 of .a)", "li:nth-of-type(2) + p + span"};
 
 TestCreate[
-  MatchQ[FromCSSSelector[#], Child[Verbatim[XMLDocument[] | XMLPattern[_]], _Condition]] & /@ $splitSelectors,
-  ConstantArray[True, Length[$splitSelectors]],
+  {AllTrue[$splitSelectors, MatchQ[chainOf[#], Child[Verbatim[XMLDocument[] | XMLPattern[_]], _Condition]] &],
+    Select[$splitSelectors, Function[css, (XMLCases[#, css] & /@ $trees) =!= (XMLCases[#, chainOf[css]] & /@ $trees)]]},
+  {True, {}},
   TestID -> "css-split-forms"
 ];
 

@@ -1,8 +1,16 @@
 (* ::Package:: *)
-(* HTMLPatterns: FromCSSSelector, a CSS selector to the XML pattern it says (ADR 0017) *)
+(* HTMLPatterns: FromCSSSelector, a CSS selector to the XML pattern it says
+   (ADR 0017; tree-pattern spec section 7, draft ADR 0026) *)
+
+(* Used by Query/Compiler.wl, until the combinators go *)
+PackageScoped[cssChainTranslation]
+
+(* Used by Query/TreePatterns.wl *)
+PackageScoped[cssTree]
+PackageScoped[cssNamedTree]
 
 (* =========================================================== *)
-(* FromCSSSelector (ADR 0017)                                   *)
+(* FromCSSSelector (ADR 0017, draft ADR 0026)                   *)
 (*                                                              *)
 (* A CSS selector, tokenised by CSS Syntax 3 and read as static *)
 (* Selectors Level 4, to the XML pattern it says. The string is *)
@@ -16,24 +24,53 @@
 (* is ::unsupported or ::impossible, naming the workaround.     *)
 (* The output holds only public symbols and the names made by   *)
 (* cssFreshName, so it can be spliced into a larger pattern.    *)
+(*                                                              *)
+(* The parsed tree has two translations. FromCSSSelector gives  *)
+(* the tree one (spec section 7): a one-element selector is its *)
+(* pattern, and a context selector is the tree pattern rooted   *)
+(* at its first compound, with its subject named by the caller. *)
+(* The one to combinators is kept for the chain compiler only,  *)
+(* and goes with the combinators.                               *)
 (* =========================================================== *)
 
 PackageExported[FromCSSSelector]
-FromCSSSelector::usage = "FromCSSSelector[\"selector\"] gives the XML pattern that a CSS selector describes, for use in XMLCases, XMLFirstCase, XMLDeleteCases and XMLMatchQ, or as a stage of Child, Descendant, Adjacent or Sibling. A CSS selector string can also be given directly wherever these take a pattern, and means its translation. The selector is matched as written: letter case matters in tag names, attribute names and values, and attributes that the HTML importer adds, such as rowspan=\"1\", count as present. [foo~=\"x\"] becomes \"fooList\" -> \"x\", which needs a reading for foo in $AttributeReadings or in the \"AttributeReadings\" option of the function that runs the query.";
+FromCSSSelector::usage = "FromCSSSelector[\"selector\"] gives the XML pattern that a CSS selector describes, when the selector looks only at the element it selects and below it, as \"a.note\" and \"div:has(> table)\" do. FromCSSSelector[n : \"selector\"] gives the pattern with the selected element named n, for any selector; one that picks its element by what is above or beside it, such as \"nav a\" or \"li:first-child\", gives a tree pattern rooted at its first compound, as XMLPattern[\"nav\", _, Descendant[n : XMLPattern[\"a\"]]] for \"nav a\". A CSS selector string can also be given directly wherever a pattern goes, and means its translation: given as the whole query, it selects the elements the selector selects, and on the left of a rule, n : \"selector\" names them. The selector is matched as written: letter case matters in tag names, attribute names and values, and attributes that the HTML importer adds, such as rowspan=\"1\", count as present. [foo~=\"x\"] becomes \"fooList\" -> \"x\", which needs a reading for foo in $AttributeReadings or in the \"AttributeReadings\" option of the function that runs the query.";
 FromCSSSelector::invalid = "`1` is not a valid CSS selector: `2`.";
 FromCSSSelector::unsupported = "`1` is valid CSS, but `2` cannot be translated to an XML pattern. `3`";
 FromCSSSelector::impossible = "`2` in `1` depends on a browser, such as user input, layout or the page's URL, and cannot be matched in a static document. `3`";
 
-FromCSSSelector[s_String] := cssTranslate[s];
+FromCSSSelector::name = "`1` picks its element by what is above or beside it, so its pattern is rooted higher up and the element it selects needs a name. Use FromCSSSelector[n : `1`], which names it n.";
+
+FromCSSSelector[s_String] :=
+  Replace[cssTree[s], {{"one", p_} :> p, {"context", _} :> (Message[FromCSSSelector::name, s]; $Failed)}];
+FromCSSSelector[Verbatim[Pattern][n_Symbol, s_String]] := cssNamedTree[s, n];
 FromCSSSelector[x_] := (Message[FromCSSSelector::string, 1, HoldForm[FromCSSSelector[x]]]; $Failed);
 FromCSSSelector[args___] := (argumentCountMessage[FromCSSSelector, Length[{args}], {1, 1}]; $Failed);
 
+(* {"one", pattern} for a one-element selector, {"context", pattern} for a
+   context selector, whose subject is named cssSubject, or $Failed after the
+   message. *)
+cssTree[s_String] := Block[{$cssTree = True}, cssTranslate[s, cssTreeList]];
+
+(* The translation with its subject named n, which is held, so that a value
+   of n cannot leak in. *)
+SetAttributes[cssNamedTree, HoldRest];
+cssNamedTree[s_String, n_Symbol] :=
+  Replace[cssTree[s], {{"one", p_} :> Pattern @@ Hold[n, p], {"context", p_} :> (p /. cssSubject :> n)}];
+
+(* The combinators the chain compiler takes. *)
+cssChainTranslation[s_String] := Block[{$cssTree = False}, cssTranslate[s, cssListPattern]];
+
+(* Whether the tree translation is being made: the two share the compounds,
+   which differ only in how a compound's tests are written. *)
+$cssTree = False;
+
 (* An invalid selector is caught before any translation, as the whole string
    is parsed first. *)
-cssTranslate[s_] :=
+cssTranslate[s_, translate_] :=
   Block[{$cssInput = cssPreprocess[s], $cssArgOf = None, $cssInHas = False},
     Catch[
-      Catch[cssListPattern[cssParse[cssTokens[$cssInput]]], $cssRefused,
+      Catch[translate[cssParse[cssTokens[$cssInput]]], $cssRefused,
         Function[{why, tag}, cssRefusal[s, why]]],
       $cssInvalid,
       Function[{why, tag}, Message[FromCSSSelector::invalid, s, why]; $Failed]]];
@@ -452,18 +489,24 @@ $cssComplexIsHow = "Its arguments can hold a combinator only when its compound i
    the alternatives at that compound. Any other is the alternatives of its
    selectors' chains, in written order (ADR 0015). *)
 cssListPattern[cs_] :=
-  Replace[DeleteDuplicatesBy[Join @@ (cssSpreadIs /@ cs), cssShape], {
+  Replace[cssDistinctSelectors[cs], {
     {c_} :> cssChainPattern[c],
-    u_ :> Replace[cssSharedChain[u], None :> cssAlternatives[cssChainPattern /@ u]]}];
+    u_ :> cssAlternatives[cssChainPattern /@ u]}];
 
-cssSharedChain[u_] :=
+(* The selectors of a list, each once, as one shared selector where they
+   share one. *)
+cssDistinctSelectors[cs_] :=
+  Replace[DeleteDuplicatesBy[Join @@ (cssSpreadIs /@ cs), cssShape],
+    u : {_, __} :> Replace[cssSharedSelector[u], {None -> u, c_ :> {c}}]];
+
+cssSharedSelector[u_] :=
   With[{comps = First /@ u},
     If[!(SameQ @@ (Last /@ u)), None,
       With[{diff = Select[Range[Length[First[comps]]], !(SameQ @@ cssShape /@ comps[[All, #]]) &]},
         If[Length[diff] > 1 || AnyTrue[comps[[All, First[diff]]], cssPositionedQ], None,
-          cssChainPattern[cx[
+          cx[
             ReplacePart[First[comps], First[diff] -> cpAlt[DeleteDuplicatesBy[comps[[All, First[diff]]], cssShape]]],
-            Last[First[u]]]]]]]];
+            Last[First[u]]]]]]];
 
 cssPositionedQ[cp[nodes_, _]] :=
   MemberQ[nodes, _sNth] || AnyTrue[Cases[nodes, sPseudo[c_, _] :> c], KeyExistsQ[$cssPositions, #] || MatchQ[#, $cssRootPseudoClasses] &];
@@ -636,10 +679,11 @@ cssGeneralList[parts_, within_] :=
         {parts, names, places}]]]];
 
 (* Whether the element named n is at its position, the siblings on that side
-   being the names in side. Held, with no private symbol. *)
+   being the names in side. Held, with no private symbol. A fixed index k is
+   k - 1 siblings before it. *)
 cssPositionTest[cssPos[_, a_, b_, of_, _], n_, side_] :=
   Replace[cssIndexHeld[of, n, side], Hold[i_] :> Which[
-    a == 0, Hold[i == b],
+    a == 0, With[{k = b - 1}, Replace[Hold[i], Hold[c_ + 1] :> Hold[c == k]]],
     a > 0, Hold[i >= b && Mod[i - b, a] == 0],
     True, Hold[i <= b && Mod[b - i, -a] == 0]]];
 
@@ -657,6 +701,186 @@ cssChain[ss_, links_] :=
     If[k == Length[links], First[links] @@ ss,
       First[links] @@ Append[Take[ss, k], cssChain[Drop[ss, k], Drop[links, k]]]]];
 
+(* ---- Translation to tree patterns (spec section 7) ---- *)
+
+(* A list of one-element selectors is the alternatives of their patterns,
+   with the tags merged where the rest is the same; any other list is one
+   pattern over the alternatives of the selectors' translations, each with its
+   subject named cssSubject, so that they share it and give each subject once
+   (spec section 5, one slot). *)
+cssTreeList[cs_] :=
+  With[{ts = cssTreeSelector /@ cssDistinctSelectors[cs]},
+    If[MatchQ[ts, {{"one", _} ..}], {"one", cssMergedAlternatives[ts[[All, 2]]]},
+      {"context", cssAlternatives[Replace[ts, {{"one", p_} :> Pattern[cssSubject, p], {_, p_} :> p}, {1}]]}]];
+
+(* One compound with no position is a one-element selector. A context
+   selector is rooted at its first compound, or at the parent of the first run
+   of compounds joined by + or ~ when that run is longer or has a position. *)
+cssTreeSelector[c_cx] :=
+  With[{runs = cssRuns[c]},
+    If[MatchQ[runs, {{_, {{_, _, {}}}, _}}], {"one", runs[[1, 2, 1, 1]]},
+      {"context", cssRunRoot[cssLinked[runs, cssSubject]]}]];
+
+(* The runs of compounds joined by + or ~, each {the link before it, its
+   compounds, the links within it}; a compound is cssCompoundT's {pattern,
+   name, positions}. *)
+cssRuns[cx[comps_, links_]] := (
+  If[MemberQ[links, cssColumn], cssRefuse["unsupported", "the column combinator ||", "Columns are not supported."]];
+  {#[[1, 2]], #[[All, 1]], Rest[#[[All, 2]]]} & /@
+    Split[Transpose[{cssCompoundT /@ comps, Prepend[links, None]}], MatchQ[Last[#2], Adjacent | Sibling] &]);
+
+(* The first run, the last compound of each run constrained by what the
+   runs after it say, and the last compound of all named subject. *)
+cssLinked[{run_}, None] := run;
+cssLinked[{run_}, subject_] := MapAt[{Pattern @@ {subject, First[#]}, subject, Last[#]} &, run, {2, -1}];
+cssLinked[{run_, rest__}, subject_] := MapAt[cssConstrained[#, cssBelow[cssLinked[{rest}, subject]]] &, run, {2, -1, 1}];
+
+(* The constraint a run puts on the element its first compound is below: one
+   compound alone is an entry or a Descendant; a longer run, or one with a
+   position, is a list over its parent's children, which after a descendant
+   combinator are the element's or those of any element below it. *)
+cssBelow[{lead_, parts_, within_}] := (
+  cssNoRoot[parts];
+  If[MatchQ[parts, {{_, _, {}}}],
+    With[{p = parts[[1, 1]]}, If[lead === Child, {___, p, ___}, Descendant[p]]],
+    With[{l = cssTreeRun[parts, within]}, If[lead === Child, l, l | Descendant[XMLPattern[_, _, l]]]]]);
+
+(* The pattern root, from the first run: its one compound; for :root and
+   :scope, that compound as the only top element (ADR 0018), its positions
+   among its siblings each 1 or never true; otherwise the list of the run
+   over the children of any element or of the document. *)
+cssRunRoot[{_, parts_, within_}] :=
+  Which[
+    !FreeQ[parts[[All, 3]], _cssRoot],
+      If[Length[parts] == 1,
+        XMLDocument[Append[If[AllTrue[parts[[1, 3]], cssFirstQ], {}, {Except[_]}], parts[[1, 1]]]],
+        cssNoRoot[parts]],
+    MatchQ[parts, {{_, _, {}}}], parts[[1, 1]],
+    True, With[{l = cssTreeRun[parts, within]}, XMLPattern[_, _, l] | XMLDocument[l]]];
+
+cssNoRoot[parts_] :=
+  Replace[FirstCase[parts[[All, 3]], _cssRoot, None, {2}], cssRoot[text_] :> cssRefuse["unsupported", text, $cssRootHow]];
+
+(* A run as a contents list (spec section 7, counted positions). The
+   positions of each compound are moved to the end of the run they count
+   from, where that can be done exactly: across + to compounds that all
+   count as one among all the siblings, or that cannot be of the type
+   counted. With at most one position at each end, the list is plain entries.
+   A run of one compound with two positions at one end, one of them a fixed
+   index k, is a named prefix of k - 1 siblings and a count on it. Any other
+   is the general form, a Condition over named runs, whose cost grows as the
+   square of the number of siblings. *)
+cssTreeRun[parts_, within_] :=
+  With[{fwd = cssMovedAll[parts, within, False], bwd = cssMovedAll[parts, within, True]},
+    Which[
+      FreeQ[{fwd, bwd}, cssUnmoved] && Length[fwd] <= 1 && Length[bwd] <= 1, cssPlainRun[parts, within, fwd, bwd],
+      Length[parts] == 1 && cssFixedSideQ[fwd] && cssFixedSideQ[bwd], cssFixedRun[First[parts], fwd, bwd],
+      True, cssGeneralList[parts, within]]];
+
+(* The positions counted from one end, moved there, each once, with
+   cssUnmoved for one that cannot be moved. *)
+cssMovedAll[parts_, within_, fromEnd_] :=
+  With[{k = Length[parts]},
+    DeleteDuplicatesBy[
+      Join @@ MapIndexed[
+        With[{j = First[#2], ps = Select[Last[#1], If[fromEnd, First, !First[#] &]]},
+          If[fromEnd, cssMoved[ps, k - j, Drop[parts, j], Drop[within, j - 1]],
+            cssMoved[ps, j - 1, Take[parts, j - 1], Take[within, j - 1]]]] &,
+        parts],
+      If[AtomQ[#], #, Most[#]] &]];
+
+cssMoved[ps_, 0, _, _] := ps;
+cssMoved[{}, _, _, _] := {};
+cssMoved[ps_, s_, crossed_, links_] /; MatchQ[links, {Adjacent ..}] := cssMovedOne[#, s, crossed] & /@ ps;
+cssMoved[_, _, _, _] := {cssUnmoved};
+
+cssMovedOne[cssPos[e_, a_, b_, None, t_], s_, _] := cssPos[e, a, b - s, None, t];
+cssMovedOne[p : cssPos[_, _, _, XMLPattern[type_String], _], _, crossed_] /;
+    AllTrue[crossed, With[{tags = cssTagsOf[First[#]]}, ListQ[tags] && !MemberQ[tags, type]] &] := p;
+cssMovedOne[__] := cssUnmoved;
+
+(* The tags a compound's pattern can have, or All. *)
+cssTagsOf[XMLPattern[t_String, ___]] := {t};
+cssTagsOf[XMLPattern[t : Verbatim[Alternatives][__String], ___]] := List @@ t;
+cssTagsOf[(Verbatim[PatternTest][p_, _]) | (Verbatim[Pattern][_, p_])] := cssTagsOf[p];
+cssTagsOf[alts_Alternatives] := With[{ts = cssTagsOf /@ List @@ alts}, If[AllTrue[ts, ListQ], Union @@ ts, All]];
+cssTagsOf[_] := All;
+
+(* Plain entries. -of-type on a compound with no type counts the siblings of
+   its own tag through a fresh tag name, bound on the compound and shared into
+   Except, which refers to that binding (spec section 3). *)
+cssPlainRun[parts_, within_, fwd_, bwd_] :=
+  Module[{ps = parts[[All, 1]], tf = None, tb = None, ownQ = MemberQ[#, cssPos[_, _, _, cssOwnType, _]] &},
+    If[ownQ[fwd], tf = cssFreshName["t"]; ps[[1]] = cssTagged[ps[[1]], tf]];
+    If[ownQ[bwd],
+      If[Length[ps] == 1 && tf =!= None, tb = tf, tb = cssFreshName["t"]; ps[[-1]] = cssTagged[ps[[-1]], tb]]];
+    spliced[Join[
+      cssOwnTyped[cssPositionEntries[fwd, False], tf],
+      cssRunEntries[ps, within],
+      cssOwnTyped[cssPositionEntries[bwd, True], tb]]]];
+
+cssOwnTyped[es_, None] := es;
+cssOwnTyped[es_, t_] := es /. cssOwnType -> XMLPattern[Pattern @@ {t, Blank[]}];
+
+cssTagged[XMLPattern[tag_, r___], t_] := XMLPattern[Pattern @@ {t, tag}, r];
+cssTagged[Verbatim[PatternTest][p_, f_], t_] := PatternTest[cssTagged[p, t], f];
+cssTagged[Verbatim[Pattern][s_, p_], t_] := Pattern @@ {s, cssTagged[p, t]};
+cssTagged[alts_Alternatives, t_] := cssTagged[#, t] & /@ alts;
+
+(* An end with at most one position, written as entries, or with a fixed
+   index among all the siblings. *)
+cssFixedSideQ[ps_] :=
+  FreeQ[ps, cssUnmoved] && (Length[ps] <= 1 && FreeQ[ps, cssOwnType] || MemberQ[ps, cssPos[_, 0, _, None, _]]);
+
+cssFixedRun[{p_, name_, _}, fwd_, bwd_] :=
+  Module[{n = If[name === None && !FreeQ[{fwd, bwd}, cssOwnType], cssFreshName["c"], name], f, b},
+    f = cssFixedSide[fwd, False, n];
+    b = cssFixedSide[bwd, True, n];
+    With[{l = spliced[Join[First[f], {If[n === name, p, Pattern @@ {n, p}]}, First[b]]], tests = Join[Last[f], Last[b]]},
+      If[tests === {}, l, conditionWith[l, cssAnd[tests]]]]];
+
+(* {entries, tests} for one end. Index 1 settles the other positions at once,
+   as no sibling is before it; index 0 or less never holds. *)
+cssFixedSide[ps_, fromEnd_, n_] /; Length[ps] <= 1 := {cssPositionEntries[ps, fromEnd], {}};
+cssFixedSide[ps_, fromEnd_, n_] :=
+  With[{fixed = FirstCase[ps, cssPos[_, 0, _, None, _]]},
+    With[{k = fixed[[3]], others = DeleteCases[ps, fixed]},
+      Which[
+        k < 1 || k == 1 && !AllTrue[others, cssFirstQ], {cssPositionEntries[{cssPos[fromEnd, 0, 0, None, ""]}, fromEnd], {}},
+        k == 1, {cssPositionEntries[{fixed}, fromEnd], {}},
+        True, With[{g = cssFreshName["g"]},
+          {{Pattern @@ {g, Repeated[_, {k - 1}]}},
+            cssPositionTest[#, n, {g}] & /@ others}]]]];
+
+(* Alternatives of patterns, those that differ only in a tag given as
+   strings merged into one, as XMLPattern["h1" | "h2"]. *)
+cssMergedAlternatives[ps_] := cssAlternatives[Values[GroupBy[ps, cssMergeKey, cssMergeTags]]];
+
+cssMergeKey[XMLPattern[t_, r___]] /; StringQ[t] || MatchQ[t, Verbatim[Alternatives][__String]] := {Hold[r]};
+cssMergeKey[p_] := {p, None};
+
+cssMergeTags[{p_}] := p;
+cssMergeTags[ps_] := XMLPattern[Alternatives @@ DeleteDuplicates[Join @@ (cssTagsOf /@ ps)], Sequence @@ Rest[First[ps]]];
+
+(* A constraint added to the XMLPatterns of a compound's pattern. *)
+cssConstrained[XMLPattern[tag_], c_] := XMLPattern[tag, _, c];
+cssConstrained[XMLPattern[tag_, a_, cs___], c_] := XMLPattern[tag, a, cs, c];
+cssConstrained[Verbatim[PatternTest][p_, f_], c_] := PatternTest[cssConstrained[p, c], f];
+cssConstrained[Verbatim[Pattern][s_, p_], c_] := Pattern @@ {s, cssConstrained[p, c]};
+cssConstrained[alts_Alternatives, c_] := cssConstrained[#, c] & /@ alts;
+
+(* :has() of a relative selector that starts below the element: the
+   constraint its runs put on the element. *)
+cssHasConstraint[rel[Adjacent | Sibling | cssColumn, _], text_] :=
+  cssRefuse["unsupported", text, "A relative selector in :has() can only start with a descendant combinator or >."];
+cssHasConstraint[rel[link_, c_cx], _] := cssBelow[cssLinked[ReplacePart[cssRuns[c], {1, 1} -> link], None]];
+
+(* A compound's tests, which see its element, as a PatternTest, and the
+   constraints of its :has() on its XMLPatterns. *)
+cssTested[p_, ts_] :=
+  With[{q = Fold[cssConstrained, p, Cases[ts, hasC[c_] :> c]], hs = DeleteCases[ts, _hasC]},
+    If[hs === {}, q, cssPatternTest[q, Function @@ (cssAnd[hs] /. cssSelf -> Slot[1])]]];
+
 (* ---- Translation: compounds ---- *)
 
 (* A compound is a list of branches, br[tag, attributes, tests], its
@@ -667,9 +891,9 @@ cssChain[ss_, links_] :=
    cssRoot[text] for :root or :scope}. *)
 cssCompoundT[cpAnchor] := {XMLPattern[$cssAnchor], None, {}};
 (* The compounds that differ between the selectors of a list have no position
-   (cssSharedChain checks their own nodes; a position inside :is() or :not()
-   is refused when its branches are made). *)
-cssCompoundT[cpAlt[cps_]] := {cssAlternatives[First @* cssCompoundT /@ cps], None, {}};
+   (cssSharedSelector checks their own nodes; a position inside :is() or
+   :not() is refused when its branches are made). *)
+cssCompoundT[cpAlt[cps_]] := {If[$cssTree, cssMergedAlternatives, cssAlternatives][First @* cssCompoundT /@ cps], None, {}};
 cssCompoundT[c : cp[nodes_, _]] :=
   With[{type = FirstCase[nodes, sType[n_] :> n, _]},
     Replace[cssBranches[c], {bs_, counts_} :>
@@ -719,6 +943,10 @@ cssApply[bs_, sNth[cssPos[e_, a_, b_, "of", text_], args_]] := (
   Flatten[Outer[cssMerge, bs, Join @@ (cssArgBranches[#, text] & /@ args)], 1]);
 cssApply[bs_, sNot[args_, text_]] := cssNot[bs, args, text];
 cssApply[bs_, sIs[args_, text_]] := Flatten[Outer[cssMerge, bs, Join @@ (cssArgBranches[#, text] & /@ args)], 1];
+(* In a tree pattern, :has() is a constraint, alternatives of one for each
+   relative selector. *)
+cssApply[bs_, sHas[rels_, text_]] /; $cssTree :=
+  cssWith[bs, br[tg[All, {}], <||>, {hasC[cssAlternatives[cssHasConstraint[#, text] & /@ rels]]}]];
 cssApply[bs_, sHas[rels_, text_]] := cssWith[bs, cssTest[cssOr[cssHasTest[#, text] & /@ rels]]];
 cssApply[_, sRefuse[kind_, part_, how_]] := cssRefuse[kind, part, how];
 cssApply[_, sPseudoElement[text_, _, name_]] := cssRefuse["impossible", text, cssPseudoElementHow[name]];
@@ -786,8 +1014,17 @@ cssAlternatives[{p_}] := p;
 cssAlternatives[ps_] := Alternatives @@ ps;
 
 (* The pattern of a compound, from its branches: a branch whose tag can never
-   match is dropped, and with none left the compound is XMLPattern[tag] /;
-   False. The tests of a compound are on one name. *)
+   match is dropped, and with none left the compound never matches. In a tree
+   pattern, the tests are a PatternTest, so that the translation invents no
+   name (spec section 7). *)
+cssFinish[bs_, type_] /; $cssTree :=
+  With[{live = Select[bs, cssTagPattern[First[#]] =!= cssNever &]},
+    {Which[
+      live === {}, cssTested[XMLPattern[type], {Hold[False]}],
+      SameQ @@ (Last /@ live), cssTested[cssMergedAlternatives[cssElement /@ live], Last[First[live]]],
+      True, Alternatives @@ (cssTested[cssElement[#], Last[#]] & /@ live)],
+     None}];
+(* For the chains, the tests of a compound are a Condition on one name. *)
 cssFinish[bs_, type_] :=
   Module[{live = Select[bs, cssTagPattern[First[#]] =!= cssNever &], name},
     name = If[AnyTrue[live, Last[#] =!= {} &], cssFreshName["e"], None];

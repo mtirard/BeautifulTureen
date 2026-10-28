@@ -57,14 +57,12 @@ PackageScoped[treeSolutions]
 (* ---- Which engine a query goes to ---- *)
 
 (* A query with a combinator or a list stage anywhere a stage can be keeps
-   the chain runners. A CSS string counts as its translation, which holds
-   XMLDocument[] only as a combinator's first stage. *)
+   the chain runners. A CSS string is a tree pattern (spec section 7). *)
 treeQueryQ[q_] := !chainStageQ[queryLHS[q]];
 
 queryLHS[(Rule | RuleDelayed)[l_, _]] := l;
 queryLHS[q_] := q;
 
-chainStageQ[s_String] := With[{t = Quiet[FromCSSSelector[s]]}, t =!= $Failed && (!FreeQ[t, XMLDocument] || chainStageQ[t])];
 chainStageQ[(Child | Adjacent | Sibling)[___]] := True;
 (* Descendant[p, levelspec] is a constraint, which is refused as a query by
    this engine; Descendant of patterns is the combinator. *)
@@ -102,8 +100,9 @@ treeResults[head_, tree_, q_, n_] :=
     Block[{$head = head, $nodeId = 0, $memo = <||>, $order, $seen = <||>, $slotOf = <||>, $readings,
         $elem, $parent, $depth, $kids, $index, $end, $wlPos, $tops, $posMemo = <||>, $keyMemo = <||>,
         $matElems = <||>, $keyLength, $local = False, $place = "query", $owner = XMLPattern, $namedPaths = False, $exceptRefs,
-        $records},
+        $records, $contextOK = True},
       Module[{lhs, rhs, all, counted, testNames, need, root},
+        If[namedContextQ[q], refuseHere["badpat", q]];
         {lhs, rhs} = splitQuery[q];
         $readings = Replace[readingsInForce[], $Failed :> Throw[$Failed, $refusal]];
         all = namesIn[lhs];
@@ -154,6 +153,22 @@ splitQuery[r_RuleDelayed] := {Extract[r, {1}, Hold], Extract[r, {2}, Hold]};
 splitQuery[r : Verbatim[Rule][_, _]] :=
   {Extract[r, {1}, Hold], Replace[Extract[r, {2}, Hold], Hold[c_Condition] :> Hold[Identity[c]]]};
 splitQuery[p_] := Module[{r}, {Hold @@ {Pattern @@ {r, p}}, Hold[r]}];
+
+(* A named context selector as the whole query: erased, it would give the
+   elements it is rooted at, not its subjects (spec section 7). *)
+namedContextQ[Verbatim[Pattern][_, p_]] := AnyTrue[rootStrings[p], cssContextQ];
+namedContextQ[(Verbatim[Condition] | Verbatim[PatternTest])[p_, _]] := namedContextQ[p];
+namedContextQ[alts_Alternatives] := AnyTrue[List @@ alts, namedContextQ];
+namedContextQ[_] := False;
+
+(* The strings at the root of a pattern, under its names, Conditions, tests
+   and Alternatives. *)
+rootStrings[s_String] := {s};
+rootStrings[(Verbatim[Pattern][_, p_]) | (Verbatim[Condition] | Verbatim[PatternTest])[p_, _]] := rootStrings[p];
+rootStrings[alts_Alternatives] := Join @@ (rootStrings /@ List @@ alts);
+rootStrings[_] := {};
+
+cssContextQ[s_] := MatchQ[Quiet[cssTree[s]], {"context", _}];
 
 (* namesIn (Query/Chains.wl) gives the names a held pattern binds, each
    Hold[name]. *)
@@ -401,14 +416,35 @@ cRoot[x_XMLElement, need_] :=
 
 refuseDocumentIn[x_] := If[!FreeQ[x, _XMLDocument], refuse[XMLDocument::place, FirstCase[x, _XMLDocument, Null, {0, Infinity}]]];
 
-(* A string is a one-element CSS selector, and means its translation. *)
+(* A string is a CSS selector, and means its translation (spec section 7). A
+   one-element selector is its pattern wherever a pattern goes. A context
+   selector is a pattern only with its subject named, so it is taken only
+   named, as the pattern root of a query that searches: the erasure of a bare
+   query names it there, and on the left of a rule the user names it. *)
 cRoot[s_String, need_] :=
-  With[{t = Replace[FromCSSSelector[s], $Failed :> Throw[$Failed, $refusal]]},
-    If[chainStageQ[t] || !FreeQ[t, XMLDocument], refuseHere["badpat", s],
-      (* the translation's own names are needed only by its own Conditions,
-         repeats and Excepts *)
-      Block[{$exceptRefs = Union[$exceptRefs, exceptRefs[Hold[t]]]}, $records = $records || $exceptRefs =!= {};
-        cRoot[t, Union[need, conditionNames[Hold[t], namesIn[Hold[t]]], bindingNames[Hold[t]]]]]]];
+  Replace[cssTree[s], {
+    $Failed :> Throw[$Failed, $refusal],
+    {"context", _} :> refuseHere["badpat", s],
+    {"one", t_} :> translationRoot[t, need]}];
+
+cRoot[Verbatim[Pattern][n_Symbol, s_String], need_] /; $place === "query" && $contextOK :=
+  translationRoot[Replace[cssNamedTree[s, n], $Failed :> Throw[$Failed, $refusal]], need];
+
+(* A name on alternatives is the name on each, so that each context selector
+   among them is named. *)
+cRoot[Verbatim[Pattern][n_Symbol, alts_Alternatives], need_] /;
+    $place === "query" && $contextOK && AnyTrue[List @@ alts, StringQ[#] && cssContextQ[#] &] :=
+  cRoot[Pattern @@ Hold[n, #] & /@ alts, need];
+
+(* The translation's own names are needed only by its own Conditions,
+   repeats and Excepts. *)
+translationRoot[t_, need_] :=
+  Block[{$exceptRefs = Union[$exceptRefs, exceptRefs[Hold[t]]]}, $records = $records || $exceptRefs =!= {};
+    cRoot[t, Union[need, conditionNames[Hold[t], namesIn[Hold[t]]], bindingNames[Hold[t]]]]];
+
+(* Whether a context selector can be the pattern root: in a query that
+   searches, not in an element test. *)
+$contextOK = False;
 
 (* A blank is any one element child in a contents list; as the whole query,
    or as Descendant's pattern, it is refused, as it reads as matching text. *)
@@ -1410,7 +1446,9 @@ combinatorRootQ[alts_Alternatives] := AnyTrue[List @@ alts, combinatorRootQ];
 combinatorRootQ[_] := False;
 
 flatRootQ[x : XMLPattern[_] | XMLPattern[_, _]] := FreeQ[x, _Descendant | _XMLDocument];
-flatRootQ[s_String] := With[{t = Quiet[FromCSSSelector[s]]}, t === $Failed || !chainStageQ[t] && flatRootQ[t]];
+(* A selector that is not translated gets its message from the chain
+   compiler; a context selector is refused by this engine. *)
+flatRootQ[s_String] := Replace[Quiet[cssTree[s]], {$Failed -> True, {"one", t_} :> flatRootQ[t], _ -> False}];
 flatRootQ[Verbatim[Pattern][_, p_] | Verbatim[Condition][p_, _] | Verbatim[PatternTest][p_, _]] := flatRootQ[p];
 flatRootQ[alts_Alternatives] := AllTrue[List @@ alts, flatRootQ];
 flatRootQ[_] := False;

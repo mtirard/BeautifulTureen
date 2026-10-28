@@ -90,7 +90,7 @@ $shiftCases = Join @@ Function[n, {
     {".b + .a:nth-child(" <> anb[n] <> "):nth-last-child(odd)", oldBoth[n]}}] /@ $anbs;
 
 TestCreate[
-  {AllTrue[$shiftCases, FreeQ[FromCSSSelector[First[#]], Condition] &],
+  {AllTrue[$shiftCases, FreeQ[FromCSSSelector[x : First[#]], Condition] &],
    Select[$shiftCases, ids @ XMLCases[$runs, First[#]] =!= ids @ XMLCases[$runs, Last[#]] &][[All, 1]],
    Total[Length[ids @ XMLCases[$runs, Last[#]]] & /@ $shiftCases] > 200},
   {True, {}, True},

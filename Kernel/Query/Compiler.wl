@@ -874,8 +874,9 @@ prefixed[es_, marks_] :=
 
 (* A Condition's test sees the names bound in its left-hand side, compiled by
    comp; attach puts the held test on the compiled left-hand side. *)
-(* A selector that is not translated has given FromCSSSelector's message. *)
-cssPattern[s_] := Replace[FromCSSSelector[s], $Failed :> refuseQuietly[]];
+(* A selector as combinators, the translation this compiler takes. One that
+   is not translated has given FromCSSSelector's message. *)
+cssPattern[s_] := Replace[cssChainTranslation[s], $Failed :> refuseQuietly[]];
 
 conditioned[comp_, c_, attach_] :=
   Module[{lhs, binds},
