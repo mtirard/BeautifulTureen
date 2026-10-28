@@ -174,34 +174,46 @@ TestCreate[
    root is where most contents-list and path queries match. *)
 $roundTripTrees = Join[#, doc /@ #] & @ randomTrees[10, 2];
 
+(* Bare patterns, and rules whose right-hand side is one counted name or
+   path. *)
+$roundTripPatterns = {XMLPattern["p"], "li.b", XMLPattern["div", "classList" -> {___, "a", ___}],
+  XMLPattern["div", _, {___, XMLPattern["p"], ___}], XMLPattern["p", _, {}],
+  XMLPattern["div", _, Descendant[XMLPattern["span", "classList" -> "c"]]],
+  XMLPattern["li"] | XMLPattern["span", _, {_, ___}], XMLDocument[{___, XMLPattern["div"], ___}]};
+
+$roundTripRules = {XMLPattern["div", _, p : Descendant[XMLPattern["span"]]] :> p,
+  XMLDocument[p : Descendant[XMLPattern["li", "classList" -> "a"]]] :> p,
+  XMLPattern["div", _, {___, x : XMLPattern["p"], ___}] :> x,
+  n : XMLPattern["div", _, Shortest @ Descendant[XMLPattern["li"]]] :> n,
+  XMLPattern["li", "class" -> c_] :> c,
+  XMLPattern["div", "classList" -> {___, c_, ___}] :> c,
+  XMLPattern[t_, _, {}] :> t,
+  XMLPattern["span", a_] :> a,
+  XMLPattern["div", "id" -> i_, Descendant[XMLPattern["p"], {2}]] :> i};
+
 (* A bare pattern's positions extract to its matches. No positions, {}, is
    the document's position, as Extract[expr, {}] is expr, so it is compared
    as such. *)
 TestCreate[
   Table[With[{ps = XMLPosition[t, p]}, If[ps === {}, {}, XMLExtract[t, ps]] === XMLCases[t, p]],
-    {t, $roundTripTrees},
-    {p, {XMLPattern["p"], "li.b", XMLPattern["div", "classList" -> {___, "a", ___}],
-      XMLPattern["div", _, {___, XMLPattern["p"], ___}], XMLPattern["p", _, {}],
-      XMLPattern["div", _, Descendant[XMLPattern["span", "classList" -> "c"]]],
-      XMLPattern["li"] | XMLPattern["span", _, {_, ___}], XMLDocument[{___, XMLPattern["div"], ___}]}}],
+    {t, $roundTripTrees}, {p, $roundTripPatterns}],
   ConstantArray[True, {4, 8}],
   TestID -> "extract-round-trip-bare"
 ];
 
-(* A rule whose right-hand side is one counted name or path: each of its
-   positions extracts to its result. *)
+(* A rule's positions each extract to its result. *)
 TestCreate[
   Table[(XMLExtract[t, #] &) /@ XMLPosition[t, q] === XMLCases[t, q],
-    {t, $roundTripTrees},
-    {q, {XMLPattern["div", _, p : Descendant[XMLPattern["span"]]] :> p,
-      XMLDocument[p : Descendant[XMLPattern["li", "classList" -> "a"]]] :> p,
-      XMLPattern["div", _, {___, x : XMLPattern["p"], ___}] :> x,
-      n : XMLPattern["div", _, Shortest @ Descendant[XMLPattern["li"]]] :> n,
-      XMLPattern["li", "class" -> c_] :> c,
-      XMLPattern["div", "classList" -> {___, c_, ___}] :> c,
-      XMLPattern[t_, _, {}] :> t,
-      XMLPattern["span", a_] :> a,
-      XMLPattern["div", "id" -> i_, Descendant[XMLPattern["p"], {2}]] :> i}}],
+    {t, $roundTripTrees}, {q, $roundTripRules}],
   ConstantArray[True, {4, 9}],
   TestID -> "extract-round-trip-rules"
+];
+
+(* XMLFirstCase gives the first result XMLCases gives, whenever there is
+   one. *)
+TestCreate[
+  Table[With[{r = XMLCases[t, q, 1]}, r === {} || XMLFirstCase[t, q] === First[r]],
+    {t, $roundTripTrees}, {q, Join[$roundTripPatterns, $roundTripRules]}],
+  ConstantArray[True, {4, 17}],
+  TestID -> "first-case-is-first-result"
 ];
