@@ -446,6 +446,106 @@ TestCreate[
   TestID -> "htt-hide-wins-over-focus-same-element"
 ];
 
+(* ---- Rules ----
+   Both queries take tree patterns and rules, matched against the input as
+   given; they act on the positions of the names the right-hand side uses
+   (spec section 6). Inputs are the spec's fixtures, built literally. *)
+
+doc6[root_] := XMLObject["Document"][{}, root, {}];
+idEl[tag_, id_String, c___] := XMLElement[tag, {"id" -> id}, {c}];
+el6[tag_, c___] := XMLElement[tag, {}, {c}];
+
+$hidetarget[pos_] := "The \"Hide\" query names the position " <> pos <>
+  ". Hide removes only elements, runs of element children, and the contents of an element.";
+$focustarget[pos_] := "The \"Focus\" query names the position " <> pos <>
+  ". Focus draws only elements and runs of element children.";
+
+TestCreate[
+  shape[HTMLToTree[doc6[el6["div", el6["pre", "code"], el6["p"]]], "Hide" -> (XMLElement["pre", _, c_] :> c)]],
+  "#document" -> {e["div"] -> {e["pre"], e["p"]}},
+  TestID -> "htt-rule-hide-contents"
+];
+
+$body6 = doc6[el6["body", idEl["nav", "n", idEl["a", "in"]], idEl["a", "out"]]];
+
+TestCreate[
+  shape[HTMLToTree[$body6, "Focus" -> (XMLDocument[Descendant[x : XMLPattern["a"]]?(NoneTrue[XMLMatchQ["nav"]])] :> x)]],
+  "#document" -> {collapsed[2], e["a", {"id" -> "out"}]},
+  TestID -> "htt-rule-focus-context"
+];
+
+$hrefs6 = doc6[el6["p", XMLElement["a", {"href" -> "/x"}, {}], XMLElement["a", {"href" -> "/x"}, {}]]];
+
+TestCreate[
+  withMessages[HTMLToTree[$hrefs6, "Focus" -> (XMLPattern["a", "href" -> h_] :> h)]],
+  {{$focustarget["{1, 1, Key[\"href\"]}"]}, $Failed},
+  TestID -> "htt-rule-focus-attribute-refused"
+];
+
+(* The target table of spec section 6, one test per row *)
+$nav6 = doc6[idEl["nav", "o", idEl["a", "a1"], idEl["nav", "i", idEl["a", "a2"]], idEl["a", "a3"]]];
+
+TestCreate[
+  shape /@ {HTMLToTree[$nav6, "Hide" -> (XMLPattern["nav", _, {___, x : XMLPattern["nav"], ___}] :> x)],
+    HTMLToTree[$nav6, "Focus" -> (XMLPattern["nav", _, {___, x : XMLPattern["nav"], ___}] :> x)]},
+  {"#document" -> {e["nav", {"id" -> "o"}] -> {e["a", {"id" -> "a1"}], e["a", {"id" -> "a3"}]}},
+    "#document" -> {collapsed[1], e["nav", {"id" -> "i"}] -> {e["a", {"id" -> "a2"}]}, collapsed[1]}},
+  TestID -> "htt-rule-target-element"
+];
+
+TestCreate[
+  shape /@ {HTMLToTree[$nav6, "Hide" -> (XMLPattern["nav", _, {_, s__}] :> s)],
+    HTMLToTree[$nav6, "Focus" -> (XMLPattern["nav", _, {_, s__}] :> s)]},
+  {"#document" -> {e["nav", {"id" -> "o"}] -> {e["a", {"id" -> "a1"}]}},
+    "#document" -> {collapsed[1], e["nav", {"id" -> "i"}] -> {e["a", {"id" -> "a2"}]}, e["a", {"id" -> "a3"}]}},
+  TestID -> "htt-rule-target-run"
+];
+
+TestCreate[
+  {shape[HTMLToTree[$nav6, "Hide" -> (XMLElement["nav", {"id" -> "i"}, c_] :> c)]],
+    withMessages[HTMLToTree[$nav6, "Focus" -> (XMLElement["nav", {"id" -> "i"}, c_] :> c)]]},
+  {"#document" -> {e["nav", {"id" -> "o"}] -> {e["a", {"id" -> "a1"}], e["nav", {"id" -> "i"}], e["a", {"id" -> "a3"}]}},
+    {{$focustarget["{1, 2, All}"]}, $Failed}},
+  TestID -> "htt-rule-target-contents"
+];
+
+(* Every other kind is refused by both, the first target found named *)
+$refusedTargets = {
+  XMLPattern[t_] :> t,
+  XMLPattern["a", a_] :> a,
+  XMLPattern["a", "href" -> h_] :> h,
+  XMLPattern["p", "classList" -> c_] :> c,
+  XMLPattern["p", "classList" -> {___, c : "lead", ___}] :> c,
+  XMLPattern["p", _, {_, g___, _}] :> g,
+  XMLPattern["body", _, p : Descendant[XMLPattern["a"]]] :> p};
+$refusedInput = doc6[el6["body", XMLElement["p", {"class" -> "lead"}, {XMLElement["a", {"href" -> "/x"}, {}], el6["b"]}]]];
+
+$refusedPositions = {"{1, 0}", "{1, 1, 1, Key[All]}", "{1, 1, 1, Key[\"href\"]}", "{1, 1, Key[\"classList\"]}",
+  "{1, 1, Key[\"classList\"], 1}", "{1, 1, 2 ;; 1}", "{1} ;; {1, 1, 1}"};
+
+TestCreate[
+  {withMessages[HTMLToTree[$refusedInput, "Hide" -> #]] & /@ $refusedTargets,
+    withMessages[HTMLToTree[$refusedInput, "Focus" -> #]] & /@ $refusedTargets},
+  {{{$hidetarget[#]}, $Failed} & /@ $refusedPositions, {{$focustarget[#]}, $Failed} & /@ $refusedPositions},
+  TestID -> "htt-rule-target-refused"
+];
+
+(* {} names the document, but a query with no match names nothing *)
+TestCreate[
+  {withMessages[HTMLToTree[$nav6, "Hide" -> (x : XMLPattern["table"] :> x)]] // MapAt[shape, 2],
+    withMessages[HTMLToTree[$nav6, "Focus" -> (x : XMLPattern["table"] :> x)]] // MapAt[shape, 2],
+    withMessages[HTMLToTree[$nav6, "Hide" -> (d : XMLDocument[] :> d)]]},
+  {{{}, shape[HTMLToTree[$nav6]]}, {{}, "#document" -> {collapsed[5]}}, {{$hidetarget["{}"]}, $Failed}},
+  TestID -> "htt-rule-no-match"
+];
+
+(* A bare element's root is kept, with root, when a rule names it *)
+TestCreate[
+  withMessages[shape[HTMLToTree[$list3, "Hide" -> (x : XMLPattern["ul"] :> x)]]],
+  {{"The root element cannot be hidden; it was kept."}, e["ul"] -> {e["li"] -> {"1"}, e["li"] -> {"2"}, e["li"] -> {"3"}}},
+  TestID -> "htt-rule-hide-bare-root-kept"
+];
+
 (* ---- Focus with depth ----
    Depth counts from the nearest Focused element above. A Focused element
    inside a Cut element is still drawn, with its own depth, under a Collapsed
@@ -1026,10 +1126,10 @@ TestCreate[
   TestID -> "htt-message-count-tree-options-not-counted"
 ];
 
-(* A bad query, a rule, "Focus" -> None or "Hide" -> All gives badquery,
+(* A bad query, "Focus" -> None or "Hide" -> All gives badquery,
    naming the option, and $Failed. *)
 $badquery[name_, off_, got_] := "The value of the \"" <> name <> "\" option should be " <> off <>
-  ", Automatic, an XMLPattern, a Child, Descendant, Adjacent or Sibling combinator, a CSS selector string, or alternatives of any of these. Each can have a condition (/;). An XMLPattern or alternatives of them can also be named or have a test (?), but a combinator, or alternatives that hold one, cannot. A rule, whether pattern -> rhs or pattern :> body, cannot be used. Got " <> got <> ".";
+  ", Automatic, an XMLPattern, an XMLDocument pattern, an XMLElement pattern, a CSS selector string, alternatives of any of these, or a rule pattern -> rhs or pattern :> body with one of these, which acts on the positions of the names that rhs uses. Each can be named and have a condition (/;) or a test (?). Got " <> got <> ".";
 
 TestCreate[
   withMessages[HTMLToTree[$p, #1 -> #2]] & @@@ {{"Focus", 1}, {"Focus", None}, {"Hide", All}},
@@ -1038,11 +1138,12 @@ TestCreate[
   TestID -> "htt-message-badquery"
 ];
 
+(* A rule is a query; one with a bad left-hand side gives badquery, and one
+   whose right-hand side uses no name acts on nothing. *)
 TestCreate[
-  {withMessages[HTMLToTree[$p, "Focus" -> ("p" -> 1)]],
-    withMessages[HTMLToTree[$p, "Hide" -> (XMLPattern["p"] :> 1)]]},
-  {{{$badquery["Focus", "All", "\"p\" -> 1"]}, $Failed},
-    {{$badquery["Hide", "None", "XMLPattern[\"p\"] :> 1"]}, $Failed}},
+  {withMessages[HTMLToTree[$p, "Focus" -> (1 :> 1)]],
+    withMessages[shape[HTMLToTree[$list3, "Hide" -> (XMLPattern["li"] :> 1)]]]},
+  {{{$badquery["Focus", "All", "1"]}, $Failed}, {{}, shape[HTMLToTree[$list3]]}},
   TestID -> "htt-message-badquery-rule"
 ];
 

@@ -11,6 +11,9 @@ PackageScoped[treeCases]
 (* Used by Positions.wl *)
 PackageScoped[treePositions]
 
+(* Used by Tree.wl *)
+PackageScoped[treeTargets]
+
 (* =========================================================== *)
 (* Tree patterns (ADR 0023, 0024, 0025)                         *)
 (*                                                              *)
@@ -105,6 +108,14 @@ treePositions[head_, tree_, q_] := Block[{$positionsOut = True}, treeCases[head,
 
 $positionsOut = False;
 
+(* What Hide and Focus act on: for each result of q, the positions of its
+   counted names, whatever the right-hand side does with them. A result its
+   Conditions refuse gives none. A no-match is {}, never read as {} the
+   document. *)
+treeTargets[head_, tree_, q_] := Block[{$positionsOut = True, $targetsOut = True}, treeCases[head, tree, q, Infinity]];
+
+$targetsOut = False;
+
 (* query -> {Hold[lhs], Hold[rhs]}. A bare pattern is erased to r$ : p :> r$.
    A Rule's right-hand side was evaluated when the query was given, as in
    Cases; a Condition in its value is part of it, not a test. *)
@@ -167,6 +178,9 @@ checkExcept[lhs_, counted_] :=
 
 (* MessageName holds its first argument, so the consumer head is injected. *)
 refuseHere[tag_, args___] := With[{h = $head}, refuse[MessageName[h, tag], args]];
+(* A query of HTMLToTree's "Focus" or "Hide" that is not a pattern is the
+   option's mistake, badquery, as in the chain compiler. *)
+refuseHere["badpat" | "blank", x_] /; $queryOption =!= None := (badQuery[$queryOption, x]; Throw[$Failed, $refusal]);
 
 (* =========================================================== *)
 (* The index                                                    *)
@@ -573,8 +587,20 @@ matchKind["Blank", nd_, i_] := If[MatchQ[elemOf[i], Blank @@ nd["Head"]], {<||>}
 
 matchKind["Literal", nd_, i_] :=
   If[MatchQ[elemOf[i], nd["Pattern"]],
-    If[nd["Keep"] === {}, {<||>}, {Map[bnd[{Missing["Literal"]}, #, {}] &, firstBindings[elemOf[i], nd["Pattern"], nd["Keep"]]]}],
+    If[nd["Keep"] === {}, {<||>},
+      {Association @ KeyValueMap[#1 -> bnd[{literalPosition[nd["Pattern"], #1, i]}, #2, {}] &,
+        firstBindings[elemOf[i], nd["Pattern"], nd["Keep"]]]}],
     {}];
+
+(* A name on a slot of the literal itself is at that slot: 0 the tag,
+   Key[All] the attributes, All the contents (spec section 4). A name deeper
+   in it has no position yet. *)
+literalPosition[pat_, name_, i_] :=
+  Replace[Lookup[literalSlots[pat], Key[name], None], {None -> Missing["Literal"], k_ :> Append[posOf[i], k]}];
+
+literalSlots[XMLElement[t_, a_, c_]] :=
+  Association @ Cases[{{Hold[t], 0}, {Hold[a], Key[All]}, {Hold[c], All}}, {Hold[Verbatim[Pattern][s_Symbol, _]], k_} :> (Hold[s] -> k)];
+literalSlots[_] := <||>;
 
 (* The document, node 0, is matched only by XMLDocument, which matches
    nothing else. *)
@@ -1077,6 +1103,9 @@ groupResult[rhs_, all_, testNames_, group_] :=
    several positions, gives the first it was bound at, in pattern order; a
    name that is absent, Sequence[]. *)
 resultOf[rhs_, all_, sol_] /; !$positionsOut := evaluated[substituted[rhs, all, sol]];
+resultOf[rhs_, all_, sol_] /; $targetsOut :=
+  If[guardedBody[rhs] =!= rhs && evaluated[substituted[rhs, all, sol]] === $noResult, $noResult,
+    positionOf[Lookup[sol, Key[#], None]] & /@ First[rhsNames[rhs, all]]];
 resultOf[rhs_, all_, sol_] :=
   With[{body = guardedBody[rhs]},
     If[body =!= rhs && evaluated[substituted[rhs, all, sol]] === $noResult, $noResult,

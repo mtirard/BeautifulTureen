@@ -18,8 +18,11 @@ PackageScoped[$treeQueryOff]
 PackageExported[HTMLToTree]
 HTMLToTree::usage = "HTMLToTree[tree] draws an HTML or XML tree as a Tree, with one node per element and per text string. A document or a list is drawn under a \"#document\" root, and an XMLElement is its own root. Each element is labelled with its tag name, and its tooltip gives its compound selector, such as div#main.note, and its attributes. Each text string is a leaf, labelled with its text, whitespace collapsed and cut to 40 characters. Whitespace-only strings are left out unless \"IncludeWhitespace\" -> True is given. The data of an element node is the element with no contents, XMLElement[tag, attrs, {}], and the data of a text node is the string. Options of Tree, such as TreeElementLabelFunction, TreeLayout, MaxDisplayedChildren and ImageSize, can be given and are passed to Tree. The default layout is TreeLayout -> Left, and MaxDisplayedChildren -> m limits the children of every node. tree can be an XMLElement, an XMLObject document, or a list. HTMLToTree[tree, n] draws elements down to DOM depth n, counted in generations of elements from the root at depth 0; n is a non-negative integer or Infinity, the default. An element at depth n with element children has a single \[Ellipsis] child in place of all its contents, with data Missing[\"Collapsed\", k], where k is the number of elements not drawn. \"Focus\" -> query draws only the elements the query selects, as XMLCases does, with their contents: each hangs from its nearest drawn ancestor, by a dashed edge whose tooltip gives the skipped path when there is one, and each run of other siblings is a single \[Ellipsis] leaf. With focus, depth counts from each Focused element, and a Focused element below the depth limit is still drawn. \"CollapsePaths\" -> False draws the elements on the path to each Focused element as nodes, which do not count towards depth. \"Hide\" -> query removes the elements it selects, with their contents, and leaves no mark; hiding wins over focus. Both queries are matched against the tree as given and take \"AttributeReadings\". \"MergeText\" -> HTMLInnerText draws an element whose contents hold elements, all of them inline, with a single text leaf in place of its contents, holding the text HTMLInnerText gives for it; \"MergeText\" -> HTMLTextContent gives its raw text instead. \"Roles\" -> rules decides which elements are inline, as in HTMLInnerText, and the text is the one HTMLInnerText gives with the same \"Roles\" and \"AttributeReadings\". Hidden elements are left out of the text, and an element that holds a Focused element is not merged.";
 HTMLToTree::optval = "The value of the `1` option should be `2`. Got `3`.";
-HTMLToTree::badquery = "The value of the `1` option should be `2`, Automatic, an XMLPattern, a Child, Descendant, Adjacent or Sibling combinator, a CSS selector string, or alternatives of any of these. Each can have a condition (/;). An XMLPattern or alternatives of them can also be named or have a test (?), but a combinator, or alternatives that hold one, cannot. A rule, whether pattern -> rhs or pattern :> body, cannot be used. Got `3`.";
+HTMLToTree::badquery = "The value of the `1` option should be `2`, Automatic, an XMLPattern, an XMLDocument pattern, an XMLElement pattern, a CSS selector string, alternatives of any of these, or a rule pattern -> rhs or pattern :> body with one of these, which acts on the positions of the names that rhs uses. Each can be named and have a condition (/;) or a test (?). Got `3`.";
 HTMLToTree::root = "The root element cannot be hidden; it was kept.";
+HTMLToTree::hidetarget = "The \"Hide\" query names the position `1`. Hide removes only elements, runs of element children, and the contents of an element.";
+HTMLToTree::focustarget = "The \"Focus\" query names the position `1`. Focus draws only elements and runs of element children.";
+HTMLToTree::exceptname = "The name `1` is bound inside Except, which matches only where its pattern does not, so it has no value in the right-hand side. A name inside Except can be used only by tests inside that Except.";
 
 Options[HTMLToTree] = {"Focus" -> Automatic, "Hide" -> Automatic, "MergeText" -> Automatic,
   "IncludeWhitespace" -> Automatic, "CollapsePaths" -> Automatic, "Roles" -> Automatic,
@@ -45,7 +48,7 @@ treeSettings[values_Association] :=
   Catch[Association[KeyValueMap[#1 -> treeSetting[#1, #2] &, values]], treeSettings];
 
 treeSetting[name_, Automatic] := $treeDefaults[name];
-treeSetting[name : "Focus" | "Hide", v : All | None | _Rule | _RuleDelayed] /; v =!= $treeQueryOff[name] :=
+treeSetting[name : "Focus" | "Hide", v : All | None] /; v =!= $treeQueryOff[name] :=
   (badQuery[name, v]; Throw[$Failed, treeSettings]);
 treeSetting[name_, v_] /; KeyExistsQ[$treeOptionValues, name] :=
   If[MatchQ[v, $treeOptionValues[name]], v,
@@ -64,44 +67,95 @@ unknownTreeOptions[opts_List] := Select[Flatten[opts], !optionRuleQ[HTMLToTree][
 
 (* ---- Hidden and focused sites ----
    Both queries are matched against the original input, as XMLCases matches,
-   so that Adjacent and :has() see the page as it is. Removing the hidden
+   so that context in a pattern sees the page as it is. Removing the hidden
    elements first (XMLDeleteCases, then draw) would be simpler, but it changes
-   what those combinators match: a sibling or descendant that is hidden would no
-   longer be there for the focus query to see. Both are compiled before
-   either is matched, and one that is refused gives $Failed. *)
+   what a query matches: a sibling or descendant that is hidden would no
+   longer be there for the focus query to see. Focus is run first, so a focus
+   query that is refused gives $Failed before hide is matched.
 
-(* A compiled query, None for a query that is off, or $Failed *)
-treeQuery[_, All | None] := None;
-treeQuery[name_, q_] := Block[{$queryOption = name}, compileQuery[q, HTMLToTree]];
+   A tree pattern or rule runs on the tree engine, which gives positions
+   (spec section 4); they are turned into the walk's WL positions here. A
+   query with a combinator keeps the chain runners until they go. *)
 
-(* The sites the walk reads: "Hidden", the positions of Hidden elements;
+(* The sites the walk reads: "Hidden", the positions of Hidden items;
    "Focused", those of Focused elements, or All; and "FocusPaths", every
-   position above a Focused element. Each is an Association to True. *)
-treeSites[tree_, s_] := Replace[treeQuery["Focus", s["Focus"]], {
-  $Failed -> $Failed,
-  focus_ :> Replace[treeQuery["Hide", s["Hide"]], {
-    $Failed -> $Failed,
-    hide_ :> With[{hidden = hiddenSites[tree, hide]},
-      With[{focused = focusedSites[tree, focus, siteSet[hidden]]},
-        <|"Hidden" -> siteSet[hidden], "Focused" -> Replace[focused, l_List :> siteSet[l]],
-          "FocusPaths" -> If[focused === All, <||>, siteSet[Join @@ (Most[prefixes[#]] & /@ focused)]]|>]]}]}];
+   position above a Focused element. Each is an Association to True. Hiding
+   wins: a site that is hidden, or inside a Hidden element, is not focused. *)
+treeSites[tree_, s_] := Catch[
+  With[{focus = querySites["Focus", tree, s["Focus"]], hidden = siteSet[querySites["Hide", tree, s["Hide"]]]},
+    With[{focused = If[focus === All, All, Select[focus, NoneTrue[prefixes[#], KeyExistsQ[hidden, #] &] &]]},
+      <|"Hidden" -> hidden, "Focused" -> Replace[focused, l_List :> siteSet[l]],
+        "FocusPaths" -> If[focused === All, <||>, siteSet[Join @@ (Most[prefixes[#]] & /@ focused)]]|>]],
+  treeSites];
 
 siteSet[ps_List] := AssociationThread[ps -> True];
 
 prefixes[pos_] := FoldList[Append, {}, pos];
 
+(* The WL positions a query selects, All for no focus, or a throw of $Failed *)
+querySites["Focus", _, All] := All;
+querySites["Hide", _, None] := {};
+querySites[name_, tree_, q_] /; treeQueryQ[q] := targetSites[name, tree, q];
+querySites[name_, tree_, q_] :=
+  Replace[chainSites[name, tree, Block[{$queryOption = name}, compileQuery[q, HTMLToTree]]],
+    $Failed :> Throw[$Failed, treeSites]];
+
 (* XMLCases does not select a bare element root, so the query is matched in a
    list around it, where it can; a root it selects is kept, with root. *)
-hiddenSites[_, None] := {};
-hiddenSites[el_XMLElement, c_] := With[{ps = queryPositions[c, {el}, Infinity]},
-  If[MemberQ[ps, {1}], Message[HTMLToTree::root]];
-  Rest /@ DeleteCases[ps, {1}]];
-hiddenSites[tree_, c_] := queryPositions[c, tree, Infinity];
+chainSites[_, _, $Failed] := $Failed;
+chainSites["Hide", el_XMLElement, c_] := Replace[queryPositions[c, {el}, Infinity], {
+  $Failed -> $Failed,
+  ps_ :> (If[MemberQ[ps, {1}], Message[HTMLToTree::root]]; Rest /@ DeleteCases[ps, {1}])}];
+chainSites[_, tree_, c_] := queryPositions[c, tree, Infinity];
 
-(* Hiding wins: a site that is hidden, or inside a Hidden element, is not focused. *)
-focusedSites[_, None, _] := All;
-focusedSites[tree_, c_, hidden_] :=
-  Select[queryPositions[c, tree, Infinity], NoneTrue[prefixes[#], KeyExistsQ[hidden, #] &] &];
+(* The sites of a tree query's targets: the positions of the names its
+   right-hand side uses, over all its results. A target of a kind the option
+   cannot act on (spec section 6) is hidetarget or focustarget. For Hide, a
+   bare element is matched in a list around it, at the same positions, so
+   that its root can be selected, and kept with root. *)
+targetSites[name_, tree_, q_] :=
+  With[{targets = Replace[
+      Block[{$queryOption = name}, treeTargets[HTMLToTree, If[name === "Hide" && MatchQ[tree, _XMLElement], {tree}, tree], q]], {
+        $Failed :> Throw[$Failed, treeSites],
+        rs_ :> DeleteDuplicates[Join @@ rs]}]},
+    Replace[SelectFirst[targets, !targetKindQ[name, #] &], t : Except[_Missing] :>
+      (refusedTarget[name, t]; Throw[$Failed, treeSites])];
+    keptRoot[name, tree, DeleteDuplicates[Join @@ (targetItems[tree, #] & /@ targets)]]];
+
+refusedTarget["Hide", t_] := Message[HTMLToTree::hidetarget, t];
+refusedTarget["Focus", t_] := Message[HTMLToTree::focustarget, t];
+
+stepQ[i_] := IntegerQ[i] && i > 0;
+
+(* Hide takes an element, a run of element children, or an element's
+   contents; Focus the first two. *)
+targetKindQ[_, {__?stepQ}] := True;
+targetKindQ[_, {___?stepQ, Span[m_?stepQ, n_Integer]}] := n >= m;
+targetKindQ["Hide", {__?stepQ, All}] := True;
+targetKindQ[_, _] := False;
+
+(* The WL positions of the items a target names, as the walk numbers them *)
+targetItems[tree_, steps : {__?stepQ}] := {wlPath[tree, steps]};
+targetItems[tree_, {steps___, Span[m_, n_]}] := wlPath[tree, {steps, #}] & /@ Range[m, n];
+targetItems[tree_, {steps__, All}] :=
+  With[{p = wlPath[tree, {steps}]}, Join[p, {3, #}] & /@ Range[Length[tree[[Sequence @@ p, 3]]]]];
+
+(* The WL position of the element at element-child steps: an XMLObject's
+   root is {2}, a list's i-th element is at its index among the items, and a
+   bare element's root is {}; below, each step is an index in its parent's
+   contents. *)
+wlPath[tree_, {i_, rest___}] :=
+  Fold[Join[#1, {3, elementIndex[tree[[Sequence @@ #1, 3]], #2]}] &, topPath[tree, i], {rest}];
+
+topPath[XMLObject["Document"][___], 1] := {2};
+topPath[l_List, i_] := {elementIndex[l, i]};
+topPath[_XMLElement, 1] := {};
+
+elementIndex[items_, i_] := Position[items, _XMLElement, {1}, Heads -> False][[i, 1]];
+
+(* A bare element's root is never hidden: it is kept, with root. *)
+keptRoot["Hide", _XMLElement, sites_] /; MemberQ[sites, {}] := (Message[HTMLToTree::root]; DeleteCases[sites, {}]);
+keptRoot[_, _, sites_] := sites;
 
 (* ---- The tree that is built ----
    The walk carries each item's position in the input, as the queries give
