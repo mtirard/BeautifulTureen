@@ -1,5 +1,5 @@
 (* ::Package:: *)
-(* HTMLPatterns: XMLCases, XMLFirstCase, XMLDeleteCases and XMLMatchQ *)
+(* HTMLPatterns: XMLCases, XMLFirstCase, XMLDeleteCases, XMLMatchQ and XMLFreeQ *)
 
 (* Used by Tree.wl *)
 PackageScoped[countQ]
@@ -72,7 +72,7 @@ XMLDeleteCases[args___] /; (countMessage[XMLDeleteCases, {args}, {2, 2}]; False)
 (* =========================================================== *)
 
 PackageExported[XMLMatchQ]
-XMLMatchQ::usage = "XMLMatchQ[element, pattern] gives True if element matches pattern, and False otherwise. XMLMatchQ[pattern] is an operator form. pattern can be an XMLPattern, alternatives of them, or either with a condition pat /; test or a test pat?f, or a CSS selector string that describes one element, such as \"a.external\". XMLMatchQ tests the element itself, not the elements nested in it; use XMLCases to search a tree. The \"AttributeReadings\" option adds readings to $AttributeReadings, in both XMLMatchQ[element, pattern, opts] and XMLMatchQ[pattern, opts].";
+XMLMatchQ::usage = "XMLMatchQ[element, pattern] gives True if element matches pattern, and False otherwise. XMLMatchQ[pattern] is an operator form. pattern can be an XMLPattern, with constraints on what is below the element, an XMLElement pattern, or a CSS selector string that describes one element, such as \"a.external\", or alternatives of these, any of them named, with a condition pat /; test or a test pat?f. XMLMatchQ tests the element itself as the pattern root, not the elements nested in it; use XMLCases to search a tree, or XMLFreeQ to test whether any element in it matches. XMLMatchQ[document, XMLDocument[c...]] tests a document. XMLMatchQ[list, listpattern] tests a list of elements against a list pattern, such as {XMLPattern[\"th\"], ___}, ignoring the strings in the list. An element against a document or list pattern, or a document or list against an element pattern, gives False. The \"AttributeReadings\" option adds readings to $AttributeReadings, in both XMLMatchQ[element, pattern, opts] and XMLMatchQ[pattern, opts].";
 XMLMatchQ::combinator = "`1` relates an element to its parent or siblings, which a lone element does not have. Use XMLCases or XMLFirstCase to search a tree with it.";
 
 Options[XMLMatchQ] = {"AttributeReadings" -> <||>};
@@ -93,11 +93,18 @@ XMLMatchQ[args___] /; (countMessage[XMLMatchQ, {args}, {1, 2}]; False) := Null;
 matchWith[$Failed, _] := $Failed;
 matchWith[m_, el_] := m[el];
 
-matcherOf[q_] := elementMatcher[compileQuery[q, XMLMatchQ]];
+(* A combinator, which the chain compiler refuses, and an XMLPattern root
+   without constraints, which it tests with one MatchQ, keep the chain
+   compiler until the combinators go (elementChainQ); any other pattern is a
+   tree pattern (Query/TreePatterns.wl). *)
+matcherOf[q_] :=
+  If[elementChainQ[q], elementMatcher[compileQuery[q, XMLMatchQ]],
+    Replace[treeMatcher[XMLMatchQ, q, True], m : Except[$Failed] :> (treeMatchQ[m, #] &)]];
 
 (* The operator form stays unevaluated, as MatchQ[pattern] does, and is applied
    to each element in turn, so its matcher is kept, keyed on everything the
-   compiled query depends on: the pattern, $AttributeReadings, which the
+   compiled query depends on: the function that compiles it, XMLMatchQ's or
+   XMLFreeQ's, the pattern, $AttributeReadings, which the
    "AttributeReadings" option joins to (issue #2), and whether shapes are
    recognised, so that a test turning recognition off gets a matcher compiled
    with it off (ADR 0020). A refused pattern is not
@@ -106,11 +113,47 @@ matcherOf[q_] := elementMatcher[compileQuery[q, XMLMatchQ]];
 $matcherCache = <||>;
 $matcherCacheSize = 256;
 
-cachedMatcher[q_] :=
-  With[{key = {q, $AttributeReadings, $recogniseShapes}},
+cachedMatcher[q_, compile_ : matcherOf] :=
+  With[{key = {compile, q, $AttributeReadings, $recogniseShapes}},
     Lookup[$matcherCache, Key[key],
-      With[{m = matcherOf[q]},
+      With[{m = compile[q]},
         If[m =!= $Failed,
           If[Length[$matcherCache] >= $matcherCacheSize, $matcherCache = <||>];
           $matcherCache[key] = m];
         m]]];
+
+(* =========================================================== *)
+(* XMLFreeQ (#32)                                               *)
+(* The XML-pattern counterpart of FreeQ: no element at the      *)
+(* DOM depths given matches, the input itself at depth 0.       *)
+(* =========================================================== *)
+
+PackageExported[XMLFreeQ]
+XMLFreeQ::usage = "XMLFreeQ[tree, pattern] gives True if no element of tree, tree itself included, matches pattern, and False otherwise. XMLFreeQ[tree, pattern, levelspec] tests only the elements at the DOM depths in levelspec, where tree itself is at depth 0, its children at depth 1, and so on; levelspec is n (depths 1 to n), {n}, {m, n} or Infinity, and the default is {0, Infinity}, as in FreeQ. XMLFreeQ[pattern] is an operator form, which takes no level spec. Each element is tested as XMLMatchQ tests it: pattern can be an XMLPattern, an XMLElement pattern, an XMLDocument pattern, which matches only a document at depth 0, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition or a test. The \"AttributeReadings\" option adds readings to $AttributeReadings, as in XMLCases.";
+XMLFreeQ::badpat = "The pattern should be an XMLPattern, an XMLElement pattern, an XMLDocument pattern, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f. A rule gives a value, not a test. A CSS selector such as \"nav a\" or \"ul > li\" looks above the element it describes; use XMLCases or XMLPosition to search a tree with it. Got `1`.";
+XMLFreeQ::level = "Level specification `1` should be a DOM depth: n, {n}, {m, n} or Infinity, with 0 <= m <= n.";
+
+Options[XMLFreeQ] = {"AttributeReadings" -> <||>};
+
+XMLFreeQ[q_, opts : Longest[__?(optionRuleQ[XMLFreeQ])]][tree_] :=
+  withReadings[OptionValue[XMLFreeQ, {opts}, "AttributeReadings"], freeWith[cachedMatcher[q, freeMatcher], tree, {0, Infinity}]];
+XMLFreeQ[q_][tree_] := withListKeyWarnings[freeWith[cachedMatcher[q, freeMatcher], tree, {0, Infinity}]];
+
+XMLFreeQ[tree_, q : Except[_?(optionRuleQ[XMLFreeQ])], levels : Except[_?(optionRuleQ[XMLFreeQ])] : {0, Infinity},
+    opts : OptionsPattern[]] :=
+  With[{l = domLevels[levels]},
+    If[l === $Failed, Message[XMLFreeQ::level, levels]; $Failed,
+      withReadings[OptionValue["AttributeReadings"], freeWith[freeMatcher[q], tree, l]]]];
+
+XMLFreeQ[args___] /; (countMessage[XMLFreeQ, {args}, {1, 3}]; False) := Null;
+
+freeMatcher[q_] := treeMatcher[XMLFreeQ, q, False];
+
+freeWith[$Failed, _, _] := $Failed;
+freeWith[m_, tree_, l_] := If[validTreeQ[tree], treeFreeQ[m, tree, l], messageTreeRefusal[XMLFreeQ, tree]; $Failed];
+
+(* A level spec in DOM depth, in FreeQ's forms, as {lo, hi}, or $Failed. *)
+domLevels[n : (_Integer?NonNegative | DirectedInfinity[1])] := {1, n};
+domLevels[{n_Integer?NonNegative}] := {n, n};
+domLevels[{m_Integer?NonNegative, n : (_Integer | DirectedInfinity[1])}] /; m <= n := {m, n};
+domLevels[_] := $Failed;
