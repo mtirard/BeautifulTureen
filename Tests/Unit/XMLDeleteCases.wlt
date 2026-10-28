@@ -122,11 +122,12 @@ TestCreate[
   TestID -> "delete-bad-pattern"
 ];
 
-(* A rule has nothing to delete with, whether -> or :> *)
+(* A rule's right-hand side names what is deleted, whether -> or :>; one
+   that names nothing is refused. *)
 TestCreate[
   {XMLDeleteCases[$treeNoise, XMLPattern["p"] -> 1], XMLDeleteCases[$treeNoise, XMLPattern["p"] :> 1]},
   {$Failed, $Failed},
-  {XMLDeleteCases::badpat, XMLDeleteCases::badpat},
+  {XMLDeleteCases::delrhs, XMLDeleteCases::delrhs},
   TestID -> "delete-rule-refused"
 ];
 
@@ -159,11 +160,11 @@ TestCreate[
   TestID -> "delete-child-classlist-both-stages"
 ];
 
-(* A rule has nothing to delete with. *)
+(* A rule that names nothing is refused. *)
 TestCreate[
   XMLDeleteCases[$treeAds, XMLPattern["p"] :> 1],
   $Failed,
-  {XMLDeleteCases::badpat},
+  {XMLDeleteCases::delrhs},
   TestID -> "delete-rule-refused"
 ];
 

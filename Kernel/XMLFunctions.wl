@@ -51,8 +51,8 @@ XMLFirstCase[args___] /; (countMessage[XMLFirstCase, {args}, {2, 3}]; False) := 
 
 (* =========================================================== *)
 (* XMLDeleteCases                                               *)
-(* Base: native DeleteCases with Infinity levelspec.            *)
-(* Combinators: the chain's last-stage elements are deleted.    *)
+(* Tree patterns: the positions of the counted names deleted    *)
+(* (Rewrite.wl). Combinators: the chain's last-stage elements.  *)
 (* =========================================================== *)
 
 PackageExported[XMLDeleteCases]
@@ -62,7 +62,8 @@ XMLDeleteCases::root = "The root element of an XMLObject cannot be deleted; it w
 Options[XMLDeleteCases] = {"AttributeReadings" -> <||>};
 
 XMLDeleteCases[tree_, q_, opts : OptionsPattern[]] :=
-  withReadings[OptionValue["AttributeReadings"], queryDelete[compileQuery[q, XMLDeleteCases], tree]];
+  withReadings[OptionValue["AttributeReadings"],
+    If[treeQueryQ[q], treeDelete[tree, q], queryDelete[compileQuery[q, XMLDeleteCases], tree]]];
 
 XMLDeleteCases[args___] /; (countMessage[XMLDeleteCases, {args}, {2, 2}]; False) := Null;
 

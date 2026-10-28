@@ -18,7 +18,7 @@ PackageScoped[treeResults]
 (* Used by Positions.wl *)
 PackageScoped[treePositions]
 
-(* Used by Tree.wl *)
+(* Used by Rewrite.wl and Tree.wl *)
 PackageScoped[treeTargets]
 
 (* =========================================================== *)
@@ -122,7 +122,8 @@ $positionsOut = False;
 (* What Hide and Focus act on: for each result of q, the positions of its
    counted names, whatever the right-hand side does with them. A result its
    Conditions refuse gives none. A no-match is {}, never read as {} the
-   document. *)
+   document. A repeated name gives every position it is bound at, since each
+   is in the tuple. *)
 treeTargets[head_, tree_, q_] := Block[{$positionsOut = True, $targetsOut = True}, treeCases[head, tree, q, Infinity]];
 
 $targetsOut = False;
@@ -1133,7 +1134,7 @@ resultOf[rhs_, all_, sol_] :=
       evaluated[body /. (Replace[#, Hold[s_] :> (HoldPattern[s] -> positionOf[Lookup[sol, Key[#], None]])] & /@ all)]]];
 
 positionOf[None] := Sequence[];
-positionOf[b_] := First[bindPos[b]];
+positionOf[b_] := If[$targetsOut, Sequence @@ bindPos[b], First[bindPos[b]]];
 
 (* Held code without the Conditions a rule's right-hand side tests: at the
    top, or at the top of a With, Module or Block (rhsParts). *)

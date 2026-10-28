@@ -23,6 +23,9 @@ PackageScoped[materialise]
 (* Used by XMLFunctions.wl *)
 PackageScoped[withListKeyWarnings]
 
+(* Used by Rewrite.wl *)
+PackageScoped[listKeyJoiners]
+
 (* =========================================================== *)
 (* Readings (ADR 0012)                                          *)
 (* A reading fixes a microsyntax to a literal attribute key and *)
@@ -63,6 +66,14 @@ resolveReading[key_String -> spec_Association] :=
         Replace[Lookup[spec, "TrimWhitespace", Automatic], Automatic -> defaults["TrimWhitespace"]]]}];
 
 resolveReadings[readings_Association] := Association[resolveReading /@ Normal[readings]];
+
+(* list key -> the text a token list is written back with: one space for the
+   space-separated microsyntax, "," for the comma-separated one, whatever the
+   delimiters that split it. *)
+listKeyJoiners[] :=
+  Association @ KeyValueMap[
+    listKeyOf[#1, #2] -> If[Lookup[#2, Method, "SpaceSeparated"] === "CommaSeparated", ",", " "] &,
+    $AttributeReadings];
 
 (* The readings table in force, $AttributeReadings, resolved. A table that
    fails validation has said why, and gives $Failed. *)
