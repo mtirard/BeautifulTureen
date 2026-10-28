@@ -21,6 +21,9 @@ PackageScoped[treePositions]
 (* Used by Rewrite.wl and Tree.wl *)
 PackageScoped[treeTargets]
 
+(* Used by Rewrite.wl *)
+PackageScoped[treeSolutions]
+
 (* =========================================================== *)
 (* Tree patterns (ADR 0023, 0024, 0025)                         *)
 (*                                                              *)
@@ -104,8 +107,9 @@ treeResults[head_, tree_, q_, n_] :=
         $readings = Replace[readingsInForce[], $Failed :> Throw[$Failed, $refusal]];
         all = namesIn[lhs];
         $order = patternOrder[lhs];
-        {counted, testNames} = rhsNames[rhs, all];
-        checkExcept[lhs, counted];
+        {counted, testNames} =
+          If[$countedGiven === None, rhsNames[rhs, all], {$countedGiven, Complement[mentioned[rhs, all], $countedGiven]}];
+        checkExcept[lhs, If[$countedGiven === None, counted, Union[counted, testNames]]];
         need = Union[counted, testNames, conditionNames[lhs, all]];
         root = compileRoot[lhs, need];
         If[!validTreeQ[tree], messageTreeRefusal[head, tree]; Throw[$Failed, $refusal]];
@@ -127,6 +131,18 @@ $positionsOut = False;
 treeTargets[head_, tree_, q_] := Block[{$positionsOut = True, $targetsOut = True}, treeCases[head, tree, q, Infinity]];
 
 $targetsOut = False;
+
+(* What XMLReplace acts on: for each result of q, its solution, an
+   Association name -> {positions, {value}}, the value a list of what the
+   name splices in. The counted names are those given, not those the
+   right-hand side uses; every other name it mentions is uncounted, and takes
+   its first passing binding (spec section 3). A result its Conditions refuse
+   gives none. *)
+treeSolutions[head_, tree_, q_, counted_] :=
+  Block[{$positionsOut = True, $solutionsOut = True, $countedGiven = counted}, treeCases[head, tree, q, Infinity]];
+
+$solutionsOut = False;
+$countedGiven = None;
 
 (* query -> {Hold[lhs], Hold[rhs]}. A bare pattern is erased to r$ : p :> r$.
    A Rule's right-hand side was evaluated when the query was given, as in
@@ -1123,7 +1139,12 @@ groupResult[rhs_, all_, testNames_, group_] :=
    guard is evaluated with each name replaced by its position instead, so a
    right-hand side with a test is evaluated twice. A repeated name, which has
    several positions, gives the first it was bound at, in pattern order; a
-   name that is absent, Sequence[]. *)
+   name that is absent, Sequence[]. For XMLReplace, the Conditions are run in
+   the same way and the solution itself is given, for its replacements to be
+   evaluated later, on the tree as rewritten. *)
+resultOf[rhs_, all_, sol_] /; $solutionsOut :=
+  If[guardedBody[rhs] =!= rhs && evaluated[substituted[rhs, all, sol]] === $noResult, $noResult,
+    {{bindPos[#], {valueOf[#]}} & /@ sol}];
 resultOf[rhs_, all_, sol_] /; !$positionsOut := evaluated[substituted[rhs, all, sol]];
 resultOf[rhs_, all_, sol_] /; $targetsOut :=
   If[guardedBody[rhs] =!= rhs && evaluated[substituted[rhs, all, sol]] === $noResult, $noResult,

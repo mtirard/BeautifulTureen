@@ -1,5 +1,5 @@
 (* ::Package:: *)
-(* HTMLPatterns: rewriting a tree at positions, and XMLDeleteCases over tree patterns *)
+(* HTMLPatterns: rewriting a tree at positions, and XMLDeleteCases and XMLReplace over tree patterns *)
 
 (* Used by XMLFunctions.wl *)
 PackageScoped[treeDelete]
@@ -134,15 +134,17 @@ assembled[] :=
 
 (* The nodes a value stands for in a contents list. *)
 nodesOf[Nothing] := {};
-nodesOf[s_Splice] := List @@ s;
+nodesOf[Splice[l_List]] := l;
 nodesOf[l_List] := l;
 nodesOf[x_] := {x};
 
 (* ---- One rewrite ---- *)
 
+(* f may Throw to $unchanged to leave the part as it is: it is called before
+   anything is set. *)
 rewriteAt[pos_, f_] :=
   With[{k = LengthWhile[pos, IntegerQ[#] && # > 0 &]},
-    With[{steps = Take[pos, k]}, If[aliveQ[steps], rewriteTerminal[steps, Drop[pos, k], f]]]];
+    With[{steps = Take[pos, k]}, If[aliveQ[steps], Catch[rewriteTerminal[steps, Drop[pos, k], f], $unchanged]]]];
 
 (* An element. *)
 rewriteTerminal[steps_, {}, f_] /; steps =!= {} :=
@@ -268,3 +270,178 @@ deleted[tree_, targets_] :=
     Replace[SelectFirst[ps, MatchQ[#, {} | {__Integer?Positive, 0}] &], p_List :> refuse[XMLDeleteCases::target, p]];
     If[MatchQ[tree, XMLObject[_][___]] && MemberQ[ps, {1}], Message[XMLDeleteCases::root]; ps = DeleteCases[ps, {1}]];
     rewritten[tree, (# -> If[MatchQ[Last[#], Key[All] | All], {} &, Nothing &]) & /@ ps]];
+
+(* =========================================================== *)
+(* XMLReplace over tree patterns (spec section 6)               *)
+(*                                                              *)
+(* A right-hand side that is a rule or a list of rules whose    *)
+(* left sides are all names of the pattern, the targets form,  *)
+(* replaces what those names match, and only they count; any   *)
+(* other right-hand side replaces the pattern root, the root   *)
+(* form, which counts only the root. A query is matched once,  *)
+(* on the original input; rewritten then applies the           *)
+(* replacements, each evaluated when its target is rewritten,  *)
+(* with every name it uses read at its position in the tree    *)
+(* rewritten so far. A list of queries gives each position the *)
+(* replacement of the first that targets it.                   *)
+(* =========================================================== *)
+
+PackageExported[XMLReplace]
+XMLReplace::usage = "XMLReplace[tree, pattern :> {x -> new, ...}] replaces what each name x of pattern matches by new, for every result of pattern in tree, and gives the rewritten tree. XMLReplace[tree, pattern :> new] replaces each match of pattern by new. XMLReplace[tree, {rule1, rule2, ...}] gives each place the replacement of the first rule that names it. A name can match an element, its tag, its attribute list, an attribute value, a list key's tokens, its contents, or a run or gap of its element children, and each takes a replacement of its own kind: an element takes an element, a string, Splice[list] or Nothing, and a gap takes the nodes to insert. Replacements are made inside out, contents before their container, and each new reads the names it uses from the tree as rewritten so far. The \"AttributeReadings\" option adds readings to $AttributeReadings, as in XMLCases.";
+XMLReplace::bare = "`1` is a pattern with no replacement, which would replace each match by itself. Name what to replace and give its replacement, as in x : p :> {x -> new}, or replace the match itself, as in p :> new.";
+XMLReplace::target = "`1` is the position of the document, which cannot be replaced. Name an element, a tag, an attribute, a token, a run or gap of children, or the contents instead.";
+XMLReplace::pathtarget = "`1` is a named path, the elements between two others, which cannot be replaced. Name the elements to replace instead.";
+XMLReplace::kind = "The replacement `2` for position `1` is not of a kind that position takes, and the position is left unchanged. An element takes an element, a string, Splice[list] or Nothing; a tag a string; an attribute list a list of rules; an attribute value a string or Nothing; a list key a list of strings; a token a string, and a run of tokens a list of strings; contents a list of nodes; a run of children Splice[list], a list or Nothing; a gap the nodes to insert.";
+XMLReplace::conflict = "Position `1` is given different replacements by different results; the replacement of the first result is used.";
+XMLReplace::stale = "The position `2` of `1` was removed by an earlier replacement, so `1` has its original value.";
+XMLReplace::badpat = "The second argument should be a rule pattern -> new or pattern :> new, or a list of them, with pattern an XMLPattern, an XMLDocument pattern, an XMLElement pattern, a one-element CSS selector string, or alternatives of any of these. Each can be named and have a condition (/;) or a test (?). Got `1`.";
+XMLReplace::badtree = "The first argument should be an XMLObject, an XMLElement, or a list of XMLElement expressions and strings. Got head `1`.";
+XMLReplace::exceptname = "The name `1` is bound inside Except, which matches only where its pattern does not, so it has no value in the right-hand side. A name inside Except can be used only by tests inside that Except.";
+
+Options[XMLReplace] = {"AttributeReadings" -> <||>};
+
+XMLReplace[tree_, q : Except[_?(optionRuleQ[XMLReplace])], opts : OptionsPattern[]] :=
+  withReadings[OptionValue["AttributeReadings"], treeReplace[tree, q]];
+
+XMLReplace[args___] /; (countMessage[XMLReplace, {args}, {2, 2}]; False) := Null;
+
+SyntaxInformation[XMLReplace] = {"ArgumentsPattern" -> {_, _, OptionsPattern[]}, "OptionNames" -> Keys[Options[XMLReplace]]};
+
+treeReplace[tree_, q_] :=
+  Catch[
+    With[{qs = If[ListQ[q], q, {q}]},
+      Scan[checkReplacement, qs];
+      With[{edits = Join[<||>, Sequence @@ Reverse[replacementEdits[tree, #] & /@ qs]]},
+        Replace[SelectFirst[Keys[edits], MatchQ[#, _Span] &], s_Span :> refuse[XMLReplace::pathtarget, s]];
+        If[KeyExistsQ[edits, {}], refuse[XMLReplace::target, {}]];
+        rewritten[tree, KeyValueMap[#1 -> replacer[#1, #2] &, edits]]]],
+    $refusal];
+
+checkReplacement[(Rule | RuleDelayed)[lhs_, _]] /; !treeQueryQ[lhs] := refuse[XMLReplace::badpat, lhs];
+checkReplacement[_Rule | _RuleDelayed] := Null;
+checkReplacement[p_] := refuse[XMLReplace::bare, p];
+
+(* For one query, position -> {Hold[replacement], names, solution}: what
+   replaces the position and the bindings of the names it may use, from the
+   first result, in result order, that targets it. A later result whose
+   replacement differs, by its code or by the positions of the names it
+   uses, is XMLReplace::conflict. A repeated name targets every position it
+   is bound at, as treeTargets gives them (ticket 28). *)
+replacementEdits[tree_, q : (Rule | RuleDelayed)[lhs_, _]] :=
+  Module[{r, names = namesIn[Hold[lhs]], rhs = heldRHS[q], targets, query = q, sols, edits = <||>, ids = <||>},
+    targets = targetRules[unguarded[rhs], names];
+    If[targets === None,
+      targets = {{Hold[r], unguarded[rhs]}};
+      (* Pattern @@ and Apply, so that Module renames r here too, and the
+         right-hand side stays held. *)
+      query = RuleDelayed @@ Join[Hold @@ {Pattern @@ {r, lhs}}, rhs];
+      names = Prepend[names, Hold[r]]];
+    sols = treeSolutions[XMLReplace, tree, query, DeleteDuplicates[targets[[All, 1]]]];
+    If[sols === $Failed, Throw[$Failed, $refusal]];
+    Do[
+      With[{b = Lookup[sol, Key[First[t]], None], id = replacementId[Last[t], sol]},
+        If[b =!= None,
+          Scan[
+            Which[
+              !KeyExistsQ[edits, #], edits[#] = {Last[t], names, sol}; ids[#] = id,
+              ids[#] =!= id, Message[XMLReplace::conflict, #]] &,
+            DeleteCases[First[b], _Missing]]]],
+      {sol, sols}, {t, targets}];
+    edits];
+
+(* A query's right-hand side, held. A Rule's was evaluated when the query was
+   given, as in Cases; a Condition in its value is part of it, not a test. *)
+heldRHS[q_RuleDelayed] := Extract[q, {2}, Hold];
+heldRHS[q_Rule] := Replace[Extract[q, {2}, Hold], Hold[c_Condition] :> Hold[Identity[c]]];
+
+(* Without a Condition at the top, which the match tests. *)
+unguarded[held_] := Replace[held, Hold[Verbatim[Condition][b_, _]] :> Hold[b]];
+
+(* {Hold[name], Hold[replacement]} for each rule of the targets form, or None
+   when the right-hand side is not one. *)
+targetRules[held_, names_] :=
+  With[{targets = Replace[Replace[held, {Hold[l_List] :> Thread[Hold[l]], h_ :> {h}}],
+      {Hold[(Rule | RuleDelayed)[s_Symbol, v_]] /; MemberQ[names, Hold[s]] :> {Hold[s], Hold[v]}, _ -> None}, {1}]},
+    If[targets =!= {} && FreeQ[targets, None, {1}], targets, None]];
+
+replacementId[code_, sol_] := code /. KeyValueMap[Replace[#1, Hold[s_] :> (HoldPattern[s] -> boundAt[First[#2]])] &, sol];
+
+(* What rewritten applies at pos: the replacement evaluated with each name it
+   uses read from the tree rewritten so far, or the part left unchanged after
+   XMLReplace::kind. A name that is not bound, in an Alternatives branch that
+   did not match, is Sequence[]. *)
+replacer[pos_, {code_, names_, sol_}] := Function[Null, replacement[pos, code, names, sol]];
+
+replacement[pos_, code_, names_, sol_] :=
+  With[{held = code /. (Replace[#, Hold[s_] :> (HoldPattern[s] -> Replace[nameValue[#, Lookup[sol, Key[#], None]], {{v_} :> v, l_ :> Sequence @@ l}])] & /@
+      Select[names, !FreeQ[code, Replace[#, Hold[s_] :> HoldPattern[s]]] &])},
+    With[{v = If[Length[held] == 1, ReleaseHold[held], $several[List @@ held]]},
+      If[replacementKindQ[pos, v], v,
+        Message[XMLReplace::kind, pos, Replace[v, $several[l_] :> HoldForm[Sequence @@ l]]]; Throw[Null, $unchanged]]]];
+
+(* What a name splices in: its value at its position now, or, when an earlier
+   rewrite removed that position, its original value, with XMLReplace::stale.
+   A repeated name reads its first position; a name with no position, deep in
+   an XMLElement pattern (ticket 16), its original value. *)
+nameValue[_, None] := {};
+nameValue[name_, {ps_, vals_}] :=
+  If[MatchQ[First[ps], _Missing], vals,
+    Replace[valueAt[First[ps]], $stale :> (Message[XMLReplace::stale, Replace[name, Hold[s_] :> HoldForm[s]], First[ps]]; vals)]];
+
+(* ---- The tree rewritten so far ---- *)
+
+(* The value at a position, as the list of what a name there splices in, or
+   $stale when an earlier rewrite removed it. An element replaced by one
+   element is that element; replaced by anything else, or inside a part that
+   was replaced, it is removed. *)
+valueAt[{}] := {assembled[]};
+valueAt[Span[upper_, lower_]] :=
+  With[{es = elementNow /@ (Take[lower, #] & /@ Range[Length[upper] + 1, Length[lower] - 1])},
+    If[MemberQ[es, $stale], $stale, {es}]];
+valueAt[pos_] := With[{k = LengthWhile[pos, IntegerQ[#] && # > 0 &]}, valueIn[Take[pos, k], Drop[pos, k]]];
+
+valueIn[steps_, {}] := Replace[elementNow[steps], x_XMLElement :> {x}];
+valueIn[steps_, _] /; !aliveQ[steps] := $stale;
+valueIn[steps_, {0}] := {currentNode[steps][[1]]};
+valueIn[steps_, {Key[All]}] := {currentNode[steps][[2]]};
+valueIn[steps_, {Key[k_], tail___}] /; KeyExistsQ[$readings, k] :=
+  If[MemberQ[currentNode[steps][[2]], Verbatim[Rule][$readings[k][[1]], _]], tokensAt[steps, k, tail], $stale];
+valueIn[steps_, {Key[k_]}] := Replace[Lookup[currentNode[steps][[2]], Key[k], $stale], v : Except[$stale] :> {v}];
+valueIn[steps_, {All}] := {currentContents[steps]};
+valueIn[steps_, {Span[m_, n_]}] :=
+  With[{es = elementNow[Append[steps, #]] & /@ Range[m, n]}, If[MemberQ[es, $stale], $stale, es]];
+
+elementNow[steps_] :=
+  If[aliveQ[Most[steps]] && !KeyExistsQ[$allReplaced, Most[steps]],
+    Replace[Lookup[$replaced, Key[steps], {current[steps]}], {{x_XMLElement} :> x, _ -> $stale}],
+    $stale];
+
+(* The tag and attributes of the element at steps, as rewritten so far. *)
+currentNode[steps_] := Lookup[$nodes, Key[steps], original[steps]];
+
+(* A list key's tokens, or a token, run or gap of them by original index; a
+   token that a rewrite replaced is removed. *)
+tokensAt[steps_, k_] := {currentTokens[steps, k]};
+tokensAt[steps_, k_, tail_] :=
+  With[{items = openedTokens[steps, k], is = Replace[tail, {i_Integer :> {i}, Span[m_, n_] :> Range[m, n]}]},
+    If[SubsetQ[items, tokenRef /@ is], $originalTokens[{steps, k}][[is]], $stale]];
+
+(* ---- What a target takes (spec section 6) ---- *)
+
+$node = _XMLElement | _String | XMLObject[_][___];
+
+replacementKindQ[pos_, v_] := With[{k = LengthWhile[pos, IntegerQ[#] && # > 0 &]}, kindQ[Take[pos, k], Drop[pos, k], v]];
+
+(* An XMLObject's root element stays an element. *)
+kindQ[{1}, {}, v_] /; MatchQ[$input, XMLObject[_][___]] := MatchQ[v, _XMLElement];
+kindQ[_, {}, v_] := MatchQ[v, $node | Splice[{$node ...}] | Nothing];
+kindQ[_, {0}, v_] := StringQ[v];
+kindQ[_, {Key[All]}, v_] := MatchQ[v, {((_String | {_String, _String}) -> _String) ...}];
+kindQ[_, {Key[k_]}, v_] /; KeyExistsQ[$readings, k] := MatchQ[v, {___String}];
+kindQ[_, {Key[_]}, v_] := MatchQ[v, _String | Nothing];
+kindQ[_, {Key[_], Span[m_, n_]}, v_] /; n == m - 1 := MatchQ[v, _String | {___String}];
+kindQ[_, {Key[_], _Span}, v_] := MatchQ[v, {___String}];
+kindQ[_, {Key[_], _Integer}, v_] := StringQ[v];
+kindQ[_, {All}, v_] := MatchQ[v, {$node ...}];
+kindQ[_, {Span[m_, n_]}, v_] /; n == m - 1 := MatchQ[v, $node | {$node ...} | Splice[{$node ...}]];
+kindQ[_, {_Span}, v_] := MatchQ[v, Splice[{$node ...}] | {$node ...} | Nothing];

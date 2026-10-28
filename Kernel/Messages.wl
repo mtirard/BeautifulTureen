@@ -48,12 +48,12 @@ Scan[Function[h,
     MessageName[h, "liststage"] = "`1` is a list of patterns for an element's children. `2`";
     MessageName[h, "listentry"] = "`1` cannot be an entry in a list of patterns for an element's children. `2`";
     MessageName[h, "blank"] = "`1` is a blank, which is not an XML pattern. Any element is XMLPattern[_]. An XML pattern matches elements only; for the text inside an element, use HTMLTextContent or HTMLInnerText."],
-  {XMLCases, XMLFirstCase, XMLDeleteCases, XMLMatchQ, XMLFreeQ, HTMLInnerText, HTMLToNotebook, Child, Descendant, Adjacent, Sibling}];
+  {XMLCases, XMLFirstCase, XMLDeleteCases, XMLReplace, XMLMatchQ, XMLFreeQ, HTMLInnerText, HTMLToNotebook, Child, Descendant, Adjacent, Sibling}];
 
 (* A list given as a tree holding something other than elements and strings. *)
 Scan[Function[h,
     MessageName[h, "badmember"] = "A list given as the first argument should hold only XMLElement expressions and strings. The member at position `1` has head `2`."],
-  {XMLCases, XMLFirstCase, XMLDeleteCases, XMLFreeQ, HTMLTextContent, HTMLInnerText, HTMLToNotebook, HTMLToTree}];
+  {XMLCases, XMLFirstCase, XMLDeleteCases, XMLReplace, XMLFreeQ, HTMLTextContent, HTMLInnerText, HTMLToNotebook, HTMLToTree}];
 
 (* A mistake in a combinator is its message, named for it (ADR 0022). HEAD
    stands for the combinator's name; the message's own slot `1` is kept.
