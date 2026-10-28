@@ -434,7 +434,7 @@ TestCreate[
 TestCreate[
   XMLCases[$ruleTree, XMLPattern[_, _, {___, XMLPattern["p", "id" -> i_], XMLPattern["a", "href" -> h_], ___}] -> {i, h}],
   {{"a", "/one"}, {"b", "/two"}},
-  TestID -> "rule-tree-pattern-bindings"
+  TestID -> "rule-tree-pattern-names"
 ];
 
 TestCreate[

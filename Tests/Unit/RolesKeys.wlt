@@ -56,12 +56,12 @@ TestCreate[
   TestID -> "constructs-key-binds-an-attribute"
 ];
 
-(* The value takes the bindings of the element's first result. *)
+(* The value takes the matches of the element's first result. *)
 TestCreate[
   HTMLToNotebook[doc[el["body", el["div", XMLElement["h2", {"class" -> "Section"}, {}], XMLElement["h2", {"class" -> "Subsection"}, {}], "x"]]],
     "Constructs" -> {XMLPattern["div", _, Descendant[XMLPattern["h2", "class" -> s_]]] :> s}],
   Notebook[{Cell[TextData[{"x"}], "Section"]}],
-  TestID -> "constructs-key-first-result-bindings"
+  TestID -> "constructs-key-first-result-matches"
 ];
 
 (* A function value is given the element as it is in the input. *)

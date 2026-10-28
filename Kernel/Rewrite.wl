@@ -45,7 +45,7 @@ rewritten[input_, edits_] :=
    list's tails, its contents {3}, and among its children the gap before n
    {4, n, 0}, a run n ;; k {4, n, 1, -k} (longest first), then child n.
    Tails order as children do, with 2 for the 4. This is the order of
-   Query/TreePatterns.wl's binding keys, for positions given on their own. *)
+   Query/TreePatterns.wl's order keys, for positions given on their own. *)
 $keyPad = -10^9;
 
 positionOrdering[ps_] :=
@@ -245,8 +245,8 @@ XMLDeleteCases::text = "The name `1` binds text inside an XMLElement pattern, an
 treeDelete[tree_, q_] :=
   Catch[
     checkDeletion[q];
-    With[{targets = treeTargets[XMLDeleteCases, tree, q]},
-      If[targets === $Failed, $Failed, deleted[tree, DeleteDuplicates[Join @@ targets]]]],
+    With[{counted = treeCountedPositions[XMLDeleteCases, tree, q]},
+      If[counted === $Failed, $Failed, deleted[tree, DeleteDuplicates[Join @@ counted]]]],
     $refusal];
 
 (* A rule's right-hand side names what is deleted: a name of the pattern or a
@@ -265,20 +265,20 @@ deletedNamesQ[_, _] := False;
    a gap filled with nothing. A name with no position, one in an XMLElement
    pattern that binds part of a tag, an attribute value or an item, deletes
    nothing. The root of an XMLObject is kept. *)
-deleted[tree_, targets_] :=
-  Module[{ps = DeleteCases[targets, _Missing]},
+deleted[tree_, counted_] :=
+  Module[{ps = DeleteCases[counted, _Missing]},
     Replace[SelectFirst[ps, MatchQ[#, _Span] &], s_Span :> refuse[XMLDeleteCases::pathtarget, s]];
     Replace[SelectFirst[ps, MatchQ[#, {} | {__Integer?Positive, 0}] &], p_List :> refuse[XMLDeleteCases::target, p]];
     If[MatchQ[tree, XMLObject[_][___]] && MemberQ[ps, {1}], Message[XMLDeleteCases::root]; ps = DeleteCases[ps, {1}]];
     If[AllTrue[ps, MatchQ[{_Integer?Positive, __Integer?Positive}]],
-      Delete[tree, inputPositions[tree, outermostTargets[ps]]],
+      Delete[tree, inputPositions[tree, outermostPositions[ps]]],
       rewritten[tree, (# -> If[MatchQ[Last[#], Key[All] | All], {} &, Nothing &]) & /@ ps]]];
 
 (* Elements below the top ones, deleted with Delete at their positions in
    the input: rewriting each through the opened nodes costs about 0.1 ms an
    element, five times the query that finds them. An element inside another
    deleted one goes with it. *)
-outermostTargets[ps_] := With[{set = AssociationThread[ps -> True]}, Select[ps, NoneTrue[Range[Length[#] - 1], Function[k, KeyExistsQ[set, Take[#, k]]]] &]];
+outermostPositions[ps_] := With[{set = AssociationThread[ps -> True]}, Select[ps, NoneTrue[Range[Length[#] - 1], Function[k, KeyExistsQ[set, Take[#, k]]]] &]];
 
 (* The input positions of element positions, each step the n-th element
    among the contents of the one before. *)
@@ -343,11 +343,11 @@ checkReplacement[_Rule | _RuleDelayed] := Null;
 checkReplacement[p_] := refuse[XMLReplace::bare, p];
 
 (* For one query, position -> {Hold[replacement], names, solution}: what
-   replaces the position and the bindings of the names it may use, from the
+   replaces the position and the matches of the names it may use, from the
    first result, in result order, that targets it. A later result whose
    replacement differs, by its code or by the positions of the names it
    uses, is XMLReplace::conflict. A repeated name targets every position it
-   is bound at, as treeTargets gives them. *)
+   is bound at, as treeCountedPositions gives them. *)
 replacementEdits[tree_, q : (Rule | RuleDelayed)[lhs_, _]] :=
   Module[{r, names = namesIn[Hold[lhs]], rhs = heldRHS[q], targets, query = q, sols, edits = <||>, ids = <||>},
     targets = targetRules[unguarded[rhs], names];
@@ -400,7 +400,7 @@ replacement[pos_, code_, names_, sol_] :=
       If[replacementKindQ[pos, v], v,
         Message[XMLReplace::kind, pos, Replace[v, $several[l_] :> HoldForm[Sequence @@ l]]]; Throw[Null, $unchanged]]]];
 
-(* What a name splices in at target pos: its value at its position now, or,
+(* What a name splices in at position pos: its value at its position now, or,
    when an earlier rewrite removed that position, its original value, with
    XMLReplace::stale. A repeated name with several positions, its values
    equal when matched, reads the one being rewritten, or else its first; a
@@ -450,7 +450,7 @@ tokensAt[steps_, k_, tail_] :=
   With[{items = openedTokens[steps, k], is = Replace[tail, {i_Integer :> {i}, Span[m_, n_] :> Range[m, n]}]},
     If[SubsetQ[items, tokenRef /@ is], $originalTokens[{steps, k}][[is]], $stale]];
 
-(* ---- What a target takes ---- *)
+(* ---- What each kind of position takes ---- *)
 
 $node = _XMLElement | _String | XMLObject[_][___];
 

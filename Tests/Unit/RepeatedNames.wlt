@@ -107,7 +107,7 @@ TestCreate[
   TestID -> "repeated-alternatives-bound-once"
 ];
 
-(* === Except referring to a binding outside it === *)
+(* === Except referring to a name matched outside it === *)
 
 (* Siblings whose tags repeat: b a c a b a. *)
 types = doc[el["div", e["b", "1"], e["a", "2"], e["c", "3"], e["a", "4"], e["b", "5"], e["a", "6"]]];
@@ -162,7 +162,7 @@ TestCreate[
   TestID -> "except-ref-name-in-rhs"
 ];
 
-(* An Except referring to an ancestor's binding compares values. *)
+(* An Except referring to a name matched on an ancestor compares values. *)
 TestCreate[
   XMLCases[doc[el["div", el["p", el["div"], el["b"]], el["p", el["b"]]]],
     XMLPattern[t_, _, Descendant[x : XMLPattern["p", _, {Except[XMLPattern[t_]] ..}]]] :> x],

@@ -88,13 +88,13 @@ ruleLookups[sets_List, head_, tree_] :=
 (* Position -> value for one rule set, the first rule's value where several
    select one element. *)
 ruleTable[rules_, head_, tree_] :=
-  Join[<||>, Sequence @@ Reverse[ruleSites[#, head, tree] & /@ If[AssociationQ[rules], Normal[rules], Flatten[{rules}]]]];
+  Join[<||>, Sequence @@ Reverse[rulePositions[#, head, tree] & /@ If[AssociationQ[rules], Normal[rules], Flatten[{rules}]]]];
 
 refuseRule[] := Throw[$Failed, $ruleRefusal];
 
-ruleSites[r : (Rule | RuleDelayed)[key_, _], head_, tree_] :=
-  If[queryKeyQ[key], queryKeySites, testKeySites][key, heldValue[r], head, tree];
-ruleSites[x_, head_, _] := (Message[MessageName[head, "notrule"], x]; refuseRule[]);
+rulePositions[r : (Rule | RuleDelayed)[key_, _], head_, tree_] :=
+  If[queryKeyQ[key], queryKeyPositions, testKeyPositions][key, heldValue[r], head, tree];
+rulePositions[x_, head_, _] := (Message[MessageName[head, "notrule"], x]; refuseRule[]);
 
 queryKeyQ[_Rule | _RuleDelayed] := True;
 queryKeyQ[s_String] := MatchQ[Quiet[cssTree[s]], {"context", _}];
@@ -106,23 +106,24 @@ heldValue[r_RuleDelayed] := Extract[r, {2}, Hold];
 heldValue[r_Rule] := Replace[Extract[r, {2}, Hold], Hold[c_Condition] :> Hold[Identity[c]]];
 
 (* A query key's names are not in scope in the value, which is evaluated once
-   for all its targets. The bare input's root is never counted (ADR 0018), so
-   a query cannot select it. A target that is not an element is keytarget. *)
-queryKeySites[key_, value_, head_, tree_] :=
-  With[{targets = Replace[treeTargets[head, Replace[tree, s_String :> {s}], key], {
+   for all the positions of its counted names. The bare input's root is never
+   counted (ADR 0018), so a query cannot select it. A position that is not an
+   element is keytarget. *)
+queryKeyPositions[key_, value_, head_, tree_] :=
+  With[{ps = Replace[treeCountedPositions[head, Replace[tree, s_String :> {s}], key], {
       $Failed :> refuseRule[],
       rs_ :> DeleteDuplicates[Join @@ rs]}]},
-    Replace[SelectFirst[targets, !MatchQ[#, {__Integer?Positive}] &],
+    Replace[SelectFirst[ps, !MatchQ[#, {__Integer?Positive}] &],
       t : Except[_Missing] :> (Message[MessageName[head, "keytarget"], t]; refuseRule[])];
-    If[targets === {}, <||>, AssociationThread[targets, ConstantArray[ReleaseHold[value], Length[targets]]]]];
+    If[ps === {}, <||>, AssociationThread[ps, ConstantArray[ReleaseHold[value], Length[ps]]]]];
 
 (* An element test is checked as XMLMatchQ checks one, then run as the query
    r : key :> value counting r alone, so that each element it matches is one
-   result and the other names take the bindings of its first solution
+   result and the other names take their matches in its first solution
    (treeSolutions). An XMLDocument root is no test of an element. A bare
    element is matched in a list around it, at the same positions, so that
    its root is tested too. *)
-testKeySites[key_, value_, head_, tree_] :=
+testKeyPositions[key_, value_, head_, tree_] :=
   Module[{r},
     If[documentKeyQ[key], Message[MessageName[head, "badpat"], key]; refuseRule[]];
     If[treeMatcher[head, key, False] === $Failed, refuseRule[]];

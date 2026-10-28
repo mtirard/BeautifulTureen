@@ -28,7 +28,7 @@ $attrs = element["<div id='root'>
 <span id='s2' title='\[EAcute]'></span>
 </div>"];
 
-$chain = element["<div id='d'><section id='s'><h2 id='h'>t</h2><p id='p1'>x</p><p id='p2'><span id='sp'>y</span></p></section><p id='p3'>z</p></div>"];
+$nested = element["<div id='d'><section id='s'><h2 id='h'>t</h2><p id='p1'>x</p><p id='p2'><span id='sp'>y</span></p></section><p id='p3'>z</p></div>"];
 
 (* === Simple selectors === *)
 
@@ -129,7 +129,7 @@ TestCreate[
 ];
 
 TestCreate[
-  ids[$chain, #] & /@ {"section p", "div > p", "h2 + p", "h2 ~ p", "div section p", "div p > span", "section > p + p"},
+  ids[$nested, #] & /@ {"section p", "div > p", "h2 + p", "h2 ~ p", "div section p", "div p > span", "section > p + p"},
   {{"p1", "p2"}, {"p3"}, {"p1"}, {"p1", "p2"}, {"p1", "p2"}, {"sp"}, {"p2"}},
   TestID -> "css-combinators-select"
 ];
@@ -520,7 +520,7 @@ TestCreate[
 ];
 
 TestCreate[
-  {ids[$chain, "section > h2, section > p"], ids[$chain, "div > p, section > p"], ids[$chain, "#p3, #h, #sp"]},
+  {ids[$nested, "section > h2, section > p"], ids[$nested, "div > p, section > p"], ids[$nested, "#p3, #h, #sp"]},
   {{"h", "p1", "p2"}, {"p1", "p2", "p3"}, {"h", "sp", "p3"}},
   TestID -> "css-selector-list-selects"
 ];
@@ -590,9 +590,9 @@ TestCreate[
 
 (* A translation can sit next to the user's names. *)
 TestCreate[
-  {Lookup[XMLCases[$chain, XMLPattern[_, _, {___, "section:not([id=q])", ___}, {___, e : XMLPattern["p"], ___}] :> e][[All, 2]], "id"],
-    Lookup[XMLCases[$chain, XMLPattern[_, _, {___, FromCSSSelector["section:has(h2)"], ___}, {___, e : XMLPattern["p"], ___}] :> e][[All, 2]], "id"],
-    Lookup[XMLCases[$chain, XMLPattern[_, _, {___, s : FromCSSSelector["section:has(h2)"], ___}] :> s][[All, 2]], "id"]},
+  {Lookup[XMLCases[$nested, XMLPattern[_, _, {___, "section:not([id=q])", ___}, {___, e : XMLPattern["p"], ___}] :> e][[All, 2]], "id"],
+    Lookup[XMLCases[$nested, XMLPattern[_, _, {___, FromCSSSelector["section:has(h2)"], ___}, {___, e : XMLPattern["p"], ___}] :> e][[All, 2]], "id"],
+    Lookup[XMLCases[$nested, XMLPattern[_, _, {___, s : FromCSSSelector["section:has(h2)"], ___}] :> s][[All, 2]], "id"]},
   {{"p3"}, {"p3"}, {"s"}},
   TestID -> "css-names-splice-beside-the-users"
 ];

@@ -81,7 +81,7 @@ unknownTreeOptions[opts_List] := Select[Flatten[opts], !optionRuleQ[HTMLToTree][
    position above a Focused element. Each is an Association to True. Hiding
    wins: a site that is hidden, or inside a Hidden element, is not focused. *)
 treeSites[tree_, s_] := Catch[
-  With[{focus = querySites["Focus", tree, s["Focus"]], hidden = siteSet[querySites["Hide", tree, s["Hide"]]]},
+  With[{focus = queryItemPositions["Focus", tree, s["Focus"]], hidden = siteSet[queryItemPositions["Hide", tree, s["Hide"]]]},
     With[{focused = If[focus === All, All, Select[focus, NoneTrue[prefixes[#], KeyExistsQ[hidden, #] &] &]]},
       <|"Hidden" -> hidden, "Focused" -> Replace[focused, l_List :> siteSet[l]],
         "FocusPaths" -> If[focused === All, <||>, siteSet[Join @@ (Most[prefixes[#]] & /@ focused)]]|>]],
@@ -92,40 +92,40 @@ siteSet[ps_List] := AssociationThread[ps -> True];
 prefixes[pos_] := FoldList[Append, {}, pos];
 
 (* The WL positions a query selects, All for no focus, or a throw of $Failed *)
-querySites["Focus", _, All] := All;
-querySites["Hide", _, None] := {};
-querySites[name_, tree_, q_] := targetSites[name, tree, q];
+queryItemPositions["Focus", _, All] := All;
+queryItemPositions["Hide", _, None] := {};
+queryItemPositions[name_, tree_, q_] := countedItemPositions[name, tree, q];
 
-(* The sites of a tree query's targets: the positions of the names its
-   right-hand side uses, over all its results. A target of a kind the option
-   cannot act on is hidetarget or focustarget. For Hide, a
+(* The WL positions of the items a tree query selects: those at the
+   positions of its counted names, over all its results. A position of a
+   kind the option cannot act on is hidetarget or focustarget. For Hide, a
    bare element is matched in a list around it, at the same positions, so
    that its root can be selected, and kept with root. *)
-targetSites[name_, tree_, q_] :=
-  With[{targets = Replace[
-      Block[{$queryOption = name}, treeTargets[HTMLToTree, If[name === "Hide" && MatchQ[tree, _XMLElement], {tree}, tree], q]], {
+countedItemPositions[name_, tree_, q_] :=
+  With[{counted = Replace[
+      Block[{$queryOption = name}, treeCountedPositions[HTMLToTree, If[name === "Hide" && MatchQ[tree, _XMLElement], {tree}, tree], q]], {
         $Failed :> Throw[$Failed, treeSites],
         rs_ :> DeleteDuplicates[Join @@ rs]}]},
-    Replace[SelectFirst[targets, !targetKindQ[name, #] &], t : Except[_Missing] :>
-      (refusedTarget[name, t]; Throw[$Failed, treeSites])];
-    keptRoot[name, tree, DeleteDuplicates[Join @@ (targetItems[tree, #] & /@ targets)]]];
+    Replace[SelectFirst[counted, !actsOnQ[name, #] &], t : Except[_Missing] :>
+      (refusedPosition[name, t]; Throw[$Failed, treeSites])];
+    keptRoot[name, tree, DeleteDuplicates[Join @@ (itemPositions[tree, #] & /@ counted)]]];
 
-refusedTarget["Hide", t_] := Message[HTMLToTree::hidetarget, t];
-refusedTarget["Focus", t_] := Message[HTMLToTree::focustarget, t];
+refusedPosition["Hide", t_] := Message[HTMLToTree::hidetarget, t];
+refusedPosition["Focus", t_] := Message[HTMLToTree::focustarget, t];
 
 stepQ[i_] := IntegerQ[i] && i > 0;
 
 (* Hide takes an element, a run of element children, or an element's
    contents; Focus the first two. *)
-targetKindQ[_, {__?stepQ}] := True;
-targetKindQ[_, {___?stepQ, Span[m_?stepQ, n_Integer]}] := n >= m;
-targetKindQ["Hide", {__?stepQ, All}] := True;
-targetKindQ[_, _] := False;
+actsOnQ[_, {__?stepQ}] := True;
+actsOnQ[_, {___?stepQ, Span[m_?stepQ, n_Integer]}] := n >= m;
+actsOnQ["Hide", {__?stepQ, All}] := True;
+actsOnQ[_, _] := False;
 
-(* The WL positions of the items a target names, as the walk numbers them *)
-targetItems[tree_, steps : {__?stepQ}] := {wlPath[tree, steps]};
-targetItems[tree_, {steps___, Span[m_, n_]}] := wlPath[tree, {steps, #}] & /@ Range[m, n];
-targetItems[tree_, {steps__, All}] :=
+(* The WL positions of the items at a position, as the walk numbers them *)
+itemPositions[tree_, steps : {__?stepQ}] := {wlPath[tree, steps]};
+itemPositions[tree_, {steps___, Span[m_, n_]}] := wlPath[tree, {steps, #}] & /@ Range[m, n];
+itemPositions[tree_, {steps__, All}] :=
   With[{p = wlPath[tree, {steps}]}, Join[p, {3, #}] & /@ Range[Length[tree[[Sequence @@ p, 3]]]]];
 
 (* The WL position of the element at element-child steps: an XMLObject's
@@ -142,8 +142,8 @@ topPath[_XMLElement, 1] := {};
 elementIndex[items_, i_] := Position[items, _XMLElement, {1}, Heads -> False][[i, 1]];
 
 (* A bare element's root is never hidden: it is kept, with root. *)
-keptRoot["Hide", _XMLElement, sites_] /; MemberQ[sites, {}] := (Message[HTMLToTree::root]; DeleteCases[sites, {}]);
-keptRoot[_, _, sites_] := sites;
+keptRoot["Hide", _XMLElement, ps_] /; MemberQ[ps, {}] := (Message[HTMLToTree::root]; DeleteCases[ps, {}]);
+keptRoot[_, _, ps_] := ps;
 
 (* ---- The tree that is built ----
    The walk carries each item's position in the input, as the queries give
