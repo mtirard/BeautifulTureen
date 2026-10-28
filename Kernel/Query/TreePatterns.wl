@@ -1126,7 +1126,7 @@ groupResult[rhs_, all_, testNames_, group_] :=
 resultOf[rhs_, all_, sol_] /; !$positionsOut := evaluated[substituted[rhs, all, sol]];
 resultOf[rhs_, all_, sol_] /; $targetsOut :=
   If[guardedBody[rhs] =!= rhs && evaluated[substituted[rhs, all, sol]] === $noResult, $noResult,
-    positionOf[Lookup[sol, Key[#], None]] & /@ First[rhsNames[rhs, all]]];
+    {positionOf[Lookup[sol, Key[#], None]] & /@ First[rhsNames[rhs, all]]}];
 resultOf[rhs_, all_, sol_] :=
   With[{body = guardedBody[rhs]},
     If[body =!= rhs && evaluated[substituted[rhs, all, sol]] === $noResult, $noResult,
