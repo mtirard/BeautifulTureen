@@ -72,10 +72,10 @@ TestCreate[
   TestID -> "message-test-on-combinator-names-it"
 ];
 
-(* Where no combinator can be used, the message does not suggest one. *)
+(* Descendant alone is a constraint, not a pattern to test (spec section 8). *)
 TestCreate[
   capturedMessages[XMLMatchQ[XMLElement["p", {}, {"x"}], Descendant[XMLPattern["p"]]]],
-  {"Descendant[XMLPattern[\"p\"]] is a combinator with fewer than two stages. A combinator needs at least two, but XMLMatchQ tests a lone element and cannot use one; use XMLCases or XMLFirstCase to search a tree with it."},
+  {"Descendant[XMLPattern[\"p\"]] is a constraint, which can only be an argument of XMLPattern after the attributes, as in XMLPattern[\"nav\", _, Descendant[XMLPattern[\"a\"]]]. To find matching elements at any depth, give the pattern alone."},
   TestID -> "message-one-stage-combinator-in-xmlmatchq"
 ];
 
@@ -306,11 +306,11 @@ TestCreate[
   TestID -> "message-css-impossible"
 ];
 
-(* A string that gives a combinator, where an element pattern goes, is named
-   as written. *)
+(* A context selector, given to XMLMatchQ, is named as written, and the text
+   says it looks above the element. *)
 TestCreate[
   capturedMessages[XMLMatchQ[XMLElement["p", {}, {}], "div > p"]],
-  {"\"div > p\" relates an element to its parent or siblings, which a lone element does not have. Use XMLCases or XMLFirstCase to search a tree with it."},
+  {"The pattern should be an XMLPattern, an XMLElement pattern, an XMLDocument pattern, a list pattern for a list of elements, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f. A rule gives a value, not a test. A CSS selector such as \"nav a\" or \"ul > li\" looks above the element, which a lone element does not have; use XMLCases or XMLPosition to search a tree with it. Got \"div > p\"."},
   TestID -> "message-css-string-combinator-names-the-string"
 ];
 

@@ -139,11 +139,13 @@ TestCreate[
   TestID -> "document-refused-in-list-combinator"
 ];
 
+(* XMLMatchQ tests an element as the pattern root, and an element is not the
+   document (tree-pattern spec, section 6). *)
 TestCreate[
   {XMLMatchQ[XMLElement["p", {}, {}], XMLDocument[]],
    HTMLInnerText[$doc, "Roles" -> {XMLDocument[] -> "Skip"}]},
-  {$Failed, $Failed},
-  {XMLMatchQ::badpat, HTMLInnerText::badpat},
+  {False, $Failed},
+  {HTMLInnerText::badpat},
   TestID -> "document-refused-one-element"
 ];
 

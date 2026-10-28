@@ -435,7 +435,7 @@ TestCreate[
   {Lookup[XMLDeleteCases[$kids, ":nth-child(odd)"][[3, All, 2]], "id"], ids[$kids, "b:has(> i:last-child)"],
     ids[$kids, "div:has(b:first-child)"], XMLMatchQ[XMLElement["li", {}, {}], "li:first-child"]},
   {{"s1", "p3", "p4"}, {"b1"}, {}, $Failed},
-  {XMLMatchQ::combinator},
+  {XMLMatchQ::badpat},
   TestID -> "css-child-indexed-in-the-consumers"
 ];
 
@@ -519,11 +519,11 @@ TestCreate[
 ];
 
 (* A string giving alternatives of combinators is refused where one element is
-   tested, as a combinator is. *)
+   tested: it looks above the element. *)
 TestCreate[
   {XMLMatchQ[XMLElement["d", {}, {}], "a > b, c > d"], HTMLInnerText[XMLElement["d", {}, {}], "Roles" -> {"a > b, c" -> "Skip"}]},
   {$Failed, $Failed},
-  {XMLMatchQ::combinator, HTMLInnerText::badpat},
+  {XMLMatchQ::badpat, HTMLInnerText::badpat},
   TestID -> "css-selector-list-of-shapes-refused-for-one-element"
 ];
 
@@ -772,11 +772,17 @@ TestCreate[
 ];
 
 TestCreate[
-  {XMLMatchQ[XMLElement["p", {}, {}], "div > p"], XMLMatchQ[XMLElement["li", {}, {}], "li:only-child"],
-    XMLMatchQ[XMLElement["p", {}, {}], e : "div > p"]},
-  {$Failed, $Failed, $Failed},
-  {XMLMatchQ::combinator, XMLMatchQ::combinator, XMLMatchQ::badpat},
+  {XMLMatchQ[XMLElement["p", {}, {}], "div > p"], XMLMatchQ[XMLElement["li", {}, {}], "li:only-child"]},
+  {$Failed, $Failed},
+  {XMLMatchQ::badpat, XMLMatchQ::badpat},
   TestID -> "css-string-combinator-refused-where-an-element-pattern-goes"
+];
+
+TestCreate[
+  XMLMatchQ[XMLElement["p", {}, {}], e : "div > p"],
+  $Failed,
+  {XMLMatchQ::badpat},
+  TestID -> "css-string-combinator-named-refused-where-an-element-pattern-goes"
 ];
 
 TestCreate[
@@ -885,6 +891,6 @@ TestCreate[
   {XMLCases[$rootDoc, Child[XMLPattern["html"], ":root"]], XMLCases[$rootDoc, Descendant[XMLPattern["html"], ":scope > p"]],
    XMLMatchQ[XMLElement["html", {}, {}], ":root"]},
   {$Failed, $Failed, $Failed},
-  {XMLCases::badpat, XMLCases::badpat, XMLMatchQ::combinator},
+  {XMLCases::badpat, XMLCases::badpat, XMLMatchQ::badpat},
   TestID -> "css-root-as-later-stage-refused"
 ];

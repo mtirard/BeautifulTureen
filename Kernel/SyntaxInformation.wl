@@ -19,6 +19,7 @@ Scan[
       If[Options[f] === {}, {}, {"OptionNames" -> Keys[Options[f]]}]]]],
   {XMLCases -> {_, _, _., OptionsPattern[]}, XMLFirstCase -> {_, _, _., OptionsPattern[]},
     XMLDeleteCases -> {_, _, OptionsPattern[]}, XMLMatchQ -> {_, _., OptionsPattern[]},
+    XMLFreeQ -> {_, _., _., OptionsPattern[]},
     HTMLInnerText -> {_, OptionsPattern[]}, HTMLTextContent -> {_},
     HTMLToNotebook -> {_, OptionsPattern[]}, HTMLClassList -> {_}, FromCSSSelector -> {_},
     XMLPattern -> {_, _.},
