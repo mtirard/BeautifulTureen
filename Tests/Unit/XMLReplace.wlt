@@ -1,7 +1,6 @@
-(* XMLReplace over tree patterns: the examples of the tree-pattern spec,
-   section 6, on its fixtures, and one test per kind of position a name can
-   replace. The fixtures are literal trees, so positions are exact. They are
-   local to this file. *)
+(* XMLReplace over tree patterns: the root and targets forms, and one test
+   per kind of position a name can replace. The fixtures are literal trees,
+   so positions are exact. *)
 
 doc[root_] := XMLObject["Document"][{}, root, {}];
 e[tag_, id_String, c___] := XMLElement[tag, {"id" -> id}, {c}];
@@ -10,7 +9,7 @@ el[tag_, c___] := XMLElement[tag, {}, {c}];
 links   = doc[el["p", e["a", "1"], e["a", "2"], e["a", "3"]]];
 hrefs   = doc[el["p", XMLElement["a", {"href" -> "/x"}, {}], XMLElement["a", {"href" -> "/x"}, {}]]];
 
-(* === Spec section 6 === *)
+(* === Examples === *)
 
 (* Root form: the pattern root is the target. *)
 TestCreate[
@@ -79,7 +78,7 @@ TestCreate[
   TestID -> "replace-stale"
 ];
 
-(* === One test per kind (spec section 6) === *)
+(* === One test per kind === *)
 
 (* An element takes an element, a string, Splice[list] or Nothing. *)
 TestCreate[

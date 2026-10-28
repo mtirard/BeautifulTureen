@@ -2,7 +2,7 @@
 (* HTMLPatterns: XMLPosition and XMLExtract *)
 
 (* =========================================================== *)
-(* Positions (spec sections 4 and 6)                            *)
+(* Positions (ADR 0025)                                         *)
 (*                                                              *)
 (* A position counts element children only, from the document:  *)
 (* {} is the document, {i1, ..., ik} an element, and at most one *)

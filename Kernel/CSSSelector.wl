@@ -1,6 +1,6 @@
 (* ::Package:: *)
 (* HTMLPatterns: FromCSSSelector, a CSS selector to the XML pattern it says
-   (tree-pattern spec section 7, ADR 0026) *)
+   (ADR 0026) *)
 
 (* Used by Query/Compiler.wl and Query/TreePatterns.wl *)
 PackageScoped[cssTree]
@@ -26,7 +26,7 @@ PackageScoped[cssNamedTree]
 (*                                                              *)
 (* A one-element selector is its pattern, and a context         *)
 (* selector is the tree pattern rooted at its first compound,   *)
-(* with its subject named by the caller (spec section 7).       *)
+(* with its subject named by the caller (ADR 0026).             *)
 (* =========================================================== *)
 
 PackageExported[FromCSSSelector]
@@ -328,7 +328,7 @@ cssAttributeOf[{_, t_, ___}, _] := cssInvalid["unexpected " <> cssShown[t] <> " 
 (* ---- Pseudo-classes and pseudo-elements ---- *)
 
 (* Translated. The child-indexed ones are positions among the parent's
-   element children (spec section 7): each is cssPos[fromEnd, a, b, of, text], the
+   element children, as positions count them: each is cssPos[fromEnd, a, b, of, text], the
    index a k + b, k >= 0, counted from the start or the end, among all the
    children (of None), those of the compound's type ("type"), or those that
    match a selector ("of", then the pattern). *)
@@ -636,13 +636,13 @@ cssIndexHeld[cssOwnType, n_, side_] := With[{l = side, e = n}, Hold[Count[l, XML
 cssIndexHeld[XMLPattern[t_String], _, side_] := With[{l = side}, Hold[Count[l, XMLElement[t, _, _]] + 1]];
 cssIndexHeld[of_, _, side_] := With[{l = side, m = XMLMatchQ[of]}, Hold[Count[l, _?m] + 1]];
 
-(* ---- Translation to tree patterns (spec section 7) ---- *)
+(* ---- Translation to tree patterns (ADR 0026) ---- *)
 
 (* A list of one-element selectors is the alternatives of their patterns,
    with the tags merged where the rest is the same; any other list is one
    pattern over the alternatives of the selectors' translations, each with its
    subject named cssSubject, so that they share it and give each subject once
-   (spec section 5, one slot). *)
+   (the names of one Alternatives share one slot in the result order). *)
 cssTreeList[cs_] :=
   With[{ts = cssTreeSelector /@ cssDistinctSelectors[cs]},
     If[MatchQ[ts, {{"one", _} ..}], {"one", cssMergedAlternatives[ts[[All, 2]]]},
@@ -700,7 +700,7 @@ cssRunRoot[{_, parts_, within_}] :=
 cssNoRoot[parts_] :=
   Replace[FirstCase[parts[[All, 3]], _cssRoot, None, {2}], cssRoot[text_] :> cssRefuse["unsupported", text, $cssRootHow]];
 
-(* A run as a contents list (spec section 7, counted positions). The
+(* A run as a contents list (ADR 0026, counted positions). The
    positions of each compound are moved to the end of the run they count
    from, where that can be done exactly: across + to compounds that all
    count as one among all the siblings, or that are all either of the type
@@ -749,7 +749,8 @@ cssTagsOf[_] := All;
 
 (* Plain entries. -of-type on a compound with no type counts the siblings of
    its own tag through a fresh tag name, bound on the compound and shared into
-   Except, which refers to that binding (spec section 3). *)
+   Except: a name inside Except that is also bound outside it refers to
+   what it matched there. *)
 cssPlainRun[parts_, within_, fwd_, bwd_] :=
   Module[{ps = parts[[All, 1]], tf = None, tb = None, ownQ = MemberQ[#, cssPos[_, _, _, cssOwnType, _]] &},
     If[ownQ[fwd], tf = cssFreshName["t"]; ps[[1]] = cssTagged[ps[[1]], tf]];
@@ -854,8 +855,8 @@ $cssSiblingHasHow = "A relative selector that starts with + or ~ looks beside th
 (* ---- Translation to tree patterns: tests on the path ---- *)
 
 (* A complex :not(), :is() or :where() whose combinators are all descendant or
-   > is a test on its compound's path from the document, its ancestors (spec
-   section 7): its argument's last compound is the element, and the compounds
+   > is a test on its compound's path from the document, its ancestors: its
+   argument's last compound is the element, and the compounds
    before it a list over the path, as nav a is {___, XMLPattern["nav"], ___}.
    :is() intersects the last compound into the element's; :not() of one that
    the element's own compound implies is the negated test alone, and of any
@@ -1068,8 +1069,7 @@ cssAlternatives[ps_] := Alternatives @@ ps;
 
 (* The pattern of a compound, from its branches: a branch whose tag can never
    match is dropped, and with none left the compound never matches. The tests
-   are a PatternTest, so that the translation invents no name (spec section
-   7). *)
+   are a PatternTest, so that the translation invents no name (ADR 0026). *)
 cssFinish[bs_, type_] :=
   With[{live = Select[bs, cssTagPattern[First[#]] =!= cssNever &]},
     {Which[

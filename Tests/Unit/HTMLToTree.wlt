@@ -449,7 +449,7 @@ TestCreate[
 (* ---- Rules ----
    Both queries take tree patterns and rules, matched against the input as
    given; they act on the positions of the names the right-hand side uses
-   (spec section 6). Inputs are the spec's fixtures, built literally. *)
+   (ADR 0024). The inputs are built literally. *)
 
 doc6[root_] := XMLObject["Document"][{}, root, {}];
 idEl[tag_, id_String, c___] := XMLElement[tag, {"id" -> id}, {c}];
@@ -482,7 +482,7 @@ TestCreate[
   TestID -> "htt-rule-focus-attribute-refused"
 ];
 
-(* The target table of spec section 6, one test per row *)
+(* Which kinds of position Hide and Focus act on, one test per kind *)
 $nav6 = doc6[idEl["nav", "o", idEl["a", "a1"], idEl["nav", "i", idEl["a", "a2"]], idEl["a", "a3"]]];
 
 TestCreate[

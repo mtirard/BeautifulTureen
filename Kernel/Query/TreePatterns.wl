@@ -127,7 +127,7 @@ $targetsOut = False;
    Association name -> {positions, {value}}, the value a list of what the
    name splices in. The counted names are those given, not those the
    right-hand side uses; every other name it mentions is uncounted, and takes
-   its first passing binding (spec section 3). A result its Conditions refuse
+   its first passing binding. A result its Conditions refuse
    gives none. *)
 treeSolutions[head_, tree_, q_, counted_] :=
   Block[{$positionsOut = True, $solutionsOut = True, $countedGiven = counted}, treeCases[head, tree, q, Infinity]];
@@ -144,7 +144,7 @@ splitQuery[r : Verbatim[Rule][_, _]] :=
 splitQuery[p_] := Module[{r}, {Hold @@ {Pattern @@ {r, p}}, Hold[r]}];
 
 (* A named context selector as the whole query: erased, it would give the
-   elements it is rooted at, not its subjects (spec section 7). *)
+   elements it is rooted at, not its subjects (ADR 0026). *)
 namedContextQ[Verbatim[Pattern][_, p_]] := AnyTrue[rootStrings[p], cssContextQ];
 namedContextQ[(Verbatim[Condition] | Verbatim[PatternTest])[p_, _]] := namedContextQ[p];
 namedContextQ[alts_Alternatives] := AnyTrue[List @@ alts, namedContextQ];
@@ -174,7 +174,7 @@ patternOrder[held_] :=
 conditionNames[held_, all_] :=
   mentioned[Cases[held, Verbatim[Condition][_, t_] :> Hold[t], {0, Infinity}, Heads -> True], all];
 
-(* ---- Counted names (spec section 3) ---- *)
+(* ---- Counted names (ADR 0024) ---- *)
 
 (* {counted, test names}: the names in the right-hand side outside the tests
    of its Conditions, and the names only in those tests. *)
@@ -202,7 +202,7 @@ varsReached[held_, inits_] :=
 
 initsOf[inits_, vars_] := Join[Hold[], Sequence @@ Cases[inits, {v_, i_} /; MemberQ[vars, v] :> i]];
 
-(* A name bound only inside Except has no value outside it (spec section 3).
+(* A name bound only inside Except has no value outside it.
    In Except[c, p] the names in p are bound, as in WL; those in c are not,
    unless they are also bound outside every Except's c, and then they refer
    to that binding (exceptRefs). *)
@@ -323,7 +323,7 @@ materialElems[{}] := Rest[$elem];
 materialElems[r_] := Lookup[$matElems, Key[r], $matElems[r] = Extract[materialise[$tops, r, {1, 2 $indexDepth - 1}], $wlPos]];
 
 (* =========================================================== *)
-(* Position order (spec section 5)                              *)
+(* Position order (ADR 0024)                                    *)
 (*                                                              *)
 (* Each position has a key, a list of integers; keys padded to  *)
 (* one length with $pad, below every entry, compare as the      *)
@@ -379,7 +379,7 @@ cRoot[Verbatim[Pattern][s_Symbol, p_], need_] :=
     With[{sub = cRoot[p, need]}, treeNode["Named", Union[sub["Names"], {name}], need, "Name" -> name, "Sub" -> sub]]];
 
 (* A Condition sees the names bound inside its pattern and the names bound
-   before it (spec section 3). One that sees a name bound outside its own
+   before it, as in WL. One that sees a name bound outside its own
    pattern is pending: the node above that binds it runs it. *)
 cRoot[c_Condition, need_] :=
   With[{test = Extract[c, {2}, Hold]},
@@ -411,7 +411,7 @@ cRoot[x_XMLElement, need_] := cLiteral[x, need];
 
 refuseDocumentIn[x_] := If[!FreeQ[x, _XMLDocument], refuse[XMLDocument::place, FirstCase[x, _XMLDocument, Null, {0, Infinity}]]];
 
-(* A string is a CSS selector, and means its translation (spec section 7); in
+(* A string is a CSS selector, and means its translation (ADR 0026); in
    an XMLElement pattern's contents it is literal text. A one-element
    selector is its pattern wherever a pattern goes. A context selector is a
    pattern only with its subject named, so it is taken only named, as the
@@ -450,7 +450,7 @@ cRoot[b : Verbatim[Blank][h___], need_] :=
 cRoot[b : (_BlankSequence | _BlankNullSequence), _] := refuseBlank[b];
 
 (* The old two-pattern form, Descendant[a, b], is a level spec that is not
-   one, wherever it is (spec section 8). *)
+   one, wherever it is. *)
 cRoot[d : Descendant[_, s_, ___], _] /; Length[d] > 2 || !levelSpecFormQ[s] :=
   refuse[Descendant::level, If[Length[d] == 2, s, d]];
 cRoot[d_Descendant, _] :=
@@ -516,7 +516,7 @@ plainHeadRules[tag_, attrs_, need_] :=
         r_ :> Replace[r, Verbatim[Rule][k_, Verbatim[Pattern][s_, _]] :> {k, Hold[s]}, {1}]}],
       None]];
 
-(* ---- XMLElement patterns (spec section 1) ----
+(* ---- XMLElement patterns (ADR 0023) ----
 
    An XMLElement pattern keeps WL's literal meaning: its contents are every
    item, elements and text, and its attributes the raw rule list. One with
@@ -559,7 +559,7 @@ cContents[p_, need_] := plainNode[p, need];
 plainNode[p_, need_] :=
   With[{names = namesIn[outsideExcept[Hold[p]]]}, markSeen[names]; treeNode["Plain", names, need, "Pattern" -> p]];
 
-(* A counted name that binds text is refused (spec section 3): text has no
+(* A counted name that binds text is refused: text has no
    position. Here, where the pattern shows it; a sequence that binds text
    while matching is refused by the results (refuseBoundText). *)
 refuseText[name_, p_] :=
@@ -599,7 +599,7 @@ cConstraint[alts_Alternatives, need_] :=
     treeNode["ConstraintAlt", Union @@ (#["Names"] & /@ subs), need, "Subs" -> subs]];
 cConstraint[c_, need_] := cListConstraint[c, need];
 
-(* ---- Paths (spec section 2) ---- *)
+(* ---- Paths ---- *)
 
 (* A Descendant constraint under a name, a test, a Condition, Shortest or
    Longest. Its value is the path: the elements strictly between the pattern
@@ -791,7 +791,7 @@ slotBindings[nd_, slot_, x_, i_] :=
 
 (* The binding of a name in a literal's tag or attributes. A name on a slot
    of the literal itself is at that slot: 0 the tag, Key[All] the attributes
-   (spec section 4). A name deeper in the tag that binds the whole tag is at
+   (ADR 0025). A name deeper in the tag that binds the whole tag is at
    0; one deeper in the attributes that binds an attribute's value is at
    Key[k] of the first attribute with that value. Any other has no position,
    and is compared by its value. *)
@@ -1505,7 +1505,7 @@ directQ[nd_] := nd["Kind"] === "Named" && With[{s = nd["Sub"]}, s["Kind"] === "X
 (* Solutions                                                    *)
 (* =========================================================== *)
 
-(* ---- Repeated names (spec section 3, ticket 28) ----
+(* ---- Repeated names ----
 
    A name used twice compares its bindings by what they are and where they
    sit. A place (an element, a run or gap, a named path or list) bound in
@@ -1565,7 +1565,7 @@ product[lists_, join_] := Fold[Function[{acc, l},
       acc === {<||>}, l,
       True, DeleteCases[Flatten[Outer[join, acc, l, 1], 1], $Failed]]], {<||>}, lists];
 
-(* ---- Except over a binding outside it (spec section 3, ticket 27) ----
+(* ---- Except over a binding outside it ----
 
    A name inside Except that is also bound outside it, anywhere in the rule,
    refers to that binding (exceptRefs). The Except cannot test the child
@@ -1623,7 +1623,7 @@ valueOf[b_] := Replace[bindVal[b], seq[l_] :> Sequence @@ l];
 passesQ[test_Hold, names_, sol_] := TrueQ[ReleaseHold[substituted[test, names, sol]]];
 
 (* =========================================================== *)
-(* Results (spec sections 3 and 5)                              *)
+(* Results (ADR 0024)                                           *)
 (* =========================================================== *)
 
 $noResult = Unique["noResult"];
@@ -1667,7 +1667,7 @@ results[root_, rhs_, all_, counted_, testNames_, bare_, n_] :=
         If[r =!= $noResult, count++; Sow[r, $resultTag]]]]];
 
 (* A counted name bound to text, or to a run holding text, in some solution
-   is refused (spec section 3), as refuseText refuses one whose pattern shows
+   is refused, as refuseText refuses one whose pattern shows
    it. *)
 refuseBoundText[sols_, counted_] :=
   Replace[FirstCase[counted, n_ /; AnyTrue[sols, MemberQ[bindPos[Lookup[#, Key[n], {{}}]], Missing["Text"]] &]],
@@ -1806,7 +1806,7 @@ pathTo[nd_, id_] :=
     Catch[Scan[With[{p = pathTo[#, id]}, If[p =!= None, Throw[Prepend[p, nd], $path]]] &, subNodes[nd]]; None, $path]];
 
 (* =========================================================== *)
-(* Element tests (spec section 6)                               *)
+(* Element tests                                                *)
 (*                                                              *)
 (* XMLMatchQ and XMLFreeQ test a node of their input as the     *)
 (* pattern root; names select nothing, so only the names that   *)

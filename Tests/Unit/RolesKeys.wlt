@@ -1,4 +1,4 @@
-(* "Roles" and "Constructs" keys (tree-pattern spec, section 6): a pattern key
+(* "Roles" and "Constructs" keys: a pattern key
    is an element test, each element tested as the pattern root, its names
    bound for the value; a rule key is a query over the original input, whose
    counted element positions get the value. A CSS string is whichever its
@@ -9,7 +9,7 @@ el[tag_, c___] := XMLElement[tag, {}, {c}];
 
 page = doc[el["body", el["nav", el["a", "Home"], el["a", "News"]], el["p", "Text"]]];
 
-(* === The spec's examples === *)
+(* === Examples === *)
 
 TestCreate[
   HTMLInnerText[page, "Roles" -> {"nav a" -> "Block"}],

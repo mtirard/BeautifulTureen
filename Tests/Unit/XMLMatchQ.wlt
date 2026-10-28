@@ -110,7 +110,7 @@ TestCreate[
   TestID -> "xmlmatchq-refuses-rule"
 ];
 
-(* === Tree patterns (spec section 6) === *)
+(* === Tree patterns === *)
 
 doc[root_] := XMLObject["Document"][{}, root, {}];
 e[tag_, id_String, c___] := XMLElement[tag, {"id" -> id}, {c}];
@@ -173,7 +173,7 @@ TestCreate[
   TestID -> "xmlmatchq-list-pattern-forms"
 ];
 
-(* Lists over the path a named Descendant binds (spec section 2). *)
+(* Lists over the path a named Descendant matches. *)
 TestCreate[
   {XMLCases[nav, XMLDocument[p : Descendant[x : XMLPattern["a"]] /; XMLMatchQ[p, {___, XMLPattern["nav", "id" -> "i"], ___}]] :> x[[2]]],
     XMLCases[nav, XMLDocument[Descendant[x : XMLPattern["a"]]?(NoneTrue[XMLMatchQ["nav#i"]])] :> x[[2]]]},

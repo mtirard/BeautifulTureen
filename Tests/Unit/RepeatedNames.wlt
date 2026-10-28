@@ -1,8 +1,8 @@
-(* Repeated names (tree-pattern spec section 3, ticket 28): a name for a
+(* Repeated names: a name for a
    place bound in two constraints of one tree pattern is one position; every
    other repeated name compares values, and a counted one keeps both
    positions. Names shared by the branches of one Alternatives are bound
-   once. The fixtures are the spec's, local to this file. *)
+   once. *)
 
 doc[root_] := XMLObject["Document"][{}, root, {}];
 e[tag_, id_String, c___] := XMLElement[tag, {"id" -> id}, {c}];
@@ -109,7 +109,7 @@ TestCreate[
 
 (* === Except referring to a binding outside it === *)
 
-(* The tags of ticket 27's probe: b a c a b a. *)
+(* Siblings whose tags repeat: b a c a b a. *)
 types = doc[el["div", e["b", "1"], e["a", "2"], e["c", "3"], e["a", "4"], e["b", "5"], e["a", "6"]]];
 
 (* An Except before its name is bound refers to it: :first-of-type, where
@@ -132,7 +132,7 @@ TestCreate[
   TestID -> "except-ref-nth-last-of-type"
 ];
 
-(* Spec section 2: not preceded by its own tag. *)
+(* Not preceded by its own tag. *)
 TestCreate[
   XMLCases[types, XMLPattern["div", _, {Except[XMLPattern[t_]] ..., x : XMLPattern[t_], ___}] :> x],
   {e["b", "1"], e["a", "2"], e["c", "3"]},

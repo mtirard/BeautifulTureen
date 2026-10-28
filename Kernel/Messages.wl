@@ -21,7 +21,7 @@ HTMLToTree::badtree = "The first argument should be an XMLObject, an XMLElement,
 HTMLToTree::badrole = "A \"Roles\" rule gave `1`, which is not \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\" or \"Skip\". The element gets its role from the built-in user-agent stylesheet instead.";
 HTMLToTree::notrule = "Each \"Roles\" entry should be a rule pattern -> value or pattern :> value. Got `1`.";
 
-(* ---- badpat (tree-pattern spec, section 8) ----
+(* ---- badpat ----
    Each consumer's text lists what it accepts. Child, Adjacent and Sibling
    were removed in 4.0.0, and a query that still uses one stays unevaluated,
    so the text says what to write instead. *)
@@ -45,7 +45,7 @@ XMLFreeQ::badpat = StringRiffle[{"The pattern should be an XMLPattern, an XMLEle
 HTMLToTree::badquery = StringRiffle[{"The value of the `1` option should be `2`, Automatic, a pattern, or a rule pattern -> rhs or pattern :> rhs, which acts on the positions of the names that rhs uses.",
   $patternForms, $removedForms, "Got `3`."}, " "];
 
-(* The keys of "Roles" and "Constructs" rules (tree-pattern spec, section 6):
+(* The keys of "Roles" and "Constructs" rules:
    an element test, or a query whose counted element positions get the value. *)
 Scan[Function[h,
     MessageName[h, "badpat"] = StringRiffle[{"The key of a rule should be an element test or a query. An element test is an XMLPattern, an XMLElement pattern, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f; each element is tested as the pattern root, and its names can be used in the value. A query is a rule such as XMLPattern[\"nav\", _, Descendant[x : XMLPattern[\"a\"]]] :> x, or a CSS selector string such as \"nav a\"; the elements it selects get the value. An XMLDocument pattern tests no element: name the elements it finds and give the rule, as in (XMLDocument[Descendant[x : XMLPattern[\"a\"]]] :> x) -> value.", $removedForms, "Got `1`."}, " "];

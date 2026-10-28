@@ -74,7 +74,7 @@ unknownTreeOptions[opts_List] := Select[Flatten[opts], !optionRuleQ[HTMLToTree][
    query that is refused gives $Failed before hide is matched.
 
    A tree pattern or rule runs on the tree engine, which gives positions
-   (spec section 4); they are turned into the walk's WL positions here. *)
+   (ADR 0025); they are turned into the walk's WL positions here. *)
 
 (* The sites the walk reads: "Hidden", the positions of Hidden items;
    "Focused", those of Focused elements, or All; and "FocusPaths", every
@@ -98,7 +98,7 @@ querySites[name_, tree_, q_] := targetSites[name, tree, q];
 
 (* The sites of a tree query's targets: the positions of the names its
    right-hand side uses, over all its results. A target of a kind the option
-   cannot act on (spec section 6) is hidetarget or focustarget. For Hide, a
+   cannot act on is hidetarget or focustarget. For Hide, a
    bare element is matched in a list around it, at the same positions, so
    that its root can be selected, and kept with root. *)
 targetSites[name_, tree_, q_] :=

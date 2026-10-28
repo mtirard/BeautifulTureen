@@ -39,7 +39,7 @@ TestCreate[
   TestID -> "message-document-placement"
 ];
 
-(* Descendant alone is a constraint, not a pattern to test (spec section 8). *)
+(* Descendant alone is a constraint, not a pattern to test. *)
 TestCreate[
   capturedMessages[XMLMatchQ[XMLElement["p", {}, {"x"}], Descendant[XMLPattern["p"]]]],
   {"Descendant[XMLPattern[\"p\"]] is a constraint, which can only be an argument of XMLPattern after the attributes, as in XMLPattern[\"nav\", _, Descendant[XMLPattern[\"a\"]]]. To find matching elements at any depth, give the pattern alone."},

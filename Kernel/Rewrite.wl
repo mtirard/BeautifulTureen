@@ -5,7 +5,7 @@
 PackageScoped[treeDelete]
 
 (* =========================================================== *)
-(* Rewriting at positions (spec sections 4 and 6)               *)
+(* Rewriting at positions (ADR 0025)                            *)
 (*                                                              *)
 (* rewritten[input, {pos -> f, ...}] sets the part at each      *)
 (* position to f of its current value, in reverse position      *)
@@ -36,7 +36,7 @@ rewritten[input_, edits_] :=
       Scan[rewriteAt[#[[1]], #[[2]]] &, Reverse[edits[[positionOrdering[edits[[All, 1]]]]]]];
       assembled[]]];
 
-(* ---- Position order (spec section 5) ---- *)
+(* ---- Position order (ADR 0024) ---- *)
 
 (* Each position has a key, a list of integers, that sorts as the positions
    do once padded with $keyPad, below every entry: an element step is {4, n, 2};
@@ -228,7 +228,7 @@ setTokens[steps_, k_, items_] := (
   setAttribute[steps, $readings[k][[1]], StringRiffle[tokenValues[steps, k, items], $joiners[k]]]);
 
 (* =========================================================== *)
-(* XMLDeleteCases over tree patterns (spec section 6)           *)
+(* XMLDeleteCases over tree patterns                            *)
 (*                                                              *)
 (* The right-hand side is a name or a list of names, with an    *)
 (* optional Condition; the union of the positions of the        *)
@@ -294,7 +294,7 @@ inputPositions[tree_, ps_] :=
         Rest[steps]]] /@ ps];
 
 (* =========================================================== *)
-(* XMLReplace over tree patterns (spec section 6)               *)
+(* XMLReplace over tree patterns                                *)
 (*                                                              *)
 (* A right-hand side that is a rule or a list of rules whose    *)
 (* left sides are all names of the pattern, the targets form,  *)
@@ -347,7 +347,7 @@ checkReplacement[p_] := refuse[XMLReplace::bare, p];
    first result, in result order, that targets it. A later result whose
    replacement differs, by its code or by the positions of the names it
    uses, is XMLReplace::conflict. A repeated name targets every position it
-   is bound at, as treeTargets gives them (ticket 28). *)
+   is bound at, as treeTargets gives them. *)
 replacementEdits[tree_, q : (Rule | RuleDelayed)[lhs_, _]] :=
   Module[{r, names = namesIn[Hold[lhs]], rhs = heldRHS[q], targets, query = q, sols, edits = <||>, ids = <||>},
     targets = targetRules[unguarded[rhs], names];
@@ -450,7 +450,7 @@ tokensAt[steps_, k_, tail_] :=
   With[{items = openedTokens[steps, k], is = Replace[tail, {i_Integer :> {i}, Span[m_, n_] :> Range[m, n]}]},
     If[SubsetQ[items, tokenRef /@ is], $originalTokens[{steps, k}][[is]], $stale]];
 
-(* ---- What a target takes (spec section 6) ---- *)
+(* ---- What a target takes ---- *)
 
 $node = _XMLElement | _String | XMLObject[_][___];
 

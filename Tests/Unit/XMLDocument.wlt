@@ -20,7 +20,7 @@ TestCreate[
 (* === Refusals === *)
 
 (* XMLMatchQ tests an element as the pattern root, and an element is not the
-   document (tree-pattern spec, section 6). *)
+   document. *)
 TestCreate[
   {XMLMatchQ[XMLElement["p", {}, {}], XMLDocument[]],
    HTMLInnerText[$doc, "Roles" -> {XMLDocument[] -> "Skip"}]},

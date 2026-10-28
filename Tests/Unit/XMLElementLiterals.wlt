@@ -1,9 +1,8 @@
-(* XMLElement patterns (tree-pattern spec sections 1, 3 and 4): exact WL
+(* XMLElement patterns (ADR 0023): exact WL
    literals accepted wherever a pattern goes, with XMLPatterns nested in
    their contents; names deep inside them have positions; a counted name
    that binds text is ::text, and a name bound only inside Except used in
-   the right-hand side is ::exceptname. The fixtures are the spec's, local
-   to this file. *)
+   the right-hand side is ::exceptname. *)
 
 doc[root_] := XMLObject["Document"][{}, root, {}];
 e[tag_, id_String, c___] := XMLElement[tag, {"id" -> id}, {c}];
@@ -14,7 +13,7 @@ row     = doc[el["tr", el["th", "a"], el["td", "a"], el["td", "b"]]];
 links   = doc[el["p", e["a", "1"], e["a", "2"], e["a", "3"]]];
 listing = doc[XMLElement["ul", {"class" -> "a b"}, {el["li"], " ", el["li", XMLElement["a", {"href" -> "/x"}, {}]]}]];
 
-(* === Text (spec section 3) === *)
+(* === Text === *)
 
 (* t is uncounted and repeated, so the two texts must be equal. *)
 TestCreate[
@@ -66,7 +65,7 @@ TestCreate[
   TestID -> "literal-blank-binds-element"
 ];
 
-(* === Where an XMLElement pattern goes (spec section 1) === *)
+(* === Where an XMLElement pattern goes === *)
 
 TestCreate[
   XMLCases[row, XMLElement["tr", _, {XMLPattern["th"], ___}]],
@@ -120,7 +119,7 @@ TestCreate[
   TestID -> "literal-xmlmatchq-nested-xmlpattern"
 ];
 
-(* === Names deep inside an XMLElement pattern (spec section 4) === *)
+(* === Names deep inside an XMLElement pattern === *)
 
 TestCreate[
   XMLCases[row, XMLElement["tr", _, {___, x : XMLElement["td", _, _], ___}] :> x],
@@ -180,7 +179,7 @@ TestCreate[
   TestID -> "literal-descendant-refused"
 ];
 
-(* === Except (spec section 3) === *)
+(* === Except === *)
 
 TestCreate[
   XMLCases[row, XMLElement["tr", _, Except[{x_, y_} /; x === y]]],
@@ -199,5 +198,5 @@ TestCreate[
   XMLCases[links, XMLPattern["p", _, {Except[x : XMLPattern["a"]] ..., ___}] :> x],
   $Failed,
   {XMLCases::exceptname},
-  TestID -> "literal-except-spec-example"
+  TestID -> "literal-except-name-in-rhs"
 ];

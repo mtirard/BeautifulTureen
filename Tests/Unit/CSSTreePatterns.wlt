@@ -1,8 +1,7 @@
-(* FromCSSSelector to tree patterns (tree-pattern spec section 7): one-element
+(* FromCSSSelector to tree patterns (ADR 0026): one-element
    selectors are patterns; a context selector is a pattern only once its
    subject is named, FromCSSSelector[n : s], rooted at its first compound.
-   Consumers name the subject of an unnamed context selector themselves. The
-   fixtures are the spec's, local to this file. *)
+   Consumers name the subject of an unnamed context selector themselves. *)
 
 doc[root_] := XMLObject["Document"][{}, root, {}];
 e[tag_, id_String, c___] := XMLElement[tag, {"id" -> id}, {c}];
@@ -173,7 +172,7 @@ TestCreate[
   TestID -> "css-tree-one-element-in-element-slots"
 ];
 
-(* === Complex :not(), :is(), :where() and :has() (ticket 19) === *)
+(* === Complex :not(), :is(), :where() and :has() === *)
 
 (* Downward :not(:has()) is XMLFreeQ below the element: {1, Infinity} after a
    descendant combinator, {1} after >. *)
@@ -195,7 +194,7 @@ TestCreate[
 TestCreate[
   {XMLCases[body, "a:not(nav a)"], XMLCases[doc[el["div", e["x", "1"], e["a", "2"], e["b", "3"]]], "a:has(+ b)"]},
   {{e["a", "out"]}, {e["a", "2"]}},
-  TestID -> "css-tree-complex-spec-results"
+  TestID -> "css-tree-complex-results"
 ];
 
 (* A test on the path is rooted at the document. The argument's last compound

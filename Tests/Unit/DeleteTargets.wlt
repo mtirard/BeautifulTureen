@@ -1,7 +1,6 @@
-(* XMLDeleteCases over tree patterns: the examples of the tree-pattern spec,
-   section 6, on its fixtures, and one test per kind of position a name can
-   delete. The fixtures are literal trees, so positions are exact. They are
-   local to this file. *)
+(* XMLDeleteCases over tree patterns: what a rule deletes, and one test per
+   kind of position a name can delete. The fixtures are literal trees, so
+   positions are exact. *)
 
 doc[root_] := XMLObject["Document"][{}, root, {}];
 e[tag_, id_String, c___] := XMLElement[tag, {"id" -> id}, {c}];
@@ -11,7 +10,7 @@ nav     = doc[e["nav", "o", e["a", "a1"], e["nav", "i", e["a", "a2"]], e["a", "a
 links   = doc[el["p", e["a", "1"], e["a", "2"], e["a", "3"]]];
 hrefs   = doc[el["p", XMLElement["a", {"href" -> "/x"}, {}], XMLElement["a", {"href" -> "/x"}, {}]]];
 
-(* === Spec section 6 === *)
+(* === Examples === *)
 
 TestCreate[
   XMLDeleteCases[nav, XMLPattern["nav", _, Descendant[a : XMLPattern["a"]]] :> a],
@@ -59,7 +58,7 @@ TestCreate[
   TestID -> "delete-tag-refused"
 ];
 
-(* === One test per kind (spec section 6) === *)
+(* === One test per kind === *)
 
 (* An element is removed; the root of an XMLObject is kept, with a message,
    and the other targets are deleted. *)

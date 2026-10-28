@@ -576,8 +576,7 @@ TestCreate[
 ];
 
 (* A string giving alternatives of combinators is refused where one element is
-   tested: it looks above the element. As a "Roles" key it is a query
-   (spec section 6). *)
+   tested: it looks above the element. As a "Roles" key it is a query. *)
 TestCreate[
   {XMLMatchQ[XMLElement["d", {}, {}], "a > b, c > d"],
    HTMLInnerText[XMLElement["d", {}, {XMLElement["a", {}, {XMLElement["b", {}, {"1"}]}], XMLElement["c", {}, {"2"}], "3"}],
@@ -806,7 +805,7 @@ $note = ImportString["<div class='note' id='n1'><p id='q1'>a <span id='t1'>x</sp
   {"HTML", "XMLObject"}];
 
 (* A context selector on the left of a rule is named; a right-hand side that
-   uses no name gives one result (spec section 3). *)
+   uses no name gives one result (ADR 0024). *)
 TestCreate[
   {XMLCases[$note, "div.note > p"] === XMLCases[$note, XMLPattern["div", "classList" -> "note", {___, x : XMLPattern["p"], ___}] :> x],
     Length[XMLCases[$note, "div.note > p"]],
@@ -858,8 +857,7 @@ TestCreate[
   TestID -> "css-string-in-roles"
 ];
 
-(* A context selector is a query key, whose subjects get the value (spec
-   section 6). *)
+(* A context selector is a query key, whose subjects get the value. *)
 TestCreate[
   {HTMLInnerText[$note, "Roles" -> {"div.note > p" -> "Inline"}], HTMLToNotebook[$note, "Constructs" -> {"div > p" -> "Section"}]},
   {"a xb\nc\nH",

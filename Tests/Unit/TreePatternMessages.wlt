@@ -1,8 +1,7 @@
-(* The messages of the tree-pattern spec, section 8: one test per row of its
-   New, Changed and Removed tables, each checking the message name and the
-   return value, on the spec's fixtures. A row naming several heads checks
-   each of them in one test. The fixtures are literal trees, so positions are
-   exact. They are local to this file. *)
+(* The messages of tree patterns, new, changed or removed in 4.0.0: one test
+   per message, each checking the message name and the return value. A
+   message shared by several heads is checked for each of them in one test.
+   The fixtures are literal trees, so positions are exact. *)
 
 doc[root_] := XMLObject["Document"][{}, root, {}];
 e[tag_, id_String, c___] := XMLElement[tag, {"id" -> id}, {c}];
@@ -32,7 +31,7 @@ TestCreate[
   XMLCases[links, XMLPattern["div", _, XMLPattern["p"]]],
   $Failed,
   {XMLPattern::constraint},
-  TestID -> "spec-message-constraint"
+  TestID -> "tree-message-constraint"
 ];
 
 TestCreate[
@@ -41,14 +40,14 @@ TestCreate[
     XMLMatchQ[{el["a"]}, {{XMLPattern["a"]}}]},
   {$Failed, $Failed, $Failed},
   {XMLPattern::listentry, XMLDocument::listentry, XMLMatchQ::listentry},
-  TestID -> "spec-message-listentry"
+  TestID -> "tree-message-listentry"
 ];
 
 TestCreate[
   XMLCases[links, Descendant[XMLPattern["a"]]],
   $Failed,
   {Descendant::place},
-  TestID -> "spec-message-descendant-place"
+  TestID -> "tree-message-descendant-place"
 ];
 
 (* The old two-pattern form is a level spec that is not one. *)
@@ -57,7 +56,7 @@ TestCreate[
     XMLCases[links, XMLPattern["p", _, Descendant[XMLPattern["a"], {0}]]]},
   {$Failed, $Failed},
   {Descendant::level, Descendant::level},
-  TestID -> "spec-message-descendant-level"
+  TestID -> "tree-message-descendant-level"
 ];
 
 TestCreate[
@@ -65,7 +64,7 @@ TestCreate[
     XMLCases[links, XMLDocument[Longest[{___, XMLPattern["p"]}]]]},
   {$Failed, $Failed},
   {XMLPattern::shortest, XMLDocument::shortest},
-  TestID -> "spec-message-shortest"
+  TestID -> "tree-message-shortest"
 ];
 
 TestCreate[
@@ -73,7 +72,7 @@ TestCreate[
     {XMLCases[row, q], XMLFirstCase[row, q], XMLPosition[row, q], XMLDeleteCases[row, q]}],
   {$Failed, $Failed, $Failed, $Failed},
   {XMLCases::text, XMLFirstCase::text, XMLPosition::text, XMLDeleteCases::text},
-  TestID -> "spec-message-text"
+  TestID -> "tree-message-text"
 ];
 
 TestCreate[
@@ -81,21 +80,21 @@ TestCreate[
     {XMLCases[links, q], XMLFirstCase[links, q], XMLPosition[links, q], XMLDeleteCases[links, q]}],
   {$Failed, $Failed, $Failed, $Failed},
   {XMLCases::exceptname, XMLFirstCase::exceptname, XMLPosition::exceptname, XMLDeleteCases::exceptname},
-  TestID -> "spec-message-exceptname"
+  TestID -> "tree-message-exceptname"
 ];
 
 TestCreate[
   XMLDeleteCases[links, XMLPattern["a"] :> "x"],
   $Failed,
   {XMLDeleteCases::delrhs},
-  TestID -> "spec-message-delrhs"
+  TestID -> "tree-message-delrhs"
 ];
 
 TestCreate[
   {XMLDeleteCases[links, XMLPattern[t_] :> t], XMLReplace[links, d : XMLDocument[] :> {d -> el["p"]}]},
   {$Failed, $Failed},
   {XMLDeleteCases::target, XMLReplace::target},
-  TestID -> "spec-message-target"
+  TestID -> "tree-message-target"
 ];
 
 TestCreate[
@@ -103,14 +102,14 @@ TestCreate[
     XMLReplace[nav, XMLPattern["nav", _, p : Descendant[XMLPattern["a"]]] :> {p -> el["b"]}]},
   {$Failed, $Failed},
   {XMLDeleteCases::pathtarget, XMLReplace::pathtarget},
-  TestID -> "spec-message-pathtarget"
+  TestID -> "tree-message-pathtarget"
 ];
 
 TestCreate[
   XMLReplace[links, XMLPattern["a"]],
   $Failed,
   {XMLReplace::bare},
-  TestID -> "spec-message-bare"
+  TestID -> "tree-message-bare"
 ];
 
 (* A warning: the position is left unchanged. *)
@@ -118,7 +117,7 @@ TestCreate[
   XMLReplace[hrefs, XMLPattern["a", "href" -> h_] :> {h -> 5}],
   hrefs,
   {XMLReplace::kind, XMLReplace::kind},
-  TestID -> "spec-message-kind"
+  TestID -> "tree-message-kind"
 ];
 
 TestCreate[
@@ -126,7 +125,7 @@ TestCreate[
     XMLPattern["ul", _, {___, x : XMLPattern["li"], ___, y : XMLPattern["li"], ___}] :> {x -> "first", y -> "second"}],
   doc[el["ul", "first", "second", "second"]],
   {XMLReplace::conflict},
-  TestID -> "spec-message-conflict"
+  TestID -> "tree-message-conflict"
 ];
 
 TestCreate[
@@ -134,28 +133,28 @@ TestCreate[
     XMLPattern["div", _, {x : XMLPattern["p"], y : XMLPattern["p"]}] :> {x -> y, y -> Nothing}],
   doc[el["div", e["p", "2"]]],
   {XMLReplace::stale},
-  TestID -> "spec-message-stale"
+  TestID -> "tree-message-stale"
 ];
 
 TestCreate[
   {XMLExtract[listing, {0}], XMLExtract[listing, {1} ;; {1}]},
   {$Failed, $Failed},
   {XMLExtract::pos, XMLExtract::pos},
-  TestID -> "spec-message-pos"
+  TestID -> "tree-message-pos"
 ];
 
 TestCreate[
   XMLExtract[listing, {1, 3}],
   $Failed,
   {XMLExtract::nopos},
-  TestID -> "spec-message-nopos"
+  TestID -> "tree-message-nopos"
 ];
 
 TestCreate[
   FromCSSSelector["nav a"],
   $Failed,
   {FromCSSSelector::name},
-  TestID -> "spec-message-css-name"
+  TestID -> "tree-message-css-name"
 ];
 
 TestCreate[
@@ -163,7 +162,7 @@ TestCreate[
     HTMLToTree[hrefs, "Hide" -> (XMLPattern["a", "href" -> h_] :> h)]},
   {$Failed, $Failed},
   {HTMLToTree::focustarget, HTMLToTree::hidetarget},
-  TestID -> "spec-message-focustarget-hidetarget"
+  TestID -> "tree-message-focustarget-hidetarget"
 ];
 
 TestCreate[
@@ -171,14 +170,14 @@ TestCreate[
     {HTMLInnerText[hrefs, "Roles" -> roles], HTMLToNotebook[hrefs, "Roles" -> roles]}],
   {$Failed, $Failed},
   {HTMLInnerText::keytarget, HTMLToNotebook::keytarget},
-  TestID -> "spec-message-keytarget"
+  TestID -> "tree-message-keytarget"
 ];
 
 TestCreate[
   {XMLFreeQ[links, x : XMLPattern["a"] :> x], XMLFreeQ[links, "p a"]},
   {$Failed, $Failed},
   {XMLFreeQ::badpat, XMLFreeQ::badpat},
-  TestID -> "spec-message-xmlfreeq-badpat"
+  TestID -> "tree-message-xmlfreeq-badpat"
 ];
 
 (* === Changed === *)
@@ -192,7 +191,7 @@ TestCreate[
     HTMLInnerText[nav, "Roles" -> {XMLDocument[Descendant[XMLPattern["a"]]] -> "Block"}]},
   {$Failed, $Failed, $Failed, $Failed, $Failed},
   {XMLCases::badpat, XMLCases::badpat, XMLPosition::badpat, HTMLInnerText::badpat, HTMLInnerText::badpat},
-  TestID -> "spec-message-badpat-fires"
+  TestID -> "tree-message-badpat-fires"
 ];
 
 (* The text lists the accepted forms, and none that was removed. *)
@@ -203,14 +202,14 @@ TestCreate[
     {Length[texts], AllTrue[texts, StringContainsQ["XMLPattern"]], AllTrue[texts, StringContainsQ["XMLDocument"]],
       AllTrue[texts, StringContainsQ["CSS selector"]], NoneTrue[texts, StringContainsQ["combinator" | "Child[" | "list stage"]]}],
   {8, True, True, True, True},
-  TestID -> "spec-message-badpat-text"
+  TestID -> "tree-message-badpat-text"
 ];
 
 TestCreate[
   {XMLMatchQ[el["a"], x : XMLPattern["a"] :> x], XMLMatchQ[el["a"], "nav a"]},
   {$Failed, $Failed},
   {XMLMatchQ::badpat, XMLMatchQ::badpat},
-  TestID -> "spec-message-xmlmatchq-badpat"
+  TestID -> "tree-message-xmlmatchq-badpat"
 ];
 
 TestCreate[
@@ -219,7 +218,7 @@ TestCreate[
     XMLCases[links, XMLElement["p", _, {XMLDocument[]}]]},
   {$Failed, $Failed, $Failed},
   {XMLDocument::place, XMLDocument::place, XMLDocument::place, General::stop},
-  TestID -> "spec-message-document-place"
+  TestID -> "tree-message-document-place"
 ];
 
 (* A blank as the whole query or as Descendant's pattern; any one child as a
@@ -229,14 +228,14 @@ TestCreate[
     XMLCases[links, XMLPattern["p", _, {_, x : XMLPattern["a"], ___}] :> x[[2, 1, 2]]]},
   {$Failed, $Failed, {"2"}},
   {XMLCases::blank, Descendant::blank},
-  TestID -> "spec-message-blank"
+  TestID -> "tree-message-blank"
 ];
 
 TestCreate[
   With[{text = First[messageTexts[HTMLToTree[links, "Focus" -> 5]]]},
     {StringContainsQ[text, "rule"], StringContainsQ[text, "XMLDocument"], StringContainsQ[text, "combinator"]}],
   {True, True, False},
-  TestID -> "spec-message-badquery-text"
+  TestID -> "tree-message-badquery-text"
 ];
 
 (* === Removed === *)
@@ -247,7 +246,7 @@ TestCreate[
       XMLMatchQ::condcombinator, HTMLInnerText::stages, XMLCases::liststage, XMLMatchQ::liststage, XMLPattern::nargs,
       Descendant::stages, Descendant::liststage}, _String]},
   {{{}, {}, {}}, {}},
-  TestID -> "spec-message-removed"
+  TestID -> "tree-message-removed"
 ];
 
 (* Child, Adjacent and Sibling stay unevaluated in a consumer, which gives
@@ -259,7 +258,7 @@ TestCreate[
     {Length[texts], AllTrue[texts, StringContainsQ["Child, Adjacent and Sibling were removed"]],
       AllTrue[texts, StringContainsQ["x : XMLPattern[\"li\"]"]]}],
   {3, True, True},
-  TestID -> "spec-message-combinator-badpat"
+  TestID -> "tree-message-combinator-badpat"
 ];
 
 TestCreate[
@@ -268,5 +267,5 @@ TestCreate[
     HTMLInnerText[links, "Roles" -> {Child[XMLPattern["p"], XMLPattern["a"]] -> "Block"}]},
   {$Failed, $Failed, $Failed, $Failed, $Failed},
   {XMLCases::badpat, XMLMatchQ::badpat, XMLPosition::badpat, XMLReplace::badpat, HTMLInnerText::badpat},
-  TestID -> "spec-message-combinator-badpat-heads"
+  TestID -> "tree-message-combinator-badpat-heads"
 ];

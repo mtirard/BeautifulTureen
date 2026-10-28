@@ -1,4 +1,4 @@
-(* XMLFreeQ (#32, as amended by the tree-pattern spec, section 6): True when
+(* XMLFreeQ (#32, as amended for tree patterns in 4.0.0): True when
    no element at the given DOM depths below the input matches the pattern as
    the pattern root. Level 0 is the input itself. The fixtures are local to
    this file. *)
@@ -9,12 +9,12 @@ el[tag_, c___] := XMLElement[tag, {}, {c}];
 
 nav = doc[e["nav", "o", e["a", "a1"], e["nav", "i", e["a", "a2"]], e["a", "a3"]]];
 
-(* The spec's examples: the default level spec is {0, Infinity}, as FreeQ's. *)
+(* The default level spec is {0, Infinity}, as FreeQ's. *)
 TestCreate[
   {XMLFreeQ[nav[[2]], XMLPattern["nav"]], XMLFreeQ[nav[[2]], XMLPattern["nav"], {1, Infinity}],
     XMLFreeQ[nav[[2, 3, 2]], XMLPattern["nav"], {1, Infinity}]},
   {False, False, True},
-  TestID -> "xmlfreeq-spec-examples"
+  TestID -> "xmlfreeq-default-levels"
 ];
 
 TestCreate[

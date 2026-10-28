@@ -1,7 +1,6 @@
 (* Context above an element: named paths, path tests, Shortest and Longest
-   on Descendant, and XMLDocument as a pattern root. The examples of the
-   tree-pattern spec, section 2, on its fixtures. The fixtures are literal
-   trees, so positions are exact. They are local to this file. *)
+   on Descendant, and XMLDocument as a pattern root. The fixtures are
+   literal trees, so positions are exact. *)
 
 doc[root_] := XMLObject["Document"][{}, root, {}];
 e[tag_, id_String, c___] := XMLElement[tag, {"id" -> id}, {c}];

@@ -1,6 +1,6 @@
-(* XMLPosition and XMLExtract: the examples of the tree-pattern spec,
-   sections 4 to 6, on its fixtures. The fixtures are literal trees, so
-   positions are exact. They are local to this file. *)
+(* XMLPosition and XMLExtract: positions of every kind, position order and
+   the round trip through XMLExtract. The fixtures are literal trees, so
+   positions are exact. *)
 
 doc[root_] := XMLObject["Document"][{}, root, {}];
 e[tag_, id_String, c___] := XMLElement[tag, {"id" -> id}, {c}];
@@ -51,7 +51,7 @@ TestCreate[
   TestID -> "position-rhs-condition-and-alternatives"
 ];
 
-(* === Position order (spec section 5) === *)
+(* === Position order === *)
 
 (* The reference order, pinned through one query: each branch of an
    Alternatives at the pattern root binds one kind of position, and the
@@ -163,7 +163,7 @@ TestCreate[
   TestID -> "extract-path-span-refused"
 ];
 
-(* The round trips of spec section 6. *)
+(* XMLExtract at the positions XMLPosition gives is what XMLCases gives. *)
 TestCreate[
   {With[{q = XMLPattern["nav", _, p : Descendant[XMLPattern["a"]]] :> p}, (XMLExtract[nav, #] &) /@ XMLPosition[nav, q] === XMLCases[nav, q]],
     With[{p = XMLPattern["nav", _, Descendant[XMLPattern["a"]]]}, XMLExtract[nav, XMLPosition[nav, p]] === XMLCases[nav, p]]},

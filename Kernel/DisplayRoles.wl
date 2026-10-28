@@ -56,7 +56,7 @@ defaultRole[tag_String] := Which[
   True,                        "Inline"];
 defaultRole[_] := "Inline";
 
-(* ---- Role and construct rules (spec section 6): an Association sugars to
+(* ---- Role and construct rules: an Association sugars to
    an ordered rule list; the first rule that selects an element wins. A
    string key is a CSS selector, as anywhere an XML pattern goes. ---- *)
 $displayRoles = {"Block", "Inline", "Preformatted", "LineBreak", "Skip"};
