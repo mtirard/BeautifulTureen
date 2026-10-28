@@ -30,3 +30,21 @@ TestCreate[
   TimeConstraint -> 1,
   TestID -> "perf-shape-ordered-context-entry-3000-siblings"
 ];
+
+(* The tree-pattern counterparts, the CSS translations: the context entry is
+   a nested constraint, div:has(> p). Measured at about 98 ms and 95 ms on a
+   2026 laptop, against 31 ms and 32 ms for the CSS strings on the chain
+   runners. *)
+TestCreate[
+  Length @ XMLCases[$threeThousand, "body > div:has(> p) + div.c3"],
+  85,
+  TimeConstraint -> 0.3,
+  TestID -> "perf-tree-context-entry-3000-siblings"
+];
+
+TestCreate[
+  Length @ XMLCases[$threeThousand, "body > div:has(> p) ~ div.c3"],
+  428,
+  TimeConstraint -> 0.3,
+  TestID -> "perf-tree-ordered-context-entry-3000-siblings"
+];

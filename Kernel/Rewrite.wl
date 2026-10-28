@@ -270,7 +270,28 @@ deleted[tree_, targets_] :=
     Replace[SelectFirst[ps, MatchQ[#, _Span] &], s_Span :> refuse[XMLDeleteCases::pathtarget, s]];
     Replace[SelectFirst[ps, MatchQ[#, {} | {__Integer?Positive, 0}] &], p_List :> refuse[XMLDeleteCases::target, p]];
     If[MatchQ[tree, XMLObject[_][___]] && MemberQ[ps, {1}], Message[XMLDeleteCases::root]; ps = DeleteCases[ps, {1}]];
-    rewritten[tree, (# -> If[MatchQ[Last[#], Key[All] | All], {} &, Nothing &]) & /@ ps]];
+    If[AllTrue[ps, MatchQ[{_Integer?Positive, __Integer?Positive}]],
+      Delete[tree, inputPositions[tree, outermostTargets[ps]]],
+      rewritten[tree, (# -> If[MatchQ[Last[#], Key[All] | All], {} &, Nothing &]) & /@ ps]]];
+
+(* Elements below the top ones, deleted with Delete at their positions in
+   the input: rewriting each through the opened nodes costs about 0.1 ms an
+   element, five times the query that finds them. An element inside another
+   deleted one goes with it. *)
+outermostTargets[ps_] := With[{set = AssociationThread[ps -> True]}, Select[ps, NoneTrue[Range[Length[#] - 1], Function[k, KeyExistsQ[set, Take[#, k]]]] &]];
+
+(* The input positions of element positions, each step the n-th element
+   among the contents of the one before. *)
+inputPositions[tree_, ps_] :=
+  Module[{kids = <||>, elementSlots, tops = If[ListQ[tree], Flatten[Position[tree, _XMLElement, {1}, Heads -> False]], {}]},
+    elementSlots[p_] := Lookup[kids, Key[p], kids[p] = Flatten @ Position[If[p === {}, tree, Extract[tree, p]][[3]], _XMLElement, {1}, Heads -> False]];
+    Function[steps,
+      Fold[Join[#1, {3, elementSlots[#1][[#2]]}] &,
+        Switch[tree,
+          XMLObject[_][___], {2},
+          _List, {tops[[First[steps]]]},
+          _, {}],
+        Rest[steps]]] /@ ps];
 
 (* =========================================================== *)
 (* XMLReplace over tree patterns (spec section 6)               *)

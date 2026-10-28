@@ -647,16 +647,23 @@ cssRepeat[u_, r_] := {Repeated[u, {r}]};
 (* When only the last compound has positions: {g___, c : C, g___} /; tests,
    with the compounds before it tested on the siblings before it as one
    pattern. Naming each compound and gap instead makes WL try every split
-   before the test: 640 s for .b ~ .a:nth-child(500) among 1,000 rows. *)
+   before the test: 640 s for .b ~ .a:nth-child(500) among 1,000 rows. A
+   side with a fixed index k among all the siblings is k - 1 of them, so
+   that there is one split, and the tests run once per element, not once per
+   sibling before it: 3.6 s for p ~ li:nth-child(3) among 5,000 siblings. *)
 cssGeneralList[parts_, within_] /; AllTrue[Most[parts], Last[#] === {} &] :=
   Module[{pre = cssFreshName["g"], post = cssFreshName["g"], n = Replace[Last[parts][[2]], None :> cssFreshName["c"]]},
     conditionWith[
-      {Pattern @@ {pre, BlankNullSequence[]},
+      {Pattern @@ {pre, cssSide[Last[Last[parts]], False]},
         If[Last[parts][[2]] === None, Pattern @@ {n, First[Last[parts]]}, First[Last[parts]]],
-        Pattern @@ {post, BlankNullSequence[]}},
+        Pattern @@ {post, cssSide[Last[Last[parts]], True]}},
       cssAnd[Join[
         cssPositionTest[#, n, If[First[#], {post}, {pre}]] & /@ Last[Last[parts]],
         cssRunTest[Most[parts], within, pre]]]]];
+
+cssSide[ps_, fromEnd_] := Replace[FirstCase[ps, cssPos[fromEnd, 0, k_Integer?Positive, None, _] :> k], {
+  k_Integer :> Repeated[_, {k - 1}],
+  _ -> BlankNullSequence[]}];
 
 (* The siblings before the last compound end with the others of the run, each
    tested whole, as a name in it could not be bound. *)
@@ -771,8 +778,9 @@ cssNoRoot[parts_] :=
 (* A run as a contents list (spec section 7, counted positions). The
    positions of each compound are moved to the end of the run they count
    from, where that can be done exactly: across + to compounds that all
-   count as one among all the siblings, or that cannot be of the type
-   counted. With at most one position at each end, the list is plain entries.
+   count as one among all the siblings, or that are all either of the type
+   counted, each one of it (p + li + p:nth-of-type(2) is p first of type),
+   or cannot be of it. With at most one position at each end, the list is plain entries.
    A run of one compound with two positions at one end, one of them a fixed
    index k, is a named prefix of k - 1 siblings and a count on it. Any other
    is the general form, a Condition over named runs, whose cost grows as the
@@ -802,8 +810,9 @@ cssMoved[ps_, s_, crossed_, links_] /; MatchQ[links, {Adjacent ..}] := cssMovedO
 cssMoved[_, _, _, _] := {cssUnmoved};
 
 cssMovedOne[cssPos[e_, a_, b_, None, t_], s_, _] := cssPos[e, a, b - s, None, t];
-cssMovedOne[p : cssPos[_, _, _, XMLPattern[type_String], _], _, crossed_] /;
-    AllTrue[crossed, With[{tags = cssTagsOf[First[#]]}, ListQ[tags] && !MemberQ[tags, type]] &] := p;
+cssMovedOne[cssPos[e_, a_, b_, XMLPattern[type_String], t_], _, crossed_] /;
+    AllTrue[crossed, With[{tags = cssTagsOf[First[#]]}, ListQ[tags] && (tags === {type} || !MemberQ[tags, type])] &] :=
+  cssPos[e, a, b - Count[crossed, c_ /; cssTagsOf[First[c]] === {type}], XMLPattern[type], t];
 cssMovedOne[__] := cssUnmoved;
 
 (* The tags a compound's pattern can have, or All. *)

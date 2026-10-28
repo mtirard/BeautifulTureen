@@ -427,6 +427,29 @@ TestCreate[
   TestID -> "css-child-indexed-moved-of-type-exact"
 ];
 
+(* A position counted among a type moves across + to compounds that are of
+   that type, each one of it: p + li + p:nth-of-type(2) is the first p. *)
+TestCreate[
+  {FromCSSSelector[n : "p + li + p:nth-of-type(2)"],
+    ids[$kids, #] & /@ {"p + span + p:nth-of-type(2)", "p + p + p:nth-of-type(3)", "span + p + p:nth-of-type(3)"}},
+  {inParent[{Except[XMLPattern["p"]] ..., XMLPattern["p"], XMLPattern["li"], n : XMLPattern["p"], ___}],
+    {{"p2"}, {}, {"p3"}}},
+  TestID -> "css-child-indexed-moved-across-own-type"
+];
+
+(* A fixed index among all the siblings, reached across ~, keeps the general
+   form with that side a prefix of k - 1 siblings, so that the list splits
+   one way. *)
+TestCreate[
+  {MatchQ[FromCSSSelector[n : "a ~ b:nth-child(3)"],
+      Verbatim[Alternatives][XMLPattern[Verbatim[_], Verbatim[_], c : Verbatim[Condition][{Verbatim[Pattern][_Symbol, Verbatim[Repeated][Verbatim[_], {2}]],
+          Verbatim[Pattern][n, XMLPattern["b"]], Verbatim[Pattern][_Symbol, Verbatim[___]]}, _]],
+        XMLDocument[c_]]],
+    ids[$kids, #] & /@ {"span ~ p:nth-child(3)", "span ~ p:nth-child(6)", "b ~ p:nth-child(3)", "p ~ span:nth-last-child(5)"}},
+  {True, {{"p2"}, {"p4"}, {}, {"s1"}}},
+  TestID -> "css-child-indexed-fixed-across-sibling"
+];
+
 (* A position reached across ~, one counted among a selector or the element's
    own type across another compound, or among a type across a compound that
    may be of it, and two positions at one end with no fixed index among all

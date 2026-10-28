@@ -116,8 +116,10 @@ treeResults[head_, tree_, q_, n_] :=
         $records = $exceptRefs =!= {};
         root = compileRoot[lhs, need];
         If[!validTreeQ[tree], messageTreeRefusal[head, tree]; Throw[$Failed, $refusal]];
-        indexTree[tree];
-        results[root, rhs, all, counted, testNames, MatchQ[tree, _XMLElement], n]]],
+        cachedIndexTree[tree];
+        With[{r = results[root, rhs, all, counted, testNames, MatchQ[tree, _XMLElement], n]},
+          $indexCache[[3, -1]] = $matElems;
+          r]]],
     $refusal];
 
 (* What XMLPosition gives: the results of q with each counted name replaced
@@ -292,6 +294,19 @@ indexTree[input_] :=
     Scan[($index[[# + 1]] = Range[Length[#]]) &, Values[groups]];
     $end = Prepend[subtreeEnds[Rest[$depth]], n];
     $keyLength = 3 Max[$depth] + 8];
+
+(* The index of the input of the last query, and the elements it
+   materialised for each set of readings, are kept for the next: a
+   document is often queried many times, and indexing it costs about 50 ms
+   at 8,000 elements. An input that is the same expression, which SameQ
+   tells at once when it is the one given before, reuses them. *)
+$indexCache = {None, None, {}};
+
+cachedIndexTree[input_] :=
+  If[$indexCache[[2]] === $indexDepth && $indexCache[[1]] === input,
+    {$tops, $wlPos, $elem, $parent, $depth, $kids, $index, $end, $keyLength, $matElems} = $indexCache[[3]],
+    indexTree[input];
+    $indexCache = {input, $indexDepth, {$tops, $wlPos, $elem, $parent, $depth, $kids, $index, $end, $keyLength, $matElems}}];
 
 (* A bare element with nothing below it read, as an element test of an
    XMLPattern without constraints is: its index, set directly. *)
@@ -911,9 +926,16 @@ pending[nd_, sols_] :=
 
 (* Whether each element passes the compiled tag and attribute test, once per
    query for all elements. *)
+(* The test reads only the tag and attributes, so it is run once for each
+   distinct pair: a page repeats a few class strings over thousands of
+   elements, and a long token list costs a scan per element. *)
 headVector[nd_] :=
   memoised[{"Head", nd["Id"]},
-    With[{p = nd["Plain"]}, Developer`ToPackedArray @ Boole[MatchQ[#, p] & /@ materialElems[nd["Readings"]]]]];
+    With[{p = nd["Plain"], els = materialElems[nd["Readings"]]},
+      Developer`ToPackedArray @ If[MatchQ[p, XMLElement[_, _, Verbatim[_]]],
+        With[{heads = Take[#, 2] & /@ els},
+          With[{u = DeleteDuplicates[heads]}, Lookup[AssociationThread[u, Boole[MatchQ[Append[#, {}], p] & /@ u]], heads]]],
+        Boole[MatchQ[#, p] & /@ els]]]];
 
 (* The bindings of the needed names in the tag and attribute slots: the tag
    is {p, 0}, a name on the attribute argument {p, Key[All]}, a value
@@ -1090,19 +1112,37 @@ walked[items_] :=
         Last /@ enumerate[items, 0, delta[$n]],
         Join @@ Function[bs,
             Block[{$bound = Join[$bound, AssociationThread[refs, bs]]},
-              Select[Last /@ enumerate[items, 0, delta[$n]],
+              Select[boundWalk[items],
                 Function[sol, AllTrue[Range[Length[refs]], bindVal[sol[refs[[#]]]] === bindVal[bs[[#]]] &]]]]] /@
           Tuples[values]]]];
+
+(* The walk with the names bound. Its Excepts are vectors then, so when the
+   one entry left that binds a name is one child, it is taken as oneCapture
+   takes it, by three vectors, without a walk. *)
+boundWalk[items_] :=
+  With[{caps = Flatten @ Position[capQ[#] && !boundOnlyQ[#] & /@ items, True]},
+    If[Length[caps] == 1 && items[[First[caps]]]["Kind"] === "One", oneCaptureAt[items, First[caps]],
+      Last /@ enumerate[items, 0, delta[$n]]]];
+
+(* An Except, or a repeat of Excepts, whose names are all bound, and that
+   binds nothing else: the walk reads it as a vector (entrySpans). *)
+boundOnlyQ[it_] := Switch[it["Kind"],
+  "Not", boundRecordQ[it] && it["Keep"] === {it["Record"]},
+  "Repeat", AllTrue[it["Items"], !capQ[#] || boundOnlyQ[#] &],
+  _, False];
 
 (* The names the Excepts among items refer to that a one-child entry of items
    binds, and that are not bound already. A name an Except inside an entry's
    own pattern refers to is left out: that entry's matches are memoised
    whatever is bound. *)
-prebindable[items_] :=
-  With[{entries = Flatten[entriesIn /@ items]},
-    With[{inner = recordRefs[Flatten[subNodes /@ Select[entries, MatchQ[#["Kind"], "One" | "Not"] &]]]},
-      Select[recordRefs[entries],
-        !KeyExistsQ[$bound, #] && !MemberQ[inner, #] && AnyTrue[items, Function[it, it["Kind"] === "One" && MemberQ[it["Keep"], #]]] &]]];
+prebindable[items_] := Select[prebindableNames[items], !KeyExistsQ[$bound, #] &];
+
+prebindableNames[items_] :=
+  memoised[{"Prebindable", #["Id"] & /@ items},
+    With[{entries = Flatten[entriesIn /@ items]},
+      With[{inner = recordRefs[Flatten[subNodes /@ Select[entries, MatchQ[#["Kind"], "One" | "Not"] &]]]},
+        Select[recordRefs[entries],
+          !MemberQ[inner, #] && AnyTrue[items, Function[it, it["Kind"] === "One" && MemberQ[it["Keep"], #]]] &]]]];
 
 (* An entry and the entries inside it, not inside the patterns they test. *)
 entriesIn[it_] := Prepend[Flatten[entriesIn /@ Switch[it["Kind"],
@@ -1213,7 +1253,7 @@ candidateVector[nd_] := memoised[{"Candidates", nd["Id"]}, candidates[nd]];
 candidates[nd_] := Switch[nd["Kind"],
   "Named" | "Cond" | "Test", candidateVector[nd["Sub"]],
   "Alt", Unitize[Total[candidateVector /@ nd["Subs"]]],
-  "XMLPattern", headVector[nd] UnitStep[(Length /@ Rest[$kids]) - nd["MinKids"]],
+  "XMLPattern", headVector[nd] UnitStep[(Length /@ Rest[$kids]) - nd["MinKids"]] Times @@ Prepend[constraintFilter /@ nd["Constraints"], 1],
   "XMLDocument", ConstantArray[0, Length[$elem] - 1],
   _, ConstantArray[1, Length[$elem] - 1]];
 
@@ -1235,6 +1275,21 @@ childVector[sub_] :=
     Developer`ToPackedArray @ If[exactCandidatesQ[sub],
       candidateVector[sub][[$kidIds]],
       Boole[match[sub, #] =!= {} & /@ $kidIds]]];
+
+(* A list constraint holds only at an element with a child that can match
+   each of its one-child entries, so the elements without are not walked:
+   a CSS translation's list is tried at every element with children, and
+   walking each costs about a tenth of a millisecond. *)
+constraintFilter[c_] := Switch[c["Kind"],
+  "List", Times @@ Prepend[parentsWith /@ Select[c["Items"], #["Kind"] === "One" &], 1],
+  "ListNamed" | "ListCond" | "ListTest", constraintFilter[c["Sub"]],
+  _, 1];
+
+parentsWith[it_] :=
+  memoised[{"Parents", it["Id"]},
+    Module[{v = ConstantArray[0, Length[$elem] - 1]},
+      v[[DeleteCases[$parent[[Flatten[Position[candidateVector[it["Sub"]], 1]] + 1]], 0]]] = 1;
+      v]];
 
 (* Whether a pattern root's candidates are exactly its matches: it tests only
    an element's tag and attributes, which the compiled test decides. *)
@@ -1302,6 +1357,21 @@ anyFrom[s_, m_, dir_] := anyFrom[Nest[shift[#, ConstantArray[1, $n], dir] &, s, 
    quadratic in the siblings for li:nth-child(2n+1). *)
 repeatReach[it_, s_, dir_] /; it["Items"] =!= {} && AllTrue[it["Items"], vectorEntryQ[#] && Min[entryVector[#]] == 1 &] :=
   If[dir == 1, blockReach[s, Length[it["Items"]], it["Min"], it["Max"]], Reverse @ blockReach[Reverse[s], Length[it["Items"]], it["Min"], it["Max"]]];
+
+(* A repeat of one entry that is one child tested by a vector, as
+   Except[XMLPattern[t_]] ... once t is bound, reaches a place from the last
+   place before it, lo children back or more, from which every child between
+   passes: a running maximum, and a count of the children that fail, which
+   two places with none failing between share. Stepping one repeat at a time
+   costs a pass over the children per repeat. *)
+repeatReach[it_, s_, dir_] /; MatchQ[it["Items"], {e_} /; vectorEntryQ[e] || boundRecordQ[e]] :=
+  With[{v = entryVector[First[it["Items"]]]},
+    If[dir == 1, runReach[s, v, it["Min"], it["Max"]], Reverse @ runReach[Reverse[s], Reverse[v], it["Min"], it["Max"]]]];
+
+runReach[s_, v_, lo_, hi_] :=
+  With[{places = Range[0, Length[v]], blocks = Prepend[Accumulate[1 - v], 0], k = Min[lo, Length[s]]},
+    With[{last = Join[ConstantArray[-1, k], Drop[FoldList[Max, places s - (1 - s)], -k]]},
+      UnitStep[last] (1 - Unitize[blocks[[Clip[last, {0, Infinity}] + 1]] - blocks]) If[hi === Infinity, 1, UnitStep[hi - (places - last)]]]];
 
 blockReach[s_, l_, lo_, hi_] :=
   With[{rows = Accumulate[Partition[PadRight[s, l Ceiling[Length[s]/l]], l]]},
@@ -1427,10 +1497,11 @@ projectSpans[sps_, keep_] := DeleteDuplicatesBy[{#[[1]], KeyTake[#[[2]], keep]} 
 oneCaptureQ[c_] :=
   With[{caps = Select[c["Items"], capQ]}, Length[caps] == 1 && caps[[1]]["Kind"] === "One"];
 
-oneCapture[c_] :=
-  With[{k = First @ FirstPosition[capQ /@ c["Items"], True], items = c["Items"]},
-    With[{f = reach[Take[items, k - 1], delta[0], 1], b = reach[Drop[items, k], delta[$n], -1], sub = items[[k]]["Sub"]},
-      hitSolutions[sub, Flatten @ Position[Most[f] itemVector[sub] Rest[b], 1]]]];
+oneCapture[c_] := oneCaptureAt[c["Items"], First @ FirstPosition[capQ /@ c["Items"], True]];
+
+oneCaptureAt[items_, k_] :=
+  With[{f = reach[Take[items, k - 1], delta[0], 1], b = reach[Drop[items, k], delta[$n], -1], sub = items[[k]]["Sub"]},
+    hitSolutions[sub, Flatten @ Position[Most[f] itemVector[sub] Rest[b], 1]]];
 
 (* The solutions of the items ks, known to match. A name on an element
    pattern with nothing else to bind, which the item's vector has already
