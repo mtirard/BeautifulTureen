@@ -4,9 +4,6 @@
    counted element positions get the value. A CSS string is whichever its
    translation is. The fixtures are local to this file. *)
 
-doc[root_] := XMLObject["Document"][{}, root, {}];
-el[tag_, c___] := XMLElement[tag, {}, {c}];
-
 page = doc[el["body", el["nav", el["a", "Home"], el["a", "News"]], el["p", "Text"]]];
 
 (* === Examples === *)
@@ -117,10 +114,10 @@ TestCreate[
 
 (* HTMLToTree's "Roles" take both kinds, as HTMLInnerText's do; the drawn
    elements are as given. *)
-shape[t_Tree] := TreeData[t] -> (shape /@ Replace[TreeChildren[t], None -> {}]);
+treeShape[t_Tree] := TreeData[t] -> (treeShape /@ Replace[TreeChildren[t], None -> {}]);
 
 TestCreate[
-  shape /@ {HTMLToTree[page, "MergeText" -> HTMLInnerText], HTMLToTree[page, "MergeText" -> HTMLInnerText, "Roles" -> {"nav a" -> "Block"}]},
+  treeShape /@ {HTMLToTree[page, "MergeText" -> HTMLInnerText], HTMLToTree[page, "MergeText" -> HTMLInnerText, "Roles" -> {"nav a" -> "Block"}]},
   {"#document" -> {el["body"] -> {el["nav"] -> {"HomeNews" -> {}}, el["p"] -> {"Text" -> {}}}},
    "#document" -> {el["body"] -> {el["nav"] -> {el["a"] -> {"Home" -> {}}, el["a"] -> {"News" -> {}}}, el["p"] -> {"Text" -> {}}}}},
   TestID -> "tree-roles-query-key"

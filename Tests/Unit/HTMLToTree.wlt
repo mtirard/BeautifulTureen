@@ -2,12 +2,7 @@
    not as pixels: shape turns a Tree into nested data (data -> {children} for a
    node with children, the bare data for a leaf), and the options handed to Tree
    are read with Options. Exact ImageSize numbers and label boxes are not
-   compared. The helpers are local to this file. *)
-
-shape[t_Tree] := Replace[TreeChildren[t], {None -> TreeData[t], cs_ :> TreeData[t] -> (shape /@ cs)}];
-
-(* An element shell, as an element node's data *)
-e[tag_, attrs_ : {}] := XMLElement[tag, attrs, {}];
+   compared. shape and shell are in Support/Fixtures.wl. *)
 
 htmlBody[h_String] := FirstCase[ImportString[h, {"HTML", "XMLObject"}],
   XMLElement["body", __], Missing[], Infinity];
@@ -38,8 +33,8 @@ withMessages[expr_] := Module[{r}, {capturedMessages[r = expr], r}];
 (* A document gets a "#document" root above its root element. *)
 TestCreate[
   shape[HTMLToTree[ImportString["<p>Hi</p>", {"HTML", "XMLObject"}]]],
-  "#document" -> {e["html", {{"http://www.w3.org/2000/xmlns/", "xmlns"} -> "http://www.w3.org/1999/xhtml"}] -> {
-    e["body"] -> {e["p"] -> {"Hi"}}}},
+  "#document" -> {shell["html", {{"http://www.w3.org/2000/xmlns/", "xmlns"} -> "http://www.w3.org/1999/xhtml"}] -> {
+    shell["body"] -> {shell["p"] -> {"Hi"}}}},
   TestID -> "htt-document-root"
 ];
 
@@ -47,14 +42,14 @@ TestCreate[
    whitespace-only strings are left out. *)
 TestCreate[
   shape[HTMLToTree[XMLElement["ul", {}, {"\n  ", XMLElement["li", {}, {"a"}], " ", XMLElement["li", {}, {}], "\n"}]]],
-  e["ul"] -> {e["li"] -> {"a"}, e["li"]},
+  shell["ul"] -> {shell["li"] -> {"a"}, shell["li"]},
   TestID -> "htt-element-root"
 ];
 
 (* A list gets a "#document" root with its elements and strings as children. *)
 TestCreate[
   shape[HTMLToTree[{XMLElement["p", {}, {"x"}], "tail", "  "}]],
-  "#document" -> {e["p"] -> {"x"}, "tail"},
+  "#document" -> {shell["p"] -> {"x"}, "tail"},
   TestID -> "htt-list-root"
 ];
 
@@ -80,7 +75,7 @@ TestCreate[
     XMLElement["p", {}, {XMLObject["CDATASection"]["a<b"], XMLObject["Comment"]["d"],
       XMLObject["ProcessingInstruction"]["x", "y"], "c"}],
     {XMLObject["Comment"]["e"]}]]],
-  "#document" -> {e["p"] -> {"a<b", "c"}},
+  "#document" -> {shell["p"] -> {"a<b", "c"}},
   TestID -> "htt-cdata-text-comments-dropped"
 ];
 
@@ -92,13 +87,13 @@ $wsTree = XMLElement["div", {}, {"\n  ", XMLElement["pre", {}, {"\n\t"}], "\[Non
    is not HTML whitespace. *)
 TestCreate[
   shape[HTMLToTree[$wsTree]],
-  e["div"] -> {e["pre"], "\[NonBreakingSpace]", " x "},
+  shell["div"] -> {shell["pre"], "\[NonBreakingSpace]", " x "},
   TestID -> "htt-whitespace-dropped"
 ];
 
 TestCreate[
   shape[HTMLToTree[$wsTree, "IncludeWhitespace" -> True]],
-  e["div"] -> {"\n  ", e["pre"] -> {"\n\t"}, "\[NonBreakingSpace]", " x "},
+  shell["div"] -> {"\n  ", shell["pre"] -> {"\n\t"}, "\[NonBreakingSpace]", " x "},
   TestID -> "htt-include-whitespace"
 ];
 
@@ -133,18 +128,18 @@ $rect = {"shape" -> "rect"};
 
 TestCreate[
   shape[HTMLToTree[$cmpBody]],
-  e["body"] -> {
-    e["nav"] -> {e["a", $rect] -> {"Home"}, e["a", $rect] -> {"About"}},
-    e["main"] -> {
-      e["h1"] -> {"Title"},
-      e["section", {"id" -> "a"}] -> {
-        e["h2"] -> {"Intro"},
-        e["p"] -> {"Some ", e["b"] -> {"bold"}, " text"},
-        e["div"] -> {
-          e["aside"] -> {e["section", {"id" -> "b"}] -> {e["h2"] -> {"Note"}}},
-          e["p"] -> {"More"}}},
-      e["div", {"class" -> "ad"}] -> {e["p"] -> {"Buy"}}},
-    e["footer"] -> {e["p"] -> {"Fine print"}}},
+  shell["body"] -> {
+    shell["nav"] -> {shell["a", $rect] -> {"Home"}, shell["a", $rect] -> {"About"}},
+    shell["main"] -> {
+      shell["h1"] -> {"Title"},
+      shell["section", {"id" -> "a"}] -> {
+        shell["h2"] -> {"Intro"},
+        shell["p"] -> {"Some ", shell["b"] -> {"bold"}, " text"},
+        shell["div"] -> {
+          shell["aside"] -> {shell["section", {"id" -> "b"}] -> {shell["h2"] -> {"Note"}}},
+          shell["p"] -> {"More"}}},
+      shell["div", {"class" -> "ad"}] -> {shell["p"] -> {"Buy"}}},
+    shell["footer"] -> {shell["p"] -> {"Fine print"}}},
   TestID -> "htt-comparison-defaults"
 ];
 
@@ -165,7 +160,7 @@ collapsed[k_] := Missing["Collapsed", k];
 (* Configuration 2 of the prototype's comparison: depth 1 *)
 TestCreate[
   shape[HTMLToTree[$cmpBody, 1]],
-  e["body"] -> {e["nav"] -> {collapsed[2]}, e["main"] -> {collapsed[12]}, e["footer"] -> {collapsed[1]}},
+  shell["body"] -> {shell["nav"] -> {collapsed[2]}, shell["main"] -> {collapsed[12]}, shell["footer"] -> {collapsed[1]}},
   TestID -> "htt-depth-one-comparison"
 ];
 
@@ -180,13 +175,13 @@ $depthTree = XMLElement["div", {}, {
 
 TestCreate[
   shape[HTMLToTree[$depthTree, 1]],
-  e["div"] -> {e["h1"] -> {"Title"}, e["p"] -> {collapsed[2]}, e["hr"], "tail"},
+  shell["div"] -> {shell["h1"] -> {"Title"}, shell["p"] -> {collapsed[2]}, shell["hr"], "tail"},
   TestID -> "htt-depth-text-kept-cut-counted"
 ];
 
 TestCreate[
   shape[HTMLToTree[$depthTree, 2]],
-  e["div"] -> {e["h1"] -> {"Title"}, e["p"] -> {"Some ", e["b"] -> {collapsed[1]}, " text"}, e["hr"], "tail"},
+  shell["div"] -> {shell["h1"] -> {"Title"}, shell["p"] -> {"Some ", shell["b"] -> {collapsed[1]}, " text"}, shell["hr"], "tail"},
   TestID -> "htt-depth-two"
 ];
 
@@ -198,8 +193,8 @@ TestCreate[
     HTMLToTree[{XMLElement["p", {}, {"x"}], "tail"}, 0],
     HTMLToTree[XMLElement["p", {}, {"x"}], 0],
     HTMLToTree[{"x"}, 0]},
-  {e["div"] -> {collapsed[5]}, "#document" -> {collapsed[3]}, "#document" -> {collapsed[1]},
-    e["p"] -> {"x"}, "#document" -> {"x"}},
+  {shell["div"] -> {collapsed[5]}, "#document" -> {collapsed[3]}, "#document" -> {collapsed[1]},
+    shell["p"] -> {"x"}, "#document" -> {"x"}},
   TestID -> "htt-depth-zero"
 ];
 
@@ -218,17 +213,17 @@ TestCreate[
 (* Configuration 3 of the prototype's comparison *)
 TestCreate[
   shape[HTMLToTree[$cmpBody, "Hide" -> ".ad"]],
-  e["body"] -> {
-    e["nav"] -> {e["a", $rect] -> {"Home"}, e["a", $rect] -> {"About"}},
-    e["main"] -> {
-      e["h1"] -> {"Title"},
-      e["section", {"id" -> "a"}] -> {
-        e["h2"] -> {"Intro"},
-        e["p"] -> {"Some ", e["b"] -> {"bold"}, " text"},
-        e["div"] -> {
-          e["aside"] -> {e["section", {"id" -> "b"}] -> {e["h2"] -> {"Note"}}},
-          e["p"] -> {"More"}}}},
-    e["footer"] -> {e["p"] -> {"Fine print"}}},
+  shell["body"] -> {
+    shell["nav"] -> {shell["a", $rect] -> {"Home"}, shell["a", $rect] -> {"About"}},
+    shell["main"] -> {
+      shell["h1"] -> {"Title"},
+      shell["section", {"id" -> "a"}] -> {
+        shell["h2"] -> {"Intro"},
+        shell["p"] -> {"Some ", shell["b"] -> {"bold"}, " text"},
+        shell["div"] -> {
+          shell["aside"] -> {shell["section", {"id" -> "b"}] -> {shell["h2"] -> {"Note"}}},
+          shell["p"] -> {"More"}}}},
+    shell["footer"] -> {shell["p"] -> {"Fine print"}}},
   TestID -> "htt-hide-comparison"
 ];
 
@@ -240,27 +235,27 @@ $list3 = XMLElement["ul", {}, {XMLElement["li", {}, {"1"}], XMLElement["li", {},
 
 TestCreate[
   shape[HTMLToTree[$list3, "Hide" -> (XMLPattern["ul", _, {___, XMLPattern["li"], x : XMLPattern["li"], ___}] :> x)]],
-  e["ul"] -> {e["li"] -> {"1"}},
+  shell["ul"] -> {shell["li"] -> {"1"}},
   TestID -> "htt-hide-adjacent-original-input"
 ];
 
 TestCreate[
   shape[HTMLToTree[XMLElement["div", {}, {XMLElement["p", {}, {XMLElement["b", {}, {}], "x"}],
       XMLElement["p", {}, {"y"}]}], "Hide" -> "b, p:has(b)"]],
-  e["div"] -> {e["p"] -> {"y"}},
+  shell["div"] -> {shell["p"] -> {"y"}},
   TestID -> "htt-hide-has-original-input"
 ];
 
 (* A Hidden element leaves no mark, in a Cut element's count too *)
 TestCreate[
   shape[HTMLToTree[$depthTree, 1, "Hide" -> "i"]],
-  e["div"] -> {e["h1"] -> {"Title"}, e["p"] -> {collapsed[1]}, e["hr"], "tail"},
+  shell["div"] -> {shell["h1"] -> {"Title"}, shell["p"] -> {collapsed[1]}, shell["hr"], "tail"},
   TestID -> "htt-hide-not-counted-at-cut"
 ];
 
 TestCreate[
   shape[HTMLToTree[$depthTree, 1, "Hide" -> "b"]],
-  e["div"] -> {e["h1"] -> {"Title"}, e["p"] -> {"Some ", " text"}, e["hr"], "tail"},
+  shell["div"] -> {shell["h1"] -> {"Title"}, shell["p"] -> {"Some ", " text"}, shell["hr"], "tail"},
   TestID -> "htt-hide-cut-element-text-only-left"
 ];
 
@@ -268,7 +263,7 @@ TestCreate[
    applies below it. *)
 TestCreate[
   withMessages[shape[HTMLToTree[$list3, "Hide" -> "ul, li:first-child"]]],
-  {{"The root element cannot be hidden; it was kept."}, e["ul"] -> {e["li"] -> {"2"}, e["li"] -> {"3"}}},
+  {{"The root element cannot be hidden; it was kept."}, shell["ul"] -> {shell["li"] -> {"2"}, shell["li"] -> {"3"}}},
   TestID -> "htt-hide-bare-root-kept"
 ];
 
@@ -296,14 +291,14 @@ $focusSections = HTMLToTree[$cmpBody, "Focus" -> "section"];
    several depths: nav and its two a, then h1 inside main. *)
 TestCreate[
   shape[$focusSections],
-  e["body"] -> {
+  shell["body"] -> {
     collapsed[4],
-    e["section", {"id" -> "a"}] -> {
-      e["h2"] -> {"Intro"},
-      e["p"] -> {"Some ", e["b"] -> {"bold"}, " text"},
-      e["div"] -> {
-        e["aside"] -> {e["section", {"id" -> "b"}] -> {e["h2"] -> {"Note"}}},
-        e["p"] -> {"More"}}},
+    shell["section", {"id" -> "a"}] -> {
+      shell["h2"] -> {"Intro"},
+      shell["p"] -> {"Some ", shell["b"] -> {"bold"}, " text"},
+      shell["div"] -> {
+        shell["aside"] -> {shell["section", {"id" -> "b"}] -> {shell["h2"] -> {"Note"}}},
+        shell["p"] -> {"More"}}},
     collapsed[4]},
   TestID -> "htt-focus-comparison"
 ];
@@ -328,7 +323,7 @@ $deep = XMLElement["div", {}, {XMLElement["main", {"id" -> "m"}, {
 
 TestCreate[
   With[{t = HTMLToTree[$deep, "Focus" -> "p"]}, {shape[t], edge[First[TreeChildren[t]]]}],
-  {e["div"] -> {e["p"] -> {"deep"}}, {Dashed, Placed["main#m > article.x.y", Tooltip]}},
+  {shell["div"] -> {shell["p"] -> {"deep"}}, {Dashed, Placed["main#m > article.x.y", Tooltip]}},
   TestID -> "htt-focus-path-selectors"
 ];
 
@@ -338,7 +333,7 @@ $twins = XMLElement["ul", {}, {XMLElement["li", {}, {"same"}], XMLElement["li", 
 
 TestCreate[
   With[{t = HTMLToTree[$twins, "Focus" -> "li:first-child"]}, {shape[t], edge[First[TreeChildren[t]]]}],
-  {e["ul"] -> {e["li"] -> {"same"}, collapsed[1]}, {None, None}},
+  {shell["ul"] -> {shell["li"] -> {"same"}, collapsed[1]}, {None, None}},
   TestID -> "htt-focus-equal-siblings"
 ];
 
@@ -347,21 +342,21 @@ TestCreate[
 TestCreate[
   shape[HTMLToTree[XMLElement["div", {}, {"intro ", XMLElement["p", {}, {"x"}], " and ",
     XMLElement["span", {}, {XMLElement["i", {}, {}]}], "\n"}], "Focus" -> "p"]],
-  e["div"] -> {collapsed[0], e["p"] -> {"x"}, collapsed[2]},
+  shell["div"] -> {collapsed[0], shell["p"] -> {"x"}, collapsed[2]},
   TestID -> "htt-focus-text-only-run"
 ];
 
 (* Matching is on the original input, for rules, CSS and alternatives *)
 TestCreate[
   shape[HTMLToTree[$list3, "Focus" -> (XMLPattern["ul", _, {___, XMLPattern["li"], x : XMLPattern["li"], ___}] :> x)]],
-  e["ul"] -> {collapsed[1], e["li"] -> {"2"}, e["li"] -> {"3"}},
+  shell["ul"] -> {collapsed[1], shell["li"] -> {"2"}, shell["li"] -> {"3"}},
   TestID -> "htt-focus-adjacent"
 ];
 
 TestCreate[
   shape[HTMLToTree[$cmpBody, "Focus" -> "p:has(b)" | XMLPattern["footer"]]],
-  e["body"] -> {collapsed[5], e["p"] -> {"Some ", e["b"] -> {"bold"}, " text"}, collapsed[7],
-    e["footer"] -> {e["p"] -> {"Fine print"}}},
+  shell["body"] -> {collapsed[5], shell["p"] -> {"Some ", shell["b"] -> {"bold"}, " text"}, collapsed[7],
+    shell["footer"] -> {shell["p"] -> {"Fine print"}}},
   TestID -> "htt-focus-css-has-and-alternatives"
 ];
 
@@ -369,13 +364,13 @@ TestCreate[
 TestCreate[
   With[{t = HTMLToTree[ImportString["<p>Hi</p><p>Bye</p>", {"HTML", "XMLObject"}], "Focus" -> "p:last-child"]},
     {shape[t], edge[TreeChildren[t][[2]]]}],
-  {"#document" -> {collapsed[1], e["p"] -> {"Bye"}}, {Dashed, Placed["html > body", Tooltip]}},
+  {"#document" -> {collapsed[1], shell["p"] -> {"Bye"}}, {Dashed, Placed["html > body", Tooltip]}},
   TestID -> "htt-focus-document"
 ];
 
 TestCreate[
   shape[HTMLToTree[{XMLElement["p", {}, {"x"}], "tail", XMLElement["b", {}, {}]}, "Focus" -> "b"]],
-  "#document" -> {collapsed[1], e["b"]},
+  "#document" -> {collapsed[1], shell["b"]},
   TestID -> "htt-focus-list"
 ];
 
@@ -383,7 +378,7 @@ TestCreate[
    message. *)
 TestCreate[
   withMessages[shape[HTMLToTree[$cmpBody, "Focus" -> "table"]]],
-  {{}, e["body"] -> {collapsed[18]}},
+  {{}, shell["body"] -> {collapsed[18]}},
   TestID -> "htt-focus-nothing"
 ];
 
@@ -408,26 +403,26 @@ TestCreate[
 (* Configuration 13 of the prototype's comparison *)
 TestCreate[
   shape[HTMLToTree[$cmpBody, "Focus" -> "section", "Hide" -> ".ad"]],
-  e["body"] -> {
+  shell["body"] -> {
     collapsed[4],
-    e["section", {"id" -> "a"}] -> {
-      e["h2"] -> {"Intro"},
-      e["p"] -> {"Some ", e["b"] -> {"bold"}, " text"},
-      e["div"] -> {
-        e["aside"] -> {e["section", {"id" -> "b"}] -> {e["h2"] -> {"Note"}}},
-        e["p"] -> {"More"}}},
+    shell["section", {"id" -> "a"}] -> {
+      shell["h2"] -> {"Intro"},
+      shell["p"] -> {"Some ", shell["b"] -> {"bold"}, " text"},
+      shell["div"] -> {
+        shell["aside"] -> {shell["section", {"id" -> "b"}] -> {shell["h2"] -> {"Note"}}},
+        shell["p"] -> {"More"}}},
     collapsed[2]},
   TestID -> "htt-focus-hide-comparison"
 ];
 
 TestCreate[
   shape[HTMLToTree[$cmpBody, "Focus" -> "section", "Hide" -> "aside"]],
-  e["body"] -> {
+  shell["body"] -> {
     collapsed[4],
-    e["section", {"id" -> "a"}] -> {
-      e["h2"] -> {"Intro"},
-      e["p"] -> {"Some ", e["b"] -> {"bold"}, " text"},
-      e["div"] -> {e["p"] -> {"More"}}},
+    shell["section", {"id" -> "a"}] -> {
+      shell["h2"] -> {"Intro"},
+      shell["p"] -> {"Some ", shell["b"] -> {"bold"}, " text"},
+      shell["div"] -> {shell["p"] -> {"More"}}},
     collapsed[4]},
   TestID -> "htt-hide-inside-focus"
 ];
@@ -436,13 +431,13 @@ TestCreate[
    do not count in a Collapsed run. *)
 TestCreate[
   shape[HTMLToTree[$cmpBody, "Focus" -> "#b", "Hide" -> "aside"]],
-  e["body"] -> {collapsed[15]},
+  shell["body"] -> {collapsed[15]},
   TestID -> "htt-hide-wins-over-focus"
 ];
 
 TestCreate[
   shape[HTMLToTree[$cmpBody, "Focus" -> "section", "Hide" -> "section"]],
-  e["body"] -> {collapsed[9]},
+  shell["body"] -> {collapsed[9]},
   TestID -> "htt-hide-wins-over-focus-same-element"
 ];
 
@@ -451,30 +446,26 @@ TestCreate[
    given; they act on the positions of the names the right-hand side uses
    (ADR 0024). The inputs are built literally. *)
 
-doc6[root_] := XMLObject["Document"][{}, root, {}];
-idEl[tag_, id_String, c___] := XMLElement[tag, {"id" -> id}, {c}];
-el6[tag_, c___] := XMLElement[tag, {}, {c}];
-
 $hidetarget[pos_] := "The \"Hide\" query names the position " <> pos <>
   ". Hide removes only elements, runs of element children, and the contents of an element.";
 $focustarget[pos_] := "The \"Focus\" query names the position " <> pos <>
   ". Focus draws only elements and runs of element children.";
 
 TestCreate[
-  shape[HTMLToTree[doc6[el6["div", el6["pre", "code"], el6["p"]]], "Hide" -> (XMLElement["pre", _, c_] :> c)]],
-  "#document" -> {e["div"] -> {e["pre"], e["p"]}},
+  shape[HTMLToTree[doc[el["div", el["pre", "code"], el["p"]]], "Hide" -> (XMLElement["pre", _, c_] :> c)]],
+  "#document" -> {shell["div"] -> {shell["pre"], shell["p"]}},
   TestID -> "htt-rule-hide-contents"
 ];
 
-$body6 = doc6[el6["body", idEl["nav", "n", idEl["a", "in"]], idEl["a", "out"]]];
+$body6 = doc[el["body", e["nav", "n", e["a", "in"]], e["a", "out"]]];
 
 TestCreate[
   shape[HTMLToTree[$body6, "Focus" -> (XMLDocument[Descendant[x : XMLPattern["a"]]?(NoneTrue[XMLMatchQ["nav"]])] :> x)]],
-  "#document" -> {collapsed[2], e["a", {"id" -> "out"}]},
+  "#document" -> {collapsed[2], shell["a", {"id" -> "out"}]},
   TestID -> "htt-rule-focus-context"
 ];
 
-$hrefs6 = doc6[el6["p", XMLElement["a", {"href" -> "/x"}, {}], XMLElement["a", {"href" -> "/x"}, {}]]];
+$hrefs6 = doc[el["p", XMLElement["a", {"href" -> "/x"}, {}], XMLElement["a", {"href" -> "/x"}, {}]]];
 
 TestCreate[
   withMessages[HTMLToTree[$hrefs6, "Focus" -> (XMLPattern["a", "href" -> h_] :> h)]],
@@ -483,28 +474,28 @@ TestCreate[
 ];
 
 (* Which kinds of position Hide and Focus act on, one test per kind *)
-$nav6 = doc6[idEl["nav", "o", idEl["a", "a1"], idEl["nav", "i", idEl["a", "a2"]], idEl["a", "a3"]]];
+$nav6 = doc[e["nav", "o", e["a", "a1"], e["nav", "i", e["a", "a2"]], e["a", "a3"]]];
 
 TestCreate[
   shape /@ {HTMLToTree[$nav6, "Hide" -> (XMLPattern["nav", _, {___, x : XMLPattern["nav"], ___}] :> x)],
     HTMLToTree[$nav6, "Focus" -> (XMLPattern["nav", _, {___, x : XMLPattern["nav"], ___}] :> x)]},
-  {"#document" -> {e["nav", {"id" -> "o"}] -> {e["a", {"id" -> "a1"}], e["a", {"id" -> "a3"}]}},
-    "#document" -> {collapsed[1], e["nav", {"id" -> "i"}] -> {e["a", {"id" -> "a2"}]}, collapsed[1]}},
+  {"#document" -> {shell["nav", {"id" -> "o"}] -> {shell["a", {"id" -> "a1"}], shell["a", {"id" -> "a3"}]}},
+    "#document" -> {collapsed[1], shell["nav", {"id" -> "i"}] -> {shell["a", {"id" -> "a2"}]}, collapsed[1]}},
   TestID -> "htt-rule-target-element"
 ];
 
 TestCreate[
   shape /@ {HTMLToTree[$nav6, "Hide" -> (XMLPattern["nav", _, {_, s__}] :> s)],
     HTMLToTree[$nav6, "Focus" -> (XMLPattern["nav", _, {_, s__}] :> s)]},
-  {"#document" -> {e["nav", {"id" -> "o"}] -> {e["a", {"id" -> "a1"}]}},
-    "#document" -> {collapsed[1], e["nav", {"id" -> "i"}] -> {e["a", {"id" -> "a2"}]}, e["a", {"id" -> "a3"}]}},
+  {"#document" -> {shell["nav", {"id" -> "o"}] -> {shell["a", {"id" -> "a1"}]}},
+    "#document" -> {collapsed[1], shell["nav", {"id" -> "i"}] -> {shell["a", {"id" -> "a2"}]}, shell["a", {"id" -> "a3"}]}},
   TestID -> "htt-rule-target-run"
 ];
 
 TestCreate[
   {shape[HTMLToTree[$nav6, "Hide" -> (XMLElement["nav", {"id" -> "i"}, c_] :> c)]],
     withMessages[HTMLToTree[$nav6, "Focus" -> (XMLElement["nav", {"id" -> "i"}, c_] :> c)]]},
-  {"#document" -> {e["nav", {"id" -> "o"}] -> {e["a", {"id" -> "a1"}], e["nav", {"id" -> "i"}], e["a", {"id" -> "a3"}]}},
+  {"#document" -> {shell["nav", {"id" -> "o"}] -> {shell["a", {"id" -> "a1"}], shell["nav", {"id" -> "i"}], shell["a", {"id" -> "a3"}]}},
     {{$focustarget["{1, 2, All}"]}, $Failed}},
   TestID -> "htt-rule-target-contents"
 ];
@@ -518,7 +509,7 @@ $refusedTargets = {
   XMLPattern["p", "classList" -> {___, c : "lead", ___}] :> c,
   XMLPattern["p", _, {_, g___, _}] :> g,
   XMLPattern["body", _, p : Descendant[XMLPattern["a"]]] :> p};
-$refusedInput = doc6[el6["body", XMLElement["p", {"class" -> "lead"}, {XMLElement["a", {"href" -> "/x"}, {}], el6["b"]}]]];
+$refusedInput = doc[el["body", XMLElement["p", {"class" -> "lead"}, {XMLElement["a", {"href" -> "/x"}, {}], el["b"]}]]];
 
 $refusedPositions = {"{1, 0}", "{1, 1, 1, Key[All]}", "{1, 1, 1, Key[\"href\"]}", "{1, 1, Key[\"classList\"]}",
   "{1, 1, Key[\"classList\"], 1}", "{1, 1, 2 ;; 1}", "{1} ;; {1, 1, 1}"};
@@ -542,7 +533,7 @@ TestCreate[
 (* A bare element's root is kept, with root, when a rule names it *)
 TestCreate[
   withMessages[shape[HTMLToTree[$list3, "Hide" -> (x : XMLPattern["ul"] :> x)]]],
-  {{"The root element cannot be hidden; it was kept."}, e["ul"] -> {e["li"] -> {"1"}, e["li"] -> {"2"}, e["li"] -> {"3"}}},
+  {{"The root element cannot be hidden; it was kept."}, shell["ul"] -> {shell["li"] -> {"1"}, shell["li"] -> {"2"}, shell["li"] -> {"3"}}},
   TestID -> "htt-rule-hide-bare-root-kept"
 ];
 
@@ -557,12 +548,12 @@ $focusDepth1 = HTMLToTree[$cmpBody, 1, "Focus" -> "section"];
    holds section#b, which skips aside; p and its text are one run. *)
 TestCreate[
   shape[$focusDepth1],
-  e["body"] -> {
+  shell["body"] -> {
     collapsed[4],
-    e["section", {"id" -> "a"}] -> {
-      e["h2"] -> {"Intro"},
-      e["p"] -> {collapsed[1]},
-      e["div"] -> {e["section", {"id" -> "b"}] -> {e["h2"] -> {"Note"}}, collapsed[1]}},
+    shell["section", {"id" -> "a"}] -> {
+      shell["h2"] -> {"Intro"},
+      shell["p"] -> {collapsed[1]},
+      shell["div"] -> {shell["section", {"id" -> "b"}] -> {shell["h2"] -> {"Note"}}, collapsed[1]}},
     collapsed[4]},
   TestID -> "htt-focus-depth-comparison"
 ];
@@ -578,10 +569,10 @@ TestCreate[
    from it, past div and aside, with runs around it. *)
 TestCreate[
   shape /@ {HTMLToTree[$cmpBody, 0, "Focus" -> "nav, footer"], HTMLToTree[$cmpBody, 0, "Focus" -> "section"]},
-  {e["body"] -> {e["nav"] -> {collapsed[2]}, collapsed[13], e["footer"] -> {collapsed[1]}},
-    e["body"] -> {
+  {shell["body"] -> {shell["nav"] -> {collapsed[2]}, collapsed[13], shell["footer"] -> {collapsed[1]}},
+    shell["body"] -> {
       collapsed[4],
-      e["section", {"id" -> "a"}] -> {collapsed[3], e["section", {"id" -> "b"}] -> {collapsed[1]}, collapsed[1]},
+      shell["section", {"id" -> "a"}] -> {collapsed[3], shell["section", {"id" -> "b"}] -> {collapsed[1]}, collapsed[1]},
       collapsed[4]}},
   TestID -> "htt-focus-depth-zero"
 ];
@@ -591,7 +582,7 @@ TestCreate[
    depth 3 in section#a, keeps its h2 at depths 2, 3 and 4. *)
 TestCreate[
   shape[TreeExtract[HTMLToTree[$cmpBody, #, "Focus" -> "section"], {2, 3, 1, 1}]] & /@ {2, 3, 4},
-  ConstantArray[e["section", {"id" -> "b"}] -> {e["h2"] -> {"Note"}}, 3],
+  ConstantArray[shell["section", {"id" -> "b"}] -> {shell["h2"] -> {"Note"}}, 3],
   TestID -> "htt-focus-depth-nested"
 ];
 
@@ -613,16 +604,16 @@ $fullPaths = HTMLToTree[$cmpBody, "Focus" -> "section", "CollapsePaths" -> False
 
 TestCreate[
   shape[$fullPaths],
-  e["body"] -> {
+  shell["body"] -> {
     collapsed[3],
-    e["main"] -> {
+    shell["main"] -> {
       collapsed[1],
-      e["section", {"id" -> "a"}] -> {
-        e["h2"] -> {"Intro"},
-        e["p"] -> {"Some ", e["b"] -> {"bold"}, " text"},
-        e["div"] -> {
-          e["aside"] -> {e["section", {"id" -> "b"}] -> {e["h2"] -> {"Note"}}},
-          e["p"] -> {"More"}}},
+      shell["section", {"id" -> "a"}] -> {
+        shell["h2"] -> {"Intro"},
+        shell["p"] -> {"Some ", shell["b"] -> {"bold"}, " text"},
+        shell["div"] -> {
+          shell["aside"] -> {shell["section", {"id" -> "b"}] -> {shell["h2"] -> {"Note"}}},
+          shell["p"] -> {"More"}}},
       collapsed[2]},
     collapsed[2]},
   TestID -> "htt-full-paths-comparison"
@@ -638,14 +629,14 @@ TestCreate[
    section#b is drawn, aside, and p beside it is a run. *)
 TestCreate[
   shape[HTMLToTree[$cmpBody, 1, "Focus" -> "section", "CollapsePaths" -> False]],
-  e["body"] -> {
+  shell["body"] -> {
     collapsed[3],
-    e["main"] -> {
+    shell["main"] -> {
       collapsed[1],
-      e["section", {"id" -> "a"}] -> {
-        e["h2"] -> {"Intro"},
-        e["p"] -> {collapsed[1]},
-        e["div"] -> {e["aside"] -> {e["section", {"id" -> "b"}] -> {e["h2"] -> {"Note"}}}, collapsed[1]}},
+      shell["section", {"id" -> "a"}] -> {
+        shell["h2"] -> {"Intro"},
+        shell["p"] -> {collapsed[1]},
+        shell["div"] -> {shell["aside"] -> {shell["section", {"id" -> "b"}] -> {shell["h2"] -> {"Note"}}}, collapsed[1]}},
       collapsed[2]},
     collapsed[2]},
   TestID -> "htt-full-paths-depth-comparison"
@@ -660,14 +651,14 @@ $deeper = XMLElement["div", {}, {XMLElement["main", {"id" -> "m"}, {
 TestCreate[
   shape /@ {HTMLToTree[$deeper, 0, "Focus" -> "article", "CollapsePaths" -> False],
     HTMLToTree[$cmpBody, 0, "Focus" -> "section", "CollapsePaths" -> False]},
-  {e["div"] -> {e["main", {"id" -> "m"}] -> {e["article"] -> {collapsed[1]}, collapsed[1]}},
-    e["body"] -> {
+  {shell["div"] -> {shell["main", {"id" -> "m"}] -> {shell["article"] -> {collapsed[1]}, collapsed[1]}},
+    shell["body"] -> {
       collapsed[3],
-      e["main"] -> {
+      shell["main"] -> {
         collapsed[1],
-        e["section", {"id" -> "a"}] -> {
+        shell["section", {"id" -> "a"}] -> {
           collapsed[3],
-          e["div"] -> {e["aside"] -> {e["section", {"id" -> "b"}] -> {collapsed[1]}}, collapsed[1]}},
+          shell["div"] -> {shell["aside"] -> {shell["section", {"id" -> "b"}] -> {collapsed[1]}}, collapsed[1]}},
         collapsed[2]},
       collapsed[2]}},
   TestID -> "htt-full-paths-not-counted"
@@ -677,8 +668,8 @@ TestCreate[
 TestCreate[
   shape[HTMLToTree[ImportString["<p>Hi</p><p>Bye</p>", {"HTML", "XMLObject"}],
     "Focus" -> "p:last-child", "CollapsePaths" -> False]],
-  "#document" -> {e["html", {{"http://www.w3.org/2000/xmlns/", "xmlns"} -> "http://www.w3.org/1999/xhtml"}] -> {
-    e["body"] -> {collapsed[1], e["p"] -> {"Bye"}}}},
+  "#document" -> {shell["html", {{"http://www.w3.org/2000/xmlns/", "xmlns"} -> "http://www.w3.org/1999/xhtml"}] -> {
+    shell["body"] -> {collapsed[1], shell["p"] -> {"Bye"}}}},
   TestID -> "htt-full-paths-document"
 ];
 
@@ -697,18 +688,18 @@ TestCreate[
    only text are not merged: there is nothing to merge. *)
 TestCreate[
   shape[HTMLToTree[$cmpBody, "MergeText" -> HTMLInnerText]],
-  e["body"] -> {
-    e["nav"] -> {"Home About"},
-    e["main"] -> {
-      e["h1"] -> {"Title"},
-      e["section", {"id" -> "a"}] -> {
-        e["h2"] -> {"Intro"},
-        e["p"] -> {"Some bold text"},
-        e["div"] -> {
-          e["aside"] -> {e["section", {"id" -> "b"}] -> {e["h2"] -> {"Note"}}},
-          e["p"] -> {"More"}}},
-      e["div", {"class" -> "ad"}] -> {e["p"] -> {"Buy"}}},
-    e["footer"] -> {e["p"] -> {"Fine print"}}},
+  shell["body"] -> {
+    shell["nav"] -> {"Home About"},
+    shell["main"] -> {
+      shell["h1"] -> {"Title"},
+      shell["section", {"id" -> "a"}] -> {
+        shell["h2"] -> {"Intro"},
+        shell["p"] -> {"Some bold text"},
+        shell["div"] -> {
+          shell["aside"] -> {shell["section", {"id" -> "b"}] -> {shell["h2"] -> {"Note"}}},
+          shell["p"] -> {"More"}}},
+      shell["div", {"class" -> "ad"}] -> {shell["p"] -> {"Buy"}}},
+    shell["footer"] -> {shell["p"] -> {"Fine print"}}},
   TestID -> "htt-merge-comparison"
 ];
 
@@ -717,7 +708,7 @@ $mergeP = XMLElement["p", {}, {"Some\n  ", XMLElement["b", {}, {"bold"}], "  tex
 
 TestCreate[
   shape /@ {HTMLToTree[$mergeP, "MergeText" -> HTMLInnerText], HTMLToTree[$mergeP, "MergeText" -> HTMLTextContent]},
-  {e["p"] -> {"Some bold text"}, e["p"] -> {"Some\n  bold  text "}},
+  {shell["p"] -> {"Some bold text"}, shell["p"] -> {"Some\n  bold  text "}},
   TestID -> "htt-merge-both-functions"
 ];
 
@@ -732,7 +723,7 @@ TestCreate[
    the strings stay as they are. *)
 TestCreate[
   shape[HTMLToTree[XMLElement["p", {}, {"  a  ", XMLObject["CDATASection"]["b"]}], "MergeText" -> HTMLInnerText]],
-  e["p"] -> {"  a  ", "b"},
+  shell["p"] -> {"  a  ", "b"},
   TestID -> "htt-merge-text-only-not-merged"
 ];
 
@@ -745,8 +736,8 @@ TestCreate[
     HTMLToTree[$mergeDiv, "MergeText" -> HTMLInnerText, "Roles" -> {"div" -> "Inline"}],
     HTMLToTree[$mergeDiv, "MergeText" -> HTMLTextContent, "Roles" -> {"div" -> "Inline"}],
     HTMLToTree[$mergeP, "MergeText" -> HTMLInnerText, "Roles" -> {"b" -> "Block"}]},
-  {e["p"] -> {"a", e["div"] -> {"b"}, "c"}, e["p"] -> {"abc"}, e["p"] -> {"abc"},
-    e["p"] -> {"Some\n  ", e["b"] -> {"bold"}, "  text "}},
+  {shell["p"] -> {"a", shell["div"] -> {"b"}, "c"}, shell["p"] -> {"abc"}, shell["p"] -> {"abc"},
+    shell["p"] -> {"Some\n  ", shell["b"] -> {"bold"}, "  text "}},
   TestID -> "htt-merge-roles-decide-inline"
 ];
 
@@ -755,7 +746,7 @@ TestCreate[
 TestCreate[
   shape /@ {HTMLToTree[XMLElement["p", {}, {"a", XMLElement["br", {}, {}], "b"}], "MergeText" -> HTMLInnerText],
     HTMLToTree[XMLElement["p", {}, {"a", XMLElement["script", {}, {"x"}]}], "MergeText" -> HTMLInnerText]},
-  {e["p"] -> {"a", e["br"], "b"}, e["p"] -> {"a", e["script"] -> {"x"}}},
+  {shell["p"] -> {"a", shell["br"], "b"}, shell["p"] -> {"a", shell["script"] -> {"x"}}},
   TestID -> "htt-merge-not-inline"
 ];
 
@@ -769,7 +760,7 @@ $mergePreOpts = {"Roles" -> {XMLPattern["div", "data-kList" -> "x"] -> "Preforma
 TestCreate[
   {shape[HTMLToTree[$mergePre, "MergeText" -> HTMLInnerText, Sequence @@ $mergePreOpts]],
     HTMLInnerText[$mergePre, Sequence @@ $mergePreOpts]},
-  {e["div", {"data-k" -> "x y"}] -> {"a  b  c"}, "a  b  c"},
+  {shell["div", {"data-k" -> "x y"}] -> {"a  b  c"}, "a  b  c"},
   TestID -> "htt-merge-roles-and-readings-passed"
 ];
 
@@ -781,7 +772,7 @@ TestCreate[
     HTMLToTree[$mergeDiv, "MergeText" -> HTMLTextContent, "Hide" -> "div"],
     HTMLToTree[XMLElement["p", {}, {"a", XMLElement["div", {}, {"z"}], XMLElement["b", {}, {"x"}]}],
       "MergeText" -> HTMLInnerText, "Hide" -> "div"]},
-  {e["p"] -> {"a x"}, e["p"] -> {"a", "c"}, e["p"] -> {"ax"}},
+  {shell["p"] -> {"a x"}, shell["p"] -> {"a", "c"}, shell["p"] -> {"ax"}},
   TestID -> "htt-merge-hidden-left-out"
 ];
 
@@ -794,14 +785,14 @@ TestCreate[
   shape /@ {HTMLToTree[$mergeBlank, "MergeText" -> HTMLTextContent],
     HTMLToTree[$mergeBlank, "MergeText" -> HTMLTextContent, "IncludeWhitespace" -> True],
     HTMLToTree[XMLElement["p", {}, {XMLElement["img", {"alt" -> "A"}, {}]}], "MergeText" -> HTMLInnerText, "IncludeWhitespace" -> True]},
-  {e["p"] -> {e["b"]}, e["p"] -> {"  "}, e["p"] -> {e["img", {"alt" -> "A"}]}},
+  {shell["p"] -> {shell["b"]}, shell["p"] -> {"  "}, shell["p"] -> {shell["img", {"alt" -> "A"}]}},
   TestID -> "htt-merge-not-drawn-not-merged"
 ];
 
 (* A merged element at the depth limit is not a Cut element: it has its text. *)
 TestCreate[
   shape /@ {HTMLToTree[$depthTree, 1, "MergeText" -> HTMLInnerText], HTMLToTree[$mergeP, 0, "MergeText" -> HTMLInnerText]},
-  {e["div"] -> {e["h1"] -> {"Title"}, e["p"] -> {"Some x text"}, e["hr"], "tail"}, e["p"] -> {"Some bold text"}},
+  {shell["div"] -> {shell["h1"] -> {"Title"}, shell["p"] -> {"Some x text"}, shell["hr"], "tail"}, shell["p"] -> {"Some bold text"}},
   TestID -> "htt-merge-not-cut"
 ];
 
@@ -814,10 +805,10 @@ TestCreate[
     HTMLToTree[$mergeInDiv, "Focus" -> "p, b", "MergeText" -> HTMLInnerText],
     HTMLToTree[$mergeInDiv, 0, "Focus" -> "p, b", "MergeText" -> HTMLInnerText],
     HTMLToTree[$mergeInDiv, "Focus" -> "b", "CollapsePaths" -> False, "MergeText" -> HTMLInnerText]},
-  {e["div"] -> {e["p"] -> {"Some bold text"}},
-    e["div"] -> {e["p"] -> {"Some\n  ", e["b"] -> {"bold"}, "  text "}},
-    e["div"] -> {e["p"] -> {collapsed[0], e["b"] -> {"bold"}, collapsed[0]}},
-    e["div"] -> {e["p"] -> {collapsed[0], e["b"] -> {"bold"}, collapsed[0]}}},
+  {shell["div"] -> {shell["p"] -> {"Some bold text"}},
+    shell["div"] -> {shell["p"] -> {"Some\n  ", shell["b"] -> {"bold"}, "  text "}},
+    shell["div"] -> {shell["p"] -> {collapsed[0], shell["b"] -> {"bold"}, collapsed[0]}},
+    shell["div"] -> {shell["p"] -> {collapsed[0], shell["b"] -> {"bold"}, collapsed[0]}}},
   TestID -> "htt-merge-not-on-focus-path"
 ];
 
@@ -829,7 +820,7 @@ $tokens = XMLElement["ul", {}, {XMLElement["li", {"data-k" -> "a b"}, {"1"}],
 TestCreate[
   shape[HTMLToTree[$tokens, "Focus" -> XMLPattern["li", "data-kList" -> "b"],
     "Hide" -> XMLPattern["li", "data-kList" -> "a"], "AttributeReadings" -> <|"data-k" -> <||>|>]],
-  e["ul"] -> {e["li", {"data-k" -> "b c"}] -> {"2"}, collapsed[1]},
+  shell["ul"] -> {shell["li", {"data-k" -> "b c"}] -> {"2"}, collapsed[1]},
   TestID -> "htt-readings-both-queries"
 ];
 
@@ -1243,6 +1234,6 @@ TestCreate[
 TestCreate[
   withMessages[shape[HTMLToTree[$mergeInDiv, "Roles" -> {"b" -> "Bold"}, "MergeText" -> HTMLInnerText]]],
   {{"A \"Roles\" rule gave \"Bold\", which is not \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\" or \"Skip\". The element gets its role from the built-in user-agent stylesheet instead."},
-    e["div"] -> {e["p"] -> {"Some bold text"}}},
+    shell["div"] -> {shell["p"] -> {"Some bold text"}}},
   TestID -> "htt-message-badrole-once"
 ];

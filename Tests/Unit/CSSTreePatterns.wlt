@@ -3,11 +3,6 @@
    subject is named, FromCSSSelector[n : s], rooted at its first compound.
    Consumers name the subject of an unnamed context selector themselves. *)
 
-doc[root_] := XMLObject["Document"][{}, root, {}];
-e[tag_, id_String, c___] := XMLElement[tag, {"id" -> id}, {c}];
-id[x_XMLElement] := Lookup[x[[2]], "id"];
-el[tag_, c___] := XMLElement[tag, {}, {c}];
-
 nav   = doc[e["nav", "o", e["a", "a1"], e["nav", "i", e["a", "a2"]], e["a", "a3"]]];
 links = doc[el["p", e["a", "1"], e["a", "2"], e["a", "3"]]];
 paras = doc[el["div", e["p", "1"], e["p", "2"], e["p", "3"]]];

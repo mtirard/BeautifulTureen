@@ -4,11 +4,6 @@
    that binds text is ::text, and a name bound only inside Except used in
    the right-hand side is ::exceptname. *)
 
-doc[root_] := XMLObject["Document"][{}, root, {}];
-e[tag_, id_String, c___] := XMLElement[tag, {"id" -> id}, {c}];
-id[x_XMLElement] := Lookup[x[[2]], "id"];
-el[tag_, c___] := XMLElement[tag, {}, {c}];
-
 row     = doc[el["tr", el["th", "a"], el["td", "a"], el["td", "b"]]];
 links   = doc[el["p", e["a", "1"], e["a", "2"], e["a", "3"]]];
 listing = doc[XMLElement["ul", {"class" -> "a b"}, {el["li"], " ", el["li", XMLElement["a", {"href" -> "/x"}, {}]]}]];

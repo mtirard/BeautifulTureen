@@ -3,10 +3,6 @@
    the pattern root. Level 0 is the input itself. The fixtures are local to
    this file. *)
 
-doc[root_] := XMLObject["Document"][{}, root, {}];
-e[tag_, id_String, c___] := XMLElement[tag, {"id" -> id}, {c}];
-el[tag_, c___] := XMLElement[tag, {}, {c}];
-
 nav = doc[e["nav", "o", e["a", "a1"], e["nav", "i", e["a", "a2"]], e["a", "a3"]]];
 
 (* The default level spec is {0, Infinity}, as FreeQ's. *)

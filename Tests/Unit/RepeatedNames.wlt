@@ -4,11 +4,6 @@
    positions. Names shared by the branches of one Alternatives are bound
    once. *)
 
-doc[root_] := XMLObject["Document"][{}, root, {}];
-e[tag_, id_String, c___] := XMLElement[tag, {"id" -> id}, {c}];
-id[x_XMLElement] := Lookup[x[[2]], "id"];
-el[tag_, c___] := XMLElement[tag, {}, {c}];
-
 same = doc[el["ul", el["li", "x"], el["li", "x"], el["li", "x"], el["li", "x"], el["li", "x"]]];
 dups = doc[el["tbody", el["tr", "a"], el["tr", "b"], el["tr", "a"]]];
 
@@ -222,8 +217,6 @@ TestCreate[
   TestID -> "repeated-replace-reads-own-position"
 ];
 
-shape[t_Tree] := Replace[TreeChildren[t], {None -> TreeData[t], cs_ :> TreeData[t] -> (shape /@ cs)}];
-shell[tag_, attrs_ : {}] := XMLElement[tag, attrs, {}];
 rows = doc[el["tbody", XMLElement["tr", {"class" -> "a"}, {}], XMLElement["tr", {"class" -> "b"}, {}], XMLElement["tr", {"class" -> "a"}, {}]]];
 rowsQuery = XMLPattern["tbody", _, {___, x : XMLPattern["tr"], ___, x : XMLPattern["tr"], ___}] :> x;
 

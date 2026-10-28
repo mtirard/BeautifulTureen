@@ -2,10 +2,6 @@
    kind of position a name can delete. The fixtures are literal trees, so
    positions are exact. *)
 
-doc[root_] := XMLObject["Document"][{}, root, {}];
-e[tag_, id_String, c___] := XMLElement[tag, {"id" -> id}, {c}];
-el[tag_, c___] := XMLElement[tag, {}, {c}];
-
 nav     = doc[e["nav", "o", e["a", "a1"], e["nav", "i", e["a", "a2"]], e["a", "a3"]]];
 links   = doc[el["p", e["a", "1"], e["a", "2"], e["a", "3"]]];
 hrefs   = doc[el["p", XMLElement["a", {"href" -> "/x"}, {}], XMLElement["a", {"href" -> "/x"}, {}]]];

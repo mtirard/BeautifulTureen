@@ -112,10 +112,6 @@ TestCreate[
 
 (* === Tree patterns === *)
 
-doc[root_] := XMLObject["Document"][{}, root, {}];
-e[tag_, id_String, c___] := XMLElement[tag, {"id" -> id}, {c}];
-el[tag_, c___] := XMLElement[tag, {}, {c}];
-
 nav = doc[e["nav", "o", e["a", "a1"], e["nav", "i", e["a", "a2"]], e["a", "a3"]]];
 row = doc[el["tr", el["th", "a"], el["td", "a"], el["td", "b"]]];
 

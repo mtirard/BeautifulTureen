@@ -3,10 +3,6 @@
    the counted names, in result order (ADR 0024). The fixtures are literal
    trees, so positions are exact. *)
 
-doc[root_] := XMLObject["Document"][{}, root, {}];
-e[tag_, id_String, c___] := XMLElement[tag, {"id" -> id}, {c}];
-id[x_XMLElement] := Lookup[x[[2]], "id"];
-el[tag_, c___] := XMLElement[tag, {}, {c}];
 num[x_] := ToExpression[id[x]];
 
 nav     = doc[e["nav", "o", e["a", "a1"], e["nav", "i", e["a", "a2"]], e["a", "a3"]]];
