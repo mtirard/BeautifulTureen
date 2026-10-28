@@ -15,7 +15,7 @@ Options[XMLCases] = {"AttributeReadings" -> <||>};
 
 (* The count n is a ceiling, as in StringCases (ADR 0019). A third argument
    that is not an option is a count, and one that is not valid gives innf. *)
-(* A query holding no combinator, list stage or XMLDocument is a tree pattern
+(* A query holding no combinator or list stage is a tree pattern
    (Query/TreePatterns.wl); the others keep the chain runners until the
    combinators go. *)
 XMLCases[tree_, q_, n : Except[_?(optionQ[XMLCases])] : Infinity, opts : OptionsPattern[]] /; countQ[n] :=

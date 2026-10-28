@@ -13,15 +13,16 @@ PackageScoped[treeCases]
 (*                                                              *)
 (* XMLPattern[tag, attrs, c...] takes constraints on what is    *)
 (* below the element: list patterns over its element children,  *)
-(* Descendant[p, levelspec], and alternatives of these. A query *)
-(* gives one result for each distinct tuple of positions of its *)
-(* counted names, the names its right-hand side uses; a bare    *)
-(* pattern p is first r$ : p :> r$.                             *)
+(* Descendant[p, levelspec], and alternatives of these; a named  *)
+(* Descendant binds its path. XMLDocument[c...] takes the same  *)
+(* constraints on the document. A query gives one result for    *)
+(* each distinct tuple of positions of its counted names, the   *)
+(* names its right-hand side uses; a bare pattern p is first    *)
+(* r$ : p :> r$.                                                *)
 (*                                                              *)
 (* This engine runs beside the combinator chains: a query that  *)
-(* holds no combinator, list stage or XMLDocument goes here     *)
-(* (treeQueryQ), any other keeps the chain runners until the    *)
-(* combinators go.                                              *)
+(* holds no combinator or list stage goes here (treeQueryQ),    *)
+(* any other keeps the chain runners until the combinators go.  *)
 (*                                                              *)
 (* The input is indexed once: node 0 is the document, elements  *)
 (* are numbered in preorder from 1. The query compiles to a     *)
@@ -39,9 +40,10 @@ PackageScoped[treeCases]
 
 (* ---- Which engine a query goes to ---- *)
 
-(* A query with a combinator, a list stage or XMLDocument anywhere a stage
-   can be keeps the chain runners. A CSS string counts as its translation. *)
-treeQueryQ[q_] := FreeQ[q, XMLDocument] && !chainStageQ[queryLHS[q]];
+(* A query with a combinator or a list stage anywhere a stage can be keeps
+   the chain runners. A CSS string counts as its translation, which holds
+   XMLDocument[] only as a combinator's first stage. *)
+treeQueryQ[q_] := !chainStageQ[queryLHS[q]];
 
 queryLHS[(Rule | RuleDelayed)[l_, _]] := l;
 queryLHS[q_] := q;
@@ -79,7 +81,7 @@ treeCases[head_, tree_, q_, n_] :=
   Catch[
     Block[{$head = head, $nodeId = 0, $memo = <||>, $order, $seen = <||>, $slotOf = <||>, $readings,
         $elem, $parent, $depth, $kids, $index, $end, $wlPos, $tops, $posMemo = <||>, $keyMemo = <||>,
-        $matElems = <||>, $keyLength, $local = False, $place = "query"},
+        $matElems = <||>, $keyLength, $local = False, $place = "query", $owner = XMLPattern, $namedPaths = False},
       Module[{lhs, rhs, all, counted, testNames, need, root},
         {lhs, rhs} = splitQuery[q];
         $readings = Replace[readingsInForce[], $Failed :> Throw[$Failed, $refusal]];
@@ -163,7 +165,7 @@ refuseHere[tag_, args___] := With[{h = $head}, refuse[MessageName[h, tag], args]
 
 (* The top elements, numbered with the rest in preorder. Built with
    whole-tree operations rather than a walk. A bare element is the one top
-   element, {1}, under a virtual document. *)
+   element, {1}, under a virtual document whose value is {e}. *)
 indexTree[input_] :=
   Module[{ps, n, pid, groups},
     $tops = Replace[input, {XMLObject["Document"][_, r_, _] :> {r}, l_List :> l, x_ :> {x}}];
@@ -172,7 +174,7 @@ indexTree[input_] :=
     n = Length[ps];
     pid = AssociationThread[ps -> Range[n]];
     $wlPos = ps;
-    $elem = Prepend[Extract[$tops, ps], input];
+    $elem = Prepend[Extract[$tops, ps], Replace[input, x_XMLElement :> {x}]];
     $parent = Prepend[Lookup[pid, Key /@ (If[Length[#] == 1, {}, Drop[#, -2]] & /@ ps), 0], -1];
     $depth = Prepend[(Length /@ ps + 1)/2, 0];
     groups = GroupBy[Range[n], $parent[[# + 1]] &];
@@ -227,7 +229,10 @@ $pad = -10^9;
 elemKey[i_] := Lookup[$keyMemo, i, $keyMemo[i] = If[i == 0, {}, Join[elemKey[$parent[[i + 1]]], {4, $index[[i + 1]], 2}]]];
 spanKey[s_, e_] := If[e == s, {s + 1, 0}, {s + 1, 1, -e}];
 
-padded[k_] := PadRight[k, $keyLength, $pad];
+(* A named path's key is its lower end's then its upper end's, so when a query
+   names a path every key takes two lengths. *)
+padded[pathKey[lower_, upper_]] := Join[PadRight[lower, $keyLength, $pad], PadRight[upper, $keyLength, $pad]];
+padded[k_] := PadRight[k, If[$namedPaths, 2, 1] $keyLength, $pad];
 
 (* A binding: the positions (more than one for a repeated name), the value,
    and the order key. A sequence's value is seq[list]. *)
@@ -273,13 +278,27 @@ cRoot[Verbatim[PatternTest][p_, f_], need_] :=
 cRoot[alts_Alternatives, need_] :=
   With[{subs = cRoot[#, need] & /@ List @@ alts}, alternativesNode["Alt", subs, #["Names"] & /@ subs, need]];
 
+(* XMLDocument[c...] matches only the document, node 0, and is a pattern
+   root only: alone, or under the names, Conditions, tests and Alternatives
+   above it. *)
+cRoot[XMLDocument[cs___], need_] /; $place === "query" :=
+  Block[{$owner = XMLDocument},
+    With[{cons = cConstraints[{cs}, need]},
+      treeNode["XMLDocument", Union @@ Prepend[#["Names"] & /@ cons, {}], need,
+        "Constraints" -> cons, "MinKids" -> Max[0, minKids /@ cons]]]];
+cRoot[x_XMLDocument, _] := If[$place === "entry", refuseListEntry[x, "document"], refuse[XMLDocument::place, x]];
+
 cRoot[XMLPattern[tag_], need_] := cRoot[XMLPattern[tag, _], need];
 cRoot[x : XMLPattern[tag_, attrs_, cs___], need_] := cTreePattern[x, need];
 cRoot[x_XMLPattern, _] := refuseHere["badpat", x];
 
 (* An XMLElement pattern keeps WL's literal meaning, matched whole. *)
 cRoot[x_XMLElement, need_] :=
-  With[{names = namesIn[Hold[x]]}, markSeen[names]; treeNode["Literal", names, need, "Pattern" -> x]];
+  With[{names = namesIn[Hold[x]]},
+    refuseDocumentIn[x];
+    markSeen[names]; treeNode["Literal", names, need, "Pattern" -> x]];
+
+refuseDocumentIn[x_] := If[!FreeQ[x, _XMLDocument], refuse[XMLDocument::place, FirstCase[x, _XMLDocument, Null, {0, Infinity}]]];
 
 (* A string is a one-element CSS selector, and means its translation. *)
 cRoot[s_String, need_] :=
@@ -304,9 +323,11 @@ cRoot[x_, _] := refuseHere["badpat", x];
 
 refuseBlank[b_] := If[$place === "descendant", refuse[Descendant::blank, b], refuseHere["blank", b]];
 
-refuseListEntry[x_, reason_] := refuse[XMLPattern::listentry, x, $listEntryReasons[reason]];
+(* The message is the list's owner's: XMLPattern's or XMLDocument's. *)
+refuseListEntry[x_, reason_] := With[{h = $owner}, refuse[MessageName[h, "listentry"], x, $listEntryReasons[reason]]];
 
 $listEntryReasons = <|
+  "document" -> "An entry is one element child or a sequence of them, and XMLDocument[...] is the document above every element. It can only be the pattern root, as in XMLDocument[{___, x : p, ___}].",
   "descendant" -> "An entry is one element child or a sequence of them, and Descendant[...] says what is somewhere below an element. A child containing x is XMLPattern[_, _, Descendant[x]].",
   "list" -> "An entry is one element child or a sequence of them, not a list. Several constraints on one element are separate arguments of XMLPattern."|>;
 
@@ -330,11 +351,11 @@ alternativesNode[kind_, subs_, namesBy_, need_] :=
 cTreePattern[XMLPattern[tag_, attrs_, cs___], need_] :=
   Module[{c, headNames, cons, plainRules},
     If[!FreeQ[attrs, _Descendant], refuse[Descendant::place, FirstCase[attrs, _Descendant, Null, {0, Infinity}]]];
-    Scan[If[!constraintFormQ[#], refuse[XMLPattern::constraint, #]] &, {cs}];
+    refuseDocumentIn[{tag, attrs}];
     c = Replace[compileWith[XMLPattern[tag, attrs], $head, $readings], $Failed :> Throw[$Failed, $refusal]];
     headNames = namesIn[Hold[{tag, attrs}]];
     markSeen[headNames];
-    cons = Block[{$place = "constraint"}, cConstraint[#, need] & /@ {cs}];
+    cons = Block[{$owner = XMLPattern}, cConstraints[{cs}, need]];
     plainRules = plainHeadRules[tag, attrs, Intersection[headNames, need]];
     treeNode["XMLPattern", Union[headNames, Union @@ Prepend[#["Names"] & /@ cons, {}]], need,
       "Plain" -> c["Plain"], "Readings" -> c["Readings"], "Tag" -> tag, "Attrs" -> attrs,
@@ -354,17 +375,61 @@ plainHeadRules[tag_, attrs_, need_] :=
 
 (* ---- Constraints ---- *)
 
-(* Named paths, path tests and Shortest/Longest are not taken yet. *)
-cConstraint[c : (Verbatim[Pattern][_, _Descendant] | Verbatim[PatternTest][_Descendant, _] | _Shortest | _Longest), _] :=
-  refuseHere["badpat", c];
-cConstraint[d : Descendant[p_, spec___], need_] :=
+(* The constraints of an XMLPattern or XMLDocument, $owner, which names the
+   messages. *)
+cConstraints[cs_List, need_] :=
+  With[{h = $owner},
+    Scan[If[!constraintFormQ[#], refuse[MessageName[h, "constraint"], #]] &, cs];
+    Block[{$place = "constraint"}, cConstraint[#, need] & /@ cs]];
+
+cConstraint[d_Descendant, need_] := cDescendant[d, need, None];
+cConstraint[c_, need_] /; pathFormQ[c] :=
+  With[{key = "Path" <> ToString[$nodeId + 1]}, cPath[c, Append[need, key], key]];
+cConstraint[c : (Shortest | Longest)[___], _] := With[{h = $owner}, refuse[MessageName[h, "shortest"], c]];
+
+(* key: the hidden name that binds a path's lower end, the match, as the
+   node's index; None when nothing above needs it. *)
+cDescendant[d : Descendant[p_, spec___], need_, key_] :=
   With[{levels = levelSpec[d, spec]},
     With[{sub = Block[{$place = "descendant"}, cRoot[p, need]]},
-      treeNode["Descendant", sub["Names"], need, "Sub" -> sub, "Levels" -> levels]]];
+      treeNode["Descendant", If[key === None, sub["Names"], Union[sub["Names"], {key}]], need,
+        "Sub" -> sub, "Levels" -> levels, "Key" -> key]]];
 cConstraint[alts_Alternatives, need_] :=
   With[{subs = cConstraint[#, need] & /@ List @@ alts},
     treeNode["ConstraintAlt", Union @@ (#["Names"] & /@ subs), need, "Subs" -> subs]];
 cConstraint[c_, need_] := cListConstraint[c, need];
+
+(* ---- Paths (spec section 2) ---- *)
+
+(* A Descendant constraint under a name, a test, a Condition, Shortest or
+   Longest. Its value is the path: the elements strictly between the pattern
+   root, its upper end, and the match, its lower end. *)
+pathFormQ[c_] := MatchQ[c, _Descendant] ||
+  MatchQ[c, Verbatim[Pattern][_, x_] | Verbatim[PatternTest][x_, _] | Verbatim[Condition][x_, _] | (Shortest | Longest)[x_] /; pathFormQ[x]];
+
+(* Every node of a path keeps key, which the wrappers read and the pattern
+   root's node projects away. *)
+cPath[d_Descendant, need_, key_] := cDescendant[d, need, key];
+cPath[Verbatim[Pattern][s_Symbol, x_], need_, key_] :=
+  With[{name = Hold[s]}, markSeen[{name}]; $namedPaths = True;
+    With[{sub = cPath[x, need, key]},
+      treeNode["PathNamed", Union[sub["Names"], {name}], need, "Name" -> name, "Sub" -> sub, "Key" -> key]]];
+cPath[Verbatim[PatternTest][x_, f_], need_, key_] :=
+  With[{sub = cPath[x, need, key]}, treeNode["PathTest", sub["Names"], need, "Sub" -> sub, "F" -> f, "Key" -> key]];
+cPath[c_Condition, need_, key_] :=
+  With[{test = Extract[c, {2}, Hold]},
+    With[{sub = cPath[c[[1]], need, key]}, Append[conditionNode["PathCond", sub, test, need], "Key" -> key]]];
+(* Shortest and Longest are filters the pattern root's node runs
+   (nearestFiltered); one is enough. *)
+cPath[c : (h : Shortest | Longest)[x_], need_, key_] :=
+  If[!FreeQ[x, Shortest | Longest], refuseHere["badpat", c],
+    With[{sub = cPath[x, need, key]}, treeNode["PathNearest", sub["Names"], need, "Sub" -> sub, "Which" -> h, "Key" -> key]]];
+
+(* Shortest or Longest on a constraint, or None. *)
+nearestOf[c_] := Switch[c["Kind"],
+  "PathNearest", c["Which"],
+  "PathNamed" | "PathTest" | "PathCond", nearestOf[c["Sub"]],
+  _, None];
 
 levelSpec[_] := {1, Infinity};
 levelSpec[_, n_Integer?Positive] := {1, n};
@@ -416,6 +481,9 @@ cItem[alts_Alternatives, need_] /; AnyTrue[List @@ alts, sequenceQ] :=
   With[{branches = cItem[#, need] & /@ List @@ alts},
     {alternativesNode["Branches", branches, (Union @@ Prepend[#["Names"] & /@ #, {}]) & /@ branches, need]}];
 cItem[Verbatim[Optional][p_, ___], need_] := cItem[Alternatives[p, PatternSequence[]], need];
+(* Shortest and Longest choose which match WL's matcher tries first; every
+   tuple is found here, so they change no result. *)
+cItem[(Shortest | Longest)[p_, ___], need_] := cItem[p, need];
 cItem[c_Condition, need_] /; sequenceQ[c[[1]]] :=
   With[{test = Extract[c, {2}, Hold]},
     With[{inner = cItem[c[[1]], need]},
@@ -434,7 +502,7 @@ conditionTestNames[p_] := conditionNames[Hold[p], namesIn[Hold[p]]];
 
 (* An entry that can match other than one item. *)
 sequenceQ[p_] := MatchQ[p, _BlankSequence | _BlankNullSequence | _PatternSequence | _Repeated | _RepeatedNull | _Optional] ||
-  MatchQ[p, Verbatim[Pattern][_, x_] | Verbatim[Condition][x_, _] | Verbatim[PatternTest][x_, _] /; sequenceQ[x]] ||
+  MatchQ[p, Verbatim[Pattern][_, x_] | Verbatim[Condition][x_, _] | Verbatim[PatternTest][x_, _] | (Shortest | Longest)[x_, ___] /; sequenceQ[x]] ||
   MatchQ[p, _Alternatives] && AnyTrue[List @@ p, sequenceQ];
 
 repeatBounds[(Verbatim[Repeated] | Verbatim[RepeatedNull])[_, {n_Integer}]] := {n, n};
@@ -463,7 +531,7 @@ minItems[it_] := Switch[it["Kind"],
 (* The fewest element children an element needs to meet a constraint. *)
 minKids[c_] := Switch[c["Kind"],
   "List", c["Min"],
-  "ListNamed" | "ListCond" | "ListTest", minKids[c["Sub"]],
+  "ListNamed" | "ListCond" | "ListTest" | "PathNamed" | "PathTest" | "PathCond" | "PathNearest", minKids[c["Sub"]],
   "Descendant", 1,
   "ConstraintAlt", Min[minKids /@ c["Subs"]],
   _, 0];
@@ -499,10 +567,20 @@ matchKind["Literal", nd_, i_] :=
     If[nd["Keep"] === {}, {<||>}, {Map[bnd[{Missing["Literal"]}, #, {}] &, firstBindings[elemOf[i], nd["Pattern"], nd["Keep"]]]}],
     {}];
 
+(* The document, node 0, is matched only by XMLDocument, which matches
+   nothing else. *)
+matchKind["XMLPattern" | "Literal" | "Blank", _, 0] := {};
+matchKind["XMLDocument", nd_, i_] :=
+  If[i == 0 && Length[childrenOf[0]] >= nd["MinKids"],
+    project[pending[nd, product[matchConstraint[#, 0] & /@ nd["Constraints"]]], nd["Keep"]],
+    {}];
+
 matchKind["XMLPattern", nd_, i_] :=
   If[headVector[nd][[i]] == 1 && Length[childrenOf[i]] >= nd["MinKids"],
-    project[pending[nd, product[Prepend[matchConstraint[#, i] & /@ nd["Constraints"], headBindings[nd, i]]]], nd["Keep"]],
+    project[pending[nd, product[Prepend[constraintSolutions[nd, #, i] & /@ nd["Constraints"], headBindings[nd, i]]]], nd["Keep"]],
     {}];
+
+constraintSolutions[nd_, c_, i_] := If[nearestOf[c] === None, matchConstraint[c, i], nearestFiltered[nd, c, i]];
 
 (* A Condition filters, unless it is pending, then a node above runs it. *)
 conditionFiltered[nd_, sols_] :=
@@ -683,7 +761,50 @@ constraintKind["Descendant", c_, i_] :=
     cands = Pick[below, candidateVector[sub][[below]] UnitStep[$depth[[below + 1]] - d0 - lo] UnitStep[hi - ($depth[[below + 1]] - d0)], 1];
     If[c["Keep"] === {},
       If[AnyTrue[cands, match[sub, #] =!= {} &], {<||>}, {}],
-      project[If[directQ[sub], <|sub["Name"] -> elemBinding[#]|> & /@ cands, Join @@ (match[sub, #] & /@ cands)], c["Keep"]]]];
+      project[Join @@ (descendantSolutions[sub, #, c["Key"]] & /@ cands), c["Keep"]]]];
+
+descendantSolutions[sub_, j_, key_] :=
+  With[{sols = If[directQ[sub], {<|sub["Name"] -> elemBinding[j]|>}, match[sub, j]]},
+    If[key === None, sols, Append[#, key -> bnd[{posOf[j]}, j, elemKey[j]]] & /@ sols]];
+
+(* ---- Paths ---- *)
+
+(* The lower end of a path solution. *)
+lowerEnd[c_, sol_] := bindVal[sol[c["Key"]]];
+
+(* The elements strictly between i and j, a node below it, outermost first. *)
+pathIds[i_, j_] := Reverse @ Most @ NestWhileList[$parent[[# + 1]] &, $parent[[j + 1]], # != i &];
+
+(* A path's position is the span of its ends, upper ;; lower; it sorts by its
+   lower end, then its upper end (pathKey, padded). *)
+pathBinding[i_, j_] := bnd[{posOf[i] ;; posOf[j]}, elemOf /@ pathIds[i, j], pathKey[elemKey[j], elemKey[i]]];
+
+constraintKind["PathNamed", c_, i_] :=
+  With[{sols = matchConstraint[c["Sub"], i]},
+    project[If[MemberQ[c["Keep"], c["Name"]],
+        DeleteCases[joined[#, <|c["Name"] -> pathBinding[i, lowerEnd[c, #]]|>] & /@ sols, $Failed], sols],
+      c["Keep"]]];
+constraintKind["PathTest", c_, i_] :=
+  Select[matchConstraint[c["Sub"], i], TrueQ[c["F"][elemOf /@ pathIds[i, lowerEnd[c, #]]]] &];
+constraintKind["PathCond", c_, i_] := conditionFiltered[c, matchConstraint[c["Sub"], i]];
+constraintKind["PathNearest", c_, i_] := matchConstraint[c["Sub"], i];
+
+(* Shortest keeps a (root, match) pair only if no element strictly between
+   matches the whole root pattern with that match: its tag and attributes,
+   every other constraint, and this one with the same lower end. Longest
+   keeps it only if no element above the root does. The Conditions the root's
+   node runs, and those around it, are not part of the comparison. *)
+nearestFiltered[nd_, c_, i_] :=
+  With[{sols = matchConstraint[c, i], within = If[nearestOf[c] === Shortest, pathIds[i, #] &, ancestorsOf[i] &]},
+    Select[sols, With[{j = lowerEnd[c, #]}, NoneTrue[within[j], shadowsQ[nd, c, #, j] &]] &]];
+
+ancestorsOf[i_] := Most @ NestWhileList[$parent[[# + 1]] &, $parent[[i + 1]], # != 0 &];
+
+shadowsQ[nd_, c_, k_, j_] :=
+  memoised[{"Shadow", c["Id"], k, j},
+    headVector[nd][[k]] == 1 && Length[childrenOf[k]] >= nd["MinKids"] &&
+      MemberQ[lowerEnd[c, #] & /@ matchConstraint[c, k], j] &&
+      AllTrue[DeleteCases[nd["Constraints"], c], matchConstraint[#, k] =!= {} &]];
 
 (* Whether each element can match a pattern root: a vector over the elements
    that is 1 at every match, for skipping the rest. *)
@@ -692,6 +813,7 @@ candidates[nd_] := Switch[nd["Kind"],
   "Named" | "Cond" | "Test", candidateVector[nd["Sub"]],
   "Alt", Unitize[Total[candidateVector /@ nd["Subs"]]],
   "XMLPattern", headVector[nd] UnitStep[(Length /@ Rest[$kids]) - nd["MinKids"]],
+  "XMLDocument", ConstantArray[0, Length[$elem] - 1],
   _, ConstantArray[1, Length[$elem] - 1]];
 
 (* =========================================================== *)
@@ -875,7 +997,7 @@ results[root_, rhs_, all_, counted_, testNames_, bare_, n_] :=
   Module[{sols, groups, slots, keys, count = 0, k = 1, r},
     Block[{$pendingAt = pendingTests[root]},
       sols = rootSolutions[root, counted === {} && testNames === {}]];
-    If[bare, sols = Select[sols, NoneTrue[Lookup[#, counted, None], MatchQ[{{___, {1}, ___}, _, _}]] &]];
+    If[bare, sols = Select[sols, NoneTrue[Lookup[#, counted, None], MatchQ[{{___, {1} | Verbatim[Span][{1}, _], ___}, _, _}]] &]];
     groups = Values @ GroupBy[sols, identity[#, counted] &];
     slots = DeleteDuplicates[Lookup[$slotOf, counted, Null] /. Null -> Nothing];
     slots = SortBy[Join[slots, Select[counted, !KeyExistsQ[$slotOf, #] &]], $order];
@@ -895,7 +1017,7 @@ reapedResults[loop_] := Replace[Reap[loop, $resultTag][[2]], {{l_} :> l, {} -> {
    in document order, so nothing is grouped or sorted, and the right-hand side
    is evaluated only until there are n. *)
 rootMatches[root_, rhs_, all_, bare_, n_] :=
-  Module[{cands = Flatten @ Position[candidateVector[root], 1], sub = root["Sub"], name = root["Name"], count = 0, k = 1, i, r},
+  Module[{cands = rootCandidates[root], sub = root["Sub"], name = root["Name"], count = 0, k = 1, i, r},
     With[{exactQ = sub["Kind"] === "XMLPattern" && sub["Constraints"] === {} && sub["Keep"] === {}},
       If[bare, cands = DeleteCases[cands, 1]];
       reapedResults[
@@ -908,10 +1030,20 @@ rootMatches[root_, rhs_, all_, bare_, n_] :=
 (* Every solution of the pattern root, at each element that can match it.
    With nothing counted or tested, one is enough. *)
 rootSolutions[root_, oneQ_] :=
-  With[{cands = Flatten @ Position[candidateVector[root], 1]},
+  With[{cands = rootCandidates[root]},
     If[oneQ,
       Catch[Scan[With[{s = pending[<|"Id" -> "Top"|>, match[root, #]]}, If[s =!= {}, Throw[s, $one]]] &, cands]; {}, $one],
       pending[<|"Id" -> "Top"|>, Join @@ (match[root, #] & /@ cands)]]];
+
+(* The nodes a pattern root can match, in document order: the document first
+   when the root can be an XMLDocument, then the elements. *)
+rootCandidates[root_] := Join[If[documentRootQ[root], {0}, {}], Flatten @ Position[candidateVector[root], 1]];
+
+documentRootQ[nd_] := Switch[nd["Kind"],
+  "XMLDocument", True,
+  "Named" | "Cond" | "Test", documentRootQ[nd["Sub"]],
+  "Alt", AnyTrue[nd["Subs"], documentRootQ],
+  _, False];
 
 resultKey[sol_, slots_, counted_] :=
   Join @@ (Function[s, padded[bindKeyOrPad[Lookup[sol,
@@ -947,10 +1079,10 @@ pendingNodes[nd_] := Join[If[TrueQ[nd["Pending"]], {nd}, {}], Join @@ (pendingNo
 subNodes[nd_] := DeleteCases[Flatten[{Lookup[nd, "Sub", {}], Lookup[nd, "Subs", {}], Lookup[nd, "Constraints", {}],
   Lookup[nd, "Items", {}], Lookup[nd, "Base", {}]}], None];
 
-(* The node that runs c: the lowest XMLPattern or list above c whose names
+(* The node that runs c: the lowest XMLPattern, XMLDocument or list above c whose names
    hold every name c sees. *)
 hostOf[root_, c_] :=
-  Replace[Last[Select[pathTo[root, c["Id"]], MatchQ[#["Kind"], "XMLPattern" | "List"] && SubsetQ[#["Names"], c["Sees"]] &], None],
+  Replace[Last[Select[pathTo[root, c["Id"]], MatchQ[#["Kind"], "XMLPattern" | "XMLDocument" | "List"] && SubsetQ[#["Names"], c["Sees"]] &], None],
     {None -> "Top", h_ :> h["Id"]}];
 
 pathTo[nd_, id_] :=

@@ -103,13 +103,15 @@ TestCreate[
 (* A misplaced XMLDocument[] is refused under XMLDocument (ADR 0022). A
    consumer that takes only an element pattern gives its own ::badpat. *)
 
+(* Alone, or as a branch of alternatives, XMLDocument is now a pattern root
+   (TreeContext.wlt); as a later stage of a combinator it is still refused. *)
 TestCreate[
   {XMLCases[$doc, XMLDocument[]],
-   XMLCases[$doc, XMLDocument[] | p],
+   XMLCases[$doc, XMLDocument[] | p] === Prepend[XMLCases[$doc, p], $doc],
    XMLCases[$doc, Child[p, XMLDocument[]]]},
-  {$Failed, $Failed, $Failed},
-  {XMLDocument::place, XMLDocument::place, XMLDocument::place, General::stop},
-  TestID -> "document-refused-alone-and-later"
+  {{$doc}, True, $Failed},
+  {XMLDocument::place},
+  TestID -> "document-refused-later"
 ];
 
 TestCreate[
