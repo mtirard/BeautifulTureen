@@ -102,7 +102,7 @@ treeResults[head_, tree_, q_, n_] :=
     Block[{$head = head, $nodeId = 0, $memo = <||>, $order, $seen = <||>, $slotOf = <||>, $readings,
         $elem, $parent, $depth, $kids, $index, $end, $wlPos, $tops, $posMemo = <||>, $keyMemo = <||>,
         $matElems = <||>, $keyLength, $local = False, $place = "query", $owner = XMLPattern, $namedPaths = False, $exceptRefs,
-        $records},
+        $records, $countedNames},
       Module[{lhs, rhs, all, counted, testNames, need, root},
         {lhs, rhs} = splitQuery[q];
         $readings = Replace[readingsInForce[], $Failed :> Throw[$Failed, $refusal]];
@@ -111,6 +111,7 @@ treeResults[head_, tree_, q_, n_] :=
         {counted, testNames} =
           If[$countedGiven === None, rhsNames[rhs, all], {$countedGiven, Complement[mentioned[rhs, all], $countedGiven]}];
         $exceptRefs = exceptRefs[lhs];
+        $countedNames = counted;
         checkExcept[lhs, If[$countedGiven === None, counted, Union[counted, testNames]]];
         need = Union[counted, testNames, conditionNames[lhs, all], bindingNames[lhs]];
         $records = $exceptRefs =!= {};
@@ -361,7 +362,7 @@ compileRoot[Hold[lhs_], need_] := cRoot[lhs, need];
 (* ---- Pattern roots ---- *)
 
 cRoot[Verbatim[Pattern][s_Symbol, p_], need_] :=
-  With[{name = Hold[s]}, markSeen[{name}];
+  With[{name = Hold[s]}, markSeen[{name}]; If[$place === "literal", refuseText[name, p]];
     With[{sub = cRoot[p, need]}, treeNode["Named", Union[sub["Names"], {name}], need, "Name" -> name, "Sub" -> sub]]];
 
 (* A Condition sees the names bound inside its pattern and the names bound
@@ -393,15 +394,13 @@ cRoot[XMLPattern[tag_], need_] := cRoot[XMLPattern[tag, _], need];
 cRoot[x : XMLPattern[tag_, attrs_, cs___], need_] := cTreePattern[x, need];
 cRoot[x_XMLPattern, _] := refuseHere["badpat", x];
 
-(* An XMLElement pattern keeps WL's literal meaning, matched whole. *)
-cRoot[x_XMLElement, need_] :=
-  With[{names = namesIn[Hold[x]]},
-    refuseDocumentIn[x];
-    markSeen[names]; treeNode["Literal", names, need, "Pattern" -> x]];
+cRoot[x_XMLElement, need_] := cLiteral[x, need];
 
 refuseDocumentIn[x_] := If[!FreeQ[x, _XMLDocument], refuse[XMLDocument::place, FirstCase[x, _XMLDocument, Null, {0, Infinity}]]];
 
-(* A string is a one-element CSS selector, and means its translation. *)
+(* A string is a one-element CSS selector, and means its translation; in an
+   XMLElement pattern's contents it is literal text. *)
+cRoot[s_String, need_] /; $place === "literal" := plainNode[s, need];
 cRoot[s_String, need_] :=
   With[{t = Replace[FromCSSSelector[s], $Failed :> Throw[$Failed, $refusal]]},
     If[chainStageQ[t] || !FreeQ[t, XMLDocument], refuseHere["badpat", s],
@@ -413,15 +412,18 @@ cRoot[s_String, need_] :=
 (* A blank is any one element child in a contents list; as the whole query,
    or as Descendant's pattern, it is refused, as it reads as matching text. *)
 cRoot[b : Verbatim[Blank][h___], need_] :=
-  If[$place === "entry", treeNode["Blank", {}, need, "Head" -> {h}], refuseBlank[b]];
+  If[MatchQ[$place, "entry" | "literal"], treeNode["Blank", {}, need, "Head" -> {h}], refuseBlank[b]];
 cRoot[b : (_BlankSequence | _BlankNullSequence), _] := refuseBlank[b];
 
 cRoot[d_Descendant, _] :=
   Switch[$place,
     "entry", refuseListEntry[d, "descendant"],
-    "query", refuse[Descendant::place, d],
+    "query" | "literal", refuse[Descendant::place, d],
     _, refuseHere["badpat", d]];
 cRoot[l_List, _] /; $place === "entry" := refuseListEntry[l, "list"];
+(* Any other pattern in an XMLElement pattern's contents is WL's, over one
+   item: an element or text. *)
+cRoot[x_, need_] /; $place === "literal" := plainNode[x, need];
 cRoot[x_, _] := refuseHere["badpat", x];
 
 refuseBlank[b_] := If[$place === "descendant", refuse[Descendant::blank, b], refuseHere["blank", b]];
@@ -475,6 +477,63 @@ plainHeadRules[tag_, attrs_, need_] :=
         r_ /; !AllTrue[r, plainRuleQ] -> None,
         r_ :> Replace[r, Verbatim[Rule][k_, Verbatim[Pattern][s_, _]] :> {k, Hold[s]}, {1}]}],
       None]];
+
+(* ---- XMLElement patterns (spec section 1) ----
+
+   An XMLElement pattern keeps WL's literal meaning: its contents are every
+   item, elements and text, and its attributes the raw rule list. One with
+   no XMLPattern in it and no name anything needs is matched whole. Any
+   other is matched by its parts: the tag and attributes as WL patterns, and
+   a contents list walked over the items as a contents list is over element
+   children, its entries patterns over one item ($place "literal"), so that
+   XMLPatterns nested in it are this engine's, every way it matches is found,
+   and a name in it has the position of what it binds. *)
+cLiteral[x : XMLElement[t_, a_, c_], need_] :=
+  With[{names = namesIn[Hold[x]]},
+    refuseDocumentIn[x];
+    If[!FreeQ[x, _Descendant], refuse[Descendant::place, FirstCase[x, _Descendant, Null, {0, Infinity}]]];
+    markSeen[names];
+    If[FreeQ[x, _XMLPattern] && !IntersectingQ[names, need],
+      treeNode["Literal", names, need, "Pattern" -> x],
+      With[{sub = Block[{$place = "literal"}, cContents[c, need]], headNames = namesIn[outsideExcept[Hold[{t, a}]]]},
+        treeNode["LiteralParts", Union[headNames, sub["Names"]], need, "Tag" -> t, "Attrs" -> a, "Slots" -> literalSlots[x],
+          "TagNames" -> Intersection[namesIn[outsideExcept[Hold[t]]], need],
+          "AttrsNames" -> Intersection[namesIn[outsideExcept[Hold[a]]], need], "Sub" -> sub]]]];
+cLiteral[x_XMLElement, _] := refuseHere["badpat", x];
+
+(* The contents slot: a list is walked over the items when it holds an
+   XMLPattern or a needed name; anything else is matched whole. *)
+cContents[Verbatim[Pattern][s_Symbol, p_], need_] :=
+  With[{name = Hold[s]}, markSeen[{name}];
+    With[{sub = cContents[p, need]}, treeNode["ContentsNamed", Union[sub["Names"], {name}], need, "Name" -> name, "Sub" -> sub]]];
+cContents[c_Condition, need_] :=
+  With[{test = Extract[c, {2}, Hold]},
+    With[{sub = cContents[c[[1]], need]}, conditionNode["ContentsCond", sub, test, need]]];
+cContents[Verbatim[PatternTest][p_, f_], need_] :=
+  With[{sub = cContents[p, need]}, treeNode["ContentsTest", sub["Names"], need, "Sub" -> sub, "F" -> f]];
+cContents[l_List, need_] /; !FreeQ[l, _XMLPattern] || IntersectingQ[namesIn[outsideExcept[Hold[l]]], need] :=
+  With[{items = Block[{$single = cRoot}, cItems[l, need]]},
+    treeNode["ContentsList", Union @@ Prepend[#["Names"] & /@ items, {}], need, "Items" -> items, "Min" -> minLength[items]]];
+cContents[p_, need_] := plainNode[p, need];
+
+(* A WL pattern matched whole against one value: an item, or a literal's
+   contents. Names inside an Except in it are its own (outsideExcept). *)
+plainNode[p_, need_] :=
+  With[{names = namesIn[outsideExcept[Hold[p]]]}, markSeen[names]; treeNode["Plain", names, need, "Pattern" -> p]];
+
+(* A counted name that binds text is refused (spec section 3): text has no
+   position. Here, where the pattern shows it; a sequence that binds text
+   while matching is refused by the results (refuseBoundText). *)
+refuseText[name_, p_] :=
+  If[MemberQ[$countedNames, name] && textPatternQ[p], refuseHere["text", Replace[name, Hold[s_] :> HoldForm[s]]]];
+
+textPatternQ[p_] :=
+  MatchQ[p, _String | Verbatim[Blank][String] | Verbatim[BlankSequence][String]] ||
+  MatchQ[p, Verbatim[Pattern][_, q_] | Verbatim[PatternTest][q_, _] | Verbatim[Condition][q_, _] | Verbatim[Repeated][q_, ___] /; textPatternQ[q]] ||
+  MatchQ[p, _Alternatives] && AllTrue[List @@ p, textPatternQ];
+
+(* The counted names, for refuseText; none for an element test. *)
+$countedNames = {};
 
 (* ---- Constraints ---- *)
 
@@ -567,7 +626,7 @@ cItem[Verbatim[BlankNullSequence][h_], need_] := cItem[RepeatedNull[Blank[h]], n
 cItem[Verbatim[BlankSequence][h_], need_] := cItem[Repeated[Blank[h]], need];
 cItem[Verbatim[PatternSequence][ps___], need_] := cItems[{ps}, need];
 cItem[Verbatim[Pattern][s_Symbol, p_], need_] /; sequenceQ[p] :=
-  With[{name = Hold[s]}, markSeen[{name}];
+  With[{name = Hold[s]}, markSeen[{name}]; If[$place === "literal", refuseText[name, p]];
     With[{inner = cItem[p, need]},
       {treeNode["Run", Union[{name}, Union @@ Prepend[#["Names"] & /@ inner, {}]], need, "Name" -> name, "Items" -> inner]}]];
 cItem[r : (_Repeated | _RepeatedNull), need_] :=
@@ -669,26 +728,113 @@ matchKind["Alt", nd_, i_] :=
 
 matchKind["Blank", nd_, i_] := If[MatchQ[elemOf[i], Blank @@ nd["Head"]], {<||>}, {}];
 
-matchKind["Literal", nd_, i_] :=
-  If[MatchQ[elemOf[i], nd["Pattern"]],
-    If[nd["Keep"] === {}, {<||>},
-      {Association @ KeyValueMap[#1 -> bnd[{literalPosition[nd["Pattern"], #1, i]}, #2, {}] &,
-        firstBindings[elemOf[i], nd["Pattern"], nd["Keep"]]]}],
-    {}];
+(* An XMLElement pattern that binds nothing needed, matched whole. *)
+matchKind["Literal", nd_, i_] := If[MatchQ[elemOf[i], nd["Pattern"]], {<||>}, {}];
 
-(* A name on a slot of the literal itself is at that slot: 0 the tag,
-   Key[All] the attributes, All the contents (spec section 4). A name deeper
-   in it has no position yet. *)
-literalPosition[pat_, name_, i_] :=
-  Replace[Lookup[literalSlots[pat], Key[name], None], {None -> Missing["Literal"], k_ :> Append[posOf[i], k]}];
+(* One matched by its parts: the tag and attributes as WL patterns, the
+   contents by cContents. Names compare values across the parts, as in WL. *)
+matchKind["LiteralParts", nd_, i_] :=
+  With[{x = elemOf[i]},
+    If[!MatchQ[x[[1]], nd["Tag"]] || !MatchQ[x[[2]], nd["Attrs"]], {},
+      project[pending[nd, product[{slotBindings[nd, "Tag", x, i], slotBindings[nd, "Attrs", x, i], contentsSolutions[nd["Sub"], i]}]],
+        nd["Keep"]]]];
+
+slotBindings[nd_, slot_, x_, i_] :=
+  With[{names = nd[slot <> "Names"], v = x[[If[slot === "Tag", 1, 2]]]},
+    If[names === {}, {<||>},
+      {Association @ KeyValueMap[#1 -> literalPosition[nd, slot, #1, #2, x, i] &, firstBindings[v, nd[slot], names]]}]];
+
+(* The binding of a name in a literal's tag or attributes. A name on a slot
+   of the literal itself is at that slot: 0 the tag, Key[All] the attributes
+   (spec section 4). A name deeper in the tag that binds the whole tag is at
+   0; one deeper in the attributes that binds an attribute's value is at
+   Key[k] of the first attribute with that value. Any other has no position,
+   and is compared by its value. *)
+literalPosition[nd_, slot_, name_, v_, x_, i_] :=
+  Replace[{Lookup[nd["Slots"], Key[name], None], slot},
+    {
+      {k : Except[None], _} :> bnd[{Append[posOf[i], k]}, v, Append[elemKey[i], If[k === 0, 0, 1]]],
+      {_, "Tag"} /; v === x[[1]] :> bnd[{Append[posOf[i], 0]}, v, Append[elemKey[i], 0]],
+      {_, "Attrs"} :>
+        Replace[FirstPosition[x[[2]], _[_, v], None, {1}, Heads -> False], {
+          {j_} :> bnd[{Append[posOf[i], Key[x[[2, j, 1]]]]}, v, Join[elemKey[i], {2, j, 0}]],
+          None :> bnd[{Missing["Literal"]}, v, Append[elemKey[i], 1]]}],
+      _ :> bnd[{Missing["Literal"]}, v, Append[elemKey[i], 0]]}];
 
 literalSlots[XMLElement[t_, a_, c_]] :=
   Association @ Cases[{{Hold[t], 0}, {Hold[a], Key[All]}, {Hold[c], All}}, {Hold[Verbatim[Pattern][s_Symbol, _]], k_} :> (Hold[s] -> k)];
 literalSlots[_] := <||>;
 
+(* The solutions of a literal's contents slot at element i. *)
+contentsSolutions[c_, i_] := memoised[{c["Id"], i}, contentsKind[c["Kind"], c, i]];
+
+contentsKind["ContentsNamed", c_, i_] :=
+  With[{sols = contentsSolutions[c["Sub"], i]},
+    If[MemberQ[c["Keep"], c["Name"]],
+      joinAll[sols, <|c["Name"] -> bnd[{Append[posOf[i], All]}, elemOf[i][[3]], Append[elemKey[i], 3]]|>], sols]];
+contentsKind["ContentsCond", c_, i_] := conditionFiltered[c, contentsSolutions[c["Sub"], i]];
+contentsKind["ContentsTest", c_, i_] :=
+  With[{sols = contentsSolutions[c["Sub"], i]}, If[sols =!= {} && TrueQ[c["F"][elemOf[i][[3]]]], sols, {}]];
+contentsKind["Plain", c_, i_] := plainSolutions[c, elemOf[i][[3]], Append[posOf[i], All], Append[elemKey[i], 3]];
+contentsKind["ContentsList", c_, i_] /; Length[elemOf[i][[3]]] < c["Min"] := {};
+contentsKind["ContentsList", c_, i_] :=
+  With[{items = elemOf[i][[3]]},
+    Block[{$n = Length[items], $walkId = {"Contents", i}, $contentOf = i, $contentIds = contentIds[i, items],
+        $oneVector = itemVectorOf, $oneSolutions = itemSolutions, $runBinding = itemRun},
+      project[pending[c, Last /@ enumerate[c["Items"], 0, delta[$n]]], c["Keep"]]]];
+
+(* The node of each item that is an element, None for text. *)
+contentIds[i_, items_] :=
+  ReplacePart[ConstantArray[None, Length[items]], Thread[Flatten[Position[items, _XMLElement, {1}, Heads -> False]] -> childrenOf[i]]];
+
+itemVectorOf[sub_] := Boole[itemSolutions[sub, #] =!= {} & /@ Range[$n]];
+itemSolutions[sub_, k_] := With[{j = $contentIds[[k]]}, If[j === None, textMatch[sub, $contentOf, k], match[sub, j]]];
+
+(* A run of items: the run of the element children in it, or, if it holds
+   text, no position. An empty run is the gap before the next element. *)
+itemRun[s_, e_] :=
+  With[{items = elemOf[$contentOf][[3]]},
+    With[{m = Count[Take[items, s], _XMLElement] + 1, run = items[[s + 1 ;; e]]},
+      With[{n = Count[run, _XMLElement]},
+        bnd[{If[n == Length[run], Append[posOf[$contentOf], m ;; m + n - 1], itemMissing[run]]}, seq[run],
+          Join[elemKey[$contentOf], {4}, spanKey[m - 1, m + n - 1]]]]]];
+
+(* What has no position: text, or another item that is not an element. *)
+itemMissing[v_] := Missing[If[!FreeQ[v, _String, {0, 1}], "Text", "Literal"]];
+
+(* The solutions of an entry at item k of element i that is not an element:
+   only WL's patterns can match it. *)
+textMatch[nd_, i_, k_] := memoised[{"Text", nd["Id"], i, k}, textKind[nd["Kind"], nd, i, k]];
+
+textBinding[i_, k_] := With[{v = elemOf[i][[3, k]]}, bnd[{itemMissing[v]}, v, Join[elemKey[i], {3, k}]]];
+
+textKind["Named", nd_, i_, k_] :=
+  With[{sols = textMatch[nd["Sub"], i, k]},
+    If[MemberQ[nd["Keep"], nd["Name"]], joinAll[sols, <|nd["Name"] -> textBinding[i, k]|>], sols]];
+textKind["Cond", nd_, i_, k_] := conditionFiltered[nd, textMatch[nd["Sub"], i, k]];
+textKind["Test", nd_, i_, k_] :=
+  With[{sols = textMatch[nd["Sub"], i, k]}, If[sols =!= {} && TrueQ[nd["F"][elemOf[i][[3, k]]]], sols, {}]];
+textKind["Alt", nd_, i_, k_] :=
+  project[Join @@ (With[{s = textMatch[#, i, k]},
+      If[nd["Slot"] === None, s, Append[#, nd["Slot"] -> textBinding[i, k]] & /@ s]] & /@ nd["Subs"]), nd["Keep"]];
+textKind["Blank", nd_, i_, k_] := If[MatchQ[elemOf[i][[3, k]], Blank @@ nd["Head"]], {<||>}, {}];
+textKind["Plain", nd_, i_, k_] := With[{b = textBinding[i, k]}, plainSolutions[nd, bindVal[b], First[bindPos[b]], bindKey[b]]];
+textKind[_, _, _, _] := {};
+
+(* A WL pattern on one value: a name that binds the whole value is at pos,
+   any other has no position. *)
+matchKind["Plain", nd_, i_] := plainSolutions[nd, elemOf[i], posOf[i], elemKey[i]];
+
+plainSolutions[nd_, v_, pos_, key_] :=
+  Which[
+    !MatchQ[v, nd["Pattern"]], {},
+    nd["Keep"] === {}, {<||>},
+    True, {Association @ KeyValueMap[#1 -> bnd[{If[#2 === v, pos, Missing["Literal"]]}, #2, key] &,
+      firstBindings[v, nd["Pattern"], nd["Keep"]]]}];
+
 (* The document, node 0, is matched only by XMLDocument, which matches
    nothing else. *)
-matchKind["XMLPattern" | "Literal" | "Blank", _, 0] := {};
+matchKind["XMLPattern" | "Literal" | "LiteralParts" | "Plain" | "Blank", _, 0] := {};
 matchKind["XMLDocument", nd_, i_] :=
   If[i == 0 && Length[childrenOf[0]] >= nd["MinKids"],
     project[pending[nd, product[matchConstraint[#, 0] & /@ nd["Constraints"], joinedAcross]], nd["Keep"]],
@@ -1258,6 +1404,7 @@ results[root_, rhs_, all_, counted_, testNames_, bare_, n_] :=
   Module[{sols, groups, slots, keys, count = 0, k = 1, r},
     Block[{$pendingAt = pendingTests[root]},
       sols = rootSolutions[root, counted === {} && testNames === {}]];
+    refuseBoundText[sols, counted];
     If[bare, sols = Select[sols, NoneTrue[Lookup[#, counted, None], MatchQ[{{___, {1} | Verbatim[Span][{1}, _], ___}, _, _}]] &]];
     groups = Values @ GroupBy[sols, identity[#, counted] &];
     slots = DeleteDuplicates[Lookup[$slotOf, counted, Null] /. Null -> Nothing];
@@ -1268,6 +1415,13 @@ results[root_, rhs_, all_, counted_, testNames_, bare_, n_] :=
       While[count < n && k <= Length[groups],
         r = groupResult[rhs, all, testNames, groups[[k++]]];
         If[r =!= $noResult, count++; Sow[r, $resultTag]]]]];
+
+(* A counted name bound to text, or to a run holding text, in some solution
+   is refused (spec section 3), as refuseText refuses one whose pattern shows
+   it. *)
+refuseBoundText[sols_, counted_] :=
+  Replace[FirstCase[counted, n_ /; AnyTrue[sols, MemberQ[bindPos[Lookup[#, Key[n], {{}}]], Missing["Text"]] &]],
+    Hold[s_] :> refuseHere["text", HoldForm[s]]];
 
 (* The results a loop sows, in order, each a list (resultOf). *)
 SetAttributes[reapedResults, HoldFirst];
@@ -1374,10 +1528,10 @@ pendingNodes[nd_] := Join[If[TrueQ[nd["Pending"]], {nd}, {}], Join @@ (pendingNo
 subNodes[nd_] := DeleteCases[Flatten[{Lookup[nd, "Sub", {}], Lookup[nd, "Subs", {}], Lookup[nd, "Constraints", {}],
   Lookup[nd, "Items", {}], Lookup[nd, "Base", {}]}], None];
 
-(* The node that runs c: the lowest XMLPattern, XMLDocument or list above c whose names
+(* The node that runs c: the lowest XMLPattern, XMLDocument, XMLElement pattern or list above c whose names
    hold every name c sees. *)
 hostOf[root_, c_] :=
-  Replace[Last[Select[pathTo[root, c["Id"]], MatchQ[#["Kind"], "XMLPattern" | "XMLDocument" | "List"] && SubsetQ[#["Names"], c["Sees"]] &], None],
+  Replace[Last[Select[pathTo[root, c["Id"]], MatchQ[#["Kind"], "XMLPattern" | "XMLDocument" | "List" | "LiteralParts" | "ContentsList"] && SubsetQ[#["Names"], c["Sees"]] &], None],
     {None -> "Top", h_ :> h["Id"]}];
 
 pathTo[nd_, id_] :=
@@ -1447,7 +1601,7 @@ listRoot[q_, need_] :=
 
 (* How many DOM levels below its root node a pattern reads. *)
 reachBelow[nd_] := Switch[nd["Kind"],
-  "List", 1 + Max[0, reachBelow /@ subNodes[nd]],
+  "List" | "ContentsList", 1 + Max[0, reachBelow /@ subNodes[nd]],
   "Descendant", nd["Levels"][[2]] + reachBelow[nd["Sub"]],
   _, Max[0, reachBelow /@ subNodes[nd]]];
 

@@ -23,6 +23,7 @@ HTMLToTree::root = "The root element cannot be hidden; it was kept.";
 HTMLToTree::hidetarget = "The \"Hide\" query names the position `1`. Hide removes only elements, runs of element children, and the contents of an element.";
 HTMLToTree::focustarget = "The \"Focus\" query names the position `1`. Focus draws only elements and runs of element children.";
 HTMLToTree::exceptname = "The name `1` is bound inside Except, which matches only where its pattern does not, so it has no value in the right-hand side. A name inside Except can be used only by tests inside that Except.";
+HTMLToTree::text = "The name `1` binds text inside an XMLElement pattern, and text has no position, so the name cannot be a result. Name the element that holds the text instead, or use the name only in a test.";
 
 Options[HTMLToTree] = {"Focus" -> Automatic, "Hide" -> Automatic, "MergeText" -> Automatic,
   "IncludeWhitespace" -> Automatic, "CollapsePaths" -> Automatic, "Roles" -> Automatic,

@@ -56,23 +56,22 @@ TestCreate[
 (* The reference order, pinned through one query: each branch of an
    Alternatives at the pattern root binds one kind of position, and the
    branches share one slot, ordered by the position each binds. The contents
-   positions {1, All} and {1, 1, All} are bound only by an XMLElement
-   pattern's contents slot, which has no position yet (ticket 16), so they are
-   left out. *)
+   positions {1, All} and {1, 1, All} are bound by an XMLElement pattern's
+   contents slot. *)
 TestCreate[
   Join @@ XMLPosition[doc[XMLElement["p", {"id" -> "i", "class" -> "a b"}, {el["b"]}]],
     (x : XMLPattern["p"]) | XMLPattern[t : "p", _] | XMLPattern["p", a_] | XMLPattern["p", "id" -> v_] |
       XMLPattern["p", "class" -> w_] | XMLPattern["p", "classList" -> l_] |
       XMLPattern["p", "classList" -> {___, k___, ___}] | XMLPattern["p", "classList" -> {___, tk_, ___}] |
-      XMLPattern["p", _, {___, g___, ___}] | XMLPattern["p", _, {c_}] |
+      XMLElement["p", _, ct_] | XMLPattern["p", _, {___, g___, ___}] | XMLPattern["p", _, {c_}] |
       XMLPattern["p", _, {XMLPattern[bt : "b", _]}] | XMLPattern["p", _, {XMLPattern["b", ba_]}] |
-      XMLPattern["p", _, {XMLPattern["b", _, {bg___}]}] :>
-      {x, t, a, v, w, l, k, tk, g, c, bt, ba, bg}],
+      XMLPattern["p", _, {XMLElement["b", _, bc_]}] | XMLPattern["p", _, {XMLPattern["b", _, {bg___}]}] :>
+      {x, t, a, v, w, l, k, tk, ct, g, c, bt, ba, bc, bg}],
   {{1}, {1, 0}, {1, Key[All]}, {1, Key["id"]}, {1, Key["class"]}, {1, Key["classList"]},
     {1, Key["classList"], 1 ;; 0}, {1, Key["classList"], 1 ;; 2}, {1, Key["classList"], 1 ;; 1}, {1, Key["classList"], 1},
     {1, Key["classList"], 2 ;; 1}, {1, Key["classList"], 2 ;; 2}, {1, Key["classList"], 2}, {1, Key["classList"], 3 ;; 2},
-    {1, 1 ;; 0}, {1, 1 ;; 1},
-    {1, 1}, {1, 1, 0}, {1, 1, Key[All]}, {1, 1, 1 ;; 0},
+    {1, All}, {1, 1 ;; 0}, {1, 1 ;; 1},
+    {1, 1}, {1, 1, 0}, {1, 1, Key[All]}, {1, 1, All}, {1, 1, 1 ;; 0},
     {1, 2 ;; 1}},
   TestID -> "position-reference-order"
 ];
