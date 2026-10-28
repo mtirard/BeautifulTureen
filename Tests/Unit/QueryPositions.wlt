@@ -14,8 +14,8 @@ $positionsRoot = $positionsDoc[[2]];
 $positionsList = With[{body = $positionsRoot[[3, 1]]}, {"text", body[[3, 1]], "more", body[[3, 2]]}];
 
 positionsOf[tree_, q_, n_ : Infinity] :=
-  MaximilienTirard`HTMLPatterns`Implementation`Private`queryPositions[
-    MaximilienTirard`HTMLPatterns`Implementation`Private`compileQuery[q, XMLCases], tree, n];
+  MaximilienTirard`HTMLPatterns`PackageScope`queryPositions[
+    MaximilienTirard`HTMLPatterns`PackageScope`compileQuery[q, XMLCases], tree, n];
 
 (* Whether the positions of q in tree give XMLCases's elements, each site once,
    in document order, and give some. *)

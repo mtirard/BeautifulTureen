@@ -34,7 +34,7 @@ withRewriteCount[expr_] :=
 
 TestCreate[
   Module[{compiled, runs},
-    compiled = MaximilienTirard`HTMLPatterns`Implementation`Private`compileQuery[#, XMLCases] & /@ $compiledQueries;
+    compiled = MaximilienTirard`HTMLPatterns`PackageScope`compileQuery[#, XMLCases] & /@ $compiledQueries;
     runs = withRewriteCount @ Table[
       MapThread[
         {MaximilienTirard`HTMLPatterns`Implementation`Private`queryCases[#2, $compiledTree, Infinity],
@@ -53,7 +53,7 @@ TestCreate[
 
 (* The per-element matcher behind XMLMatchQ, from a query compiled once. *)
 TestCreate[
-  With[{c = MaximilienTirard`HTMLPatterns`Implementation`Private`compileQuery[First[$compiledQueries], XMLMatchQ]},
+  With[{c = MaximilienTirard`HTMLPatterns`PackageScope`compileQuery[First[$compiledQueries], XMLMatchQ]},
     withRewriteCount[
       MaximilienTirard`HTMLPatterns`Implementation`Private`elementMatcher[c] /@ Table[$compiledTree[[3, 1]], 3]]],
   {{True, True, True}, 0},
