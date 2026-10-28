@@ -1,5 +1,5 @@
 ---
-status: accepted (amended by ADR-0014)
+status: accepted (amended by ADR-0014; superseded in part by ADR-0023)
 ---
 
 # `XMLMatchQ` ships, as a whole-element test

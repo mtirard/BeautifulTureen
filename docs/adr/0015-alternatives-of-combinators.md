@@ -1,5 +1,5 @@
 ---
-status: accepted (amended by ADR-0016)
+status: superseded by ADR-0023 and ADR-0024
 ---
 
 # Alternatives of combinators read as WL alternatives, and the first alternative that accepts an element binds its names

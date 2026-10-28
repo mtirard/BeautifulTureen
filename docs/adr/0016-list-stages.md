@@ -1,5 +1,5 @@
 ---
-status: accepted (amended by ADR-0018 and ADR-0020)
+status: superseded by ADR-0023
 ---
 
 # A list stage is a WL list pattern over a parent's element children, and `Adjacent` and `Sibling` are its shorthands

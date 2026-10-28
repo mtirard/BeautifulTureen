@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded, with no successor for the recognised shapes; what carries over is in ADR-0026
 ---
 
 # CSS translates to a visible XML pattern, and the compiler recognises shapes of it and runs them by dedicated methods

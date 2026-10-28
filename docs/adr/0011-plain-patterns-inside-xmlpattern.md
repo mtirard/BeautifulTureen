@@ -1,5 +1,5 @@
 ---
-status: accepted (amended after implementation)
+status: accepted (amended after implementation; superseded in part by ADR-0023)
 ---
 
 # Inside an `XMLPattern`, everything is a plain WL pattern: literal keys, one attribute argument, one desugaring

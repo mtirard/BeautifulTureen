@@ -1,5 +1,5 @@
 ---
-status: accepted (amended after implementation; amended by ADR-0017)
+status: accepted (amended after implementation; amended by ADR-0017; superseded in part by ADR-0024)
 ---
 
 # A reading synthesises a `‹key›List` attribute, by an additive, query-driven materialisation
