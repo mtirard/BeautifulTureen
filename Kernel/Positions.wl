@@ -40,7 +40,6 @@ Scan[Function[h,
     MessageName[h, "badtree"] = "The first argument should be an XMLObject, an XMLElement, or a list of XMLElement expressions and strings. Got head `1`.";
     MessageName[h, "badmember"] = "A list given as the first argument should hold only XMLElement expressions and strings. The member at position `1` has head `2`."],
   {XMLPosition, XMLExtract}];
-XMLPosition::badpat = "The second argument should be an XMLPattern, an XMLDocument pattern, an XMLElement pattern, a one-element CSS selector string, alternatives of any of these, or a rule pattern -> rhs or pattern :> body with one of these. Each can be named and have a condition (/;) or a test (?). Got `1`.";
 XMLPosition::exceptname = "The name `1` is bound inside Except, which matches only where its pattern does not, so it has no value in the right-hand side. A name inside Except can be used only by tests inside that Except.";
 XMLPosition::text = "The name `1` binds text inside an XMLElement pattern, and text has no position, so the name cannot be a result. Name the element that holds the text instead, or use the name only in a test.";
 XMLPosition::blank = "`1` is a blank, which is not an XML pattern. Any element is XMLPattern[_]. An XML pattern matches elements only; for the text inside an element, use HTMLTextContent or HTMLInnerText.";

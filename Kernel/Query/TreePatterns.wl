@@ -64,6 +64,12 @@ constraintFormQ[c_] := MatchQ[c, _List | _Descendant | _Shortest | _Longest] ||
 namesIn[s_] :=
   DeleteDuplicates @ Cases[s, Verbatim[Pattern][n_Symbol, _] :> Hold[n], {0, Infinity}, Heads -> True];
 
+(* Child, Adjacent and Sibling were removed in 4.0.0 (ADR 0023). A query
+   that still uses one holds it unevaluated, in the caller's context, so it
+   is found by name; it is badpat, whose text gives the tree forms. *)
+removedCombinatorQ[held_] :=
+  !FreeQ[held, (h_Symbol /; MemberQ[{"Child", "Adjacent", "Sibling"}, SymbolName[Unevaluated[h]]])[___]];
+
 (* =========================================================== *)
 (* Running a query                                              *)
 (* =========================================================== *)
@@ -83,6 +89,7 @@ treeResults[head_, tree_, q_, n_] :=
       Module[{lhs, rhs, all, counted, testNames, need, root},
         If[namedContextQ[q], refuseHere["badpat", q]];
         {lhs, rhs} = splitQuery[q];
+        If[removedCombinatorQ[lhs], refuseHere["badpat", q]];
         $readings = Replace[readingsInForce[], $Failed :> Throw[$Failed, $refusal]];
         all = namesIn[lhs];
         $order = patternOrder[lhs];
@@ -442,6 +449,10 @@ cRoot[b : Verbatim[Blank][h___], need_] :=
   If[MatchQ[$place, "entry" | "literal"], treeNode["Blank", {}, need, "Head" -> {h}], refuseBlank[b]];
 cRoot[b : (_BlankSequence | _BlankNullSequence), _] := refuseBlank[b];
 
+(* The old two-pattern form, Descendant[a, b], is a level spec that is not
+   one, wherever it is (spec section 8). *)
+cRoot[d : Descendant[_, s_, ___], _] /; Length[d] > 2 || !levelSpecFormQ[s] :=
+  refuse[Descendant::level, If[Length[d] == 2, s, d]];
 cRoot[d_Descendant, _] :=
   Switch[$place,
     "entry", refuseListEntry[d, "descendant"],
@@ -1810,7 +1821,7 @@ pathTo[nd_, id_] :=
    operator form, applied to every element. A selector that is not
    translated, or a context selector, is left to this engine, which gives
    its message. *)
-plainRootQ[x : XMLPattern[_] | XMLPattern[_, _]] := FreeQ[x, _Descendant | _XMLDocument];
+plainRootQ[x : XMLPattern[_] | XMLPattern[_, _]] := FreeQ[x, _Descendant | _XMLDocument] && !removedCombinatorQ[Hold[x]];
 plainRootQ[s_String] := MatchQ[Quiet[cssTree[s]], {"one", t_} /; plainRootQ[t]];
 plainRootQ[Verbatim[Pattern][_, p_] | Verbatim[Condition][p_, _] | Verbatim[PatternTest][p_, _]] := plainRootQ[p];
 plainRootQ[alts_Alternatives] := AllTrue[List @@ alts, plainRootQ];
@@ -1824,7 +1835,7 @@ treeMatcher[head_, q_, listsQ_] :=
     Block[{$head = head, $nodeId = 0, $order, $seen = <||>, $slotOf = <||>, $readings, $local = False,
         $place = "query", $owner = XMLPattern, $namedPaths = False, $exceptRefs = exceptRefs[Hold[q]], $records},
       Module[{lhs = Hold[q], need, root, listQ = listsQ && listRootQ[q]},
-        If[MatchQ[q, _Rule | _RuleDelayed], refuseHere["badpat", q]];
+        If[MatchQ[q, _Rule | _RuleDelayed] || removedCombinatorQ[lhs], refuseHere["badpat", q]];
         $readings = Replace[readingsInForce[], $Failed :> Throw[$Failed, $refusal]];
         $order = patternOrder[lhs];
         need = Union[conditionNames[lhs, namesIn[lhs]], bindingNames[lhs]];

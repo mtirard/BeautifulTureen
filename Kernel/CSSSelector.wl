@@ -348,7 +348,7 @@ $cssNth = <|"nth-child" -> {False, None}, "nth-last-child" -> {True, None},
   "nth-of-type" -> {False, "type"}, "nth-last-of-type" -> {True, "type"}|>;
 
 (* Valid Selectors 4 that is not translated, with the workaround. *)
-$cssChildIndexedHow = "It needs the element's parent, so it can be in a compound of the selector or of a relative selector in :has(), but not in an argument of :not(), :is() or :where(). Write a list of patterns for the parent's children instead, as in Child[XMLDocument[] | XMLPattern[_], {XMLPattern[\"li\"], ___}].";
+$cssChildIndexedHow = "It needs the element's parent, so it can be in a compound of the selector or of a relative selector in :has(), but not in an argument of :not(), :is() or :where(). Write a list pattern over the parent's children instead, as in XMLPattern[_, _, {x : XMLPattern[\"li\"], ___}] :> x.";
 $cssFormHow = "Write the test as a condition on an XMLPattern.";
 (* :root and :scope are the only top element (ADR 0018), at the start of a
    selector. *)
@@ -359,7 +359,7 @@ $cssUnsupported = Join[
     "default", "unchecked", "indeterminate", "valid", "invalid", "in-range", "out-of-range",
     "required", "optional", "defined"}]];
 $cssUnsupportedFunctions =
-  <|"lang" -> "Use Descendant[XMLPattern[_, \"lang\" -> ...], ...], which takes the lang of any ancestor, not only the nearest.",
+  <|"lang" -> "Use XMLPattern[_, \"lang\" -> ..., Descendant[x : ...]] :> x, which takes the lang of any ancestor, not only the nearest.",
     "dir" -> $cssFormHow|>;
 
 (* Valid, but true only in a browser. *)
