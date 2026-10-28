@@ -78,7 +78,7 @@ TestCreate[
 (* List stages, on WL's matcher and by a recognised shape (ADR 0020), and a
    list stage with a context entry. *)
 SetAttributes[unrecognised, HoldFirst];
-unrecognised[expr_] := Block[{MaximilienTirard`HTMLPatterns`Implementation`Private`$recogniseShapes = False}, expr];
+unrecognised[expr_] := Block[{MaximilienTirard`HTMLPatterns`PackageScope`$recogniseShapes = False}, expr];
 
 $listStageQueries = {
   "li:nth-child(2n+1)",

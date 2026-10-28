@@ -37,9 +37,9 @@ TestCreate[
     compiled = MaximilienTirard`HTMLPatterns`PackageScope`compileQuery[#, XMLCases] & /@ $compiledQueries;
     runs = withRewriteCount @ Table[
       MapThread[
-        {MaximilienTirard`HTMLPatterns`Implementation`Private`queryCases[#2, $compiledTree, Infinity],
-         MaximilienTirard`HTMLPatterns`Implementation`Private`queryFirst[#2, $compiledTree, None],
-         If[MatchQ[#1, _RuleDelayed], None, MaximilienTirard`HTMLPatterns`Implementation`Private`queryDelete[#2, $compiledTree]]} &,
+        {MaximilienTirard`HTMLPatterns`PackageScope`queryCases[#2, $compiledTree, Infinity],
+         MaximilienTirard`HTMLPatterns`PackageScope`queryFirst[#2, $compiledTree, None],
+         If[MatchQ[#1, _RuleDelayed], None, MaximilienTirard`HTMLPatterns`PackageScope`queryDelete[#2, $compiledTree]]} &,
         {$compiledQueries, compiled}],
       3];
     {Last[runs],
@@ -55,7 +55,7 @@ TestCreate[
 TestCreate[
   With[{c = MaximilienTirard`HTMLPatterns`PackageScope`compileQuery[First[$compiledQueries], XMLMatchQ]},
     withRewriteCount[
-      MaximilienTirard`HTMLPatterns`Implementation`Private`elementMatcher[c] /@ Table[$compiledTree[[3, 1]], 3]]],
+      MaximilienTirard`HTMLPatterns`PackageScope`elementMatcher[c] /@ Table[$compiledTree[[3, 1]], 3]]],
   {{True, True, True}, 0},
   TestID -> "compiled-query-element-matcher-without-rewriting"
 ];
