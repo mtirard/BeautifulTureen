@@ -11,42 +11,42 @@ Notebook[{
 Cell[CellGroupData[{
 Cell["HTMLPatterns", "GuideTitle"],
 
-Cell[TextData[{"HTMLPatterns selects elements from imported HTML and XML and extracts their text. An ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], " matches an element by its tag and attributes, including its classes. The combinators ", Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Child"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Descendant"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["Adjacent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Adjacent"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Sibling"]], "InlineFormula"], " combine patterns as CSS selectors do. ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLCases"]], "InlineFormula"], " and related functions search a tree with these patterns, and ", Cell[BoxData[ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLInnerText"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["HTMLToNotebook", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLToNotebook"]], "InlineFormula"], " turn the results into text or a notebook. ", Cell[BoxData[ButtonBox["HTMLToTree", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLToTree"]], "InlineFormula"], " draws a tree to show the structure that patterns match. Since version 2.0.0, ", Cell[BoxData[ButtonBox["MatchQ", BaseStyle -> "Link", ButtonData -> "paclet:ref/MatchQ"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["Cases", BaseStyle -> "Link", ButtonData -> "paclet:ref/Cases"]], "InlineFormula"], " treat ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], " as a literal expression, and the \"classList\" key replaces ", Cell[BoxData[ButtonBox["CSSClass", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/CSSClass"]], "InlineFormula"], "."}], "GuideAbstract"]
+Cell[TextData[{"HTMLPatterns selects elements from imported HTML and XML and extracts their text. An ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], " matches an element by its tag and attributes, including its classes, and by constraints on the elements below it, so patterns are nested as the document is. ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLCases"]], "InlineFormula"], " and related functions search a tree with these patterns. A rule such as ", Cell[BoxData[RowBox[{RowBox[{ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"], "[", RowBox[{"\"nav\"", ",", StyleBox["_", "TR"], ",", RowBox[{ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Descendant"], "[", "x : XMLPattern[\"a\"]", "]"}]}], "]"}], "\[RuleDelayed]", StyleBox["x", "TR"]}]], "InlineFormula"], " gives one result for each place matched by the names its right-hand side uses. CSS selector strings can be given wherever a pattern goes. ", Cell[BoxData[ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLInnerText"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["HTMLToNotebook", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLToNotebook"]], "InlineFormula"], " turn the results into text or a notebook, and ", Cell[BoxData[ButtonBox["HTMLToTree", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLToTree"]], "InlineFormula"], " draws a tree to show the structure that patterns match. Version 4.0.0 replaces the combinators Child, Adjacent and Sibling with nested patterns."}], "GuideAbstract"]
 }, Open  ]],
 
 Cell[CellGroupData[{
 
 Cell["", "GuideFunctionsSection"],
 
-Cell[CellGroupData[{Cell["Selecting Elements", "GuideFunctionsSubsection"], Cell[TextData[{Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLCases"]], "InlineGuideFunction"], " \[LongDash] find all elements of a tree that match a pattern, at any depth"}], "GuideText"],
+Cell[CellGroupData[{Cell["Selecting Elements", "GuideFunctionsSubsection"], Cell[TextData[{Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLCases"]], "InlineGuideFunction"], " \[LongDash] find all elements of a tree that match a pattern, or the results of a rule"}], "GuideText"],
 
 Cell[TextData[{Cell[BoxData[ButtonBox["XMLFirstCase", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLFirstCase"]], "InlineGuideFunction"], " \[LongDash] find the first element that matches a pattern"}], "GuideText"],
 
-Cell[TextData[{Cell[BoxData[ButtonBox["XMLDeleteCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLDeleteCases"]], "InlineGuideFunction"], " \[LongDash] remove the elements that match a pattern from a tree"}], "GuideText"],
+Cell[TextData[{Cell[BoxData[ButtonBox["XMLPosition", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPosition"]], "InlineGuideFunction"], " \[LongDash] give the positions of the results of a query"}], "GuideText"],
 
-Cell[TextData[{Cell[BoxData[ButtonBox["XMLMatchQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLMatchQ"]], "InlineGuideFunction"], " \[LongDash] test whether an element matches a pattern"}], "GuideText"]}, Open]],
+Cell[TextData[{Cell[BoxData[ButtonBox["XMLExtract", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLExtract"]], "InlineGuideFunction"], " \[LongDash] give the parts of a tree at positions"}], "GuideText"],
+
+Cell[TextData[{Cell[BoxData[ButtonBox["XMLDeleteCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLDeleteCases"]], "InlineGuideFunction"], " \[LongDash] remove the elements that match a pattern, or the parts that the names of a rule match"}], "GuideText"],
+
+Cell[TextData[{Cell[BoxData[ButtonBox["XMLReplace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLReplace"]], "InlineGuideFunction"], " \[LongDash] replace the parts of a tree that the names of a pattern match"}], "GuideText"],
+
+Cell[TextData[{Cell[BoxData[ButtonBox["XMLMatchQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLMatchQ"]], "InlineGuideFunction"], " \[LongDash] test whether an element matches a pattern"}], "GuideText"],
+
+Cell[TextData[{Cell[BoxData[ButtonBox["XMLFreeQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLFreeQ"]], "InlineGuideFunction"], " \[LongDash] test whether no element of a tree matches a pattern"}], "GuideText"]}, Open]],
 
 Cell["\t", "GuideDelimiter"],
 
-Cell[CellGroupData[{Cell["Building Patterns", "GuideFunctionsSubsection"], Cell[TextData[{Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineGuideFunction"], " \[LongDash] pattern for the tag and attributes of an element"}], "GuideText"],
+Cell[CellGroupData[{Cell["Building Patterns", "GuideFunctionsSubsection"], Cell[TextData[{Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineGuideFunction"], " \[LongDash] pattern for the tag and attributes of an element, and for the elements below it"}], "GuideText"],
 
-Cell[TextData[{Cell[BoxData[ButtonBox["FromCSSSelector", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/FromCSSSelector"]], "InlineGuideFunction"], " \[LongDash] translate a CSS selector to an XML pattern"}], "GuideText"],
+Cell[TextData[{Cell[BoxData[ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Descendant"]], "InlineGuideFunction"], " \[LongDash] constraint met by an element that has a match anywhere below it"}], "GuideText"],
+
+Cell[TextData[{Cell[BoxData[ButtonBox["XMLDocument", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLDocument"]], "InlineGuideFunction"], " \[LongDash] pattern for the document above the top elements of a tree"}], "GuideText"],
+
+Cell[TextData[{Cell[BoxData[ButtonBox["FromCSSSelector", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/FromCSSSelector"]], "InlineGuideFunction"], " \[LongDash] translate a CSS selector to an XML pattern, naming the element it selects"}], "GuideText"],
 
 Cell[TextData[{Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/$AttributeReadings"]], "InlineGuideFunction"], " \[LongDash] the attributes split into lists of tokens, such as class into \"classList\""}], "GuideText"],
 
 Cell[TextData[{Cell[BoxData[ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLWhitespace"]], "InlineGuideFunction"], " \[LongDash] the HTML whitespace characters that separate classes in a class attribute"}], "GuideText"]}, Open]],
-
-Cell["\t", "GuideDelimiter"],
-
-Cell[CellGroupData[{Cell["Combinators", "GuideFunctionsSubsection"], Cell[TextData[{Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Child"]], "InlineGuideFunction"], " \[LongDash] match an element that is a direct child of another match"}], "GuideText"],
-
-Cell[TextData[{Cell[BoxData[ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Descendant"]], "InlineGuideFunction"], " \[LongDash] match an element nested at any depth inside another match"}], "GuideText"],
-
-Cell[TextData[{Cell[BoxData[ButtonBox["Adjacent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Adjacent"]], "InlineGuideFunction"], " \[LongDash] match an element that immediately follows a sibling match"}], "GuideText"],
-
-Cell[TextData[{Cell[BoxData[ButtonBox["Sibling", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Sibling"]], "InlineGuideFunction"], " \[LongDash] match an element that follows a sibling match at any distance"}], "GuideText"],
-
-Cell[TextData[{Cell[BoxData[ButtonBox["XMLDocument", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLDocument"]], "InlineGuideFunction"], " \[LongDash] the parent of the top-level elements, as the first stage of a combinator"}], "GuideText"]}, Open]],
 
 Cell["\t", "GuideDelimiter"],
 

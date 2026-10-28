@@ -300,7 +300,7 @@ XMLCases[tree,XMLPattern[_,_,Descendant[XMLPattern[\"li\"],{1}]]]===XMLCases[tre
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"An element meets ", Cell[BoxData[RowBox[{ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Descendant"], "[", StyleBox["p", "TI"], "]"}]], "InlineFormula"], " when ", Cell[BoxData[ButtonBox["XMLFreeQ", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLFreeQ"]], "InlineFormula"], " below it gives False:"}], "ExampleText"], Cell[BoxData["element=XMLElement[\"p\",{},{XMLElement[\"i\",{},{XMLElement[\"b\",{},{\"x\"}]}]}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"An element meets ", Cell[BoxData[RowBox[{ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Descendant"], "[", StyleBox["p", "TI"], "]"}]], "InlineFormula"], " when ", Cell[BoxData[ButtonBox["XMLFreeQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLFreeQ"]], "InlineFormula"], " below it gives False:"}], "ExampleText"], Cell[BoxData["element=XMLElement[\"p\",{},{XMLElement[\"i\",{},{XMLElement[\"b\",{},{\"x\"}]}]}];
 {XMLMatchQ[element,XMLPattern[\"p\",_,Descendant[XMLPattern[\"b\"]]]],XMLFreeQ[element,XMLPattern[\"b\"],{1,Infinity}]}"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"True", ",", "False"}], "}"}]], "Output"]}, Open]]}, Open]],

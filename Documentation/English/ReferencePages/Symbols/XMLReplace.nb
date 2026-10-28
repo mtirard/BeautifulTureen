@@ -96,7 +96,7 @@ Cell[CellGroupData[{
 
 Cell["Related Guides", "MoreAboutSection"],
 
-Cell["XXXX", "MoreAbout"]
+Cell[TextData[ButtonBox["HTMLPatterns", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/guide/HTMLPatterns"]], "MoreAbout"]
 }, Open  ]],
 
 Cell[CellGroupData[{
