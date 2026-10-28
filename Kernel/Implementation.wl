@@ -1,364 +1,23 @@
 (* ::Package:: *)
 (* HTMLPatterns: XML patterns + the XML* consumers *)
 
+(* Used by Common.wl *)
+PackageScoped[treeOptionNameQ]
+
+(* Used by Readings.wl *)
+PackageScoped[refuse]
+PackageScoped[$refusal]
+
 (* === Messages === *)
 
-CSSClass::obs = "CSSClass is obsolete. Match the class list with the \"classList\" key instead: XMLPattern[tag, \"classList\" -> \"cls\"] for .cls, or \"classList\" -> _?(FreeQ[\"cls\"]) for :not(.cls).";
-XMLPattern::badtag = "The tag should be a string, a {namespace, name} pair, alternatives of these, or a pattern such as _. Got `1`.";
-XMLPattern::nargs = "XMLPattern was given `1` arguments, but takes a tag and at most one attribute argument. Put several attribute constraints in one list: XMLPattern[tag, {c1, c2, ...}].";
-XMLPattern::badattrs = "The attribute argument should be a key -> value rule, a key, or a list of these, optionally named (attrs : ...) or tested (...?test) as a whole. Got `1`.";
-XMLPattern::badkey = "An attribute key should be a string, a {namespace, name} pair of strings, or alternatives of these. Got `1`. To test the keys, test the attributes as a whole: XMLPattern[tag, attrs_?test].";
-XMLPattern::dupkey = "The attribute key `1` appears in more than one constraint, so the pattern can never match. Combine the constraints into one value pattern.";
-XMLPattern::nolistreading = "The key `1` looks like a list key, but `2` has no reading, so `1` is matched as an attribute of that name. To match the tokens of `2`, add a reading: $AttributeReadings[`2`] = <||> for the session, or \"AttributeReadings\" -> <|`2` -> <||>|> in the call.";
-XMLPattern::otherlistkey = "The key `1` is matched as an attribute of that name, but the reading for `2` gives its tokens under the list key `3`. Use `3`, or set \"ListKey\" -> `1` in the reading.";
-XMLPattern::strpat = "`1` is a string pattern, and in an XMLPattern it does not match any string. Write _?(StringMatchQ[`1`]) instead.";
-XMLDocument::place = "XMLDocument[] takes no arguments and stands for the document above the top elements, so it can only be the first stage of a combinator, alone or in alternatives, as in Child[XMLDocument[], XMLPattern[\"html\"]], and it cannot be named or have a condition or test. Got `1`.";
-XMLCases::badtree = "The first argument should be an XMLObject, an XMLElement, or a list of XMLElement expressions and strings. Got head `1`.";
-XMLCases::badpat = "The second argument should be an XMLPattern, a Child, Descendant, Adjacent or Sibling combinator, a CSS selector string, alternatives of any of these, or a rule pattern -> rhs or pattern :> body with one of these. Each can have a condition (/;). An XMLPattern or alternatives of them can also be named or have a test (?), but a combinator, or alternatives that hold one, cannot. Got `1`.";
-XMLCases::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
-XMLFirstCase::badtree = "The first argument should be an XMLObject, an XMLElement, or a list of XMLElement expressions and strings. Got head `1`.";
-XMLFirstCase::badpat = "The second argument should be an XMLPattern, a Child, Descendant, Adjacent or Sibling combinator, a CSS selector string, alternatives of any of these, or a rule pattern -> rhs or pattern :> body with one of these. Each can have a condition (/;). An XMLPattern or alternatives of them can also be named or have a test (?), but a combinator, or alternatives that hold one, cannot. Got `1`.";
-XMLFirstCase::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
-XMLDeleteCases::badtree = "The first argument should be an XMLObject, an XMLElement, or a list of XMLElement expressions and strings. Got head `1`.";
-XMLDeleteCases::badpat = "The second argument should be an XMLPattern, a Child, Descendant, Adjacent or Sibling combinator, a CSS selector string, or alternatives of any of these. Each can have a condition (/;). An XMLPattern or alternatives of them can also be named or have a test (?), but a combinator, or alternatives that hold one, cannot. A rule, whether pattern -> rhs or pattern :> body, cannot be used. Got `1`.";
-XMLDeleteCases::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
-XMLMatchQ::badpat = "The pattern should be an XMLPattern, alternatives of them, or either with a condition pat /; test or a test pat?f, or a CSS selector string that describes one element. Got `1`.";
-XMLMatchQ::stages = "`1` is a combinator with fewer than two stages. A combinator needs at least two, but XMLMatchQ tests a lone element and cannot use one; use XMLCases or XMLFirstCase to search a tree with it.";
-XMLMatchQ::condcombinator = "A condition (/;) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Got `1`.";
-XMLMatchQ::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
-$AttributeReadings::badkey = "Each key in the readings should be an attribute name given as a string. Got `1`.";
-$AttributeReadings::notassoc = "$AttributeReadings and the \"AttributeReadings\" option should be an Association from attribute names to readings. Got `1`.";
-$AttributeReadings::badentry = "The reading for `1` should be an Association with any of the fields Method, Delimiters, \"TrimWhitespace\" and \"ListKey\". Got `2`.";
-$AttributeReadings::badfield = "The reading for `1` has the unknown field `2`. The fields of a reading are Method, Delimiters, \"TrimWhitespace\" and \"ListKey\".";
-$AttributeReadings::badmethod = "The reading for `1` has Method `2`. Method should be \"SpaceSeparated\" or \"CommaSeparated\".";
-$AttributeReadings::badvalue = "The reading for `1` has `2` -> `3`. Delimiters should be a string pattern, \"TrimWhitespace\" should be True or False, and \"ListKey\" should be a string. Any of them can also be Automatic.";
-$AttributeReadings::duplistkey = "More than one reading has the list key `1`. Give each reading a different \"ListKey\".";
-$AttributeReadings::listkeyisreading = "The list key `1` is also an attribute with a reading, so `1` in an XMLPattern would be ambiguous. Choose a different \"ListKey\".";
 XMLMatchQ::combinator = "`1` relates an element to its parent or siblings, which a lone element does not have. Use XMLCases or XMLFirstCase to search a tree with it.";
 FromCSSSelector::invalid = "`1` is not a valid CSS selector: `2`.";
 FromCSSSelector::unsupported = "`1` is valid CSS, but `2` cannot be translated to an XML pattern. `3`";
 FromCSSSelector::impossible = "`2` in `1` depends on a browser, such as user input, layout or the page's URL, and cannot be matched in a static document. `3`";
 XMLDeleteCases::root = "The root element of an XMLObject cannot be deleted; it was kept.";
-HTMLTextContent::badtree = "The first argument should be an XMLObject, an XMLElement, a string, or a list of XMLElement expressions and strings. Got head `1`.";
-HTMLClassList::notelement = "The argument should be a single XMLElement. Got head `1`. For a list of elements, use HTMLClassList /@ elements.";
-HTMLInnerText::badtree = "The first argument should be an XMLObject, an XMLElement, a string, or a list of XMLElement expressions and strings. Got head `1`.";
-HTMLInnerText::badrole = "A \"Roles\" rule gave `1`, which is not \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\" or \"Skip\". The element gets its role from the built-in user-agent stylesheet instead.";
-HTMLInnerText::badpat = "The left-hand side of a rule should be an XMLPattern, alternatives of them, or either with a condition pat /; test or a test pat?f, or a CSS selector string that describes one element. Got `1`.";
-HTMLInnerText::stages = "`1` is a combinator with fewer than two stages. A combinator needs at least two, but a rule is tried on one element at a time and cannot use one; use an XMLPattern or alternatives of them.";
-HTMLInnerText::notrule = "Each \"Roles\" entry should be a rule pattern -> value or pattern :> value. Got `1`.";
-HTMLInnerText::condcombinator = "A condition (/;) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Got `1`.";
-HTMLInnerText::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
-HTMLToNotebook::badtree = "The first argument should be an XMLObject, an XMLElement, a string, or a list of XMLElement expressions and strings. Got head `1`.";
-HTMLToNotebook::badrole = "A \"Roles\" rule gave `1`, which is not \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\" or \"Skip\". The element gets its role from the built-in user-agent stylesheet instead.";
-HTMLToNotebook::badpat = "The left-hand side of a rule should be an XMLPattern, alternatives of them, or either with a condition pat /; test or a test pat?f, or a CSS selector string that describes one element. Got `1`.";
-HTMLToNotebook::stages = "`1` is a combinator with fewer than two stages. A combinator needs at least two, but a rule is tried on one element at a time and cannot use one; use an XMLPattern or alternatives of them.";
-HTMLToNotebook::notrule = "Each \"Roles\" or \"Constructs\" entry should be a rule pattern -> value or pattern :> value. Got `1`.";
-HTMLToNotebook::condcombinator = "A condition (/;) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Got `1`.";
-HTMLToNotebook::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
-HTMLToTree::badtree = "The first argument should be an XMLObject, an XMLElement, or a list of XMLElement expressions and strings. Got head `1`.";
 HTMLToTree::optval = "The value of the `1` option should be `2`. Got `3`.";
 HTMLToTree::badquery = "The value of the `1` option should be `2`, Automatic, an XMLPattern, a Child, Descendant, Adjacent or Sibling combinator, a CSS selector string, or alternatives of any of these. Each can have a condition (/;). An XMLPattern or alternatives of them can also be named or have a test (?), but a combinator, or alternatives that hold one, cannot. A rule, whether pattern -> rhs or pattern :> body, cannot be used. Got `3`.";
 HTMLToTree::root = "The root element cannot be hidden; it was kept.";
-HTMLToTree::badrole = "A \"Roles\" rule gave `1`, which is not \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\" or \"Skip\". The element gets its role from the built-in user-agent stylesheet instead.";
-HTMLToTree::badpat = "The left-hand side of a rule should be an XMLPattern, alternatives of them, or either with a condition pat /; test or a test pat?f, or a CSS selector string that describes one element. Got `1`.";
-HTMLToTree::stages = "`1` is a combinator with fewer than two stages. A combinator needs at least two, but a rule is tried on one element at a time and cannot use one; use an XMLPattern or alternatives of them.";
-HTMLToTree::notrule = "Each \"Roles\" entry should be a rule pattern -> value or pattern :> value. Got `1`.";
-HTMLToTree::condcombinator = "A condition (/;) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Got `1`.";
-HTMLToTree::testcombinator = "A test (?) can apply to an XMLPattern or alternatives of them, but not to a combinator such as Child or Descendant. Put it on the stage it tests, as in Child[a, b?f]. Got `1`.";
-
-(* A list of patterns for an element's children (ADR 0016), refused where it
-   cannot stand, with the reason. Set here, not with the other messages above,
-   so that h is a private symbol. *)
-Scan[Function[h,
-    MessageName[h, "liststage"] = "`1` is a list of patterns for an element's children. `2`";
-    MessageName[h, "listentry"] = "`1` cannot be an entry in a list of patterns for an element's children. `2`";
-    MessageName[h, "blank"] = "`1` is a blank, which is not an XML pattern. Any element is XMLPattern[_]. An XML pattern matches elements only; for the text inside an element, use HTMLTextContent or HTMLInnerText."],
-  {XMLCases, XMLFirstCase, XMLDeleteCases, XMLMatchQ, HTMLInnerText, HTMLToNotebook, Child, Descendant, Adjacent, Sibling}];
-
-(* A list given as a tree holding something other than elements and strings. *)
-Scan[Function[h,
-    MessageName[h, "badmember"] = "A list given as the first argument should hold only XMLElement expressions and strings. The member at position `1` has head `2`."],
-  {XMLCases, XMLFirstCase, XMLDeleteCases, HTMLTextContent, HTMLInnerText, HTMLToNotebook, HTMLToTree}];
-
-(* A mistake in a combinator is its message, named for it (ADR 0022). The
-   message's own slot is a value here, so that the template keeps it. *)
-Scan[Function[h,
-    With[{fill = TemplateApply[#, <|"h" -> h, "got" -> "`1`"|>] &},
-      MessageName[h, "stages"] = fill["`h` needs at least two stages, as in `h`[a, b] or `h`[a, b, c]. Got `got`."];
-      MessageName[h, "testcombinator"] = fill["A test (?) can apply to an XMLPattern or alternatives of them, but not to a `h` combinator. Put it on the stage it tests, as in `h`[a, b?f]. Got `got`."]]],
-  {Child, Descendant, Adjacent, Sibling}];
-
-(* =========================================================== *)
-(* Validation helpers                                           *)
-(* =========================================================== *)
-
-(* Valid tag: a string, a {namespace, name} pair, or any ordinary pattern matched
-   against the element's tag \[LongDash] Alternatives, Blank(Sequence), a named Pattern,
-   or a predicate-bearing PatternTest (_?f) / Condition (t_ /; test). *)
-validTagQ[_String] := True;
-validTagQ[{_, _}] := True;
-validTagQ[_Alternatives] := True;
-validTagQ[_Blank] := True;
-validTagQ[_BlankSequence] := True;
-validTagQ[_Pattern] := True;
-validTagQ[_PatternTest] := True;
-validTagQ[_Condition] := True;
-validTagQ[_] := False;
-
-(* A literal attribute key: a plain name, an imported {namespace, name} pair (WL
-   imports a namespaced attribute such as xlink:href with a two-element list key
-   {namespaceURI, localName}), or Alternatives of those. *)
-literalKeyQ[_String] := True;
-literalKeyQ[{_String, _String}] := True;
-literalKeyQ[Verbatim[Alternatives][ks__]] := AllTrue[{ks}, literalKeyQ];
-literalKeyQ[_] := False;
-
-keyLiterals[Verbatim[Alternatives][ks__]] := Join @@ (keyLiterals /@ {ks});
-keyLiterals[k_] := {k};
-
-(* The four combinator heads, each a link of a chain. *)
-$links = Child | Descendant | Adjacent | Sibling;
-
-combinatorQ[$links[___]] := True;
-combinatorQ[_] := False;
-
-(* A name, a Condition or a test around a pattern never changes what it is. *)
-patternBase[Verbatim[Pattern][_, x_]] := patternBase[x];
-patternBase[Verbatim[Condition][x_, _]] := patternBase[x];
-patternBase[Verbatim[PatternTest][x_, _]] := patternBase[x];
-patternBase[x_] := x;
-
-(* Valid tree for XMLCases *)
-validTreeQ[XMLObject["Document"][_, _XMLElement, _]] := True;
-validTreeQ[_XMLElement] := True;
-validTreeQ[expr_List] := AllTrue[expr, treeMemberQ];
-validTreeQ[_] := False;
-
-(* What a list given as a tree can hold *)
-treeMemberQ[_XMLElement | _String] := True;
-treeMemberQ[_] := False;
-
-(* Issues head's message for a tree refused by validTreeQ or validTextInputQ:
-   badmember with a list's first refused member, otherwise badtree. A list
-   given here must have been refused, so it has a member that is not one. *)
-messageTreeRefusal[head_, tree_List] :=
-  With[{i = LengthWhile[tree, treeMemberQ] + 1},
-    Message[MessageName[head, "badmember"], i, Head[tree[[i]]]]];
-messageTreeRefusal[head_, tree_] := Message[MessageName[head, "badtree"], Head[tree]];
-
-(* Input surface for the text extractors: the selector surface, plus a bare
-   string (text-of-a-string is meaningful, unlike for the selectors). *)
-validTextInputQ[_String] := True;
-validTextInputQ[t_] := validTreeQ[t];
-
-(* The bare string patterns written where a pattern is matched. A StringExpression
-   inside a PatternTest's test or a Condition's test is an argument to a string
-   function, not a pattern, and neither is anything under Verbatim. *)
-SetAttributes[barePatterns, HoldAllComplete];
-barePatterns[s_StringExpression] := {s};
-barePatterns[Verbatim[PatternTest][p_, _]] := barePatterns[p];
-barePatterns[Verbatim[Condition][p_, _]] := barePatterns[p];
-barePatterns[Verbatim[Verbatim][___]] := {};
-barePatterns[_[args___]] := Join @@ (barePatterns /@ Unevaluated[{args}]);
-barePatterns[_] := {};
-
-(* =========================================================== *)
-(* HTMLWhitespace                                               *)
-(* The delimiter of the space-separated microsyntax.            *)
-(* =========================================================== *)
-
-PackageExported[HTMLWhitespace]
-HTMLWhitespace::usage = "HTMLWhitespace is a string pattern that matches a run of one or more HTML whitespace characters: space, tab, line feed, form feed and carriage return. Use StringSplit[value, HTMLWhitespace] to split a class attribute as a browser does. HTMLWhitespace does not match no-break space or other Unicode whitespace, which StringSplit splits on by default.";
-
-(* A run, not one character, mirroring Whitespace rather than
-   WhitespaceCharacter: splitting "a  b" on it gives no phantom empty token. *)
-HTMLWhitespace = (" " | "\t" | "\n" | "\f" | "\r") ..;
-
-(* =========================================================== *)
-(* HTMLClassList                                                *)
-(* The extraction form of the class reading. Shares classList   *)
-(* with the class reading's split, so extracting and matching   *)
-(* agree on the same element.                                   *)
-(* =========================================================== *)
-
-(* The class list: the tokens of the class attribute, split on HTMLWhitespace
-   as a browser splits them. Splitting gives the empty list for "", for
-   whitespace-only values, and (via the "" default in classValue) for a missing
-   attribute \[LongDash] the three ways an element ends up carrying no classes, which
-   must be indistinguishable here. *)
-classList[val_String] := StringSplit[val, HTMLWhitespace];
-
-(* Absent class reads as "", the same value a present-but-empty class="" carries. *)
-classValue[attrs_] := Lookup[attrs, "class", ""];
-
-PackageExported[HTMLClassList]
-HTMLClassList::usage = "HTMLClassList[element] gives the classes of an XMLElement as a list of strings: its class attribute split on HTMLWhitespace, in the order written and with duplicates kept. An element with no class attribute, or with a class attribute that is empty or only whitespace, gives {}. HTMLClassList takes a single element; for many elements, use HTMLClassList /@ XMLCases[tree, pattern].";
-
-HTMLClassList[XMLElement[_, attrs_List, _]] := classList[classValue[attrs]];
-
-(* A list, a document or a bare string is refused, not interpreted: a list is a
-   forest elsewhere in the paclet (one answer), where concatenated class lists
-   mean nothing, and a bare string is a text node, not an attribute value. *)
-HTMLClassList[other_] :=
-  (Message[HTMLClassList::notelement, Head[other]]; $Failed);
-
-HTMLClassList[args___] /; (countMessage[HTMLClassList, {args}, {1, 1}]; False) := Null;
-
-(* =========================================================== *)
-(* CSSClass                                                     *)
-(* Obsolete (ADR 0011): the class list is the "classList" key.  *)
-(* =========================================================== *)
-
-PackageExported[CSSClass]
-CSSClass::usage = "CSSClass is obsolete. Match an element's class list with the \"classList\" key of XMLPattern instead: XMLPattern[tag, \"classList\" -> \"cls\"].";
-
-CSSClass[___] := (Message[CSSClass::obs]; $Failed);
-
-(* =========================================================== *)
-(* Readings (ADR 0012)                                          *)
-(* A reading fixes a microsyntax to a literal attribute key and *)
-(* names the list key an XML pattern reaches its token list by. *)
-(* =========================================================== *)
-
-PackageExported[$AttributeReadings]
-$AttributeReadings::usage = "$AttributeReadings is an Association that gives, for each attribute it names, how the attribute value is split into a list of tokens and the list key that gives that list in an XMLPattern. Each entry is an Association with the fields Method, Delimiters, \"TrimWhitespace\" and \"ListKey\", any of which can be omitted. Method \"SpaceSeparated\" (the default) splits on HTMLWhitespace and does not trim tokens. Method \"CommaSeparated\" splits on \",\" and trims HTML whitespace from each token. Delimiters (a string pattern) and \"TrimWhitespace\" (True or False) override the setting that Method gives. \"ListKey\" -> Automatic gives the attribute name followed by \"List\". Keys are attribute names given as strings; a {namespace, name} attribute cannot have an entry. By default, $AttributeReadings has one entry, for \"class\", with the list key \"classList\". The \"AttributeReadings\" option of functions such as XMLCases adds entries for one call, and an entry for an attribute already present replaces it. Block[{$AttributeReadings = ...}, ...] replaces the whole Association, including the \"class\" entry.";
-
-$AttributeReadings = <|
-  "class" -> <|Method -> "SpaceSeparated", Delimiters -> Automatic,
-    "TrimWhitespace" -> Automatic, "ListKey" -> Automatic|>|>;
-
-(* Method is shorthand defining the other two fields. *)
-$methodDefaults = <|
-  "SpaceSeparated" -> <|Delimiters -> HTMLWhitespace, "TrimWhitespace" -> False|>,
-  "CommaSeparated" -> <|Delimiters -> ",", "TrimWhitespace" -> True|>|>;
-
-splitter[delim_, False] := Function[v, StringSplit[v, delim]];
-(* Trimming strips HTML whitespace, as the comma microsyntax does: a no-break
-   space is part of a token. *)
-splitter[delim_, True] := Function[v, StringTrim[#, HTMLWhitespace] & /@ StringSplit[v, delim]];
-
-(* A readings table resolved for the compiler: list key -> {raw key, split}. *)
-resolveReading[key_String -> spec_Association] :=
-  With[{defaults = $methodDefaults[Lookup[spec, Method, "SpaceSeparated"]]},
-    listKeyOf[key, spec] ->
-      {key, splitter[
-        Replace[Lookup[spec, Delimiters, Automatic], Automatic -> defaults[Delimiters]],
-        Replace[Lookup[spec, "TrimWhitespace", Automatic], Automatic -> defaults["TrimWhitespace"]]]}];
-
-resolveReadings[readings_Association] := Association[resolveReading /@ Normal[readings]];
-
-(* The readings table in force, $AttributeReadings, resolved. A table that
-   fails validation has said why, and gives $Failed. *)
-readingsInForce[] :=
-  Catch[resolveReadings[validReadings[validTable[$AttributeReadings]]], $refusal];
-
-(* A consumer's AttributeReadings option is shorthand for a Block of the global
-   over the whole call (#34), so a nested XML* call in a condition or a rule
-   body, and any function it calls, sees it. It adds to the global; an entry
-   for a key the global already has replaces that key's entry whole. Only the
-   two tables' shapes are checked here, as Join needs them; each query compiled
-   in the call validates the joined table. *)
-SetAttributes[withReadings, HoldRest];
-withReadings[opt_, call_] :=
-  Replace[Catch[Join @@ (validTable /@ {$AttributeReadings, opt}), $refusal], {
-    $Failed -> $Failed,
-    t_ :> Block[{$AttributeReadings = t}, withListKeyWarnings[call]]}];
-
-(* The list keys already warned about in this call (#24). The outermost call
-   sets up the set and every nested call shares it, so each key is warned
-   about once per call, however many queries the call compiles, and again on
-   the next call. Outside any call it is None, and every warning is issued. *)
-$warnedListKeys = None;
-
-SetAttributes[withListKeyWarnings, HoldAll];
-withListKeyWarnings[call_] := If[$warnedListKeys === None, Block[{$warnedListKeys = <||>}, call], call];
-
-(* A Block of $AttributeReadings, the option's or a caller's, hides the
-   symbol's message texts too, so a refusal gives its text back for the
-   Block's duration. *)
-$readingMessages = AssociationMap[MessageName[$AttributeReadings, #] &,
-  {"notassoc", "badkey", "badentry", "badfield", "badmethod", "badvalue", "duplistkey", "listkeyisreading"}];
-
-refuseReading[tag_String, args___] := (
-  If[!StringQ[MessageName[$AttributeReadings, tag]],
-    MessageName[$AttributeReadings, tag] = $readingMessages[tag]];
-  refuse[MessageName[$AttributeReadings, tag], args]);
-
-validTable[t_Association] := t;
-validTable[t_] := refuseReading["notassoc", t];
-
-validReadings[readings_] :=
-  (KeyValueMap[validReading, readings]; validListKeys[readings]; readings);
-
-listKeyOf[key_, spec_] := Replace[Lookup[spec, "ListKey", Automatic], Automatic -> key <> "List"];
-
-validListKeys[readings_] :=
-  With[{listKeys = KeyValueMap[listKeyOf, readings]},
-    Replace[Select[Tally[listKeys], Last[#] > 1 &],
-      {{k_, _}, ___} :> refuseReading["duplistkey", k]];
-    Replace[Intersection[listKeys, Keys[readings]],
-      {k_, ___} :> refuseReading["listkeyisreading", k]]];
-
-$readingFields = {Method, Delimiters, "TrimWhitespace", "ListKey"};
-
-validReading[key_, _] /; !StringQ[key] := refuseReading["badkey", key];
-validReading[key_, spec_] /; !AssociationQ[spec] := refuseReading["badentry", key, spec];
-validReading[key_, spec_] := (
-  Replace[Complement[Keys[spec], $readingFields],
-    {f_, ___} :> refuseReading["badfield", key, f]];
-  If[!KeyExistsQ[$methodDefaults, Lookup[spec, Method, "SpaceSeparated"]],
-    refuseReading["badmethod", key, spec[Method]]];
-  KeyValueMap[
-    If[!validFieldQ[#1, #2], refuseReading["badvalue", key, #1, #2]] &,
-    KeyDrop[spec, Method]]);
-
-(* Whether a value is a string pattern is the string functions' own judgement. *)
-validFieldQ[Delimiters, d_] := d === Automatic || Quiet[Check[StringFreeQ["", d]; True, False]];
-validFieldQ["TrimWhitespace", t_] := MatchQ[t, Automatic | True | False];
-validFieldQ["ListKey", k_] := MatchQ[k, Automatic | _String];
-
-(* =========================================================== *)
-(* Materialisation (ADR 0012)                                   *)
-(* A query naming a list key runs on a tree whose elements each *)
-(* carry the token list beside the raw value, under the private *)
-(* key head tok (inert: no definitions). unmaterialised is the  *)
-(* exact inverse: unmaterialised[materialise[e, ...]] === e.    *)
-(* =========================================================== *)
-
-(* Only the distinct raw values on the tree are split: a page has a handful of
-   distinct class strings across thousands of elements. An absent attribute
-   reads as {}, as a browser's classList does. *)
-tokenMap[tree_, {key_, split_}, level_] :=
-  With[{vals = DeleteDuplicates @
-      Cases[tree, XMLElement[_, a_List, _] :> Lookup[a, key, Nothing], level]},
-    AssociationThread[vals, split /@ vals]];
-
-(* One pass per list key: nearly every query names one. *)
-materialise[tree_, readings_List, level_ : {0, Infinity}] :=
-  Fold[materialiseKey[#1, #2, level] &, tree, readings];
-
-materialiseKey[tree_, reading : {key_, _}, level_] :=
-  With[{map = tokenMap[tree, reading, level]},
-    Replace[tree,
-      XMLElement[t_, a_List, c_] :>
-        XMLElement[t, Append[a, tok[key] -> Lookup[map, Lookup[a, key, None], {}]], c],
-      level]];
-
-(* An element materialised when it is asked for, the distinct raw values on
-   tree split once, up front: for rules tried on one element at a time. *)
-materialiser[_, {}] := Identity;
-materialiser[tree_, readings_] :=
-  With[{maps = {First[#], tokenMap[tree, #, {0, Infinity}]} & /@ readings},
-    attachTokens[maps, #] &];
-
-attachTokens[maps_, XMLElement[t_, a_List, c_]] :=
-  XMLElement[t, Join[a, Function[{key, map}, tok[key] -> Lookup[map, Lookup[a, key, None], {}]] @@@ maps], c];
-
-(* Every token list removed, at any depth, from whatever a name or a test can
-   see: an element, an attribute list, a list of copied attribute lists, or a
-   sequence of these (a name on a run of children binds a Sequence). It is
-   exact because nothing else in a tree has the head tok. *)
-unmaterialised[xs___] := Sequence @@ DeleteCases[{xs}, _tok -> _, Infinity];
 
 (* =========================================================== *)
 (* The query compiler                                           *)
@@ -622,12 +281,7 @@ unboundEmpty[held_, names_] :=
 
 (* ---- Element patterns ---- *)
 
-PackageExported[XMLPattern]
-XMLPattern::usage = "XMLPattern[tag] is an XML pattern that matches any XMLElement whose tag matches tag. XMLPattern[tag, attrs] also requires the element's attributes to match attrs. MatchQ and Cases treat XMLPattern as a literal expression; use it with XMLCases, XMLFirstCase, XMLDeleteCases, XMLMatchQ and the \"Roles\" and \"Constructs\" options. attrs is a \"key\" -> value rule, a bare \"key\" (any value), or a list of these, and can be named or tested as a whole. The element may have other attributes as well. A key is a string, a {namespace, name} pair, or alternatives of these. A value is any pattern, matched against the whole attribute value. The list key \"classList\" gives the element's classes as a list of strings, and \"classList\" -> \"cls\" matches an element that has the class cls. $AttributeReadings can add list keys for other attributes.";
-
 cElem[XMLPattern[args___]] := cXMLPattern[{args}];
-PackageExported[XMLDocument]
-XMLDocument::usage = "XMLDocument[] is a pattern for the parent of the top-level elements of a tree, used as the first stage of a Child or Descendant combinator in XMLCases, XMLFirstCase and XMLDeleteCases. Child[XMLDocument[], pattern] gives the top-level elements that match pattern: the root element of an XMLObject, or the elements of a list. On a bare XMLElement, XMLDocument[] is a parent above it, so Child[XMLDocument[], XMLPattern[_], pattern] gives the children of the element that match pattern. Descendant[XMLDocument[], pattern] gives every element that matches pattern, as pattern alone does. In a list stage, Child[XMLDocument[] | XMLPattern[_], {...}] counts the top-level elements as the children of the document, so Child[XMLDocument[] | XMLPattern[_], {XMLPattern[\"html\"], ___}] matches the root element of a document. XMLDocument[] takes no arguments, and cannot be named, have a condition or test of its own, or be a later stage. The tree given is never a result.";
 
 (* The document above the top elements (ADR 0018), featureless. A chain site
    {0} stands for it, where the tree has its head, which this matches. *)
@@ -1570,18 +1224,6 @@ plainQuery[q_] :=
 (* recognised shape the selected child.                          *)
 (* =========================================================== *)
 
-PackageExported[Child]
-Child::usage = "Child[parentPat, childPat] is a combinator for XMLCases, XMLFirstCase and XMLDeleteCases that matches elements that match childPat and are direct children of an element that matches parentPat. Child[parentPat, {e1, e2, ...}] matches the list of patterns {e1, e2, ...} against the element children of each element that matches parentPat, leaving out text, and selects the child in the place of the last entry that is an XML pattern: Child[XMLPattern[_], {XMLPattern[\"li\"], ___}] matches each li that is the first element child of its parent, and Child[XMLPattern[_], {PatternSequence[_, _] ..., XMLPattern[\"tr\"], ___}] the odd rows. The other entries are patterns such as _, ___, Repeated, Except and PatternSequence over the children. Names in the list are bound as in a WL list pattern, where the first way the list matches binds them, and a name on the list, s : {...}, binds the List of element children. Child[pat1, pat2, pat3, ...] is Child[pat1, Child[pat2, pat3, ...]], so Child[a, b, c] matches each c that is a child of a b that is a child of an a. Each argument is a stage: an XMLPattern, another combinator, a CSS selector string, or alternatives of these. The first argument can also be XMLDocument[], the parent of the top-level elements of the tree, or alternatives that hold it. After Child or Descendant, a stage can also be a list of patterns for the parent's element children. A stage that is alternatives holding a combinator is each of them in turn, so Child[a, Descendant[b, c] | d] matches each c inside a b that is a child of an a, and each d that is a child of an a. Stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements. A condition on a stage can use the names bound in that stage. A condition on the whole combinator can use the names bound in all its stages.";
-
-PackageExported[Descendant]
-Descendant::usage = "Descendant[ancestorPat, descPat] is a combinator for XMLCases, XMLFirstCase and XMLDeleteCases that matches elements that match descPat and are nested at any depth inside an element that matches ancestorPat. Descendant[ancestorPat, {e1, e2, ...}] matches the list of patterns {e1, e2, ...} against the element children of each element that matches ancestorPat or lies inside one, one parent at a time, as Child does, so Descendant[XMLPattern[\"div\"], {XMLPattern[\"p\"], ___}] matches each p inside a div that is the first element child of its parent. Each such element is given once, however many of its ancestors match. A name bound in ancestorPat, as used in a rule body, gives the outermost matching ancestor. Descendant[pat1, pat2, pat3, ...] is Descendant[pat1, Descendant[pat2, pat3, ...]], so Descendant[a, b, c] matches each c inside a b inside an a. Each argument is a stage: an XMLPattern, another combinator, a CSS selector string, or alternatives of these. The first argument can also be XMLDocument[], the parent of the top-level elements of the tree, or alternatives that hold it. After Child or Descendant, a stage can also be a list of patterns for the parent's element children. A stage that is alternatives holding a combinator is each of them in turn, so Child[a, Descendant[b, c] | d] matches each c inside a b that is a child of an a, and each d that is a child of an a. Stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements. A condition on a stage can use the names bound in that stage. A condition on the whole combinator can use the names bound in all its stages.";
-
-PackageExported[Adjacent]
-Adjacent::usage = "Adjacent[beforePat, afterPat] is a combinator for XMLCases, XMLFirstCase and XMLDeleteCases that matches elements that match afterPat and immediately follow a sibling that matches beforePat. Only elements count as siblings, not text. Adjacent[beforePat, afterPat] gives the same as Child[XMLDocument[] | XMLPattern[_], {___, beforePat, afterPat, ___}], so the top-level elements of a list are siblings. Adjacent[pat1, pat2, pat3, ...] is Adjacent[pat1, Adjacent[pat2, pat3, ...]], so Adjacent[a, b, c] matches each c that immediately follows a b that immediately follows an a. Each argument is a stage: an XMLPattern, another combinator, a CSS selector string, or alternatives of these. The first argument can also be XMLDocument[], the parent of the top-level elements of the tree, or alternatives that hold it. After Child or Descendant, a stage can also be a list of patterns for the parent's element children. A stage that is alternatives holding a combinator is each of them in turn, so Child[a, Descendant[b, c] | d] matches each c inside a b that is a child of an a, and each d that is a child of an a. Stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements. A condition on a stage can use the names bound in that stage. A condition on the whole combinator can use the names bound in all its stages.";
-
-PackageExported[Sibling]
-Sibling::usage = "Sibling[beforePat, afterPat] is a combinator for XMLCases, XMLFirstCase and XMLDeleteCases that matches elements that match afterPat and follow a sibling that matches beforePat, at any distance. Only elements count as siblings, not text. Each such element is given once. Sibling[beforePat, afterPat] gives the same as Child[XMLDocument[] | XMLPattern[_], {___, beforePat, ___, afterPat, ___}], so the top-level elements of a list are siblings. A name bound in beforePat, as used in a rule body, gives the first matching earlier sibling in document order. Sibling[pat1, pat2, pat3, ...] is Sibling[pat1, Sibling[pat2, pat3, ...]], so Sibling[a, b, c] matches each c that follows a b that follows an a. Each argument is a stage: an XMLPattern, another combinator, a CSS selector string, or alternatives of these. The first argument can also be XMLDocument[], the parent of the top-level elements of the tree, or alternatives that hold it. After Child or Descendant, a stage can also be a list of patterns for the parent's element children. A stage that is alternatives holding a combinator is each of them in turn, so Child[a, Descendant[b, c] | d] matches each c inside a b that is a child of an a, and each d that is a child of an a. Stages chain left to right, as in a CSS selector, so Descendant[a, Child[b, c]] and Child[Descendant[a, b], c] select the same elements. A condition on a stage can use the names bound in that stage. A condition on the whole combinator can use the names bound in all its stages.";
-
 (* Every combinator query runs as a chain, nested or not, tested or not. *)
 chainQ[q_] := q["Links"] =!= {};
 
@@ -2211,45 +1853,6 @@ deleteAt[tree : XMLObject["Document"][_, _, _], ps_] /; MemberQ[ps, {2}] :=
   (Message[XMLDeleteCases::root]; deleteAt[tree, DeleteCases[ps, {2}]]);
 deleteAt[tree_, {}] := tree;
 deleteAt[tree_, ps_] := Delete[tree, ps];
-
-(* =========================================================== *)
-(* Argument counts and options                                  *)
-(* =========================================================== *)
-
-(* Only a rule naming an option of f is read as one: any other rule, such as
-   XMLFirstCase's default, is an argument. *)
-optionRuleQ[f_][(Rule | RuleDelayed)[name_, _]] :=
-  MemberQ[Keys[Options[f]], ToString[name]] || passedOptionQ[f, name];
-optionRuleQ[_][_] := False;
-
-(* HTMLToTree also takes Tree's options, which it passes on to Tree *)
-passedOptionQ[HTMLToTree, name_] := treeOptionNameQ[name];
-passedOptionQ[_, _] := False;
-
-optionQ[f_][a_] := MatchQ[a, _?(optionRuleQ[f]) | {__?(optionRuleQ[f])}];
-
-(* Each public function ends with
-   f[args___] /; (countMessage[f, {args}, {min, max}]; False) := Null,
-   for a call that no other definition takes. countMessage gives the message a
-   built-in gives when the number of positional arguments is outside
-   {min, max} (argx, argrx or argt), and the condition fails either way, so the
-   call stays unevaluated, as a built-in's does. The options of f at the end of
-   args are not counted, but the first min arguments are always positional, so
-   a query pattern -> rhs is never read as an option.
-   A one-argument call gives no message: for XMLMatchQ it is the operator form,
-   and for XMLCases, XMLFirstCase and XMLDeleteCases it has the shape of an
-   operator form, as Cases[pattern] has, which they may get. *)
-countMessage[_, {_}, _] := Null;
-countMessage[f_, args_List, spec : {min_, max_}] :=
-  With[{
-      optionCount = LengthWhile[Reverse[args], optionQ[f]],
-      alwaysPositional = Min[min, Length[args]]},
-    With[{n = Max[alwaysPositional, Length[args] - optionCount]},
-      If[n < min || n > max, argumentCountMessage[f, n, spec]]]];
-
-argumentCountMessage[f_, n_, {1, 1}] := Message[MessageName[f, "argx"], f, n];
-argumentCountMessage[f_, n_, {m_, m_}] := Message[MessageName[f, "argrx"], f, n, m];
-argumentCountMessage[f_, n_, {min_, max_}] := Message[MessageName[f, "argt"], f, n, min, max];
 
 (* =========================================================== *)
 (* XMLCases                                                     *)
