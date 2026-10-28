@@ -277,7 +277,7 @@ Cell["XMLDeleteCases::root: The root element of an XMLObject cannot be deleted; 
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["XMLDocument[] is no longer a stage; give a list pattern over the top elements:", "ExampleText"], Cell[BoxData["fragment={XMLElement[\"p\",{},{\"One\"}],XMLElement[\"div\",{},{XMLElement[\"p\",{},{\"Nested\"}]}]};
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give a list pattern over the top elements in place of a version 3 stage:", "ExampleText"], Cell[BoxData["fragment={XMLElement[\"p\",{},{\"One\"}],XMLElement[\"div\",{},{XMLElement[\"p\",{},{\"Nested\"}]}]};
 XMLCases[fragment,XMLDocument[{___,x:XMLPattern[\"p\"],___}]:>x]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"One\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]]}, Open]],
