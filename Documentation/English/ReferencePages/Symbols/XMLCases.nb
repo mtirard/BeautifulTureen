@@ -284,24 +284,12 @@ Cell[BoxData["XMLCases[links,XMLPattern[\"p\",_,{___,x:XMLPattern[\"a\"],___}]:>
 
 Cell[BoxData[RowBox[{"{", RowBox[{"\"A\"", ",", "\"B\"", ",", "\"C\""}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give each link inside a nav once, including a link inside two nav elements:", "ExampleText"], Cell[BoxData["navs=ImportString[\"<nav id=\\\"outer\\\"><a>Home</a><nav id=\\\"inner\\\"><a>News</a></nav><a>About</a></nav>\",{\"HTML\",\"XMLObject\"}];
-XMLCases[navs,XMLPattern[\"nav\",_,Descendant[x:XMLPattern[\"a\"]]]:>HTMLTextContent[x]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give two equal values at different places as two results:", "ExampleText"], Cell[BoxData["hrefs=ImportString[\"<p><a href=\\\"/x\\\">one</a><a href=\\\"/x\\\">two</a></p>\",{\"HTML\",\"XMLObject\"}];
+XMLCases[hrefs,XMLPattern[\"a\",\"href\"->h_]:>h]"], "Input"],
 
-Cell[BoxData[RowBox[{"{", RowBox[{"\"Home\"", ",", "\"News\"", ",", "\"About\""}], "}"}]], "Output"],
+Cell[BoxData[RowBox[{"{", RowBox[{"\"/x\"", ",", "\"/x\""}], "}"}]], "Output"]}, Open]],
 
-Cell["Use the name of the nav as well to get one result for each pair of a nav and a link inside it:", "ExampleText"],
-
-Cell[BoxData["XMLCases[navs,XMLPattern[\"nav\",\"id\"->id_,Descendant[x:XMLPattern[\"a\"]]]:>{id,HTMLTextContent[x]}]"], "Input"],
-
-Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"\"outer\"", ",", "\"Home\""}], "}"}], ",", RowBox[{"{", RowBox[{"\"outer\"", ",", "\"News\""}], "}"}], ",", RowBox[{"{", RowBox[{"\"outer\"", ",", "\"About\""}], "}"}], ",", RowBox[{"{", RowBox[{"\"inner\"", ",", "\"News\""}], "}"}]}], "}"}]], "Output"],
-
-Cell["The results are grouped by the first name in the pattern, whatever the order in the right-hand side:", "ExampleText"],
-
-Cell[BoxData["XMLCases[navs,XMLPattern[\"nav\",\"id\"->id_,Descendant[x:XMLPattern[\"a\"]]]:>{HTMLTextContent[x],id}]"], "Input"],
-
-Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"\"Home\"", ",", "\"outer\""}], "}"}], ",", RowBox[{"{", RowBox[{"\"News\"", ",", "\"outer\""}], "}"}], ",", RowBox[{"{", RowBox[{"\"About\"", ",", "\"outer\""}], "}"}], ",", RowBox[{"{", RowBox[{"\"News\"", ",", "\"inner\""}], "}"}]}], "}"}]], "Output"]}, Open]],
-
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give each link inside a nav once, even a link inside two nav elements:", "ExampleText"], Cell[BoxData["links=ImportString[\"<p><a href=\\\"/a\\\">A</a><a href=\\\"/b\\\">B</a><a href=\\\"/c\\\">C</a></p>\",{\"HTML\",\"XMLObject\"}];
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["An unused name is a test, so this gives each link that has a later link, once:", "ExampleText"], Cell[BoxData["links=ImportString[\"<p><a href=\\\"/a\\\">A</a><a href=\\\"/b\\\">B</a><a href=\\\"/c\\\">C</a></p>\",{\"HTML\",\"XMLObject\"}];
 XMLCases[links,XMLPattern[\"p\",_,{___,x:XMLPattern[\"a\"],___,y:XMLPattern[\"a\"],___}]:>HTMLTextContent[x]]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"\"A\"", ",", "\"B\""}], "}"}]], "Output"],
@@ -318,10 +306,22 @@ Cell[BoxData["XMLCases[links,XMLPattern[\"a\"]:>\"found\"]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", "\"found\"", "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give two equal values at different places as two results:", "ExampleText"], Cell[BoxData["hrefs=ImportString[\"<p><a href=\\\"/x\\\">one</a><a href=\\\"/x\\\">two</a></p>\",{\"HTML\",\"XMLObject\"}];
-XMLCases[hrefs,XMLPattern[\"a\",\"href\"->h_]:>h]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give each link inside a nav once, including a link inside two nav elements:", "ExampleText"], Cell[BoxData["navs=ImportString[\"<nav id=\\\"outer\\\"><a>Home</a><nav id=\\\"inner\\\"><a>News</a></nav><a>About</a></nav>\",{\"HTML\",\"XMLObject\"}];
+XMLCases[navs,XMLPattern[\"nav\",_,Descendant[x:XMLPattern[\"a\"]]]:>HTMLTextContent[x]]"], "Input"],
 
-Cell[BoxData[RowBox[{"{", RowBox[{"\"/x\"", ",", "\"/x\""}], "}"}]], "Output"]}, Open]],
+Cell[BoxData[RowBox[{"{", RowBox[{"\"Home\"", ",", "\"News\"", ",", "\"About\""}], "}"}]], "Output"],
+
+Cell["Use the name of the nav as well to get one result for each pair of a nav and a link inside it:", "ExampleText"],
+
+Cell[BoxData["XMLCases[navs,XMLPattern[\"nav\",\"id\"->id_,Descendant[x:XMLPattern[\"a\"]]]:>{id,HTMLTextContent[x]}]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"\"outer\"", ",", "\"Home\""}], "}"}], ",", RowBox[{"{", RowBox[{"\"outer\"", ",", "\"News\""}], "}"}], ",", RowBox[{"{", RowBox[{"\"outer\"", ",", "\"About\""}], "}"}], ",", RowBox[{"{", RowBox[{"\"inner\"", ",", "\"News\""}], "}"}]}], "}"}]], "Output"],
+
+Cell["The results are grouped by the first name in the pattern, whatever the order in the right-hand side:", "ExampleText"],
+
+Cell[BoxData["XMLCases[navs,XMLPattern[\"nav\",\"id\"->id_,Descendant[x:XMLPattern[\"a\"]]]:>{HTMLTextContent[x],id}]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"\"Home\"", ",", "\"outer\""}], "}"}], ",", RowBox[{"{", RowBox[{"\"News\"", ",", "\"outer\""}], "}"}], ",", RowBox[{"{", RowBox[{"\"About\"", ",", "\"outer\""}], "}"}], ",", RowBox[{"{", RowBox[{"\"News\"", ",", "\"inner\""}], "}"}]}], "}"}]], "Output"]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Use a name twice in one list to require equal values, here the same class as an earlier sibling:", "ExampleText"], Cell[BoxData["list=ImportString[\"<ul><li class=\\\"x\\\">1</li><li class=\\\"y\\\">2</li><li class=\\\"x\\\">3</li></ul>\",{\"HTML\",\"XMLObject\"}];
 XMLCases[list,XMLPattern[\"ul\",_,{___,XMLPattern[\"li\",\"class\"->c_],___,item:XMLPattern[\"li\",\"class\"->c_],___}]:>HTMLTextContent[item]]"], "Input"],
