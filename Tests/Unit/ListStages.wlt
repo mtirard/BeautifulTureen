@@ -485,12 +485,14 @@ TestCreate[
   TestID -> "list-refused-context-combinator"
 ];
 
+(* A list given to XMLMatchQ is a list pattern, which an element does not
+   match (tree-pattern spec, section 6). *)
 TestCreate[
   {XMLMatchQ[XMLElement["li", {}, {}], Child[any, {li}]],
    XMLMatchQ[XMLElement["li", {}, {}], {li}],
    HTMLInnerText[$five, "Roles" -> {Child[any, {li}] -> "Skip"}]},
-  {$Failed, $Failed, $Failed},
-  {XMLMatchQ::combinator, XMLMatchQ::liststage, HTMLInnerText::badpat},
+  {$Failed, False, $Failed},
+  {XMLMatchQ::combinator, HTMLInnerText::badpat},
   TestID -> "list-refused-one-element"
 ];
 

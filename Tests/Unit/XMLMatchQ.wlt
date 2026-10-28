@@ -117,3 +117,106 @@ TestCreate[
   {XMLMatchQ::badpat, XMLMatchQ::badpat},
   TestID -> "xmlmatchq-refuses-rule"
 ];
+
+(* === Tree patterns (spec section 6) === *)
+
+doc[root_] := XMLObject["Document"][{}, root, {}];
+e[tag_, id_String, c___] := XMLElement[tag, {"id" -> id}, {c}];
+el[tag_, c___] := XMLElement[tag, {}, {c}];
+
+nav = doc[e["nav", "o", e["a", "a1"], e["nav", "i", e["a", "a2"]], e["a", "a3"]]];
+row = doc[el["tr", el["th", "a"], el["td", "a"], el["td", "b"]]];
+
+(* The element is the pattern root; constraints look below it. *)
+TestCreate[
+  {XMLMatchQ[nav[[2]], XMLPattern["nav", _, Descendant[XMLPattern["a"], {2}]]],
+    XMLMatchQ[nav[[2]], XMLPattern["nav", _, Descendant[XMLPattern["a"], {3}]]]},
+  {True, False},
+  TestID -> "xmlmatchq-tree-pattern-root"
+];
+
+(* An XMLElement pattern is matched whole, contents included. *)
+TestCreate[
+  {XMLMatchQ[nav[[2, 3, 2]], XMLElement["nav", _, {XMLElement["a", {"id" -> "a2"}, {}]}]],
+    XMLMatchQ[nav[[2, 3, 2]], XMLElement["nav", _, {XMLElement["a", {"id" -> "a1"}, {}]}]]},
+  {True, False},
+  TestID -> "xmlmatchq-xmlelement-pattern"
+];
+
+(* An XMLDocument pattern tests a document; an element is not one. *)
+TestCreate[
+  {XMLMatchQ[nav, XMLDocument[{XMLPattern["nav"]}]], XMLMatchQ[nav, XMLDocument[{XMLPattern["a"]}]],
+    XMLMatchQ[nav[[2]], XMLDocument[{XMLPattern["nav"]}]], XMLMatchQ[nav[[2]], XMLDocument[]]},
+  {True, False, False, False},
+  TestID -> "xmlmatchq-document-pattern"
+];
+
+(* A kind mismatch is False: a document or a list against an element
+   pattern. *)
+TestCreate[
+  {XMLMatchQ[nav, XMLPattern["nav"]], XMLMatchQ[nav, XMLPattern[_, _, Descendant[XMLPattern["a"]]]],
+    XMLMatchQ[{el["a"]}, XMLPattern["a"]], XMLMatchQ[{el["a"]}, XMLDocument[{XMLPattern["a"]}]]},
+  {False, False, False, False},
+  TestID -> "xmlmatchq-kind-mismatch"
+];
+
+(* A list of elements against a list pattern, in the contents-list grammar:
+   strings are skipped. An element is not a list. *)
+TestCreate[
+  {XMLMatchQ[row[[2, 3]], {XMLPattern["th"], ___}], XMLMatchQ[row[[2, 3]], {XMLPattern["td"], ___}],
+    XMLMatchQ[{" ", el["a"], "x", el["b"]}, {XMLPattern["a"], XMLPattern["b"]}],
+    XMLMatchQ[{}, {}], XMLMatchQ[row[[2]], {___}], XMLMatchQ[row, {___}]},
+  {True, False, True, True, False, False},
+  TestID -> "xmlmatchq-list-pattern"
+];
+
+(* Named, conditioned, tested and alternative list patterns, as constraints
+   take them. *)
+TestCreate[
+  {XMLMatchQ[row[[2, 3]], l : {__} /; Length[l] == 3], XMLMatchQ[row[[2, 3]], l : {__} /; Length[l] == 2],
+    XMLMatchQ[row[[2, 3]], {___, XMLPattern["th"]} | {___, XMLPattern["td"]}],
+    XMLMatchQ[row[[2, 3]], {__}?(Length[#] == 3 &)],
+    XMLMatchQ[{el["a"]}, {XMLPattern["a"]}]},
+  {True, False, True, True, True},
+  TestID -> "xmlmatchq-list-pattern-forms"
+];
+
+(* Lists over the path a named Descendant binds (spec section 2). *)
+TestCreate[
+  {XMLCases[nav, XMLDocument[p : Descendant[x : XMLPattern["a"]] /; XMLMatchQ[p, {___, XMLPattern["nav", "id" -> "i"], ___}]] :> x[[2]]],
+    XMLCases[nav, XMLDocument[Descendant[x : XMLPattern["a"]]?(NoneTrue[XMLMatchQ["nav#i"]])] :> x[[2]]]},
+  {{{"id" -> "a2"}}, {{"id" -> "a1"}, {"id" -> "a3"}}},
+  TestID -> "xmlmatchq-path-tests"
+];
+
+(* A list entry that is not one element child is refused under XMLMatchQ. *)
+TestCreate[
+  XMLMatchQ[{el["a"]}, {Descendant[XMLPattern["a"]]}],
+  $Failed,
+  {XMLMatchQ::listentry},
+  TestID -> "xmlmatchq-list-entry-refused"
+];
+
+(* A rule, and a context selector, which looks above the element, are
+   refused; so is Descendant, which is a constraint, not a pattern. *)
+TestCreate[
+  {XMLMatchQ[el["a"], x : XMLPattern["a"] :> x], XMLMatchQ[el["a"], "nav a"], XMLMatchQ[el["a"], Descendant[XMLPattern["a"]]]},
+  {$Failed, $Failed, $Failed},
+  {XMLMatchQ::badpat, XMLMatchQ::badpat, Descendant::place},
+  TestID -> "xmlmatchq-refusals"
+];
+
+TestCreate[
+  XMLMatchQ[el["a"], "a" | "nav a"],
+  $Failed,
+  {XMLMatchQ::badpat},
+  TestID -> "xmlmatchq-refuses-context-selector-in-alternatives"
+];
+
+(* The operator form takes tree patterns and list patterns. *)
+TestCreate[
+  {Select[{nav[[2]], nav[[2, 3, 2]], nav}, XMLMatchQ[XMLPattern[_, _, Descendant[XMLPattern["a"]]]]],
+    Select[{row[[2, 3]], {}}, XMLMatchQ[{___, XMLPattern["td"]}]]},
+  {{nav[[2]], nav[[2, 3, 2]]}, {row[[2, 3]]}},
+  TestID -> "xmlmatchq-operator-form-tree-patterns"
+];

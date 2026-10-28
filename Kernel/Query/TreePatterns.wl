@@ -4,6 +4,12 @@
 (* Used by Query/Compiler.wl *)
 PackageScoped[constraintFormQ]
 
+(* Used by XMLFunctions.wl, for XMLMatchQ and XMLFreeQ *)
+PackageScoped[elementChainQ]
+PackageScoped[treeMatcher]
+PackageScoped[treeMatchQ]
+PackageScoped[treeFreeQ]
+
 (* Used by XMLFunctions.wl *)
 PackageScoped[treeQueryQ]
 PackageScoped[treeCases]
@@ -11,6 +17,9 @@ PackageScoped[treeResults]
 
 (* Used by Positions.wl *)
 PackageScoped[treePositions]
+
+(* Used by Tree.wl *)
+PackageScoped[treeTargets]
 
 (* =========================================================== *)
 (* Tree patterns (ADR 0023, 0024, 0025)                         *)
@@ -110,6 +119,14 @@ treePositions[head_, tree_, q_] := Block[{$positionsOut = True}, treeCases[head,
 
 $positionsOut = False;
 
+(* What Hide and Focus act on: for each result of q, the positions of its
+   counted names, whatever the right-hand side does with them. A result its
+   Conditions refuse gives none. A no-match is {}, never read as {} the
+   document. *)
+treeTargets[head_, tree_, q_] := Block[{$positionsOut = True, $targetsOut = True}, treeCases[head, tree, q, Infinity]];
+
+$targetsOut = False;
+
 (* query -> {Hold[lhs], Hold[rhs]}. A bare pattern is erased to r$ : p :> r$.
    A Rule's right-hand side was evaluated when the query was given, as in
    Cases; a Condition in its value is part of it, not a test. *)
@@ -172,6 +189,9 @@ checkExcept[lhs_, counted_] :=
 
 (* MessageName holds its first argument, so the consumer head is injected. *)
 refuseHere[tag_, args___] := With[{h = $head}, refuse[MessageName[h, tag], args]];
+(* A query of HTMLToTree's "Focus" or "Hide" that is not a pattern is the
+   option's mistake, badquery, as in the chain compiler. *)
+refuseHere["badpat" | "blank", x_] /; $queryOption =!= None := (badQuery[$queryOption, x]; Throw[$Failed, $refusal]);
 
 (* =========================================================== *)
 (* The index                                                    *)
@@ -179,11 +199,15 @@ refuseHere[tag_, args___] := With[{h = $head}, refuse[MessageName[h, tag], args]
 
 (* The top elements, numbered with the rest in preorder. Built with
    whole-tree operations rather than a walk. A bare element is the one top
-   element, {1}, under a virtual document whose value is {e}. *)
+   element, {1}, under a virtual document whose value is {e}. Only the
+   elements to DOM depth $indexDepth are indexed: an element test reads no
+   deeper than its pattern reaches. *)
+$indexDepth = Infinity;
+
 indexTree[input_] :=
   Module[{ps, n, pid, groups},
     $tops = Replace[input, {XMLObject["Document"][_, r_, _] :> {r}, l_List :> l, x_ :> {x}}];
-    ps = Position[$tops, _XMLElement, Heads -> False];
+    ps = Position[$tops, _XMLElement, {1, 2 $indexDepth - 1}, Heads -> False];
     ps = ps[[Ordering[PadRight[ps, Automatic, 0]]]];
     n = Length[ps];
     pid = AssociationThread[ps -> Range[n]];
@@ -197,6 +221,12 @@ indexTree[input_] :=
     Scan[($index[[# + 1]] = Range[Length[#]]) &, Values[groups]];
     $end = Prepend[subtreeEnds[Rest[$depth]], n];
     $keyLength = 3 Max[$depth] + 8];
+
+(* A bare element with nothing below it read, as an element test of an
+   XMLPattern without constraints is: its index, set directly. *)
+indexTree[x_XMLElement] /; $indexDepth == 1 :=
+  ($tops = {x}; $wlPos = {{1}}; $elem = {{x}, x}; $parent = {-1, 0}; $depth = {0, 1};
+    $kids = {{1}, {}}; $index = {0, 1}; $end = {1, 1}; $keyLength = 11);
 
 (* The last node of each subtree: the node before the next one, in preorder,
    that is no deeper. *)
@@ -219,9 +249,9 @@ posOf[0] := {};
 posOf[i_] := Lookup[$posMemo, i, $posMemo[i] = Append[posOf[$parent[[i + 1]]], $index[[i + 1]]]];
 
 (* The elements as the compiled tests of one set of readings see them:
-   materialised once per set, over the whole input, which moves no element. *)
+   materialised once per set, over the indexed input, which moves no element. *)
 materialElems[{}] := Rest[$elem];
-materialElems[r_] := Lookup[$matElems, Key[r], $matElems[r] = Extract[materialise[$tops, r], $wlPos]];
+materialElems[r_] := Lookup[$matElems, Key[r], $matElems[r] = Extract[materialise[$tops, r, {1, 2 $indexDepth - 1}], $wlPos]];
 
 (* =========================================================== *)
 (* Position order (spec section 5)                              *)
@@ -578,8 +608,20 @@ matchKind["Blank", nd_, i_] := If[MatchQ[elemOf[i], Blank @@ nd["Head"]], {<||>}
 
 matchKind["Literal", nd_, i_] :=
   If[MatchQ[elemOf[i], nd["Pattern"]],
-    If[nd["Keep"] === {}, {<||>}, {Map[bnd[{Missing["Literal"]}, #, {}] &, firstBindings[elemOf[i], nd["Pattern"], nd["Keep"]]]}],
+    If[nd["Keep"] === {}, {<||>},
+      {Association @ KeyValueMap[#1 -> bnd[{literalPosition[nd["Pattern"], #1, i]}, #2, {}] &,
+        firstBindings[elemOf[i], nd["Pattern"], nd["Keep"]]]}],
     {}];
+
+(* A name on a slot of the literal itself is at that slot: 0 the tag,
+   Key[All] the attributes, All the contents (spec section 4). A name deeper
+   in it has no position yet. *)
+literalPosition[pat_, name_, i_] :=
+  Replace[Lookup[literalSlots[pat], Key[name], None], {None -> Missing["Literal"], k_ :> Append[posOf[i], k]}];
+
+literalSlots[XMLElement[t_, a_, c_]] :=
+  Association @ Cases[{{Hold[t], 0}, {Hold[a], Key[All]}, {Hold[c], All}}, {Hold[Verbatim[Pattern][s_Symbol, _]], k_} :> (Hold[s] -> k)];
+literalSlots[_] := <||>;
 
 (* The document, node 0, is matched only by XMLDocument, which matches
    nothing else. *)
@@ -1082,6 +1124,9 @@ groupResult[rhs_, all_, testNames_, group_] :=
    several positions, gives the first it was bound at, in pattern order; a
    name that is absent, Sequence[]. *)
 resultOf[rhs_, all_, sol_] /; !$positionsOut := evaluated[substituted[rhs, all, sol]];
+resultOf[rhs_, all_, sol_] /; $targetsOut :=
+  If[guardedBody[rhs] =!= rhs && evaluated[substituted[rhs, all, sol]] === $noResult, $noResult,
+    positionOf[Lookup[sol, Key[#], None]] & /@ First[rhsNames[rhs, all]]];
 resultOf[rhs_, all_, sol_] :=
   With[{body = guardedBody[rhs]},
     If[body =!= rhs && evaluated[substituted[rhs, all, sol]] === $noResult, $noResult,
@@ -1126,3 +1171,109 @@ hostOf[root_, c_] :=
 pathTo[nd_, id_] :=
   If[nd["Id"] === id, {},
     Catch[Scan[With[{p = pathTo[#, id]}, If[p =!= None, Throw[Prepend[p, nd], $path]]] &, subNodes[nd]]; None, $path]];
+
+(* =========================================================== *)
+(* Element tests (spec section 6)                               *)
+(*                                                              *)
+(* XMLMatchQ and XMLFreeQ test a node of their input as the     *)
+(* pattern root; names select nothing, so only the names that   *)
+(* Conditions see are bound. A test is compiled once, which the *)
+(* operator forms keep (ADR 0013), and run on an index of the   *)
+(* input that reaches no deeper than the pattern does.          *)
+(* =========================================================== *)
+
+(* A pattern XMLMatchQ leaves to the chain compiler: one holding a combinator
+   at the top, which it refuses, or a pattern root of XMLPatterns without
+   constraints. The chain compiler tests those with one MatchQ, about a
+   hundred times faster per element than this engine, which matters in the
+   operator form, applied to every element. A string or a list is not a
+   combinator here: a context selector is refused by this engine, and a list
+   is a list pattern. *)
+elementChainQ[q_] := combinatorRootQ[q] || flatRootQ[q];
+
+combinatorRootQ[(Child | Adjacent | Sibling)[___]] := True;
+combinatorRootQ[d_Descendant] := chainStageQ[d];
+combinatorRootQ[Verbatim[Pattern][_, p_] | Verbatim[Condition][p_, _] | Verbatim[PatternTest][p_, _]] := combinatorRootQ[p];
+combinatorRootQ[alts_Alternatives] := AnyTrue[List @@ alts, combinatorRootQ];
+combinatorRootQ[_] := False;
+
+flatRootQ[x : XMLPattern[_] | XMLPattern[_, _]] := FreeQ[x, _Descendant | _XMLDocument];
+flatRootQ[s_String] := With[{t = Quiet[FromCSSSelector[s]]}, t === $Failed || !chainStageQ[t] && flatRootQ[t]];
+flatRootQ[Verbatim[Pattern][_, p_] | Verbatim[Condition][p_, _] | Verbatim[PatternTest][p_, _]] := flatRootQ[p];
+flatRootQ[alts_Alternatives] := AllTrue[List @@ alts, flatRootQ];
+flatRootQ[_] := False;
+
+(* The test of pattern q under head, or $Failed after a message. A rule is
+   refused: it gives a value, not a test. listsQ: whether a list pattern, in
+   the contents-list grammar, can be the root (XMLMatchQ's lists). *)
+treeMatcher[head_, q_, listsQ_] :=
+  Catch[
+    Block[{$head = head, $nodeId = 0, $order, $seen = <||>, $slotOf = <||>, $readings, $local = False,
+        $place = "query", $owner = XMLPattern, $namedPaths = False},
+      Module[{lhs = Hold[q], need, root, listQ = listsQ && listRootQ[q]},
+        If[MatchQ[q, _Rule | _RuleDelayed], refuseHere["badpat", q]];
+        $readings = Replace[readingsInForce[], $Failed :> Throw[$Failed, $refusal]];
+        $order = patternOrder[lhs];
+        need = conditionNames[lhs, namesIn[lhs]];
+        root = If[listQ, listRoot[q, need], compileRoot[lhs, need]];
+        <|"Head" -> head, "Root" -> root, "Lists" -> listQ, "Readings" -> $readings,
+          "Pending" -> pendingTests[root], "Reach" -> reachBelow[root]|>]],
+    $refusal];
+
+(* A list pattern, named, conditioned or tested, or alternatives of these. *)
+listRootQ[q_] := MatchQ[q, _List] ||
+  MatchQ[q, Verbatim[Pattern][_, x_] | Verbatim[Condition][x_, _] | Verbatim[PatternTest][x_, _] /; listRootQ[x]] ||
+  MatchQ[q, _Alternatives] && AllTrue[List @@ q, listRootQ];
+
+(* A list pattern matches the top elements of a list, the children of the
+   virtual document above them, as XMLDocument's contents list does. *)
+listRoot[q_, need_] :=
+  Block[{$owner = XMLMatchQ, $place = "constraint"},
+    With[{c = cConstraint[q, need]},
+      treeNode["XMLDocument", c["Names"], need, "Constraints" -> {c}, "MinKids" -> minKids[c]]]];
+
+(* How many DOM levels below its root node a pattern reads. *)
+reachBelow[nd_] := Switch[nd["Kind"],
+  "List", 1 + Max[0, reachBelow /@ subNodes[nd]],
+  "Descendant", nd["Levels"][[2]] + reachBelow[nd["Sub"]],
+  _, Max[0, reachBelow /@ subNodes[nd]]];
+
+(* The node of x the test is rooted at: the element, the document, or the
+   virtual document above a list's elements; None for any other input. Only
+   a list pattern takes a list, and it takes nothing else. *)
+testNode[m_, x_] :=
+  Which[
+    m["Lists"], If[ListQ[x] && validTreeQ[x], 0, None],
+    MatchQ[x, _XMLElement], 1,
+    MatchQ[x, XMLObject["Document"][_, _XMLElement, _]], 0,
+    True, None];
+
+(* f[] run on the index of x to DOM depth, with the test's compiled state. *)
+withIndex[m_, x_, depth_, f_] :=
+  Block[{$head = m["Head"], $readings = m["Readings"], $pendingAt = m["Pending"], $memo = <||>, $indexDepth = depth,
+      $elem, $parent, $depth, $kids, $index, $end, $wlPos, $tops, $posMemo = <||>, $keyMemo = <||>, $matElems = <||>,
+      $keyLength, $namedPaths = False},
+    indexTree[x];
+    f[]];
+
+rootMatchQ[m_, i_] := pending[<|"Id" -> "Top"|>, match[m["Root"], i]] =!= {};
+
+(* XMLMatchQ: whether x, as the pattern root, matches. A kind the pattern
+   cannot match is not an error: the document under an element pattern, an
+   element under an XMLDocument pattern, matches nothing. *)
+treeMatchQ[$Failed, _] := $Failed;
+treeMatchQ[m_, x_] :=
+  With[{i = testNode[m, x]},
+    i =!= None && withIndex[m, x, i + m["Reach"], rootMatchQ[m, i] &]];
+
+(* XMLFreeQ: whether no node at relative DOM depths lo to hi matches, x
+   itself at depth 0. A list is not a node: its elements are at depth 1. *)
+treeFreeQ[$Failed, _, _] := $Failed;
+treeFreeQ[m_, x_, {lo_, hi_}] :=
+  With[{b = If[MatchQ[x, _XMLElement], 1, 0]},
+    withIndex[m, x, b + hi + m["Reach"],
+      Function[
+        NoneTrue[
+          Select[Range[If[ListQ[x], 1, b], $end[[b + 1]]],
+            lo <= $depth[[# + 1]] - b <= hi && (# == 0 || candidateVector[m["Root"]][[#]] == 1) &],
+          rootMatchQ[m, #] &]]]];
