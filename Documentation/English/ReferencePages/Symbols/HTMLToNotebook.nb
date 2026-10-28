@@ -55,9 +55,15 @@ Cell[TextData[{"The role sets what an element becomes:
 | \"LineBreak\" | a newline in the surrounding cell | ", Cell[BoxData[StyleBox["br", "TR"]], "InlineFormula"], " |
 | \"Skip\" | dropped with its content | ", Cell[BoxData[StyleBox["script", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["style", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["head", "TR"]], "InlineFormula"], ", etc. |"}], "Notes"],
 
-Cell[TextData[{"Each rule of \"Roles\" or \"Constructs\" has the form ", Cell[BoxData[RowBox[{StyleBox["pattern", "TI"], "\[Rule]", StyleBox["val", "TI"]}]], "InlineFormula"], " or ", Cell[BoxData[RowBox[{StyleBox["pattern", "TI"], "\[RuleDelayed]", StyleBox["val", "TI"]}]], "InlineFormula"], ", and the rules may also be given as an ", Cell[BoxData[ButtonBox["Association", BaseStyle -> "Link", ButtonData -> "paclet:ref/Association"]], "InlineFormula"], ". ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " may be a CSS selector string, an ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], ", alternatives of them, or either with a condition ", Cell[BoxData["pat$ /; test$"], "InlineFormula"], "."}], "Notes"],
+Cell[TextData[{"Each rule of \"Roles\" or \"Constructs\" has the form ", Cell[BoxData[RowBox[{StyleBox["key", "TI"], "\[Rule]", StyleBox["val", "TI"]}]], "InlineFormula"], " or ", Cell[BoxData[RowBox[{StyleBox["key", "TI"], "\[RuleDelayed]", StyleBox["val", "TI"]}]], "InlineFormula"], ", and the rules may also be given as an ", Cell[BoxData[ButtonBox["Association", BaseStyle -> "Link", ButtonData -> "paclet:ref/Association"]], "InlineFormula"], ". ", Cell[BoxData[StyleBox["key", "TI"]], "InlineFormula"], " is one of two kinds:"}], "Notes"],
 
-Cell["In each option, the first rule that matches an element applies. An element that no rule matches gets its role from the built-in user-agent stylesheet, and its result from the first table above.", "Notes"],
+Cell[BoxData[GridBox[{
+{Cell["      ", "ModInfo"], StyleBox[Cell["key", "TableText"], FontSlant->"Italic"], StyleBox[Cell["selects", "TableText"], FontSlant->"Italic"]},
+{Cell["      ", "ModInfo"], Cell[TextData[{"an element test: an ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], ", an ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], " pattern, a CSS selector string that describes one element, or alternatives of these, each of which can be named, have a condition or have a test"}], "TableText"], Cell[TextData[{"each element that matches it as the top of the pattern; its names can be used in ", Cell[BoxData[StyleBox["val", "TI"]], "InlineFormula"]}], "TableText"]},
+{Cell["      ", "ModInfo"], Cell[TextData[{"a query: a rule such as ", Cell[BoxData[RowBox[{RowBox[{ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"], "[", RowBox[{"\"nav\"", ",", StyleBox["_", "TR"], ",", RowBox[{ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Descendant"], "[", "x : XMLPattern[\"a\"]", "]"}]}], "]"}], "\[RuleDelayed]", StyleBox["x", "TR"]}]], "InlineFormula"], ", or a CSS selector string that matches an element by what is above it, such as ", Cell[BoxData["\"nav a\""], "InlineFormula"]}], "TableText"], Cell[TextData[{"the elements that the names on its right-hand side match, found once in the whole of ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], "; its names cannot be used in ", Cell[BoxData[StyleBox["val", "TI"]], "InlineFormula"]}], "TableText"]}
+}]], "2ColumnTableMod"],
+
+Cell["In each option, the first rule that selects an element applies, whichever kind its key is. An element that no rule selects gets its role from the built-in user-agent stylesheet, and its result from the first table above. A query must select elements only.", "Notes"],
 
 Cell[TextData[{"The value of a \"Constructs\" rule may have the following forms:
 
@@ -73,7 +79,7 @@ Cell[TextData[{"The role decides whether an element becomes a cell or text in a 
 
 Cell[TextData[{Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " may use list keys, which stand for an attribute value split into a list of strings. The list key \"classList\" gives the classes of the element, and \"AttributeReadings\" adds list keys for other attributes, such as \"relList\" for ", Cell[BoxData[StyleBox["rel", "TR"]], "InlineFormula"], "."}], "Notes"],
 
-Cell[TextData[{"A name in ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " is bound to the element as it is in ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], ", without list keys. A function ", Cell[BoxData[StyleBox["f", "TI"]], "InlineFormula"], " is applied to the same element."}], "Notes"]
+Cell[TextData[{"A name in an element test is bound to the element as it is in ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], ", without list keys. A function ", Cell[BoxData[StyleBox["f", "TI"]], "InlineFormula"], " is applied to the same element."}], "Notes"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -251,7 +257,12 @@ Cell[BoxData["\"**note, warn:** Mind the step.\\n\\nPlain.\""], "Output"]}, Open
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Use a CSS selector string to make each ", Cell[BoxData[StyleBox["p", "TR"]], "InlineFormula"], " that has the class ", Cell[BoxData[StyleBox["note", "TR"]], "InlineFormula"], " a \"Section\" cell:"}], "ExampleText"], Cell[BoxData["ExportString[HTMLToNotebook[ImportString[\"<p class=\\\"note\\\">Heading-like</p><p>Body.</p>\",{\"HTML\",\"XMLObject\"}],\"Constructs\"->{\"p.note\"->\"Section\"}],\"Markdown\"]"], "Input"],
 
-Cell[BoxData["\"### Heading-like\\n\\nBody.\""], "Output"]}, Open]]}, Open]],
+Cell[BoxData["\"### Heading-like\\n\\nBody.\""], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give a CSS selector that looks above the element, to make the links inside a nav plain text:", "ExampleText"], Cell[BoxData["page=ImportString[\"<body><nav><a href=\\\"/\\\">Home</a></nav><p>See <a href=\\\"/about\\\">About</a>.</p></body>\",{\"HTML\",\"XMLObject\"}];
+ExportString[HTMLToNotebook[page,\"Constructs\"->{\"nav a\"->\"Plain\"}],\"Markdown\"]"], "Input"],
+
+Cell[BoxData["\"Home\\n\\nSee [About](/about).\""], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["AttributeReadings", "ExampleSubsection"], $Line = 0; Null]], "ExampleSubsection"], Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Split ", Cell[BoxData[StyleBox["rel", "TR"]], "InlineFormula"], " into tokens so that a rule can use the list key \"relList\":"}], "ExampleText"], Cell[BoxData["ExportString[HTMLToNotebook[ImportString[\"<p>Read <a rel=\\\"nofollow sponsored\\\" href=\\\"/ad\\\">this ad</a> <a href=\\\"/docs\\\">the docs</a>.</p>\",{\"HTML\",\"XMLObject\"}],\"Constructs\"->{XMLPattern[\"a\",\"relList\"->\"sponsored\"]->\"Plain\"},\"AttributeReadings\"-><|\"rel\"-><||>|>],\"Markdown\"]"], "Input"],
 
@@ -289,7 +300,7 @@ Cell[BoxData["\"- [The original document file (I think - I can't test it)](propo
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Convert the whole page to a single Markdown document:", "ExampleText"], Cell[BoxData["tree=Import[\"https://www.w3.org/History/1989/proposal.html\",{\"HTML\",\"XMLObject\"}];
 StringLength[ExportString[HTMLToNotebook[tree],\"Markdown\"]]"], "Input"],
 
-Cell[BoxData["30437"], "Output"]}, Open]]}, Open]],
+Cell[BoxData["30580"], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
@@ -330,9 +341,9 @@ Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"
 
 Cell[BoxData["\"bare link\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A rule applies to one element, so its pattern cannot be a combinator such as ", Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Child"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["HTMLToNotebook[ImportString[\"<nav><a href=\\\"/\\\">Home</a></nav>\",{\"HTML\",\"XMLObject\"}],\"Constructs\"->{Child[XMLPattern[\"nav\"],XMLPattern[\"a\"]]->\"Plain\"}]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A query must select elements, so a rule that names an attribute issues a message:", "ExampleText"], Cell[BoxData["HTMLToNotebook[XMLElement[\"p\",{},{XMLElement[\"a\",{\"href\"->\"/\"},{\"Home\"}]}],\"Constructs\"->{(XMLPattern[\"a\",\"href\"->h_]:>h)->\"Plain\"}]"], "Input"],
 
-Cell["HTMLToNotebook::badpat: The left-hand side of a rule should be an XMLPattern, alternatives of them, or either with a condition pat /; test or a test pat?f, or a CSS selector string that describes one element. Got Child[XMLPattern[\"nav\"], XMLPattern[\"a\"]].", "Message", "MSG"],
+Cell["HTMLToNotebook::keytarget: A query key selects the position {1, 1, Key[\"href\"]}, which is not an element. A \"Roles\" or \"Constructs\" query should select elements only.", "Message", "MSG"],
 
 Cell[BoxData["$Failed"], "Output"]}, Open]]}, Open]],
 
