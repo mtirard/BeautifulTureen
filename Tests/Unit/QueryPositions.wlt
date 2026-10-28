@@ -23,7 +23,7 @@ agreesQ[tree_, q_, n_ : Infinity] :=
   MemoryConstrained[TimeConstrained[
     With[{ps = positionsOf[tree, q, n], cs = XMLCases[tree, q, n]},
       ListQ[ps] && ps =!= {} && Extract[tree, ps] === cs && DuplicateFreeQ[ps] &&
-        MaximilienTirard`HTMLPatterns`Implementation`Private`documentOrdering[ps] === Range[Length[ps]]],
+        MaximilienTirard`HTMLPatterns`PackageScope`documentOrdering[ps] === Range[Length[ps]]],
     30, "time"], 2*^9, "memory"];
 
 (* The queries that select something on each input form. *)

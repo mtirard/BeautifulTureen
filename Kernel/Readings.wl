@@ -1,15 +1,27 @@
 (* ::Package:: *)
 (* HTMLPatterns: readings and materialisation (ADR 0012) *)
 
-(* Used by Implementation.wl *)
-PackageScoped[readingsInForce]
-PackageScoped[withReadings]
-PackageScoped[$warnedListKeys]
-PackageScoped[withListKeyWarnings]
-PackageScoped[materialise]
+(* Used by DisplayRoles.wl *)
 PackageScoped[materialiser]
-PackageScoped[unmaterialised]
+
+(* Used by DisplayRoles.wl and Query/Compiler.wl *)
+PackageScoped[readingsInForce]
+
+(* Used by Notebook.wl, Text.wl, Tree.wl and XMLFunctions.wl *)
+PackageScoped[withReadings]
+
+(* Used by Query/Compiler.wl *)
+PackageScoped[$warnedListKeys]
 PackageScoped[tok]
+
+(* Used by Query/Compiler.wl and Query/Run.wl *)
+PackageScoped[unmaterialised]
+
+(* Used by Query/Run.wl *)
+PackageScoped[materialise]
+
+(* Used by XMLFunctions.wl *)
+PackageScoped[withListKeyWarnings]
 
 (* =========================================================== *)
 (* Readings (ADR 0012)                                          *)

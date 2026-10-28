@@ -27,9 +27,9 @@ $compiledQueries = {
 SetAttributes[withRewriteCount, HoldFirst];
 withRewriteCount[expr_] :=
   Module[{n = 0},
-    Internal`InheritedBlock[{MaximilienTirard`HTMLPatterns`Implementation`Private`solvable},
-      PrependTo[DownValues[MaximilienTirard`HTMLPatterns`Implementation`Private`solvable],
-        HoldPattern[MaximilienTirard`HTMLPatterns`Implementation`Private`solvable[_]] /; (n++; False) :> Null];
+    Internal`InheritedBlock[{MaximilienTirard`HTMLPatterns`PackageScope`solvable},
+      PrependTo[DownValues[MaximilienTirard`HTMLPatterns`PackageScope`solvable],
+        HoldPattern[MaximilienTirard`HTMLPatterns`PackageScope`solvable[_]] /; (n++; False) :> Null];
       {expr, n}]];
 
 TestCreate[

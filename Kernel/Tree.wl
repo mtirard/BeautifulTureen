@@ -4,7 +4,7 @@
 (* Used by Common.wl *)
 PackageScoped[treeOptionNameQ]
 
-(* Used by Implementation.wl *)
+(* Used by Query/Compiler.wl *)
 PackageScoped[$treeQueryOff]
 
 (* =========================================================== *)

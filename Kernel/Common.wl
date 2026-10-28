@@ -3,22 +3,40 @@
    compiler gives meaning to, HTMLWhitespace, HTMLClassList, CSSClass,
    and argument counts and options *)
 
-(* Used by Implementation.wl *)
+(* Used by CSSSelector.wl *)
+PackageScoped[argumentCountMessage]
+
+(* Used by Notebook.wl, Query/Run.wl, Text.wl and Tree.wl *)
+PackageScoped[messageTreeRefusal]
+
+(* Used by Notebook.wl, Text.wl, Tree.wl and XMLFunctions.wl *)
+PackageScoped[countMessage]
+
+(* Used by Notebook.wl and Text.wl *)
+PackageScoped[validTextInputQ]
+
+(* Used by Query/Compiler.wl *)
 PackageScoped[validTagQ]
 PackageScoped[literalKeyQ]
 PackageScoped[keyLiterals]
 PackageScoped[$links]
 PackageScoped[combinatorQ]
-PackageScoped[patternBase]
-PackageScoped[validTreeQ]
-PackageScoped[messageTreeRefusal]
-PackageScoped[validTextInputQ]
 PackageScoped[barePatterns]
+
+(* Used by Query/Compiler.wl and Query/Run.wl *)
+PackageScoped[patternBase]
+
+(* Used by Query/Run.wl and Tree.wl *)
+PackageScoped[validTreeQ]
+
+(* Used by Tree.wl *)
 PackageScoped[classList]
+
+(* Used by Tree.wl and XMLFunctions.wl *)
 PackageScoped[optionRuleQ]
+
+(* Used by XMLFunctions.wl *)
 PackageScoped[optionQ]
-PackageScoped[countMessage]
-PackageScoped[argumentCountMessage]
 
 (* =========================================================== *)
 (* Validation helpers                                           *)
