@@ -99,7 +99,7 @@ TestCreate[
 TestCreate[
   XMLMatchQ[$lead, XMLPattern["p", "a", "b"]],
   $Failed,
-  {XMLPattern::nargs},
+  {XMLPattern::constraint},
   TestID -> "xmlmatchq-xmlpattern-refusal"
 ];
 

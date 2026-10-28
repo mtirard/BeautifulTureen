@@ -750,7 +750,7 @@ TestCreate[
     XMLCases[$note, "div.note > p" :> 1], XMLCases[$note, "p" -> 2],
     XMLFirstCase[$note, "div:not(.note) p"][[2]], Length[XMLCases[XMLDeleteCases[$note, "div.note"], "p"]],
     XMLMatchQ[XMLElement["p", {"class" -> "a b"}, {}], ".b"], XMLMatchQ[".b"][XMLElement["p", {"class" -> "a"}, {}]]},
-  {True, 2, {1, 1}, {2, 2, 2}, {"id" -> "q3"}, 1, True, False},
+  {True, 2, {1, 1}, {2}, {"id" -> "q3"}, 1, True, False},
   TestID -> "css-string-in-the-consumers"
 ];
 

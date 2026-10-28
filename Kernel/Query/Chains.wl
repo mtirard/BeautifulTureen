@@ -3,7 +3,6 @@
 
 (* Used by Query/Compiler.wl *)
 PackageScoped[chainOf]
-PackageScoped[namesIn]
 PackageScoped[selectRule]
 PackageScoped[stagesDecideQ]
 PackageScoped[tupleRule]
@@ -14,6 +13,9 @@ PackageScoped[listSlot]
 PackageScoped[alternativesOf]
 PackageScoped[chainQ]
 PackageScoped[unionQ]
+
+(* Used by Query/Compiler.wl and Query/TreePatterns.wl *)
+PackageScoped[namesIn]
 
 (* Used by Query/Run.wl *)
 PackageScoped[chainCases]

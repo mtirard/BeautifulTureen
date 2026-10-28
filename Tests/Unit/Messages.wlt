@@ -46,9 +46,16 @@ TestCreate[
 (* A combinator with one stage is refused with a message that says it needs two,
    named for the combinator written. *)
 TestCreate[
-  capturedMessages[XMLCases[$msgTree, Descendant[XMLPattern["p"]]]],
-  {"Descendant needs at least two stages, as in Descendant[a, b] or Descendant[a, b, c]. Got Descendant[XMLPattern[\"p\"]]."},
+  capturedMessages[XMLCases[$msgTree, Sibling[XMLPattern["p"]]]],
+  {"Sibling needs at least two stages, as in Sibling[a, b] or Sibling[a, b, c]. Got Sibling[XMLPattern[\"p\"]]."},
   TestID -> "message-one-stage-combinator-names-two-stage-minimum"
+];
+
+(* Descendant with one argument is a constraint, which says where it goes. *)
+TestCreate[
+  capturedMessages[XMLCases[$msgTree, Descendant[XMLPattern["p"]]]],
+  {"Descendant[XMLPattern[\"p\"]] is a constraint, which can only be an argument of XMLPattern after the attributes, as in XMLPattern[\"nav\", _, Descendant[XMLPattern[\"a\"]]]. To find matching elements at any depth, give the pattern alone."},
+  TestID -> "message-descendant-constraint-as-query"
 ];
 
 (* A misplaced XMLDocument[] says where it can stand. *)
@@ -223,7 +230,7 @@ TestCreate[
     XMLFirstCase[$msgTree, XMLPattern["div"], "none"],
     XMLFirstCase[$msgTree, XMLPattern["div"], "a" -> "b"],
     XMLFirstCase[$msgTree, XMLPattern["div"], "none", "AttributeReadings" -> <||>]},
-  {{1, 1}, 1, "none", "a" -> "b", "none"},
+  {{1}, 1, "none", "a" -> "b", "none"},
   TestID -> "count-rules-as-query-and-default-unchanged"
 ];
 

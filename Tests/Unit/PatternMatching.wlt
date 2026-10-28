@@ -359,7 +359,8 @@ TestCreate[
 
 (* A query pattern -> rhs is read as Cases reads a Rule: rhs is evaluated once,
    when the query is given, and the names the pattern binds are put into the
-   value. *)
+   value. A value that uses no name gives at most one result: a query gives
+   one result for each distinct tuple of positions of the names it uses. *)
 
 $ruleTree = ImportString[
   "<div><p id=\"a\" class=\"x y\">1</p><a href=\"/one\">o</a><p id=\"b\">2</p><a href=\"/two\">t</a></div>",
@@ -367,7 +368,7 @@ $ruleTree = ImportString[
 
 TestCreate[
   XMLCases[$ruleTree, XMLPattern["p"] -> 1],
-  {1, 1},
+  {1},
   TestID -> "rule-constant-rhs"
 ];
 
@@ -390,7 +391,7 @@ TestCreate[
   {XMLCases[$ruleTree, e : XMLPattern["a"] -> Length[e]],
    Cases[{{1, 2}, {3, 4}}, e_ -> Length[e]],
    XMLCases[$ruleTree, e : XMLPattern["a"] :> Length[e]]},
-  {{0, 0}, {0, 0}, {3, 3}},
+  {{0}, {0, 0}, {3, 3}},
   TestID -> "rule-rhs-evaluated-before-matching"
 ];
 
@@ -400,7 +401,7 @@ TestCreate[
   Block[{x = 5},
     {XMLCases[$ruleTree, XMLPattern["p", "id" -> x_] -> x],
      Cases[{"id" -> "a", "id" -> "b"}, ("id" -> x_) -> x]}],
-  {{5, 5}, {5, 5}},
+  {{5}, {5, 5}},
   TestID -> "rule-global-value-as-cases"
 ];
 
@@ -415,7 +416,7 @@ TestCreate[
 (* The right-hand side is evaluated once, when the query is given. *)
 TestCreate[
   Module[{n = 0}, {XMLCases[$ruleTree, XMLPattern["p"] -> ++n], n}],
-  {{1, 1}, 1},
+  {{1}, 1},
   TestID -> "rule-rhs-evaluated-once"
 ];
 
@@ -529,17 +530,19 @@ TestCreate[
   TestID -> "patterntest-shapes"
 ];
 
-(* A Condition over a KeyValuePattern with later names is matched in two steps;
-   f is run in each step, on the element as it is in the tree. *)
+(* A Condition over a KeyValuePattern with later names sees every name; f is
+   run on the element as it is in the tree. How often a test runs is not
+   specified; here it runs once. *)
 $testedLink = XMLElement["a", {"href" -> "/x/1", "data-id" -> "1"}, {}];
 TestCreate[
   Reap[{XMLCases[{$testedLink}, (XMLPattern["a", {"href" -> h_, "data-id" -> i_}] /; StringContainsQ[h, i])?((Sow[#]; True) &)],
     XMLCases[{$testedLink}, (XMLPattern["a", {"href" -> h_, "data-id" -> i_}] /; StringContainsQ[h, i])?(False &)]}],
-  {{{$testedLink}, {}}, {{$testedLink, $testedLink}}},
+  {{{$testedLink}, {}}, {{$testedLink}}},
   TestID -> "patterntest-two-step-match"
 ];
 
-(* A branch whose test fails binds nothing in the second step either. *)
+(* A branch whose test fails binds nothing. When both branches match, each
+   gives its own tuple of the counted names h, i and j: one result each. *)
 $testedXY = XMLPattern["a", {"x" -> h_, "y" -> i_}];
 $testedX = XMLPattern["a", {"x" -> j_}];
 $testedA = XMLElement["div", {}, {XMLElement["a", {"x" -> "1", "y" -> "2"}, {}]}];
@@ -548,7 +551,7 @@ TestCreate[
    XMLCases[$testedA, ((n : $testedXY /; False) | $testedX) /; True :> {h, i, j}],
    XMLCases[$testedA, Child[XMLPattern["div"], (($testedXY?(False &)) | $testedX) /; True] :> {h, i, j}],
    XMLCases[$testedA, (($testedXY?(True &)) | $testedX) /; True :> {h, i, j}]},
-  {{{"1"}}, {{"1"}}, {{"1"}}, {{"1", "2"}}},
+  {{{"1"}}, {{"1"}}, {{"1"}}, {{"1", "2"}, {"1"}}},
   TestID -> "patterntest-two-step-failed-branch"
 ];
 

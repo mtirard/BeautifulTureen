@@ -8,7 +8,7 @@ PackageScoped[spliced]
 (* Used by CSSSelector.wl and Query/Chains.wl *)
 PackageScoped[conditionWith]
 
-(* Used by DisplayRoles.wl *)
+(* Used by DisplayRoles.wl and Query/TreePatterns.wl *)
 PackageScoped[compileWith]
 
 (* Used by Query/Chains.wl *)
@@ -37,13 +37,15 @@ PackageScoped[countIn]
 PackageScoped[matchIn]
 
 (* Used by Query/Chains.wl and Query/Run.wl *)
-PackageScoped[bodyConditionQ]
 PackageScoped[solvable]
 PackageScoped[$unmatched]
 
-(* Used by Readings.wl *)
-PackageScoped[refuse]
+(* Used by Query/Chains.wl, Query/Run.wl and Query/TreePatterns.wl *)
+PackageScoped[bodyConditionQ]
+
+(* Used by Query/TreePatterns.wl and Readings.wl *)
 PackageScoped[$refusal]
+PackageScoped[refuse]
 
 (* Used by Tree.wl *)
 PackageScoped[badQuery]
@@ -886,7 +888,13 @@ conditionWith[p_, test_Hold] := Condition @@ Join[Hold[p], test];
 
 cXMLPattern[{tag_}] := XMLElement[cTag[tag], _, _];
 cXMLPattern[{tag_, attrs_}] := With[{t = cTag[tag]}, XMLElement[t, cAttrs[attrs], _]];
-cXMLPattern[args_] := refuse[XMLPattern::nargs, Length[args]];
+(* Constraints are taken by the tree-pattern engine (Query/TreePatterns.wl),
+   which a query holding a combinator does not reach. *)
+cXMLPattern[{tag_, attrs_, cs__}] :=
+  Replace[Select[{cs}, !constraintFormQ[#] &], {
+    {c_, ___} :> refuse[XMLPattern::constraint, c],
+    {} :> badpat[XMLPattern[tag, attrs, cs]]}];
+cXMLPattern[args_] := badpat[XMLPattern @@ args];
 
 cTag[tag_] := (
   noStringPatterns[tag];

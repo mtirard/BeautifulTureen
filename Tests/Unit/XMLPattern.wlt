@@ -79,7 +79,7 @@ TestCreate[
 TestCreate[
   XMLCases[$links, XMLPattern["a", "href" -> _, "rel" -> _]],
   $Failed,
-  {XMLPattern::nargs},
+  {XMLPattern::constraint},
   TestID -> "xmlpattern-refuses-third-argument"
 ];
 
@@ -223,7 +223,7 @@ TestCreate[
 (* A string pattern handed to a string function is not a bare one. *)
 TestCreate[
   XMLCases[$links, XMLPattern["a", "href" -> _?(StringMatchQ["/" ~~ __])] :> "hit"],
-  {"hit", "hit"},
+  {"hit"},
   TestID -> "xmlpattern-string-pattern-inside-test-accepted"
 ];
 

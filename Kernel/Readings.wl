@@ -4,7 +4,7 @@
 (* Used by DisplayRoles.wl *)
 PackageScoped[materialiser]
 
-(* Used by DisplayRoles.wl and Query/Compiler.wl *)
+(* Used by DisplayRoles.wl, Query/Compiler.wl and Query/TreePatterns.wl *)
 PackageScoped[readingsInForce]
 
 (* Used by Notebook.wl, Text.wl, Tree.wl and XMLFunctions.wl *)
@@ -17,7 +17,7 @@ PackageScoped[tok]
 (* Used by Query/Compiler.wl and Query/Run.wl *)
 PackageScoped[unmaterialised]
 
-(* Used by Query/Run.wl *)
+(* Used by Query/Run.wl and Query/TreePatterns.wl *)
 PackageScoped[materialise]
 
 (* Used by XMLFunctions.wl *)

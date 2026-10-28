@@ -15,8 +15,12 @@ Options[XMLCases] = {"AttributeReadings" -> <||>};
 
 (* The count n is a ceiling, as in StringCases (ADR 0019). A third argument
    that is not an option is a count, and one that is not valid gives innf. *)
+(* A query holding no combinator, list stage or XMLDocument is a tree pattern
+   (Query/TreePatterns.wl); the others keep the chain runners until the
+   combinators go. *)
 XMLCases[tree_, q_, n : Except[_?(optionQ[XMLCases])] : Infinity, opts : OptionsPattern[]] /; countQ[n] :=
-  withReadings[OptionValue["AttributeReadings"], queryCases[compileQuery[q, XMLCases], tree, n]];
+  withReadings[OptionValue["AttributeReadings"],
+    If[treeQueryQ[q], treeCases[XMLCases, tree, q, n], queryCases[compileQuery[q, XMLCases], tree, n]]];
 
 XMLCases[tree_, q_, n : Except[_?(optionQ[XMLCases])], opts : OptionsPattern[]] /;
     (Message[XMLCases::innf, Unevaluated[XMLCases[tree, q, n, opts]], 3]; False) := Null;
@@ -38,7 +42,10 @@ Options[XMLFirstCase] = {"AttributeReadings" -> <||>};
 
 XMLFirstCase[tree_, q_, default : Except[_?(optionRuleQ[XMLFirstCase])] : Missing["NotFound"],
     opts : OptionsPattern[]] :=
-  withReadings[OptionValue["AttributeReadings"], queryFirst[compileQuery[q, XMLFirstCase], tree, default]];
+  withReadings[OptionValue["AttributeReadings"],
+    If[treeQueryQ[q],
+      Replace[treeCases[XMLFirstCase, tree, q, 1], {{r_} :> r, {} :> default}],
+      queryFirst[compileQuery[q, XMLFirstCase], tree, default]]];
 
 XMLFirstCase[args___] /; (countMessage[XMLFirstCase, {args}, {2, 3}]; False) := Null;
 
