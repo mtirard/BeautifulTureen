@@ -39,21 +39,19 @@ rewritten[input_, edits_] :=
 (* ---- Position order (ADR 0024) ---- *)
 
 (* Each position has a key, a list of integers, that sorts as the positions
-   do once padded with $keyPad, below every entry: an element step is {4, n, 2};
-   within an element its tag is {0}, its attribute map {1}, its j-th
-   attribute {2, j, 0}, a list key read from it {2, j, 1}, followed by that
-   list's tails, its contents {3}, and among its children the gap before n
-   {4, n, 0}, a run n ;; k {4, n, 1, -k} (longest first), then child n.
-   Tails order as children do, with 2 for the 4. This is the order of
-   Query/TreePatterns.wl's order keys, for positions given on their own. *)
-$keyPad = -10^9;
+   do once padded with $keyPad: an element step is {4, n, 2}; within an
+   element its tag is {0}, its attribute map {1}, its j-th attribute
+   {2, j, 0}, a list key read from it {2, j, 1}, followed by that list's
+   tails, its contents {3}, and a run or gap of its children as sequenceKey
+   gives it. This is the order of Query/TreePatterns.wl's order keys, for
+   positions given on their own. *)
 
 positionOrdering[ps_] :=
   With[{keys = positionKey /@ ps}, Ordering[PadRight[#, Max[0, Length /@ keys], $keyPad] & /@ keys]];
 
 positionKey[pos_] :=
-  With[{k = LengthWhile[pos, IntegerQ[#] && # > 0 &]},
-    Join[Join @@ ({4, #, 2} & /@ Take[pos, k]), terminalKey[Take[pos, k], Drop[pos, k]]]];
+  With[{k = LengthWhile[pos, elementStepQ]},
+    Join[Join @@ (sequenceKey[4, #] & /@ Take[pos, k]), terminalKey[Take[pos, k], Drop[pos, k]]]];
 
 terminalKey[_, {}] := {};
 terminalKey[_, {0}] := {0};
@@ -61,17 +59,15 @@ terminalKey[_, {Key[All]}] := {1};
 terminalKey[_, {All}] := {3};
 terminalKey[_, {s_Span}] := sequenceKey[4, s];
 terminalKey[steps_, {Key[k_], tail___}] :=
-  With[{raw = If[KeyExistsQ[$readings, k], $readings[k][[1]], k], attrs = original[steps][[2]]},
+  With[{raw = If[KeyExistsQ[$readings, k], rawKeyOf[$readings[k]], k], attrs = original[steps][[2]]},
     Join[{2, Replace[FirstPosition[attrs, Verbatim[Rule][raw, _], {Length[attrs] + 1}, {1}, Heads -> False], {j_} :> j],
         If[KeyExistsQ[$readings, k], 1, 0]},
       Replace[{tail}, {{} -> {}, {t_} :> sequenceKey[2, t]}]]];
 
-sequenceKey[h_, i_Integer] := {h, i, 2};
-sequenceKey[h_, Span[m_, n_]] := If[n == m - 1, {h, m, 0}, {h, m, 1, -n}];
 
 (* ---- The original input ---- *)
 
-inputContents[] := Replace[$input, {XMLObject["Document"][_, r_, _] :> {r}, l_List :> l, x_ :> {x}}];
+inputContents[] := topItems[$input];
 
 (* The original element at element steps ({} the document's contents), and
    the element children of either. *)
@@ -143,7 +139,7 @@ nodesOf[x_] := {x};
 (* f may Throw to $unchanged to leave the part as it is: it is called before
    anything is set. *)
 rewriteAt[pos_, f_] :=
-  With[{k = LengthWhile[pos, IntegerQ[#] && # > 0 &]},
+  With[{k = LengthWhile[pos, elementStepQ]},
     With[{steps = Take[pos, k]}, If[aliveQ[steps], Catch[rewriteTerminal[steps, Drop[pos, k], f], $unchanged]]]];
 
 (* An element. *)
@@ -155,7 +151,7 @@ rewriteTerminal[steps_, {Key[All]}, f_] := $nodes[steps] = ReplacePart[opened[st
 
 (* A list key's token list, or a token, run or gap of it. *)
 rewriteTerminal[steps_, {Key[k_], tail___}, f_] /; KeyExistsQ[$readings, k] :=
-  With[{raw = $readings[k][[1]]},
+  With[{raw = rawKeyOf[$readings[k]]},
     If[{tail} === {},
       setAttribute[steps, raw, Replace[f[currentTokens[steps, k]], l_List :> StringRiffle[l, $joiners[k]]]],
       setTokens[steps, k, tokensRewritten[openedTokens[steps, k], tail, f, tokenValues[steps, k, #] &]]]];
@@ -215,7 +211,7 @@ openedTokens[steps_, k_] :=
     $originalTokens[{steps, k}] = splitTokens[steps, k];
     $tokens[{steps, k}] = tokenRef /@ Range[Length[$originalTokens[{steps, k}]]]];
 
-splitTokens[steps_, k_] := $readings[k][[2]][Lookup[opened[steps][[2]], Key[$readings[k][[1]]], ""]];
+splitTokens[steps_, k_] := splitterOf[$readings[k]][Lookup[opened[steps][[2]], Key[rawKeyOf[$readings[k]]], ""]];
 
 currentTokens[steps_, k_] := If[KeyExistsQ[$tokens, {steps, k}], tokenValues[steps, k, $tokens[{steps, k}]], splitTokens[steps, k]];
 
@@ -225,7 +221,7 @@ tokenValues[steps_, k_, items_] := Replace[items, tokenRef[i_] :> $originalToken
    kept even when empty. *)
 setTokens[steps_, k_, items_] := (
   $tokens[{steps, k}] = items;
-  setAttribute[steps, $readings[k][[1]], StringRiffle[tokenValues[steps, k, items], $joiners[k]]]);
+  setAttribute[steps, rawKeyOf[$readings[k]], StringRiffle[tokenValues[steps, k, items], $joiners[k]]]);
 
 (* =========================================================== *)
 (* XMLDeleteCases over tree patterns                            *)
@@ -239,8 +235,6 @@ setTokens[steps_, k_, items_] := (
 XMLDeleteCases::delrhs = "The right-hand side of `1` should be a name of the pattern, or a list of names, optionally with a condition (/;): XMLDeleteCases deletes what those names match, as in x : XMLPattern[\"a\"] :> x. Use :> so that the names are not evaluated.";
 XMLDeleteCases::target = "`1` is the position of the document or of a tag, which cannot be deleted. Name an element, an attribute, a token, a run of children or the contents instead.";
 XMLDeleteCases::pathtarget = "`1` is a named path, the elements between two others, which cannot be deleted. Name the elements to delete instead.";
-XMLDeleteCases::exceptname = "The name `1` is bound inside Except, which matches only where its pattern does not, so it has no value in the right-hand side. A name inside Except can be used only by tests inside that Except.";
-XMLDeleteCases::text = "The name `1` binds text inside an XMLElement pattern, and text has no position, so the name cannot be a result. Name the element that holds the text instead, or use the name only in a test.";
 
 treeDelete[tree_, q_] :=
   Catch[
@@ -271,7 +265,7 @@ deleted[tree_, counted_] :=
     Replace[SelectFirst[ps, MatchQ[#, {} | {__Integer?Positive, 0}] &], p_List :> refuse[XMLDeleteCases::target, p]];
     If[MatchQ[tree, XMLObject[_][___]] && MemberQ[ps, {1}], Message[XMLDeleteCases::root]; ps = DeleteCases[ps, {1}]];
     If[AllTrue[ps, MatchQ[{_Integer?Positive, __Integer?Positive}]],
-      Delete[tree, inputPositions[tree, outermostPositions[ps]]],
+      Delete[tree, wlPositions[tree, outermostPositions[ps]]],
       rewritten[tree, (# -> If[MatchQ[Last[#], Key[All] | All], {} &, Nothing &]) & /@ ps]]];
 
 (* Elements below the top ones, deleted with Delete at their positions in
@@ -280,18 +274,6 @@ deleted[tree_, counted_] :=
    deleted one goes with it. *)
 outermostPositions[ps_] := With[{set = AssociationThread[ps -> True]}, Select[ps, NoneTrue[Range[Length[#] - 1], Function[k, KeyExistsQ[set, Take[#, k]]]] &]];
 
-(* The input positions of element positions, each step the n-th element
-   among the contents of the one before. *)
-inputPositions[tree_, ps_] :=
-  Module[{kids = <||>, elementSlots, tops = If[ListQ[tree], Flatten[Position[tree, _XMLElement, {1}, Heads -> False]], {}]},
-    elementSlots[p_] := Lookup[kids, Key[p], kids[p] = Flatten @ Position[If[p === {}, tree, Extract[tree, p]][[3]], _XMLElement, {1}, Heads -> False]];
-    Function[steps,
-      Fold[Join[#1, {3, elementSlots[#1][[#2]]}] &,
-        Switch[tree,
-          XMLObject[_][___], {2},
-          _List, {tops[[First[steps]]]},
-          _, {}],
-        Rest[steps]]] /@ ps];
 
 (* =========================================================== *)
 (* XMLReplace over tree patterns                                *)
@@ -316,9 +298,6 @@ XMLReplace::pathtarget = "`1` is a named path, the elements between two others, 
 XMLReplace::kind = "The replacement `2` for position `1` is not of a kind that position takes, and the position is left unchanged. An element takes an element, a string, Splice[list] or Nothing; a tag a string; an attribute list a list of rules; an attribute value a string or Nothing; a list key a list of strings; a token a string, and a run of tokens a list of strings; contents a list of nodes; a run of children Splice[list], a list or Nothing; a gap the nodes to insert.";
 XMLReplace::conflict = "Position `1` is given different replacements by different results; the replacement of the first result is used.";
 XMLReplace::stale = "The position `2` of `1` was removed by an earlier replacement, so `1` has its original value.";
-XMLReplace::badtree = "The first argument should be an XMLObject, an XMLElement, or a list of XMLElement expressions and strings. Got head `1`.";
-XMLReplace::exceptname = "The name `1` is bound inside Except, which matches only where its pattern does not, so it has no value in the right-hand side. A name inside Except can be used only by tests inside that Except.";
-XMLReplace::text = "The name `1` binds text inside an XMLElement pattern, and text has no position, so the name cannot be a result. Name the element that holds the text instead, or use the name only in a test.";
 
 Options[XMLReplace] = {"AttributeReadings" -> <||>};
 
@@ -422,14 +401,14 @@ valueAt[{}] := {assembled[]};
 valueAt[Span[upper_, lower_]] :=
   With[{es = elementNow /@ (Take[lower, #] & /@ Range[Length[upper] + 1, Length[lower] - 1])},
     If[MemberQ[es, $stale], $stale, {es}]];
-valueAt[pos_] := With[{k = LengthWhile[pos, IntegerQ[#] && # > 0 &]}, valueIn[Take[pos, k], Drop[pos, k]]];
+valueAt[pos_] := With[{k = LengthWhile[pos, elementStepQ]}, valueIn[Take[pos, k], Drop[pos, k]]];
 
 valueIn[steps_, {}] := Replace[elementNow[steps], x_XMLElement :> {x}];
 valueIn[steps_, _] /; !aliveQ[steps] := $stale;
 valueIn[steps_, {0}] := {currentNode[steps][[1]]};
 valueIn[steps_, {Key[All]}] := {currentNode[steps][[2]]};
 valueIn[steps_, {Key[k_], tail___}] /; KeyExistsQ[$readings, k] :=
-  If[MemberQ[currentNode[steps][[2]], Verbatim[Rule][$readings[k][[1]], _]], tokensAt[steps, k, tail], $stale];
+  If[MemberQ[currentNode[steps][[2]], Verbatim[Rule][rawKeyOf[$readings[k]], _]], tokensAt[steps, k, tail], $stale];
 valueIn[steps_, {Key[k_]}] := Replace[Lookup[currentNode[steps][[2]], Key[k], $stale], v : Except[$stale] :> {v}];
 valueIn[steps_, {All}] := {currentContents[steps]};
 valueIn[steps_, {Span[m_, n_]}] :=
@@ -454,7 +433,7 @@ tokensAt[steps_, k_, tail_] :=
 
 $node = _XMLElement | _String | XMLObject[_][___];
 
-replacementKindQ[pos_, v_] := With[{k = LengthWhile[pos, IntegerQ[#] && # > 0 &]}, kindQ[Take[pos, k], Drop[pos, k], v]];
+replacementKindQ[pos_, v_] := With[{k = LengthWhile[pos, elementStepQ]}, kindQ[Take[pos, k], Drop[pos, k], v]];
 
 (* An XMLObject's root element stays an element. *)
 kindQ[{1}, {}, v_] /; MatchQ[$input, XMLObject[_][___]] := MatchQ[v, _XMLElement];

@@ -21,8 +21,6 @@ HTMLToTree::optval = "The value of the `1` option should be `2`. Got `3`.";
 HTMLToTree::root = "The root element cannot be hidden; it was kept.";
 HTMLToTree::hidetarget = "The \"Hide\" query names the position `1`. Hide removes only elements, runs of element children, and the contents of an element.";
 HTMLToTree::focustarget = "The \"Focus\" query names the position `1`. Focus draws only elements and runs of element children.";
-HTMLToTree::exceptname = "The name `1` is bound inside Except, which matches only where its pattern does not, so it has no value in the right-hand side. A name inside Except can be used only by tests inside that Except.";
-HTMLToTree::text = "The name `1` binds text inside an XMLElement pattern, and text has no position, so the name cannot be a result. Name the element that holds the text instead, or use the name only in a test.";
 
 Options[HTMLToTree] = {"Focus" -> Automatic, "Hide" -> Automatic, "MergeText" -> Automatic,
   "IncludeWhitespace" -> Automatic, "CollapsePaths" -> Automatic, "Roles" -> Automatic,
@@ -113,33 +111,18 @@ countedItemPositions[name_, tree_, q_] :=
 refusedPosition["Hide", t_] := Message[HTMLToTree::hidetarget, t];
 refusedPosition["Focus", t_] := Message[HTMLToTree::focustarget, t];
 
-stepQ[i_] := IntegerQ[i] && i > 0;
-
 (* Hide takes an element, a run of element children, or an element's
    contents; Focus the first two. *)
-actsOnQ[_, {__?stepQ}] := True;
-actsOnQ[_, {___?stepQ, Span[m_?stepQ, n_Integer]}] := n >= m;
-actsOnQ["Hide", {__?stepQ, All}] := True;
+actsOnQ[_, {__?elementStepQ}] := True;
+actsOnQ[_, {___?elementStepQ, Span[m_?elementStepQ, n_Integer]}] := n >= m;
+actsOnQ["Hide", {__?elementStepQ, All}] := True;
 actsOnQ[_, _] := False;
 
 (* The WL positions of the items at a position, as the walk numbers them *)
-itemPositions[tree_, steps : {__?stepQ}] := {wlPath[tree, steps]};
-itemPositions[tree_, {steps___, Span[m_, n_]}] := wlPath[tree, {steps, #}] & /@ Range[m, n];
+itemPositions[tree_, steps : {__?elementStepQ}] := wlPositions[tree, {steps}];
+itemPositions[tree_, {steps___, Span[m_, n_]}] := wlPositions[tree, {steps, #} & /@ Range[m, n]];
 itemPositions[tree_, {steps__, All}] :=
-  With[{p = wlPath[tree, {steps}]}, Join[p, {3, #}] & /@ Range[Length[tree[[Sequence @@ p, 3]]]]];
-
-(* The WL position of the element at element-child steps: an XMLObject's
-   root is {2}, a list's i-th element is at its index among the items, and a
-   bare element's root is {}; below, each step is an index in its parent's
-   contents. *)
-wlPath[tree_, {i_, rest___}] :=
-  Fold[Join[#1, {3, elementIndex[tree[[Sequence @@ #1, 3]], #2]}] &, topPath[tree, i], {rest}];
-
-topPath[XMLObject["Document"][___], 1] := {2};
-topPath[l_List, i_] := {elementIndex[l, i]};
-topPath[_XMLElement, 1] := {};
-
-elementIndex[items_, i_] := Position[items, _XMLElement, {1}, Heads -> False][[i, 1]];
+  With[{p = First[wlPositions[tree, {{steps}}]]}, Join[p, {3, #}] & /@ Range[Length[tree[[Sequence @@ p, 3]]]]];
 
 (* A bare element's root is never hidden: it is kept, with root. *)
 keptRoot["Hide", _XMLElement, ps_] /; MemberQ[ps, {}] := (Message[HTMLToTree::root]; DeleteCases[ps, {}]);

@@ -262,7 +262,7 @@ $indexDepth = Infinity;
 
 indexTree[input_] :=
   Module[{ps, n, pid, groups},
-    $tops = Replace[input, {XMLObject["Document"][_, r_, _] :> {r}, l_List :> l, x_ :> {x}}];
+    $tops = topItems[input];
     ps = Position[$tops, _XMLElement, {1, 2 $indexDepth - 1}, Heads -> False];
     ps = ps[[Ordering[PadRight[ps, Automatic, 0]]]];
     n = Length[ps];
@@ -326,26 +326,23 @@ materialElems[r_] := Lookup[$matElems, Key[r], $matElems[r] = Extract[materialis
 (* Position order (ADR 0024)                                    *)
 (*                                                              *)
 (* Each position has a key, a list of integers; keys padded to  *)
-(* one length with $pad, below every entry, compare as the      *)
+(* one length with $keyPad, below every entry, compare as the   *)
 (* positions sort, a container before what it holds. An element *)
 (* step is {4, n, 2}; within an element, its tag is {0}, its    *)
 (* attribute map {1}, its j-th attribute {2, j, 0}, a list key  *)
 (* read from it {2, j, 1} and that list's tails {2, j, 1, 2,    *)
-(* ...},                                                        *)
-(* its contents {3}, and among its children the gap before n    *)
-(* {4, n, 0}, a run n ;; k {4, n, 1, -k} (longest first), then  *)
-(* child n. Tails order as children do, with 2 for the 4.       *)
+(* ...}, its contents {3}, and among its children the gap       *)
+(* before n {4, n, 0}, a run n ;; k {4, n, 1, -k} (longest      *)
+(* first), then child n. Tails order as children do, with 2 for *)
+(* the 4 (sequenceKey, Positions.wl).                           *)
 (* =========================================================== *)
 
-$pad = -10^9;
-
-elemKey[i_] := Lookup[$keyMemo, i, $keyMemo[i] = If[i == 0, {}, Join[elemKey[$parent[[i + 1]]], {4, $index[[i + 1]], 2}]]];
-spanKey[s_, e_] := If[e == s, {s + 1, 0}, {s + 1, 1, -e}];
+elemKey[i_] := Lookup[$keyMemo, i, $keyMemo[i] = If[i == 0, {}, Join[elemKey[$parent[[i + 1]]], sequenceKey[4, $index[[i + 1]]]]]];
 
 (* A named path's key is its lower end's then its upper end's, so when a query
    names a path every key takes two lengths. *)
-padded[pathKey[lower_, upper_]] := Join[PadRight[lower, $keyLength, $pad], PadRight[upper, $keyLength, $pad]];
-padded[k_] := PadRight[k, If[$namedPaths, 2, 1] $keyLength, $pad];
+padded[pathKey[lower_, upper_]] := Join[PadRight[lower, $keyLength, $keyPad], PadRight[upper, $keyLength, $keyPad]];
+padded[k_] := PadRight[k, If[$namedPaths, 2, 1] $keyLength, $keyPad];
 
 (* A name's match: the positions, the value, and the order key of each
    position.
@@ -843,7 +840,7 @@ itemRun[s_, e_] :=
     With[{m = Count[Take[items, s], _XMLElement] + 1, run = items[[s + 1 ;; e]]},
       With[{n = Count[run, _XMLElement]},
         nameMatch[{If[n == Length[run], Append[posOf[$contentOf], m ;; m + n - 1], itemMissing[run]]}, seq[run],
-          Join[elemKey[$contentOf], {4}, spanKey[m - 1, m + n - 1]]]]]];
+          Join[elemKey[$contentOf], sequenceKey[4, m ;; m + n - 1]]]]]];
 
 (* What has no position: text, or another item that is not an element. *)
 itemMissing[v_] := Missing[If[!FreeQ[v, _String, {0, 1}], "Text", "Literal"]];
@@ -983,8 +980,8 @@ attributeSlots[x_, i_, keys_] :=
       <|"Key" -> attrs[[#, 1]], "Value" -> attrs[[#, 2]], "Pos" -> Append[p, Key[attrs[[#, 1]]]],
         "OrderKey" -> Join[k, {2, #, 0}], "List" -> False|> & /@ Select[Range[Length[attrs]], MemberQ[keys, attrs[[#, 1]]] &],
       KeyValueMap[Function[{listKey, reading},
-          <|"Key" -> listKey, "Value" -> Last[reading][Lookup[attrs, First[reading], ""]], "Pos" -> Append[p, Key[listKey]],
-            "OrderKey" -> Join[k, {2, Replace[FirstPosition[attrs[[All, 1]], First[reading], {Length[attrs] + 1}, {1}], {j_} :> j], 1}],
+          <|"Key" -> listKey, "Value" -> splitterOf[reading][Lookup[attrs, rawKeyOf[reading], ""]], "Pos" -> Append[p, Key[listKey]],
+            "OrderKey" -> Join[k, {2, Replace[FirstPosition[attrs[[All, 1]], rawKeyOf[reading], {Length[attrs] + 1}, {1}], {j_} :> j], 1}],
             "List" -> True|>],
         KeyTake[$readings, keys]]]];
 
@@ -1053,8 +1050,8 @@ tokenVector[sub_] := Boole[MatchQ[#, sub["Pattern"]] & /@ $tokens];
 tokenSolutions[sub_, k_] :=
   If[!MatchQ[$tokens[[k]], sub["Pattern"]], {},
     If[sub["Keep"] === {}, {<||>},
-      {Map[nameMatch[{Append[$tokenPos, k]}, #, Join[$tokenKey, {2, k, 2}]] &, firstMatchValues[$tokens[[k]], sub["Pattern"], sub["Keep"]]]}]];
-tokenRun[s_, e_] := nameMatch[{Append[$tokenPos, s + 1 ;; e]}, seq[$tokens[[s + 1 ;; e]]], Join[$tokenKey, {2}, spanKey[s, e]]];
+      {Map[nameMatch[{Append[$tokenPos, k]}, #, Join[$tokenKey, sequenceKey[2, k]]] &, firstMatchValues[$tokens[[k]], sub["Pattern"], sub["Keep"]]]}]];
+tokenRun[s_, e_] := nameMatch[{Append[$tokenPos, s + 1 ;; e]}, seq[$tokens[[s + 1 ;; e]]], Join[$tokenKey, sequenceKey[2, s + 1 ;; e]]];
 
 (* ---- Constraints ---- *)
 
@@ -1066,7 +1063,7 @@ constraintKind["ConstraintAlt", c_, i_] := project[Join @@ (matchConstraint[#, i
 constraintKind["ListNamed", c_, i_] :=
   With[{sols = matchConstraint[c["Sub"], i], n = Length[childrenOf[i]]},
     If[MemberQ[c["Keep"], c["Name"]],
-      joinAll[sols, <|c["Name"] -> nameMatch[{Append[posOf[i], 1 ;; n]}, elemOf /@ childrenOf[i], Join[elemKey[i], {4}, spanKey[0, n]]]|>],
+      joinAll[sols, <|c["Name"] -> nameMatch[{Append[posOf[i], 1 ;; n]}, elemOf /@ childrenOf[i], Join[elemKey[i], sequenceKey[4, 1 ;; n]]]|>],
       sols]];
 constraintKind["ListCond", c_, i_] := conditionFiltered[c, matchConstraint[c["Sub"], i]];
 constraintKind["ListTest", c_, i_] :=
@@ -1289,7 +1286,7 @@ exactCandidatesQ[nd_] := Switch[nd["Kind"],
   _, False];
 childSolutions[sub_, k_] := match[sub, $kidIds[[k]]];
 childRun[s_, e_] :=
-  nameMatch[{Append[posOf[$walkId], s + 1 ;; e]}, seq[elemOf /@ $kidIds[[s + 1 ;; e]]], Join[elemKey[$walkId], {4}, spanKey[s, e]]];
+  nameMatch[{Append[posOf[$walkId], s + 1 ;; e]}, seq[elemOf /@ $kidIds[[s + 1 ;; e]]], Join[elemKey[$walkId], sequenceKey[4, s + 1 ;; e]]];
 
 itemVector[sub_] := memoised[{"ItemVector", sub["Id"], $walkId}, $oneVector[sub]];
 
@@ -1497,7 +1494,7 @@ oneCaptureAt[items_, k_] :=
    its parent's. *)
 hitSolutions[sub_, ks_] /; $oneSolutions === childSolutions && directQ[sub] :=
   With[{name = sub["Name"], p = posOf[$walkId], key = elemKey[$walkId]},
-    MapThread[<|name -> nameMatch[{Append[p, #1]}, elemOf[#2], Join[key, {4, #1, 2}]]|> &, {ks, $kidIds[[ks]]}]];
+    MapThread[<|name -> nameMatch[{Append[p, #1]}, elemOf[#2], Join[key, sequenceKey[4, #1]]]|> &, {ks, $kidIds[[ks]]}]];
 hitSolutions[sub_, ks_] := Join @@ ($oneSolutions[sub, #] & /@ ks);
 
 directQ[nd_] := nd["Kind"] === "Named" && With[{s = nd["Sub"]}, s["Kind"] === "XMLPattern" && s["Constraints"] === {} && s["Keep"] === {}];

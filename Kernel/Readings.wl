@@ -23,6 +23,10 @@ PackageScoped[withListKeyWarnings]
 (* Used by Rewrite.wl *)
 PackageScoped[listKeyJoiners]
 
+(* Used by Positions.wl, Query/Compiler.wl, Query/TreePatterns.wl and Rewrite.wl *)
+PackageScoped[rawKeyOf]
+PackageScoped[splitterOf]
+
 (* =========================================================== *)
 (* Readings (ADR 0012)                                          *)
 (* A reading fixes a microsyntax to a literal attribute key and *)
@@ -54,7 +58,11 @@ splitter[delim_, False] := Function[v, StringSplit[v, delim]];
    space is part of a token. *)
 splitter[delim_, True] := Function[v, StringTrim[#, HTMLWhitespace] & /@ StringSplit[v, delim]];
 
-(* A readings table resolved for the compiler: list key -> {raw key, split}. *)
+(* A readings table resolved for the compiler: list key -> {raw key, split},
+   whose parts rawKeyOf and splitterOf read. *)
+rawKeyOf[{key_, _}] := key;
+splitterOf[{_, split_}] := split;
+
 resolveReading[key_String -> spec_Association] :=
   With[{defaults = $methodDefaults[Lookup[spec, Method, "SpaceSeparated"]]},
     listKeyOf[key, spec] ->

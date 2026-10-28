@@ -169,7 +169,7 @@ cRule[k_] := refuse[XMLPattern::badkey, k];
 
 (* A list key compiles to its private slot; every other key is itself. *)
 slotKey[Verbatim[Alternatives][ks__]] := Alternatives @@ (slotKey /@ {ks});
-slotKey[k_String] /; KeyExistsQ[$readings, k] := tok[First[$readings[k]]];
+slotKey[k_String] /; KeyExistsQ[$readings, k] := tok[rawKeyOf[$readings[k]]];
 slotKey[k_] := k;
 
 (* The one desugaring (ADR 0011): at a list key, a literal string or an
