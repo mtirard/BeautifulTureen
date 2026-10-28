@@ -7,6 +7,7 @@ PackageScoped[constraintFormQ]
 (* Used by XMLFunctions.wl *)
 PackageScoped[treeQueryQ]
 PackageScoped[treeCases]
+PackageScoped[treeResults]
 
 (* Used by Positions.wl *)
 PackageScoped[treePositions]
@@ -79,8 +80,12 @@ constraintFormQ[c_] := MatchQ[c, _List | _Descendant | _Shortest | _Longest] ||
 (* =========================================================== *)
 
 (* The results of q on tree, the first n of them in result order, or $Failed
-   after a message under head. *)
-treeCases[head_, tree_, q_, n_] :=
+   after a message under head. A result that is a sequence is spliced in, as
+   in Cases. *)
+treeCases[head_, tree_, q_, n_] := Replace[treeResults[head, tree, q, n], l_List :> Join @@ l];
+
+(* The same, each result as the list of what it splices in. *)
+treeResults[head_, tree_, q_, n_] :=
   Catch[
     Block[{$head = head, $nodeId = 0, $memo = <||>, $order, $seen = <||>, $slotOf = <||>, $readings,
         $elem, $parent, $depth, $kids, $index, $end, $wlPos, $tops, $posMemo = <||>, $keyMemo = <||>,
@@ -1017,7 +1022,7 @@ results[root_, rhs_, all_, counted_, testNames_, bare_, n_] :=
         r = groupResult[rhs, all, testNames, groups[[k++]]];
         If[r =!= $noResult, count++; Sow[r, $resultTag]]]]];
 
-(* The results a loop sows, in order. *)
+(* The results a loop sows, in order, each a list (resultOf). *)
 SetAttributes[reapedResults, HoldFirst];
 reapedResults[loop_] := Replace[Reap[loop, $resultTag][[2]], {{l_} :> l, {} -> {}}];
 
@@ -1033,7 +1038,7 @@ rootMatches[root_, rhs_, all_, bare_, n_] :=
         While[count < n && k <= Length[cands],
           i = cands[[k++]];
           If[exactQ || match[sub, i] =!= {},
-            r = If[rhs === Hold @@ name && !$positionsOut, elemOf[i], resultOf[rhs, all, <|name -> elemBinding[i]|>]];
+            r = If[rhs === Hold @@ name && !$positionsOut, {elemOf[i]}, resultOf[rhs, all, <|name -> elemBinding[i]|>]];
             If[r =!= $noResult, count++; Sow[r, $resultTag]]]]]]];
 
 (* Every solution of the pattern root, at each element that can match it.
@@ -1091,9 +1096,12 @@ guardedBody[Hold[Verbatim[Condition][b_, _]]] := guardedBody[Hold[b]];
 guardedBody[Hold[(h : With | Module | Block)[vs_, b_]]] := Replace[guardedBody[Hold[b]], Hold[c_] :> Hold[h[vs, c]]];
 guardedBody[held_] := held;
 
-(* Held code evaluated as a rule's right-hand side: a Condition that fails
-   gives $noResult. *)
-evaluated[Hold[code_]] := Replace[$noResult, _ :> code];
+(* Held code evaluated as a rule's right-hand side, as the list of what it
+   gives, so that a sequence, such as an empty gap, is spliced in as in Cases;
+   a Condition that fails gives $noResult. Several expressions are a sequence
+   substituted for a name, and hold no Condition. *)
+evaluated[Hold[code_]] := Replace[{Replace[$noResult, _ :> code]}, {$noResult} -> $noResult];
+evaluated[Hold[code___]] := {code};
 
 (* ---- Pending Conditions ---- *)
 

@@ -117,6 +117,24 @@ TestCreate[
   TestID -> "result-gaps-and-runs"
 ];
 
+(* A sequence as the whole right-hand side is spliced into the results, as in
+   Cases: an empty gap adds nothing, but is still a result for the count. *)
+TestCreate[
+  With[{q = XMLPattern["div", _, {___, XMLPattern["p"], g___, XMLPattern["p"], ___}] :> g},
+    {XMLCases[paras, q], XMLCases[paras, q, 1], XMLCases[paras, q, 2],
+      XMLCases[doc[el["div", el["p"], el["b"], el["i"], el["p"]]], q]}],
+  {{e["p", "2"]}, {}, {e["p", "2"]}, {el["b"], el["i"]}},
+  TestID -> "result-sequence-spliced"
+];
+
+(* XMLFirstCase gives the first result as FirstCase does: an empty gap is
+   Sequence[]. *)
+TestCreate[
+  {XMLFirstCase[paras, XMLPattern["div", _, {___, XMLPattern["p"], g___, XMLPattern["p"], ___}] :> g]},
+  {},
+  TestID -> "first-sequence-spliced"
+];
+
 (* A name in a branch that did not match is Sequence[]. *)
 TestCreate[
   XMLCases[alt, XMLPattern["li", _, {___, (x : XMLPattern["a"]) | (y : XMLPattern["span"]), ___}] :> {x, y}],

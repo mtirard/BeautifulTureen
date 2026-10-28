@@ -44,7 +44,7 @@ XMLFirstCase[tree_, q_, default : Except[_?(optionRuleQ[XMLFirstCase])] : Missin
     opts : OptionsPattern[]] :=
   withReadings[OptionValue["AttributeReadings"],
     If[treeQueryQ[q],
-      Replace[treeCases[XMLFirstCase, tree, q, 1], {{r_} :> r, {} :> default}],
+      Replace[treeResults[XMLFirstCase, tree, q, 1], {{r_} :> Sequence @@ r, {} :> default}],
       queryFirst[compileQuery[q, XMLFirstCase], tree, default]]];
 
 XMLFirstCase[args___] /; (countMessage[XMLFirstCase, {args}, {2, 3}]; False) := Null;
