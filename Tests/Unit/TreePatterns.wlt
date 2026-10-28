@@ -159,6 +159,13 @@ TestCreate[
   TestID -> "result-no-counted-names-one-result"
 ];
 
+(* The same contrast on a CSS string: naming it does not multiply. *)
+TestCreate[
+  {XMLCases[hrefs, "a[href]" :> 1], XMLCases[hrefs, n : "a[href]" :> 1], XMLCases[hrefs, n : "a[href]" :> n], XMLCases[hrefs, "a[href]"]},
+  {{1}, {1}, hrefs[[2, 3]], hrefs[[2, 3]]},
+  TestID -> "result-css-no-counted-names-one-result"
+];
+
 (* === Section 5: order === *)
 
 (* Grouped by the first counted name in pattern order, whatever the order in
