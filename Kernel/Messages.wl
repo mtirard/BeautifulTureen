@@ -52,10 +52,12 @@ Scan[Function[h,
     MessageName[h, "badmember"] = "A list given as the first argument should hold only XMLElement expressions and strings. The member at position `1` has head `2`."],
   {XMLCases, XMLFirstCase, XMLDeleteCases, HTMLTextContent, HTMLInnerText, HTMLToNotebook, HTMLToTree}];
 
-(* A mistake in a combinator is its message, named for it (ADR 0022). The
-   message's own slot is a value here, so that the template keeps it. *)
+(* A mistake in a combinator is its message, named for it (ADR 0022). HEAD
+   stands for the combinator's name; the message's own slot `1` is kept.
+   StringReplace rather than TemplateApply: TextString of a symbol loads the
+   entity framework, ~0.4 s the first time in a session. *)
 Scan[Function[h,
-    With[{fill = TemplateApply[#, <|"h" -> h, "got" -> "`1`"|>] &},
-      MessageName[h, "stages"] = fill["`h` needs at least two stages, as in `h`[a, b] or `h`[a, b, c]. Got `got`."];
-      MessageName[h, "testcombinator"] = fill["A test (?) can apply to an XMLPattern or alternatives of them, but not to a `h` combinator. Put it on the stage it tests, as in `h`[a, b?f]. Got `got`."]]],
+    With[{fill = StringReplace[#, "HEAD" -> SymbolName[h]] &},
+      MessageName[h, "stages"] = fill["HEAD needs at least two stages, as in HEAD[a, b] or HEAD[a, b, c]. Got `1`."];
+      MessageName[h, "testcombinator"] = fill["A test (?) can apply to an XMLPattern or alternatives of them, but not to a HEAD combinator. Put it on the stage it tests, as in HEAD[a, b?f]. Got `1`."]]],
   {Child, Descendant, Adjacent, Sibling}];
