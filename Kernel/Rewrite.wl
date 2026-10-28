@@ -240,6 +240,7 @@ XMLDeleteCases::delrhs = "The right-hand side of `1` should be a name of the pat
 XMLDeleteCases::target = "`1` is the position of the document or of a tag, which cannot be deleted. Name an element, an attribute, a token, a run of children or the contents instead.";
 XMLDeleteCases::pathtarget = "`1` is a named path, the elements between two others, which cannot be deleted. Name the elements to delete instead.";
 XMLDeleteCases::exceptname = "The name `1` is bound inside Except, which matches only where its pattern does not, so it has no value in the right-hand side. A name inside Except can be used only by tests inside that Except.";
+XMLDeleteCases::text = "The name `1` binds text inside an XMLElement pattern, and text has no position, so the name cannot be a result. Name the element that holds the text instead, or use the name only in a test.";
 
 treeDelete[tree_, q_] :=
   Catch[
@@ -261,9 +262,9 @@ deletedNamesQ[Hold[l_List], names_] := l =!= {} && AllTrue[Thread[Hold[l]], dele
 deletedNamesQ[_, _] := False;
 
 (* Each kind deleted: Key[All] and All are emptied; anything else is removed,
-   a gap filled with nothing. A name deeper inside an XMLElement pattern
-   than its slots has no position yet (ticket 16), and deletes nothing. The root of an XMLObject is
-   kept. *)
+   a gap filled with nothing. A name with no position, one in an XMLElement
+   pattern that binds part of a tag, an attribute value or an item, deletes
+   nothing. The root of an XMLObject is kept. *)
 deleted[tree_, targets_] :=
   Module[{ps = DeleteCases[targets, _Missing]},
     Replace[SelectFirst[ps, MatchQ[#, _Span] &], s_Span :> refuse[XMLDeleteCases::pathtarget, s]];
@@ -297,6 +298,7 @@ XMLReplace::stale = "The position `2` of `1` was removed by an earlier replaceme
 XMLReplace::badpat = "The second argument should be a rule pattern -> new or pattern :> new, or a list of them, with pattern an XMLPattern, an XMLDocument pattern, an XMLElement pattern, a one-element CSS selector string, or alternatives of any of these. Each can be named and have a condition (/;) or a test (?). Got `1`.";
 XMLReplace::badtree = "The first argument should be an XMLObject, an XMLElement, or a list of XMLElement expressions and strings. Got head `1`.";
 XMLReplace::exceptname = "The name `1` is bound inside Except, which matches only where its pattern does not, so it has no value in the right-hand side. A name inside Except can be used only by tests inside that Except.";
+XMLReplace::text = "The name `1` binds text inside an XMLElement pattern, and text has no position, so the name cannot be a result. Name the element that holds the text instead, or use the name only in a test.";
 
 Options[XMLReplace] = {"AttributeReadings" -> <||>};
 
@@ -383,8 +385,8 @@ replacement[pos_, code_, names_, sol_] :=
    when an earlier rewrite removed that position, its original value, with
    XMLReplace::stale. A repeated name with several positions, its values
    equal when matched, reads the one being rewritten, or else its first; a
-   name with no position, deep in an XMLElement pattern (ticket 16), its
-   original value. *)
+   name with no position, one in an XMLElement pattern that binds part of a
+   tag, an attribute value or an item, its original value. *)
 nameValue[_, None, _] := {};
 nameValue[name_, {ps_, vals_}, pos_] :=
   With[{p = If[MemberQ[ps, pos], pos, First[ps]]},
