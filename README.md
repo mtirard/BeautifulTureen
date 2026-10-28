@@ -3,12 +3,13 @@
 Pattern-based HTML element selection and text extraction for the Wolfram Language.
 
 > [!WARNING]
-> **Work in progress.** HTMLPatterns is not yet released and is not on the Wolfram Paclet Repository. Its design is still changing, including how combinators such as `Child` and `Descendant` work, so expect breaking changes between commits. Issues and feedback are welcome.
+> **Work in progress.** HTMLPatterns is not yet released and is not on the Wolfram Paclet Repository. Its design is still changing, so expect breaking changes between versions; [CHANGELOG.md](CHANGELOG.md) lists them. Issues and feedback are welcome.
 
 HTMLPatterns works on the `XMLObject` tree that `Import[…, {"HTML", "XMLObject"}]` gives. It adds:
 
-- **XML patterns**: `XMLPattern[tag, attrs]`, with the combinators `Child`, `Descendant`, `Adjacent` and `Sibling`, and CSS selector strings through `FromCSSSelector`
-- **Selection**: `XMLCases`, `XMLFirstCase`, `XMLDeleteCases` and `XMLMatchQ`, with results in document order
+- **XML patterns**: `XMLPattern[tag, attrs, constraints…]`, nested as the document is, with constraints on an element's children and on what is below it (`Descendant`), and CSS selector strings through `FromCSSSelector`
+- **Selection**: `XMLCases`, `XMLFirstCase`, `XMLPosition`, `XMLExtract`, `XMLMatchQ` and `XMLFreeQ`, with results in document order
+- **Rewriting**: `XMLDeleteCases` and `XMLReplace`
 - **Text**: `HTMLTextContent` and `HTMLInnerText`, the analogues of the DOM's `textContent` and `innerText`
 - **Conversion**: `HTMLToNotebook` (and from there Markdown, PDF, …) and `HTMLToTree`
 
@@ -24,6 +25,9 @@ XMLCases[html, "li.active a"]
 
 XMLCases[html, XMLPattern["a", {"href" -> h_}] :> h]
 (* {"/a", "/b"} *)
+
+XMLCases[html, XMLPattern["li", "classList" -> "active", {___, x : XMLPattern["a"], ___}] :> x]
+(* {XMLElement["a", {"shape" -> "rect", "href" -> "/b"}, {"Docs"}]} *)
 
 HTMLInnerText[XMLFirstCase[html, "ul.menu"]]
 (* "Home\nDocs" *)
