@@ -4,17 +4,12 @@
    loads every other .wl file under Kernel/, each in its own private context.
    That format is new in Wolfram 15.0, which is why the paclet requires 15.0.
    Keep this file to the one call: code here would run in the caller's context.
-   Files load in alphabetical order, except:
-   - Common.wl loads first, ahead of CSSSelector.wl: Query/Compiler.wl has
-     $links on its left-hand sides.
-   - Query/Compiler.wl loads next, before Query/Chains.wl, whose definitions
-     have $anyLength and $recognisedMethods on their left-hand sides; a
-     left-hand side is evaluated when the definition is made.
-   - SyntaxInformation.wl loads last: it reads every public function's Options.
-   A misspelt name in "LoadFirstFiles" or "LoadLastFiles" loads no file at all.
+   Files load in alphabetical order, except SyntaxInformation.wl, which
+   loads last: it reads every public function's Options. A misspelt name in
+   "LoadLastFiles" loads no file at all.
    "FileOrderingFunction" -> Order gives the same order for these file names as
    the default AlphabeticSort, which takes ~0.2 s the first time in a session. *)
 
 PackageInitialize["MaximilienTirard`HTMLPatterns`",
-  <|"LoadFirstFiles" -> {"Common.wl", "Query/Compiler.wl"}, "LoadLastFiles" -> {"SyntaxInformation.wl"},
+  <|"LoadLastFiles" -> {"SyntaxInformation.wl"},
     "FileOrderingFunction" -> Order|>]

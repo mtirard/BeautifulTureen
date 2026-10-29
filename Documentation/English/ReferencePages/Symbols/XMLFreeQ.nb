@@ -1,0 +1,373 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 12.0' *)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["XMLFreeQ", "ObjectName"],
+
+Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["XMLFreeQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLFreeQ"], "[", RowBox[{StyleBox["tree", "TI"], ",", StyleBox["pattern", "TI"]}], "]"}]], "InlineFormula"], " \[LineSeparator]gives ", Cell[BoxData[ButtonBox["True", BaseStyle -> "Link", ButtonData -> "paclet:ref/True"]], "InlineFormula"], " if no element of ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " itself included, matches ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], ", and ", Cell[BoxData[ButtonBox["False", BaseStyle -> "Link", ButtonData -> "paclet:ref/False"]], "InlineFormula"], " otherwise.", "\n", Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["XMLFreeQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLFreeQ"], "[", RowBox[{StyleBox["tree", "TI"], ",", StyleBox["pattern", "TI"], ",", StyleBox["levelspec", "TI"]}], "]"}]], "InlineFormula"], " \[LineSeparator]tests only the elements at the DOM depths in ", Cell[BoxData[StyleBox["levelspec", "TI"]], "InlineFormula"], ".", "\n", Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["XMLFreeQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLFreeQ"], "[", StyleBox["pattern", "TI"], "]"}]], "InlineFormula"], " \[LineSeparator]represents an operator form of ", Cell[BoxData[ButtonBox["XMLFreeQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLFreeQ"]], "InlineFormula"], " that can be applied to a tree."}], "Usage"],
+
+Cell[TextData[{Cell[BoxData[RowBox[{ButtonBox["XMLFreeQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLFreeQ"], "[", RowBox[{StyleBox["tree", "TI"], ",", StyleBox["pattern", "TI"]}], "]"}]], "InlineFormula"], " tests each element of ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " as ", Cell[BoxData[ButtonBox["XMLMatchQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLMatchQ"]], "InlineFormula"], " tests it, with the element as the top of the pattern. It gives ", Cell[BoxData[ButtonBox["True", BaseStyle -> "Link", ButtonData -> "paclet:ref/True"]], "InlineFormula"], " when none of them matches."}], "Notes"],
+
+Cell[TextData[{Cell[BoxData[StyleBox["levelspec", "TI"]], "InlineFormula"], " counts DOM depth from ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], ": ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " itself is at depth 0, its children at depth 1, and so on. It has the following forms:"}], "Notes"],
+
+Cell[BoxData[GridBox[{
+{Cell["      ", "ModInfo"], StyleBox[Cell["form", "TableText"], FontSlant->"Italic"], StyleBox[Cell["description", "TableText"], FontSlant->"Italic"]},
+{Cell["      ", "ModInfo"], StyleBox["n", "TI"], Cell[TextData[{"depths 1 to ", Cell[BoxData[StyleBox["n", "TI"]], "InlineFormula"]}], "TableText"]},
+{Cell["      ", "ModInfo"], RowBox[{"{", StyleBox["n", "TI"], "}"}], Cell[TextData[{"depth ", Cell[BoxData[StyleBox["n", "TI"]], "InlineFormula"], " only"}], "TableText"]},
+{Cell["      ", "ModInfo"], RowBox[{"{", RowBox[{StyleBox["m", "TI"], ",", StyleBox["n", "TI"]}], "}"}], Cell[TextData[{"depths ", Cell[BoxData[StyleBox["m", "TI"]], "InlineFormula"], " to ", Cell[BoxData[StyleBox["n", "TI"]], "InlineFormula"]}], "TableText"]},
+{Cell["      ", "ModInfo"], ButtonBox["Infinity", BaseStyle -> "Link", ButtonData -> "paclet:ref/Infinity"], Cell["depths 1 and below", "TableText"]}
+}]], "2ColumnTableMod"],
+
+Cell[TextData[{"The default level spec is ", Cell[BoxData[RowBox[{"{", RowBox[{StyleBox["0", "TR"], ",", ButtonBox["Infinity", BaseStyle -> "Link", ButtonData -> "paclet:ref/Infinity"]}], "}"}]], "InlineFormula"], ", as in ", Cell[BoxData[ButtonBox["FreeQ", BaseStyle -> "Link", ButtonData -> "paclet:ref/FreeQ"]], "InlineFormula"], ", so ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " itself is tested."}], "Notes"],
+
+Cell[TextData[{"For a list, the elements of the list are at depth 1. For an ", Cell[BoxData[ButtonBox["XMLObject", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLObject"]], "InlineFormula"], ", the document is at depth 0 and its root element at depth 1."}], "Notes"],
+
+Cell[TextData[{Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " can be an ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], ", an ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], " pattern, an ", Cell[BoxData[ButtonBox["XMLDocument", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLDocument"]], "InlineFormula"], " pattern, which matches only a document at depth 0, a CSS selector string that describes one element, or alternatives of these. Each can be named, have a condition or have a test."}], "Notes"],
+
+Cell[TextData[{Cell[BoxData[ButtonBox["XMLFreeQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLFreeQ"]], "InlineFormula"], " issues a message and returns ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], " if ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " is a malformed ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], ", a rule, or a CSS selector that matches an element by what is above or beside it, such as ", Cell[BoxData["\"nav a\""], "InlineFormula"], "."}], "Notes"],
+
+Cell[TextData[{"The operator form ", Cell[BoxData[RowBox[{ButtonBox["XMLFreeQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLFreeQ"], "[", StyleBox["pattern", "TI"], "]"}]], "InlineFormula"], " takes no level spec."}], "Notes"],
+
+Cell["The following option can be given:", "Notes"],
+
+Cell[BoxData[GridBox[{
+{Cell["      ", "ModInfo"], StyleBox[Cell["option", "TableText"], FontSlant->"Italic"], StyleBox[Cell["default", "TableText"], FontSlant->"Italic"], StyleBox[Cell["description", "TableText"], FontSlant->"Italic"]},
+{Cell["      ", "ModInfo"], "\"AttributeReadings\"", StyleBox["<||>", "TR"], Cell[TextData[{"entries to add to ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/$AttributeReadings"]], "InlineFormula"], " for this test"}], "TableText"]}
+}]], "3ColumnTableMod"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "See Also",
+ Cell[BoxData[
+  TemplateBox[{"SeeAlso", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell[
+       "Insert links to any related reference (function) pages.", 
+        "MoreInfoText"], BaseStyle -> "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "SeeAlsoSection"],
+
+Cell[TextData[{Cell[BoxData[TemplateBox[{Cell[TextData["XMLMatchQ"]], "paclet:MaximilienTirard/HTMLPatterns/ref/XMLMatchQ"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLCases"]], "paclet:MaximilienTirard/HTMLPatterns/ref/XMLCases"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["Descendant"]], "paclet:MaximilienTirard/HTMLPatterns/ref/Descendant"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["FromCSSSelector"]], "paclet:MaximilienTirard/HTMLPatterns/ref/FromCSSSelector"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLPattern"]], "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["FreeQ"]], "paclet:ref/FreeQ"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}]}], "SeeAlso"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Tech Notes",
+ Cell[BoxData[
+  TemplateBox[{"TechNotes", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell["Insert links to related tech notes.", "MoreInfoText"], BaseStyle -> 
+       "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "TechNotesSection"],
+
+Cell["XXXX", "Tutorials"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Related Guides", "MoreAboutSection"],
+
+Cell[TextData[ButtonBox["HTMLPatterns", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/guide/HTMLPatterns"]], "MoreAbout"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Related Links",
+ Cell[BoxData[
+  TemplateBox[{"RelatedLinks", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell[
+       "Insert links to any related page, including web pages.", 
+        "MoreInfoText"], BaseStyle -> "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "RelatedLinksSection"],
+
+Cell["XXXX", "RelatedLinks"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Examples Initialization",
+ Cell[BoxData[
+  TemplateBox[{"ExamplesInitialization", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell[
+       "Input that is to be evaluated before any examples are run, e.g. \
+Needs[\[Ellipsis]].", "MoreInfoText"], BaseStyle -> "IFrameBox"]], 
+     "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "ExamplesInitializationSection"],
+
+Cell[BoxData[RowBox[{"Needs", "[", "\"MaximilienTirard`HTMLPatterns`\"", "]"}]], "ExampleInitialization"]
+}, Open  ]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[GridBox[{
+    {
+     StyleBox[
+      RowBox[{"Basic", " ", "Examples"}], "PrimaryExamplesSection"], 
+     ButtonBox[
+      RowBox[{
+       RowBox[{"More", " ", "Examples"}], " ", "\[RightTriangle]"}],
+      BaseStyle->"ExtendedExamplesLink",
+      ButtonData:>"ExtendedExamples"]}
+   }],
+  $Line = 0; Null]], "PrimaryExamplesSection"],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Test whether a tree has no table:", "ExampleText"], Cell[BoxData["page=ImportString[\"<div><p>Text</p></div>\",{\"HTML\",\"XMLObject\"}];
+XMLFreeQ[page,XMLPattern[\"table\"]]"], "Input"],
+
+Cell[BoxData["True"], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Test only the elements below an element, and not the element itself:", "ExampleText"], Cell[BoxData["navs=XMLElement[\"nav\",{},{XMLElement[\"a\",{},{\"Home\"}]}];
+{XMLFreeQ[navs,XMLPattern[\"nav\"]],XMLFreeQ[navs,XMLPattern[\"nav\"],{1,Infinity}]}"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"False", ",", "True"}], "}"}]], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "More Examples",
+ Cell[BoxData[
+  TemplateBox[{"MoreExamples", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell["Extended examples in standardized sections.", "MoreInfoText"], 
+       BaseStyle -> "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "ExtendedExamplesSection",
+ CellTags->"ExtendedExamples"],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Scope", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Test only the children:", "ExampleText"], Cell[BoxData["element=XMLElement[\"p\",{},{XMLElement[\"i\",{},{XMLElement[\"b\",{},{\"bold\"}]}]}];
+{XMLFreeQ[element,XMLPattern[\"b\"],{1}],XMLFreeQ[element,XMLPattern[\"b\"],{2}]}"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"True", ",", "False"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Use the operator form to select the paragraphs with no link:", "ExampleText"], Cell[BoxData["paras={XMLElement[\"p\",{},{\"Plain\"}],XMLElement[\"p\",{},{XMLElement[\"a\",{\"href\"->\"/\"},{\"Link\"}]}]};
+Select[paras,XMLFreeQ[XMLPattern[\"a\"]]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Plain\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give a CSS selector string that describes one element:", "ExampleText"], Cell[BoxData["page=ImportString[\"<p><a class=\\\"ext\\\" href=\\\"https://w3.org\\\">W3C</a></p>\",{\"HTML\",\"XMLObject\"}];
+XMLFreeQ[page,\"a.ext\"]"], "Input"],
+
+Cell[BoxData["False"], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give a pattern with constraints of its own:", "ExampleText"], Cell[BoxData["page=ImportString[\"<ul><li>Miso</li></ul><ol></ol>\",{\"HTML\",\"XMLObject\"}];
+XMLFreeQ[page,XMLPattern[\"ol\"|\"ul\",_,{}]]"], "Input"],
+
+Cell[BoxData["False"], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give an XMLDocument pattern to test the document at depth 0:", "ExampleText"], Cell[BoxData["page=ImportString[\"<html><body></body></html>\",{\"HTML\",\"XMLObject\"}];
+XMLFreeQ[page,XMLDocument[{XMLPattern[\"html\"]}]]"], "Input"],
+
+Cell[BoxData["False"], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Generalizations & Extensions", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"]}, Open]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "Options", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["AttributeReadings", "ExampleSubsection"], $Line = 0; Null]], "ExampleSubsection"], Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Split rel into tokens, and test for a link with one of them:", "ExampleText"], Cell[BoxData["links={XMLElement[\"a\",{\"rel\"->\"nofollow noopener\"},{}]};
+XMLFreeQ[links,XMLPattern[\"a\",\"relList\"->\"nofollow\"],\"AttributeReadings\"-> <|\"rel\"-> <||>|>]"], "Input"],
+
+Cell[BoxData["False"], "Output"]}, Open]]}, Open]],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "XXXX", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "XXXX", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"]
+}, Open  ]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Applications", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Select the paragraphs that hold no bold text, as the CSS selector ", Cell[BoxData["p:not(:has(b))"], "InlineFormula"], " does:"}], "ExampleText"], Cell[BoxData["page=ImportString[\"<p>Plain</p><p>Some <b>bold</b></p>\",{\"HTML\",\"XMLObject\"}];
+XMLCases[page,x:XMLPattern[\"p\"]?(XMLFreeQ[#,XMLPattern[\"b\"],{1,Infinity}]&):>HTMLTextContent[x]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", "\"Plain\"", "}"}]], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Properties & Relations", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["FromCSSSelector", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/FromCSSSelector"]], "InlineFormula"], " translates ", Cell[BoxData[":not(:has(...))"], "InlineFormula"], " to XMLFreeQ:"}], "ExampleText"], Cell[BoxData["FromCSSSelector[\"p:not(:has(b))\"]"], "Input"],
+
+Cell[BoxData[RowBox[{RowBox[{"(", RowBox[{"XMLPattern", "[", "\"p\"", "]"}], ")"}], "?", RowBox[{"(", RowBox[{RowBox[{"XMLFreeQ", "[", RowBox[{"#1", ",", RowBox[{"XMLPattern", "[", "\"b\"", "]"}], ",", RowBox[{"{", RowBox[{"1", ",", "\[Infinity]"}], "}"}]}], "]"}], "&"}], ")"}]}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["XMLFreeQ at depths 1 and below gives the opposite of a Descendant constraint:", "ExampleText"], Cell[BoxData["element=XMLElement[\"p\",{},{XMLElement[\"i\",{},{XMLElement[\"b\",{},{\"x\"}]}]}];
+{XMLFreeQ[element,XMLPattern[\"b\"],{1,Infinity}],XMLMatchQ[element,XMLPattern[\"p\",_,Descendant[XMLPattern[\"b\"]]]]}"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"False", ",", "True"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["XMLFreeQ gives True exactly when XMLCases finds nothing at those depths:", "ExampleText"], Cell[BoxData["page=ImportString[\"<div><p>a</p></div>\",{\"HTML\",\"XMLObject\"}];
+{XMLFreeQ[page,XMLPattern[\"p\"]],XMLCases[page,XMLPattern[\"p\"]]==={}}"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"False", ",", "False"}], "}"}]], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Possible Issues", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["FreeQ treats an XMLPattern as a literal expression:", "ExampleText"], Cell[BoxData["page=ImportString[\"<div><p>a</p></div>\",{\"HTML\",\"XMLObject\"}];
+{FreeQ[page,XMLPattern[\"p\"]],XMLFreeQ[page,XMLPattern[\"p\"]]}"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"True", ",", "False"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["The default level spec includes the tree itself:", "ExampleText"], Cell[BoxData["element=XMLElement[\"nav\",{},{XMLElement[\"a\",{},{}]}];
+XMLFreeQ[element,XMLPattern[\"nav\"]]"], "Input"],
+
+Cell[BoxData["False"], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A level spec counts DOM depth, not the levels of the expression:", "ExampleText"], Cell[BoxData["element=XMLElement[\"div\",{},{XMLElement[\"p\",{},{}]}];
+{XMLFreeQ[element,XMLPattern[\"p\"],{1}],FreeQ[element,XMLElement[\"p\",__],{1}]}"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"False", ",", "True"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A rule gives ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["XMLFreeQ[XMLElement[\"p\",{},{}],x:XMLPattern[\"p\"]:>x]"], "Input"],
+
+Cell["XMLFreeQ::badpat: The pattern should be an XMLPattern, an XMLElement pattern, an XMLDocument pattern, which matches only a document at depth 0, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f. A rule gives a value, not a test. A CSS selector such as \"nav a\" or \"ul > li\" looks above the element it describes; use XMLCases or XMLPosition to search a tree with it. Child, Adjacent and Sibling were removed in version 4; a test of an element's children constrains them, as in XMLPattern[\"ul\", _, {___, XMLPattern[\"li\"], ___}], and XMLCases searches a tree with a rule, as in XMLPattern[\"ul\", _, {___, x : XMLPattern[\"li\"], ___}] :> x. Got x:XMLPattern[\"p\"] :> x.", "Message", "MSG"],
+
+Cell[BoxData["$Failed"], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A CSS selector that looks above the element gives ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["XMLFreeQ[XMLElement[\"nav\",{},{XMLElement[\"a\",{},{}]}],\"nav a\"]"], "Input"],
+
+Cell["XMLFreeQ::badpat: The pattern should be an XMLPattern, an XMLElement pattern, an XMLDocument pattern, which matches only a document at depth 0, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f. A rule gives a value, not a test. A CSS selector such as \"nav a\" or \"ul > li\" looks above the element it describes; use XMLCases or XMLPosition to search a tree with it. Child, Adjacent and Sibling were removed in version 4; a test of an element's children constrains them, as in XMLPattern[\"ul\", _, {___, XMLPattern[\"li\"], ___}], and XMLCases searches a tree with a rule, as in XMLPattern[\"ul\", _, {___, x : XMLPattern[\"li\"], ___}] :> x. Got \"nav a\".", "Message", "MSG"],
+
+Cell[BoxData["$Failed"], "Output"],
+
+Cell["Root the test at the element instead:", "ExampleText"],
+
+Cell[BoxData["XMLFreeQ[XMLElement[\"nav\",{},{XMLElement[\"a\",{},{}]}],XMLPattern[\"nav\",_,Descendant[XMLPattern[\"a\"]]]]"], "Input"],
+
+Cell[BoxData["False"], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Interactive Examples", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Neat Examples", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"]}, Open]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Metadata", "MetadataSection"],
+
+Cell[TextData[{
+ "New in: ",
+ Cell["XX", "HistoryData",
+  CellTags->"New"],
+ " | Modified in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Modified"],
+ " | Obsolete in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Obsolete"]
+}], "History"],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Categorization",
+ Cell[BoxData[
+  TemplateBox[{"Metadata", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell[
+       "Metadata such as page URI, context, and type of documentation page.", 
+        "MoreInfoText"], BaseStyle -> "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "CategorizationSection"],
+
+Cell["Symbol", "Categorization",
+ CellLabel->"Entity Type"],
+
+Cell["MaximilienTirard/HTMLPatterns", "Categorization",
+ CellLabel->"Paclet Name"],
+
+Cell["MaximilienTirard`HTMLPatterns`", "Categorization",
+ CellLabel->"Context"],
+
+Cell["MaximilienTirard/HTMLPatterns/ref/XMLFreeQ", "Categorization",
+ CellLabel->"URI"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Keywords", "KeywordsSection"],
+
+Cell["XXXX", "Keywords"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Syntax Templates", "TemplatesSection"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Additional Function Template"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Arguments Pattern"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Local Variables"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Color Equal Signs"]
+}, Closed]]
+}, Open  ]]
+},
+TaggingRules->Association["Paclet" -> "None"],
+CellContext->"Global`",
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "FunctionPageStylesExt.nb", 
+  CharacterEncoding -> "UTF-8"]
+]
+(* End of Notebook Content *)

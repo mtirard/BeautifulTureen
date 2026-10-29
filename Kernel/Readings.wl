@@ -1,10 +1,7 @@
 (* ::Package:: *)
 (* HTMLPatterns: readings and materialisation (ADR 0012) *)
 
-(* Used by DisplayRoles.wl *)
-PackageScoped[materialiser]
-
-(* Used by DisplayRoles.wl and Query/Compiler.wl *)
+(* Used by DisplayRoles.wl, Query/Compiler.wl and Query/TreePatterns.wl *)
 PackageScoped[readingsInForce]
 
 (* Used by Notebook.wl, Text.wl, Tree.wl and XMLFunctions.wl *)
@@ -17,11 +14,18 @@ PackageScoped[tok]
 (* Used by Query/Compiler.wl and Query/Run.wl *)
 PackageScoped[unmaterialised]
 
-(* Used by Query/Run.wl *)
+(* Used by Query/Run.wl and Query/TreePatterns.wl *)
 PackageScoped[materialise]
 
 (* Used by XMLFunctions.wl *)
 PackageScoped[withListKeyWarnings]
+
+(* Used by Rewrite.wl *)
+PackageScoped[listKeyJoiners]
+
+(* Used by Positions.wl, Query/Compiler.wl, Query/TreePatterns.wl and Rewrite.wl *)
+PackageScoped[rawKeyOf]
+PackageScoped[splitterOf]
 
 (* =========================================================== *)
 (* Readings (ADR 0012)                                          *)
@@ -54,7 +58,11 @@ splitter[delim_, False] := Function[v, StringSplit[v, delim]];
    space is part of a token. *)
 splitter[delim_, True] := Function[v, StringTrim[#, HTMLWhitespace] & /@ StringSplit[v, delim]];
 
-(* A readings table resolved for the compiler: list key -> {raw key, split}. *)
+(* A readings table resolved for the compiler: list key -> {raw key, split},
+   whose parts rawKeyOf and splitterOf read. *)
+rawKeyOf[{key_, _}] := key;
+splitterOf[{_, split_}] := split;
+
 resolveReading[key_String -> spec_Association] :=
   With[{defaults = $methodDefaults[Lookup[spec, Method, "SpaceSeparated"]]},
     listKeyOf[key, spec] ->
@@ -63,6 +71,14 @@ resolveReading[key_String -> spec_Association] :=
         Replace[Lookup[spec, "TrimWhitespace", Automatic], Automatic -> defaults["TrimWhitespace"]]]}];
 
 resolveReadings[readings_Association] := Association[resolveReading /@ Normal[readings]];
+
+(* list key -> the text a token list is written back with: one space for the
+   space-separated microsyntax, "," for the comma-separated one, whatever the
+   delimiters that split it. *)
+listKeyJoiners[] :=
+  Association @ KeyValueMap[
+    listKeyOf[#1, #2] -> If[Lookup[#2, Method, "SpaceSeparated"] === "CommaSeparated", ",", " "] &,
+    $AttributeReadings];
 
 (* The readings table in force, $AttributeReadings, resolved. A table that
    fails validation has said why, and gives $Failed. *)
@@ -160,16 +176,6 @@ materialiseKey[tree_, reading : {key_, _}, level_] :=
       XMLElement[t_, a_List, c_] :>
         XMLElement[t, Append[a, tok[key] -> Lookup[map, Lookup[a, key, None], {}]], c],
       level]];
-
-(* An element materialised when it is asked for, the distinct raw values on
-   tree split once, up front: for rules tried on one element at a time. *)
-materialiser[_, {}] := Identity;
-materialiser[tree_, readings_] :=
-  With[{maps = {First[#], tokenMap[tree, #, {0, Infinity}]} & /@ readings},
-    attachTokens[maps, #] &];
-
-attachTokens[maps_, XMLElement[t_, a_List, c_]] :=
-  XMLElement[t, Join[a, Function[{key, map}, tok[key] -> Lookup[map, Lookup[a, key, None], {}]] @@@ maps], c];
 
 (* Every token list removed, at any depth, from whatever a name or a test can
    see: an element, an attribute list, a list of copied attribute lists, or a

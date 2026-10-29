@@ -1,5 +1,5 @@
 ---
-status: accepted (amended after implementation; amended by ADR-0015, ADR-0016 and ADR-0018)
+status: superseded by ADR-0023 and ADR-0024
 ---
 
 # A combinator is one plain pattern over its stages, and its names scope as WL's do

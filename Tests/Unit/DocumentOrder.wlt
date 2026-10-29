@@ -49,18 +49,18 @@ TestCreate[
   TestID -> "order-alternatives-condition"
 ];
 
-(* A combinator gives its last stage's elements in the same order *)
+(* A name below the pattern root gives its elements in the same order *)
 TestCreate[
-  XMLCases[$mixed, Descendant[XMLPattern["body"], XMLPattern[_, "id" -> id_]] :> id],
+  XMLCases[$mixed, XMLPattern["body", _, Descendant[XMLPattern[_, "id" -> id_]]] :> id],
   {"1", "2", "3", "4", "5", "6", "7"},
-  TestID -> "order-combinator"
+  TestID -> "order-descendant"
 ];
 
-(* A nested chain too *)
+(* A nested tree pattern too *)
 TestCreate[
-  XMLCases[$mixed, Child[Descendant[XMLPattern["body"], XMLPattern["section" | "div" | "p"]], XMLPattern[_, "id" -> id_]] :> id],
+  XMLCases[$mixed, XMLPattern["body", _, Descendant[XMLPattern["section" | "div" | "p", _, {___, XMLPattern[_, "id" -> id_], ___}]]] :> id],
   {"2", "3", "4", "5", "6"},
-  TestID -> "order-nested-chain"
+  TestID -> "order-nested-tree-pattern"
 ];
 
 (* === XMLFirstCase: the first in document order === *)
@@ -108,9 +108,9 @@ TestCreate[
   TestID -> "first-rule-body-condition-moves-on"
 ];
 
-(* A combinator: the first in document order of its last stage's elements *)
+(* A name below the pattern root: the first of its elements in document order *)
 TestCreate[
-  XMLFirstCase[$mixed, Descendant[XMLPattern["body"], XMLPattern["p" | "div", "id" -> id_]] :> id],
+  XMLFirstCase[$mixed, XMLPattern["body", _, Descendant[XMLPattern["p" | "div", "id" -> id_]]] :> id],
   "2",
-  TestID -> "first-combinator"
+  TestID -> "first-descendant"
 ];

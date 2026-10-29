@@ -519,15 +519,6 @@ TestCreate[
   TestID -> "htn-roles-classlist-absent"
 ];
 
-(* A rule is tried against one element, so a combinator is refused. *)
-TestCreate[
-  HTMLToNotebook[XMLElement["p", {}, {"x"}],
-    "Roles" -> {Child[XMLPattern["div"], XMLPattern["p"]] -> "Skip"}],
-  $Failed,
-  {HTMLToNotebook::badpat},
-  TestID -> "htn-rule-combinator-refused"
-];
-
 (* An entry that is not a rule is refused once, when the option is read. *)
 TestCreate[
   HTMLToNotebook[XMLElement["div", {}, {XMLElement["p", {}, {"a"}], XMLElement["p", {}, {"b"}]}],

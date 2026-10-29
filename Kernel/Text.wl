@@ -57,14 +57,13 @@ HTMLInnerText::usage = "HTMLInnerText[tree] gives the readable text of an XML tr
 
 Options[HTMLInnerText] = {"Roles" -> {}, "BlockSeparator" -> "\n", "AttributeReadings" -> <||>};
 
-HTMLInnerText[XMLObject["Document"][_, root_, _], opts : OptionsPattern[]] :=
-  HTMLInnerText[root, opts];
-
+(* The "Roles" queries run on the input as given, a document included; the
+   walk starts from its root. *)
 HTMLInnerText[tree_, opts : OptionsPattern[]] :=
   withReadings[OptionValue["AttributeReadings"],
     Replace[ruleLookups[{OptionValue["Roles"]}, HTMLInnerText, tree], {
       $Failed -> $Failed,
-      {roles_} :> innerText[tree, roleOf[#, roles, HTMLInnerText] &, OptionValue["BlockSeparator"]]}]
+      {marked_, {roles_}} :> innerText[documentRoot[marked], roleOf[#, roles, HTMLInnerText] &, OptionValue["BlockSeparator"]]}]
   ] /; validTextInputQ[tree];
 
 HTMLInnerText[tree_, OptionsPattern[]] :=

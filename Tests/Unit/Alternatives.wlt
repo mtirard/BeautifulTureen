@@ -148,20 +148,6 @@ TestCreate[
   TestID -> "alts-unbound-attribute-condition"
 ];
 
-(* A Condition that sees only the bound name, or only the unbound one *)
-TestCreate[
-  {XMLCases[$treeUnbound,
-     ((e : XMLPattern["p", "classList" -> "x"]) | s : XMLPattern["section"]) /; {e} === {XMLElement["p", {"class" -> "x"}, {"a"}]}],
-   XMLCases[$treeUnbound,
-     ((e : XMLPattern["p", "classList" -> "x"]) | s : XMLPattern["section"]) /; {s} === {} :> {e}],
-   XMLCases[$treeUnbound,
-     (Child[XMLPattern["body"], e : XMLPattern["p", "classList" -> "x"]] | Child[XMLPattern["body"], s : XMLPattern["section"]]) /;
-       Length[{s}] == 0]},
-  {{XMLElement["p", {"class" -> "x"}, {"a"}]}, {{XMLElement["p", {"class" -> "x"}, {"a"}]}},
-   {XMLElement["p", {"class" -> "x"}, {"a"}]}},
-  TestID -> "alts-unbound-condition-sees-one-name"
-];
-
 TestCreate[
   XMLCases[$treeUnbound,
     (XMLPattern["p", "classList" -> "x"] | s : XMLPattern["section"]) :> {s} /; Length[{s}] == 0],
@@ -174,14 +160,6 @@ TestCreate[
     (XMLPattern["p", "classList" -> "x"] | s : XMLPattern["section"]) :> {s}],
   {},
   TestID -> "alts-unbound-firstcase"
-];
-
-(* An Alternatives as a combinator stage *)
-TestCreate[
-  XMLCases[$treeUnbound,
-    Child[XMLPattern["body"], XMLPattern["p", "classList" -> "x"] | s : XMLPattern["section"]] :> {s}],
-  {{}, {XMLElement["section", {}, {"b"}]}},
-  TestID -> "alts-unbound-combinator-stage"
 ];
 
 (* One name bound as a different kind of thing in each branch: an element, the
@@ -199,22 +177,3 @@ TestCreate[
   TestID -> "alts-kinds-element-attributes"
 ];
 
-(* A name on a list entry. In document order the div's match comes first, as
-   with Cases[$treeKinds, ((a : XMLElement["div", {___, "class" -> "c1", ___}, _]) |
-   XMLElement["body", _, {___, XMLElement["p", _, _], a_}]) :> {a}, {0, Infinity}] *)
-TestCreate[
-  XMLCases[$treeKinds,
-    ((a : XMLPattern["div", "classList" -> "c1"]) | Child[XMLPattern["body"], {___, XMLPattern["p"], a_}]) :> {a}],
-  {{XMLElement["div", {"class" -> "c1"}, {}]}, {XMLElement["span", {}, {}]}},
-  TestID -> "alts-kinds-element-entry"
-];
-
-(* The div is selected by the list and comes first in document order; Cases on
-   XMLElement["p", a_, _] | XMLElement["body", _, {XMLElement["div", {___,
-   "class" -> "c1", ___}, _], a_, ___}] gives the same two in the other order. *)
-TestCreate[
-  XMLCases[$treeKinds,
-    (XMLPattern["p", a_] | Child[XMLPattern["body"], {XMLPattern["div", "classList" -> "c1"], a_, ___}]) :> {a}],
-  {{XMLElement["p", {"id" -> "x"}, {}]}, {{"id" -> "x"}}},
-  TestID -> "alts-kinds-attributes-entry"
-];

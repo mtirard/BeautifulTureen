@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted (superseded in part by ADR-0024)
 ---
 
 # `XMLCases[tree, pattern, n]` gives at most the first n results, and `XMLCases` never takes a levelspec

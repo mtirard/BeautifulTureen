@@ -1,5 +1,5 @@
 ---
-status: accepted (amended by ADR-0018 and ADR-0020)
+status: superseded by ADR-0026
 ---
 
 # `FromCSSSelector` translates a static CSS selector into XML patterns, and a bare string where an XML pattern goes is CSS

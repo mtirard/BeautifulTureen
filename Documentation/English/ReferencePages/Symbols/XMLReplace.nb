@@ -1,0 +1,431 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 12.0' *)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["XMLReplace", "ObjectName"],
+
+Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["XMLReplace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLReplace"], "[", RowBox[{StyleBox["tree", "TI"], ",", RowBox[{StyleBox["pattern", "TI"], "\[RuleDelayed]", RowBox[{"{", RowBox[{RowBox[{StyleBox["x", "TI"], "\[Rule]", StyleBox["new", "TI"]}], ",", StyleBox["\[Ellipsis]", "TR"]}], "}"}]}]}], "]"}]], "InlineFormula"], " \[LineSeparator]replaces what each name ", Cell[BoxData[StyleBox["x", "TI"]], "InlineFormula"], " of ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " matches by ", Cell[BoxData[StyleBox["new", "TI"]], "InlineFormula"], ", for every result of ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], ", and gives the rewritten tree.", "\n", Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["XMLReplace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLReplace"], "[", RowBox[{StyleBox["tree", "TI"], ",", RowBox[{StyleBox["pattern", "TI"], "\[RuleDelayed]", StyleBox["new", "TI"]}]}], "]"}]], "InlineFormula"], " \[LineSeparator]replaces each match of ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " by ", Cell[BoxData[StyleBox["new", "TI"]], "InlineFormula"], ".", "\n", Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["XMLReplace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLReplace"], "[", RowBox[{StyleBox["tree", "TI"], ",", RowBox[{"{", RowBox[{SubscriptBox[StyleBox["rule", "TI"], StyleBox["1", "TR"]], ",", SubscriptBox[StyleBox["rule", "TI"], StyleBox["2", "TR"]], ",", StyleBox["\[Ellipsis]", "TR"]}], "}"}]}], "]"}]], "InlineFormula"], " \[LineSeparator]gives each place the replacement of the first rule that names it."}], "Usage"],
+
+Cell[TextData[{Cell[BoxData[RowBox[{ButtonBox["XMLReplace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLReplace"], "[", RowBox[{StyleBox["tree", "TI"], ",", RowBox[{StyleBox["pattern", "TI"], "\[RuleDelayed]", RowBox[{"{", RowBox[{RowBox[{StyleBox["x", "TR"], "\[Rule]", StyleBox["new", "TI"]}], ",", StyleBox["\[Ellipsis]", "TR"]}], "}"}]}]}], "]"}]], "InlineFormula"], " replaces the places that the names ", Cell[BoxData[StyleBox["x", "TR"]], "InlineFormula"], ", etc. match, for every result of ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], ". Only the names on the left of the rules count the results; names used only in ", Cell[BoxData[StyleBox["new", "TI"]], "InlineFormula"], " are tests."}], "Notes"],
+
+Cell[TextData[{Cell[BoxData[RowBox[{ButtonBox["XMLReplace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLReplace"], "[", RowBox[{StyleBox["tree", "TI"], ",", RowBox[{StyleBox["pattern", "TI"], "\[RuleDelayed]", StyleBox["new", "TI"]}]}], "]"}]], "InlineFormula"], ", with any other right-hand side, replaces each element that the pattern root of ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " matches, as ", Cell[BoxData[ButtonBox["Replace", BaseStyle -> "Link", ButtonData -> "paclet:ref/Replace"]], "InlineFormula"], " does."}], "Notes"],
+
+Cell[TextData[{Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " can be an ", Cell[BoxData[ButtonBox["XMLObject", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLObject"]], "InlineFormula"], ", an ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], ", or a list of ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], " objects. ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " can have the same forms as in ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLCases"]], "InlineFormula"], "."}], "Notes"],
+
+Cell[TextData[{Cell[BoxData[RowBox[{ButtonBox["XMLReplace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLReplace"], "[", RowBox[{StyleBox["tree", "TI"], ",", RowBox[{"{", RowBox[{SubscriptBox[StyleBox["rule", "TI"], StyleBox["1", "TR"]], ",", SubscriptBox[StyleBox["rule", "TI"], StyleBox["2", "TR"]], ",", StyleBox["\[Ellipsis]", "TR"]}], "}"}]}], "]"}]], "InlineFormula"], " gives each place the replacement of the first rule that names it."}], "Notes"],
+
+Cell["A replacement must be of the kind that its place takes:", "Notes"],
+
+Cell[BoxData[GridBox[{
+{Cell["      ", "ModInfo"], StyleBox[Cell["place", "TableText"], FontSlant->"Italic"], StyleBox[Cell["replacement", "TableText"], FontSlant->"Italic"]},
+{Cell["      ", "ModInfo"], Cell["an element", "TableText"], Cell[TextData[{"an element, a string, ", Cell[BoxData[RowBox[{ButtonBox["Splice", BaseStyle -> "Link", ButtonData -> "paclet:ref/Splice"], "[", StyleBox["list", "TI"], "]"}]], "InlineFormula"], ", or ", Cell[BoxData[ButtonBox["Nothing", BaseStyle -> "Link", ButtonData -> "paclet:ref/Nothing"]], "InlineFormula"], " to remove it"}], "TableText"]},
+{Cell["      ", "ModInfo"], Cell["a tag", "TableText"], Cell["a string", "TableText"]},
+{Cell["      ", "ModInfo"], Cell["the attribute list", "TableText"], Cell["a list of rules", "TableText"]},
+{Cell["      ", "ModInfo"], Cell["an attribute value", "TableText"], Cell[TextData[{"a string, or ", Cell[BoxData[ButtonBox["Nothing", BaseStyle -> "Link", ButtonData -> "paclet:ref/Nothing"]], "InlineFormula"], " to remove the attribute"}], "TableText"]},
+{Cell["      ", "ModInfo"], Cell[TextData[{"a list key, such as ", Cell[BoxData["\"classList\""], "InlineFormula"]}], "TableText"], Cell["a list of strings", "TableText"]},
+{Cell["      ", "ModInfo"], Cell["a token of a list key", "TableText"], Cell["a string", "TableText"]},
+{Cell["      ", "ModInfo"], Cell["a run of tokens", "TableText"], Cell["a list of strings", "TableText"]},
+{Cell["      ", "ModInfo"], Cell["the contents of an element", "TableText"], Cell["a list of nodes", "TableText"]},
+{Cell["      ", "ModInfo"], Cell["a run of element children", "TableText"], Cell[TextData[{Cell[BoxData[RowBox[{ButtonBox["Splice", BaseStyle -> "Link", ButtonData -> "paclet:ref/Splice"], "[", StyleBox["list", "TI"], "]"}]], "InlineFormula"], ", a list, or ", Cell[BoxData[ButtonBox["Nothing", BaseStyle -> "Link", ButtonData -> "paclet:ref/Nothing"]], "InlineFormula"]}], "TableText"]},
+{Cell["      ", "ModInfo"], Cell["the empty place between children", "TableText"], Cell["the nodes to insert", "TableText"]}
+}]], "2ColumnTableMod"],
+
+Cell[TextData[{"A replacement of the wrong kind gives ", Cell[BoxData["XMLReplace::kind"], "InlineFormula"], ", and that place is left unchanged. The other replacements are made."}], "Notes"],
+
+Cell[TextData[{"Every place is found in the original ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], ". The replacements are then made inside out: the contents of an element before the element, and later places before earlier ones."}], "Notes"],
+
+Cell[TextData[{"Each ", Cell[BoxData[StyleBox["new", "TI"]], "InlineFormula"], " is evaluated when its place is replaced, and the names it uses have their values in the tree as rewritten so far. So a rule for an element sees the replacements already made inside it."}], "Notes"],
+
+Cell[TextData[{"When a place gets different replacements from different results, the first result wins, with ", Cell[BoxData["XMLReplace::conflict"], "InlineFormula"], ". When a name's place was removed by an earlier replacement, the name keeps its original value, with ", Cell[BoxData["XMLReplace::stale"], "InlineFormula"], "."}], "Notes"],
+
+Cell["The document, and a named path, cannot be replaced.", "Notes"],
+
+Cell[TextData[{"A bare pattern, with no replacement, gives ", Cell[BoxData["XMLReplace::bare"], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], "."}], "Notes"],
+
+Cell["The following option can be given:", "Notes"],
+
+Cell[BoxData[GridBox[{
+{Cell["      ", "ModInfo"], StyleBox[Cell["option", "TableText"], FontSlant->"Italic"], StyleBox[Cell["default", "TableText"], FontSlant->"Italic"], StyleBox[Cell["description", "TableText"], FontSlant->"Italic"]},
+{Cell["      ", "ModInfo"], "\"AttributeReadings\"", StyleBox["<||>", "TR"], Cell[TextData[{"entries to add to ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/$AttributeReadings"]], "InlineFormula"], " for this call, as in ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLCases"]], "InlineFormula"]}], "TableText"]}
+}]], "3ColumnTableMod"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "See Also",
+ Cell[BoxData[
+  TemplateBox[{"SeeAlso", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell[
+       "Insert links to any related reference (function) pages.", 
+        "MoreInfoText"], BaseStyle -> "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "SeeAlsoSection"],
+
+Cell[TextData[{Cell[BoxData[TemplateBox[{Cell[TextData["XMLDeleteCases"]], "paclet:MaximilienTirard/HTMLPatterns/ref/XMLDeleteCases"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLCases"]], "paclet:MaximilienTirard/HTMLPatterns/ref/XMLCases"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLPosition"]], "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPosition"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLExtract"]], "paclet:MaximilienTirard/HTMLPatterns/ref/XMLExtract"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLPattern"]], "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["Replace"]], "paclet:ref/Replace"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["ReplaceAll"]], "paclet:ref/ReplaceAll"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["ReplacePart"]], "paclet:ref/ReplacePart"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}]}], "SeeAlso"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Tech Notes",
+ Cell[BoxData[
+  TemplateBox[{"TechNotes", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell["Insert links to related tech notes.", "MoreInfoText"], BaseStyle -> 
+       "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "TechNotesSection"],
+
+Cell["XXXX", "Tutorials"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Related Guides", "MoreAboutSection"],
+
+Cell[TextData[ButtonBox["HTMLPatterns", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/guide/HTMLPatterns"]], "MoreAbout"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Related Links",
+ Cell[BoxData[
+  TemplateBox[{"RelatedLinks", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell[
+       "Insert links to any related page, including web pages.", 
+        "MoreInfoText"], BaseStyle -> "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "RelatedLinksSection"],
+
+Cell["XXXX", "RelatedLinks"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Examples Initialization",
+ Cell[BoxData[
+  TemplateBox[{"ExamplesInitialization", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell[
+       "Input that is to be evaluated before any examples are run, e.g. \
+Needs[\[Ellipsis]].", "MoreInfoText"], BaseStyle -> "IFrameBox"]], 
+     "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "ExamplesInitializationSection"],
+
+Cell[BoxData[RowBox[{"Needs", "[", "\"MaximilienTirard`HTMLPatterns`\"", "]"}]], "ExampleInitialization"]
+}, Open  ]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[GridBox[{
+    {
+     StyleBox[
+      RowBox[{"Basic", " ", "Examples"}], "PrimaryExamplesSection"], 
+     ButtonBox[
+      RowBox[{
+       RowBox[{"More", " ", "Examples"}], " ", "\[RightTriangle]"}],
+      BaseStyle->"ExtendedExamplesLink",
+      ButtonData:>"ExtendedExamples"]}
+   }],
+  $Line = 0; Null]], "PrimaryExamplesSection"],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Replace each b element by a strong element with the same contents:", "ExampleText"], Cell[BoxData["tree=ImportString[\"<p>Some <b>bold</b> and <b>more</b> text.</p>\",{\"HTML\",\"XMLObject\"}];
+XMLCases[XMLReplace[tree,x:XMLPattern[\"b\"]:>XMLElement[\"strong\",{},x[[3]]]],XMLPattern[\"p\"]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"\"Some \"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"strong\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"bold\"", "}"}]}], "]"}], ",", "\" and \"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"strong\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"more\"", "}"}]}], "]"}], ",", "\" text.\""}], "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Name the parts to replace, and give their replacements as rules:", "ExampleText"], Cell[BoxData["page={XMLElement[\"div\",{\"class\"->\"note\"},{XMLElement[\"p\",{},{\"x\"}],XMLElement[\"span\",{},{\"y\"}]}]};
+XMLReplace[page,XMLPattern[\"div\",\"class\"->c_,{___,p:XMLPattern[\"p\"],___}]:>{p->XMLElement[\"p\",{\"class\"->c},p[[3]]]}]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", RowBox[{"\"class\"", "\[Rule]", "\"note\""}], "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "\[Rule]", "\"note\""}], "}"}], ",", RowBox[{"{", "\"x\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"span\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"y\"", "}"}]}], "]"}]}], "}"}]}], "]"}], "}"}]], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "More Examples",
+ Cell[BoxData[
+  TemplateBox[{"MoreExamples", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell["Extended examples in standardized sections.", "MoreInfoText"], 
+       BaseStyle -> "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "ExtendedExamplesSection",
+ CellTags->"ExtendedExamples"],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Scope", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Replace an attribute value:", "ExampleText"], Cell[BoxData["links={XMLElement[\"a\",{\"href\"->\"http://example.com\"},{\"x\"}]};
+XMLReplace[links,XMLPattern[\"a\",\"href\"->h_]:>{h->StringReplace[h,\"http:\"->\"https:\"]}]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"href\"", "\[Rule]", "\"https://example.com\""}], "}"}], ",", RowBox[{"{", "\"x\"", "}"}]}], "]"}], "}"}]], "Output"],
+
+Cell["Remove an attribute with Nothing:", "ExampleText"],
+
+Cell[BoxData["XMLReplace[links,XMLPattern[\"a\",\"href\"->h_]:>{h->Nothing}]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"x\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Rename the tag of each element:", "ExampleText"], Cell[BoxData["XMLReplace[{XMLElement[\"div\",{},{XMLElement[\"b\",{},{\"x\"}]}]},XMLPattern[t:\"b\"]:>{t->\"strong\"}]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"strong\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"x\"", "}"}]}], "]"}], "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Replace a class token, keeping the others:", "ExampleText"], Cell[BoxData["XMLReplace[{XMLElement[\"p\",{\"class\"->\"lead old\"},{}]},XMLPattern[\"p\",\"classList\"->{___,c:\"old\",___}]:>{c->\"new\"}]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "\[Rule]", "\"lead new\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Replace the contents of an element:", "ExampleText"], Cell[BoxData["XMLReplace[{XMLElement[\"pre\",{},{\"long code\"}]},XMLElement[\"pre\",_,c_]:>{c->{\"(code)\"}}]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"pre\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"(code)\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Insert an element into an empty list, at the empty place after its children:", "ExampleText"], Cell[BoxData["XMLReplace[{XMLElement[\"ul\",{},{}]},XMLPattern[\"ul\",_,{___,g:PatternSequence[]}]:>{g->XMLElement[\"li\",{},{\"new\"}]}]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"ul\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"new\"", "}"}]}], "]"}], "}"}]}], "]"}], "}"}]], "Output"],
+
+Cell["Insert an element after the first child:", "ExampleText"],
+
+Cell[BoxData["XMLReplace[{XMLElement[\"ul\",{},{XMLElement[\"li\",{},{\"a\"}],XMLElement[\"li\",{},{\"c\"}]}]},XMLPattern[\"ul\",_,{_,g:PatternSequence[],___}]:>{g->XMLElement[\"li\",{},{\"b\"}]}]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"ul\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"a\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"b\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"c\"", "}"}]}], "]"}]}], "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Replace an element by several with Splice:", "ExampleText"], Cell[BoxData["XMLReplace[{XMLElement[\"div\",{},{XMLElement[\"br\",{},{}]}]},x:XMLPattern[\"br\"]:>Splice[{\"line one\",XMLElement[\"br\",{},{}],\"line two\"}]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"\"line one\"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"br\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "]"}], ",", "\"line two\""}], "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Replace a run of children:", "ExampleText"], Cell[BoxData["section={XMLElement[\"section\",{},{XMLElement[\"h2\",{},{\"A\"}],XMLElement[\"p\",{},{\"a1\"}],XMLElement[\"p\",{},{\"a2\"}]}]};
+XMLReplace[section,XMLPattern[\"section\",_,{XMLPattern[\"h2\"],run__}]:>{run->{XMLElement[\"p\",{},{\"summary\"}]}}]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"section\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"h2\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"A\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"summary\"", "}"}]}], "]"}]}], "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Unwrap each span, replacing it by its contents:", "ExampleText"], Cell[BoxData["tree={XMLElement[\"p\",{},{\"a \",XMLElement[\"span\",{},{\"b\"}],\" c\"}]};
+XMLReplace[tree,x:XMLPattern[\"span\"]:>Splice[x[[3]]]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"\"a \"", ",", "\"b\"", ",", "\" c\""}], "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Replace the elements inside each other in one call, inside out:", "ExampleText"], Cell[BoxData["XMLReplace[{XMLElement[\"p\",{},{XMLElement[\"i\",{},{XMLElement[\"b\",{},{\"x\"}]}]}]},x:XMLPattern[\"i\"|\"b\"]:>{x->ReplacePart[x,1->(x[[1]]/.{\"i\"->\"em\",\"b\"->\"strong\"})]}]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"em\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"strong\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"x\"", "}"}]}], "]"}], "}"}]}], "]"}], "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give several rules, where each place takes the first rule that names it:", "ExampleText"], Cell[BoxData["links={XMLElement[\"p\",{},{XMLElement[\"a\",{\"id\"->\"1\"},{}],XMLElement[\"a\",{\"id\"->\"2\"},{}]}]};
+XMLReplace[links,{XMLPattern[\"a\",\"id\"->\"2\"]:>\"two\",XMLPattern[\"a\"]:>\"other\"}]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"\"other\"", ",", "\"two\""}], "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give a CSS selector string, naming the element it selects:", "ExampleText"], Cell[BoxData["page=ImportString[\"<body><nav><a href=\\\"/\\\">Home</a></nav><a href=\\\"/about\\\">About</a></body>\",{\"HTML\",\"XMLObject\"}];
+HTMLTextContent[XMLReplace[page,n:\"nav a\":>{n->\"(link)\"}]]"], "Input"],
+
+Cell[BoxData["\"(link)About\""], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Generalizations & Extensions", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"]}, Open]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "Options", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["AttributeReadings", "ExampleSubsection"], $Line = 0; Null]], "ExampleSubsection"], Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Split rel into tokens, and replace one of them:", "ExampleText"], Cell[BoxData["links={XMLElement[\"a\",{\"rel\"->\"nofollow noopener\"},{}]};
+XMLReplace[links,XMLPattern[\"a\",\"relList\"->{___,r:\"nofollow\",___}]:>{r->\"ugc\"},\"AttributeReadings\"-> <|\"rel\"-> <||>|>]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"rel\"", "\[Rule]", "\"ugc noopener\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "}"}]], "Output"]}, Open]]}, Open]],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "XXXX", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "XXXX", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"]
+}, Open  ]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Applications", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Make every relative link absolute:", "ExampleText"], Cell[BoxData["page=ImportString[\"<p><a href=\\\"/about\\\">About</a> <a href=\\\"https://w3.org\\\">W3C</a></p>\",{\"HTML\",\"XMLObject\"}];
+XMLCases[XMLReplace[page,XMLPattern[\"a\",\"href\"->h_?(StringStartsQ[\"/\"])]:>{h->\"https://example.com\"<>h}],XMLPattern[\"a\",\"href\"->h_]:>h]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"\"https://example.com/about\"", ",", "\"https://w3.org\""}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Number the items of each list:", "ExampleText"], Cell[BoxData["lists={XMLElement[\"ol\",{},{XMLElement[\"li\",{},{\"Miso\"}],XMLElement[\"li\",{},{\"Pho\"}]}]};
+XMLReplace[lists,XMLPattern[\"ol\",_,{before___,x:XMLPattern[\"li\"],___}]:>{x->XMLElement[\"li\",{},{ToString[Length[{before}]+1]<>\". \",Splice[x[[3]]]}]}]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"ol\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"\"1. \"", ",", "\"Miso\""}], "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"\"2. \"", ",", "\"Pho\""}], "}"}]}], "]"}]}], "}"}]}], "]"}], "}"}]], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Properties & Relations", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Replacing an element by Nothing removes it, as XMLDeleteCases does:", "ExampleText"], Cell[BoxData["page=ImportString[\"<div><p>a</p><b>b</b></div>\",{\"HTML\",\"XMLObject\"}];
+XMLReplace[page,XMLPattern[\"p\"]:>Nothing]===XMLDeleteCases[page,XMLPattern[\"p\"]]"], "Input"],
+
+Cell[BoxData["True"], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["XMLReplace replaces the places that XMLPosition gives for the same names:", "ExampleText"], Cell[BoxData["links={XMLElement[\"p\",{},{XMLElement[\"a\",{\"href\"->\"/a\"},{}],XMLElement[\"a\",{\"href\"->\"/b\"},{}]}]};
+{XMLPosition[links,XMLPattern[\"a\",\"href\"->h_]:>h],XMLReplace[links,XMLPattern[\"a\",\"href\"->h_]:>{h->\"#\"}]}"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"1", ",", "1", ",", RowBox[{"Key", "[", "\"href\"", "]"}]}], "}"}], ",", RowBox[{"{", RowBox[{"1", ",", "2", ",", RowBox[{"Key", "[", "\"href\"", "]"}]}], "}"}]}], "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"href\"", "\[Rule]", "\"#\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"href\"", "\[Rule]", "\"#\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}]}], "}"}]}], "]"}], "}"}]}], "}"}]], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Possible Issues", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A pattern with no replacement issues a message:", "ExampleText"], Cell[BoxData["XMLReplace[{XMLElement[\"a\",{},{}]},XMLPattern[\"a\"]]"], "Input"],
+
+Cell["XMLReplace::bare: XMLPattern[\"a\"] is a pattern with no replacement, which would replace each match by itself. Name what to replace and give its replacement, as in x : p :> {x -> new}, or replace the match itself, as in p :> new.", "Message", "MSG"],
+
+Cell[BoxData["$Failed"], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A replacement of the wrong kind leaves its place unchanged:", "ExampleText"], Cell[BoxData["XMLReplace[{XMLElement[\"a\",{\"href\"->\"/x\"},{}]},XMLPattern[\"a\",\"href\"->h_]:>{h->5}]"], "Input"],
+
+Cell["XMLReplace::kind: The replacement 5 for position {1, Key[\"href\"]} is not of a kind that position takes, and the position is left unchanged. An element takes an element, a string, Splice[list] or Nothing; a tag a string; an attribute list a list of rules; an attribute value a string or Nothing; a list key a list of strings; a token a string, and a run of tokens a list of strings; contents a list of nodes; a run of children Splice[list], a list or Nothing; a gap the nodes to insert.", "Message", "MSG"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"href\"", "\[Rule]", "\"/x\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "}"}]], "Output"],
+
+Cell["Give a string for an attribute value:", "ExampleText"],
+
+Cell[BoxData["XMLReplace[{XMLElement[\"a\",{\"href\"->\"/x\"},{}]},XMLPattern[\"a\",\"href\"->h_]:>{h->\"5\"}]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"href\"", "\[Rule]", "\"5\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["When results give one place different replacements, the first result wins:", "ExampleText"], Cell[BoxData["XMLReplace[{XMLElement[\"ul\",{},{XMLElement[\"li\",{},{}],XMLElement[\"li\",{},{}],XMLElement[\"li\",{},{}]}]},XMLPattern[\"ul\",_,{___,x:XMLPattern[\"li\"],___,y:XMLPattern[\"li\"],___}]:>{x->\"first\",y->\"second\"}]"], "Input"],
+
+Cell["XMLReplace::conflict: Position {1, 2} is given different replacements by different results; the replacement of the first result is used.", "Message", "MSG"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"ul\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"\"first\"", ",", "\"second\"", ",", "\"second\""}], "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A name whose place an earlier replacement removed keeps its original value:", "ExampleText"], Cell[BoxData["XMLReplace[{XMLElement[\"div\",{},{XMLElement[\"p\",{\"id\"->\"1\"},{}],XMLElement[\"p\",{\"id\"->\"2\"},{}]}]},XMLPattern[\"div\",_,{x:XMLPattern[\"p\"],y:XMLPattern[\"p\"]}]:>{x->y,y->Nothing}]"], "Input"],
+
+Cell["XMLReplace::stale: The position {1, 2} of y was removed by an earlier replacement, so y has its original value.", "Message", "MSG"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"id\"", "\[Rule]", "\"2\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A rule whose right-hand side is not a list of rules for names replaces the whole match:", "ExampleText"], Cell[BoxData["links={XMLElement[\"a\",{\"href\"->\"/x\"},{\"x\"}]};
+{XMLReplace[links,XMLPattern[\"a\",\"href\"->h_]:>h],XMLReplace[links,XMLPattern[\"a\",\"href\"->h_]:>{h->h}]}"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", "\"/x\"", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"href\"", "\[Rule]", "\"/x\""}], "}"}], ",", RowBox[{"{", "\"x\"", "}"}]}], "]"}], "}"}]}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["ReplaceAll treats an XMLPattern as a literal expression:", "ExampleText"], Cell[BoxData["tree={XMLElement[\"b\",{},{\"x\"}]};
+{tree/.XMLPattern[\"b\"]->\"y\",XMLReplace[tree,XMLPattern[\"b\"]:>\"y\"]}"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"b\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"x\"", "}"}]}], "]"}], "}"}], ",", RowBox[{"{", "\"y\"", "}"}]}], "}"}]], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Interactive Examples", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Neat Examples", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"]}, Open]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Metadata", "MetadataSection"],
+
+Cell[TextData[{
+ "New in: ",
+ Cell["XX", "HistoryData",
+  CellTags->"New"],
+ " | Modified in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Modified"],
+ " | Obsolete in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Obsolete"]
+}], "History"],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Categorization",
+ Cell[BoxData[
+  TemplateBox[{"Metadata", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell[
+       "Metadata such as page URI, context, and type of documentation page.", 
+        "MoreInfoText"], BaseStyle -> "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "CategorizationSection"],
+
+Cell["Symbol", "Categorization",
+ CellLabel->"Entity Type"],
+
+Cell["MaximilienTirard/HTMLPatterns", "Categorization",
+ CellLabel->"Paclet Name"],
+
+Cell["MaximilienTirard`HTMLPatterns`", "Categorization",
+ CellLabel->"Context"],
+
+Cell["MaximilienTirard/HTMLPatterns/ref/XMLReplace", "Categorization",
+ CellLabel->"URI"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Keywords", "KeywordsSection"],
+
+Cell["XXXX", "Keywords"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Syntax Templates", "TemplatesSection"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Additional Function Template"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Arguments Pattern"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Local Variables"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Color Equal Signs"]
+}, Closed]]
+}, Open  ]]
+},
+TaggingRules->Association["Paclet" -> "None"],
+CellContext->"Global`",
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "FunctionPageStylesExt.nb", 
+  CharacterEncoding -> "UTF-8"]
+]
+(* End of Notebook Content *)

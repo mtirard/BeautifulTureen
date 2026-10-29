@@ -281,7 +281,7 @@ TestCreate[
 TestCreate[
   HTMLInnerText[$richText, "Roles" -> {XMLPattern["li", "a", "b"] -> "Skip"}],
   $Failed,
-  {XMLPattern::nargs},
+  {XMLPattern::constraint},
   TestID -> "innertext-roles-xmlpattern-refusal"
 ];
 

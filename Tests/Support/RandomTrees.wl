@@ -1,7 +1,7 @@
 (*
 	Seeded random trees, for tests that compare two ways of running a query on
-	many inputs (a recognised shape against WL's matcher, a CSS selector against
-	its translation).
+	many inputs (a query against the XPath oracle, a CSS selector against its
+	translation, two CSS selectors that a law relates).
 
 	A tree is an XMLElement whose element children are drawn from a small
 	alphabet of tags, each with a random class attribute (absent, empty, or one

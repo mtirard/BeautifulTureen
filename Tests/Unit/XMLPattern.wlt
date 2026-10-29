@@ -79,7 +79,7 @@ TestCreate[
 TestCreate[
   XMLCases[$links, XMLPattern["a", "href" -> _, "rel" -> _]],
   $Failed,
-  {XMLPattern::nargs},
+  {XMLPattern::constraint},
   TestID -> "xmlpattern-refuses-third-argument"
 ];
 
@@ -169,9 +169,9 @@ TestCreate[
 
 TestCreate[
   XMLCases[XMLElement["div", {}, {$xy}],
-    Child[XMLPattern["div"], XMLPattern["p", {("x" | "y") -> v_, "x" -> w_}]] :> {v, w}],
+    XMLPattern["div", _, {___, XMLPattern["p", {("x" | "y") -> v_, "x" -> w_}], ___}] :> {v, w}],
   {{"2", "1"}},
-  TestID -> "xmlpattern-overlapping-keys-combinator-stage"
+  TestID -> "xmlpattern-overlapping-keys-contents-entry"
 ];
 
 TestCreate[
@@ -223,7 +223,7 @@ TestCreate[
 (* A string pattern handed to a string function is not a bare one. *)
 TestCreate[
   XMLCases[$links, XMLPattern["a", "href" -> _?(StringMatchQ["/" ~~ __])] :> "hit"],
-  {"hit", "hit"},
+  {"hit"},
   TestID -> "xmlpattern-string-pattern-inside-test-accepted"
 ];
 
@@ -232,4 +232,19 @@ TestCreate[
   Length @ XMLCases[$links, XMLPattern["a", "rel"] | XMLPattern["input", "required"]],
   2,
   TestID -> "xmlpattern-composes-with-alternatives"
+];
+
+(* === A rule over a bare XMLPattern === *)
+
+TestCreate[
+  XMLCases[$tree, x:XMLPattern["p"] :> HTMLTextContent[x]],
+  {"Hello", "World", "Nav"},
+  TestID -> "base-rule-named"
+];
+
+(* Named attribute flows through XMLPattern *)
+TestCreate[
+  XMLCases[$treeProducts, XMLPattern["a", "href" -> href_] :> href],
+  {"/sale", "/regular"},
+  TestID -> "attr-extraction-href"
 ];

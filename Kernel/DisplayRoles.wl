@@ -6,10 +6,12 @@
 PackageScoped[ruleLookups]
 PackageScoped[roleOf]
 PackageScoped[innerText]
+PackageScoped[documentRoot]
 
 (* Used by Notebook.wl *)
 PackageScoped[normWS]
 PackageScoped[noRule]
+PackageScoped[unmarked]
 
 (* =========================================================== *)
 (* Display-role substrate (shared Layer 1)                     *)
@@ -54,44 +56,129 @@ defaultRole[tag_String] := Which[
   True,                        "Inline"];
 defaultRole[_] := "Inline";
 
-(* ---- Role rules: an Association sugars to an ordered rule list; first
-   match wins. A string left-hand side is a CSS selector, as anywhere an XML
-   pattern goes. ---- *)
+(* ---- Role and construct rules: an Association sugars to
+   an ordered rule list; the first rule that selects an element wins. A
+   string key is a CSS selector, as anywhere an XML pattern goes. ---- *)
 $displayRoles = {"Block", "Inline", "Preformatted", "LineBreak", "Skip"};
 validRoleQ[r_] := MemberQ[$displayRoles, r];
 
-(* Each rule's left-hand side is compiled like a query, and must be an element
-   pattern: a rule is tried against one element at a time. compileRule gives
-   {rule, readings}, the readings being those of the list keys it names, or
-   $Failed for an entry that is refused, a non-rule among them. *)
-compileRule[Verbatim[Rule][lhs_, r_], head_, readings_] :=
-  Replace[elementQuery[compileWith[lhs, head, readings], lhs, head, "badpat"],
-    c_Association :> {c["Plain"] -> r, c["Readings"]}];
-compileRule[rule_RuleDelayed, head_, readings_] :=
-  Replace[
-    elementQuery[
-      compileWith[RuleDelayed @@ Join[Hold @@ {rule[[1]]}, Extract[rule, {2}, Hold]], head, readings],
-      rule[[1]], head, "badpat"],
-    c_Association :> {c["Plain"], c["Readings"]}];
-compileRule[x_, head_, _] := With[{h = head}, Message[MessageName[h, "notrule"], x]; $Failed];
+(* Every rule is run once on the tree engine, against the input as given,
+   before the walk. A key that is a rule is a query, whose counted element
+   positions get the value; a CSS string is a query when its translation is
+   one, a context selector; any other key is an element test, each element
+   tested as the pattern root, its names bound for the value from its first
+   result. The walk asks about an element, not a position, and equal
+   elements at two positions can get different values, so each element a
+   rule selects is marked with its position, an attribute keyMark -> pos.
+   The walkers read attributes by name, so the mark is unseen, and an
+   element given to user code is unmarked first. *)
 
-(* ruleLookups[{rules1, rules2, ...}, head, tree]: for each rule set, a
-   function from an element of tree to the value of the first rule that matches
-   it, or noRule; $Failed if any set is refused. The readings table is resolved
-   once for them all. A rule naming a list key is matched on the element with
-   its token lists attached, each distinct raw value on the tree split once;
-   the element itself is never changed, so a caller walks the tree as it is. *)
+(* ruleLookups[{rules1, rules2, ...}, head, tree]: {marked, lookups}, tree
+   with every element a rule selects marked, and for each rule set a function
+   from an element of marked to the value of the first rule that selects it,
+   or noRule; $Failed if any set is refused. The readings table is checked
+   whatever the rules, so that a bad one is refused once. *)
 ruleLookups[sets_List, head_, tree_] :=
-  With[{readings = readingsInForce[]},
-    If[readings === $Failed, $Failed,
-      With[{lookups = ruleLookup[#, head, readings, tree] & /@ sets},
-        If[MemberQ[lookups, $Failed], $Failed, lookups]]]];
+  Catch[
+    If[readingsInForce[] === $Failed, refuseRule[]];
+    With[{tables = ruleTable[#, head, tree] & /@ sets},
+      {markedTree[tree, Union @@ (Keys /@ tables)], lookupIn /@ tables}],
+    $ruleRefusal];
 
-ruleLookup[rules_, head_, readings_, tree_] :=
-  With[{cs = compileRule[#, head, readings] & /@ If[AssociationQ[rules], Normal[rules], Flatten[{rules}]]},
-    If[MemberQ[cs, $Failed], $Failed,
-      With[{rs = Append[cs[[All, 1]], _ -> noRule], attach = materialiser[tree, Union @@ cs[[All, 2]]]},
-        Replace[attach[#], rs] &]]];
+(* Position -> value for one rule set, the first rule's value where several
+   select one element. *)
+ruleTable[rules_, head_, tree_] :=
+  Join[<||>, Sequence @@ Reverse[rulePositions[#, head, tree] & /@ If[AssociationQ[rules], Normal[rules], Flatten[{rules}]]]];
+
+refuseRule[] := Throw[$Failed, $ruleRefusal];
+
+rulePositions[r : (Rule | RuleDelayed)[key_, _], head_, tree_] :=
+  If[queryKeyQ[key], queryKeyPositions, testKeyPositions][key, heldValue[r], head, tree];
+rulePositions[x_, head_, _] := (Message[MessageName[head, "notrule"], x]; refuseRule[]);
+
+queryKeyQ[_Rule | _RuleDelayed] := True;
+queryKeyQ[s_String] := MatchQ[Quiet[cssTree[s]], {"context", _}];
+queryKeyQ[_] := False;
+
+(* A rule's value, held. A Rule's was evaluated when it was given; a
+   Condition in it is part of the value, not a test. *)
+heldValue[r_RuleDelayed] := Extract[r, {2}, Hold];
+heldValue[r_Rule] := Replace[Extract[r, {2}, Hold], Hold[c_Condition] :> Hold[Identity[c]]];
+
+(* A query key's names are not in scope in the value, which is evaluated once
+   for all the positions of its counted names. The bare input's root is never
+   counted (ADR 0018), so a query cannot select it. A position that is not an
+   element is keytarget. *)
+queryKeyPositions[key_, value_, head_, tree_] :=
+  With[{ps = Replace[treeCountedPositions[head, Replace[tree, s_String :> {s}], key], {
+      $Failed :> refuseRule[],
+      rs_ :> DeleteDuplicates[Join @@ rs]}]},
+    Replace[SelectFirst[ps, !MatchQ[#, {__Integer?Positive}] &],
+      t : Except[_Missing] :> (Message[MessageName[head, "keytarget"], t]; refuseRule[])];
+    If[ps === {}, <||>, AssociationThread[ps, ConstantArray[ReleaseHold[value], Length[ps]]]]];
+
+(* An element test is checked as XMLMatchQ checks one, then run as the query
+   r : key :> value counting r alone, so that each element it matches is one
+   result and the other names take their matches in its first solution
+   (treeSolutions). An XMLDocument root is no test of an element. A bare
+   element is matched in a list around it, at the same positions, so that
+   its root is tested too. *)
+testKeyPositions[key_, value_, head_, tree_] :=
+  Module[{r},
+    If[documentKeyQ[key], Message[MessageName[head, "badpat"], key]; refuseRule[]];
+    If[treeMatcher[head, key, False] === $Failed, refuseRule[]];
+    With[{names = Select[namesIn[Hold[key]], !FreeQ[value, Replace[#, Hold[s_] :> HoldPattern[s]]] &],
+        sols = treeSolutions[head, Replace[tree, x : (_XMLElement | _String) :> {x}],
+          RuleDelayed @@ Join[Hold @@ {Pattern @@ {r, key}}, value], {Hold[r]}]},
+      Which[sols === $Failed, refuseRule[], sols === {}, Return[<||>, Module]];
+      With[{constant = If[names === {}, ReleaseHold[value]]},
+        Association[(First[First[#[Hold[r]]]] -> If[names === {}, constant, boundValue[value, names, #]]) & /@ sols]]]];
+
+documentKeyQ[_XMLDocument] := True;
+documentKeyQ[Verbatim[Pattern][_, p_] | Verbatim[Condition][p_, _] | Verbatim[PatternTest][p_, _]] := documentKeyQ[p];
+documentKeyQ[alts_Alternatives] := AnyTrue[List @@ alts, documentKeyQ];
+documentKeyQ[_] := False;
+
+(* The value with each name replaced by what it binds; a name that is not
+   bound, in an Alternatives branch that did not match, is Sequence[]. *)
+boundValue[value_, names_, sol_] :=
+  ReleaseHold[value /. (Replace[#, Hold[s_] :> (HoldPattern[s] -> Replace[Lookup[sol, Key[#], None], {None :> Sequence[], {_, vals_} :> Sequence @@ vals}])] & /@ names)];
+
+(* ---- Marks ---- *)
+
+lookupIn[table_] := Function[el, Lookup[table, Key[markOf[el]], noRule]];
+
+markOf[XMLElement[_, attrs_List, _]] := Lookup[attrs, keyMark, None];
+markOf[_] := None;
+
+(* The element or tree with its marks removed, as user code is given it. *)
+unmarked[x_] := If[FreeQ[x, keyMark], x, DeleteCases[x, HoldPattern[keyMark -> _], Infinity]];
+
+(* tree with the elements at positions ps marked, walking only the parts
+   that hold one. Positions count element children from the document. *)
+markedTree[tree_, {}] := tree;
+markedTree[tree_, ps_] :=
+  Block[{$marks = AssociationThread[ps -> True],
+      $above = AssociationThread[Union @@ (Most[FoldList[Append, {}, #]] & /@ ps) -> True]},
+    markedInput[tree]];
+
+markedInput[XMLObject["Document"][p_, root_, e_]] := XMLObject["Document"][p, markedElement[root, {1}], e];
+markedInput[l_List] := markedItems[l, {}];
+markedInput[x_XMLElement] := markedElement[x, {1}];
+markedInput[x_] := x;
+
+markedItems[items_, pos_] :=
+  MapThread[If[MatchQ[#1, _XMLElement], markedElement[#1, Append[pos, #2]], #1] &,
+    {items, Accumulate[Boole[MatchQ[#, _XMLElement]] & /@ items]}];
+
+markedElement[XMLElement[t_, a_, c_], pos_] :=
+  XMLElement[t, If[KeyExistsQ[$marks, pos], Append[a, keyMark -> pos], a],
+    If[KeyExistsQ[$above, pos], markedItems[c, pos], c]];
+
+(* The document's root element, which the walkers start from; any other
+   input as it is. *)
+documentRoot[XMLObject["Document"][_, root_, _]] := root;
+documentRoot[x_] := x;
 
 (* roleOf: first matching rule wins; a non-role RHS messages (under the caller's
    own ::badrole) and defers to the frozen table; no match defers to the table;

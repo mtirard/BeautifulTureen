@@ -1,0 +1,395 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 12.0' *)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["XMLExtract", "ObjectName"],
+
+Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["XMLExtract", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLExtract"], "[", RowBox[{StyleBox["tree", "TI"], ",", StyleBox["pos", "TI"]}], "]"}]], "InlineFormula"], " \[LineSeparator]gives the part of ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " at the position ", Cell[BoxData[StyleBox["pos", "TI"]], "InlineFormula"], ", as ", Cell[BoxData[ButtonBox["XMLPosition", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPosition"]], "InlineFormula"], " gives positions.", "\n", Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["XMLExtract", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLExtract"], "[", RowBox[{StyleBox["tree", "TI"], ",", RowBox[{"{", RowBox[{SubscriptBox[StyleBox["pos", "TI"], StyleBox["1", "TR"]], ",", SubscriptBox[StyleBox["pos", "TI"], StyleBox["2", "TR"]], ",", StyleBox["\[Ellipsis]", "TR"]}], "}"}]}], "]"}]], "InlineFormula"], " \[LineSeparator]gives a list of the parts at each ", Cell[BoxData[SubscriptBox[StyleBox["pos", "TI"], StyleBox["i", "TI"]]], "InlineFormula"], "."}], "Usage"],
+
+Cell[TextData[{Cell[BoxData[ButtonBox["XMLExtract", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLExtract"]], "InlineFormula"], " reads the positions that ", Cell[BoxData[ButtonBox["XMLPosition", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPosition"]], "InlineFormula"], " gives. When ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " matches, ", Cell[BoxData[RowBox[{ButtonBox["XMLExtract", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLExtract"], "[", RowBox[{StyleBox["tree", "TI"], ",", RowBox[{ButtonBox["XMLPosition", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPosition"], "[", RowBox[{StyleBox["tree", "TI"], ",", StyleBox["pattern", "TI"]}], "]"}]}], "]"}]], "InlineFormula"], " gives what ", Cell[BoxData[RowBox[{ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLCases"], "[", RowBox[{StyleBox["tree", "TI"], ",", StyleBox["pattern", "TI"]}], "]"}]], "InlineFormula"], " gives. When nothing matches, ", Cell[BoxData[ButtonBox["XMLPosition", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPosition"]], "InlineFormula"], " gives ", Cell[BoxData[RowBox[{"{", "}"}]], "InlineFormula"], ", which ", Cell[BoxData[ButtonBox["XMLExtract", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLExtract"]], "InlineFormula"], " reads as the position of the document, as ", Cell[BoxData[RowBox[{ButtonBox["Extract", BaseStyle -> "Link", ButtonData -> "paclet:ref/Extract"], "[", RowBox[{StyleBox["expr", "TI"], ",", RowBox[{"{", "}"}]}], "]"}]], "InlineFormula"], " gives ", Cell[BoxData[StyleBox["expr", "TI"]], "InlineFormula"], "."}], "Notes"],
+
+Cell[TextData[{"A position counts ", StyleBox["element children only", FontWeight->"Bold"], ", from the document. ", Cell[BoxData[RowBox[{"{", "}"}]], "InlineFormula"], " is the document, the root element of an ", Cell[BoxData[ButtonBox["XMLObject", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLObject"]], "InlineFormula"], " or a bare ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], " given as the tree is ", Cell[BoxData[RowBox[{"{", StyleBox["1", "TR"], "}"}]], "InlineFormula"], ", and the ", Cell[BoxData[StyleBox["i", "TR"]], "InlineFormula"], "-th element of a list is ", Cell[BoxData[RowBox[{"{", StyleBox["i", "TR"], "}"}]], "InlineFormula"], "."}], "Notes"],
+
+Cell[TextData[{"A position for an element is a list of indices ", Cell[BoxData[RowBox[{"{", RowBox[{SubscriptBox[StyleBox["i", "TI"], StyleBox["1", "TR"]], ",", SubscriptBox[StyleBox["i", "TI"], StyleBox["2", "TR"]], ",", StyleBox["\[Ellipsis]", "TR"]}], "}"}]], "InlineFormula"], ". Other positions end in one of the following, and give the following parts:"}], "Notes"],
+
+Cell[BoxData[GridBox[{
+{Cell["      ", "ModInfo"], StyleBox[Cell["end", "TableText"], FontSlant->"Italic"], StyleBox[Cell["part", "TableText"], FontSlant->"Italic"]},
+{Cell["      ", "ModInfo"], "0", Cell["the tag", "TableText"]},
+{Cell["      ", "ModInfo"], RowBox[{ButtonBox["Key", BaseStyle -> "Link", ButtonData -> "paclet:ref/Key"], "[", ButtonBox["All", BaseStyle -> "Link", ButtonData -> "paclet:ref/All"], "]"}], Cell["the attribute list", "TableText"]},
+{Cell["      ", "ModInfo"], RowBox[{ButtonBox["Key", BaseStyle -> "Link", ButtonData -> "paclet:ref/Key"], "[", "\"\<\!\(\*StyleBox[\"key\", \"TI\"]\)\>\"", "]"}], Cell[TextData[{"the value of an attribute, or the list of tokens of a list key such as ", Cell[BoxData["\"classList\""], "InlineFormula"]}], "TableText"]},
+{Cell["      ", "ModInfo"], "Key[\"key$\"], i$", Cell[TextData[{"the ", Cell[BoxData[StyleBox["i", "TI"]], "InlineFormula"], "-th token of a list key"}], "TableText"]},
+{Cell["      ", "ModInfo"], ButtonBox["All", BaseStyle -> "Link", ButtonData -> "paclet:ref/All"], Cell["the contents, text included", "TableText"]},
+{Cell["      ", "ModInfo"], "m$ ;; n$", Cell[TextData[{"the element children ", Cell[BoxData[StyleBox["m", "TI"]], "InlineFormula"], " to ", Cell[BoxData[StyleBox["n", "TI"]], "InlineFormula"], ", as a sequence"}], "TableText"]},
+{Cell["      ", "ModInfo"], "n$ ;; n$-1", Cell[TextData[{"the empty place before element child ", Cell[BoxData[StyleBox["n", "TI"]], "InlineFormula"], ", as ", Cell[BoxData[RowBox[{ButtonBox["Sequence", BaseStyle -> "Link", ButtonData -> "paclet:ref/Sequence"], "[", "]"}]], "InlineFormula"]}], "TableText"]}
+}]], "2ColumnTableMod"],
+
+Cell[TextData[{Cell[BoxData[RowBox[{ButtonBox["XMLExtract", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLExtract"], "[", RowBox[{StyleBox["tree", "TI"], ",", "upper$ ;; lower$"}], "]"}]], "InlineFormula"], " gives the list of the elements strictly between the element at ", Cell[BoxData[StyleBox["upper", "TI"]], "InlineFormula"], " and the element at ", Cell[BoxData[StyleBox["lower", "TI"]], "InlineFormula"], ", outermost first, as a named path in ", Cell[BoxData[ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Descendant"]], "InlineFormula"], " does. ", Cell[BoxData[StyleBox["upper", "TI"]], "InlineFormula"], " is ", Cell[BoxData[RowBox[{"{", "}"}]], "InlineFormula"], " or a position above ", Cell[BoxData[StyleBox["lower", "TI"]], "InlineFormula"], "."}], "Notes"],
+
+Cell[TextData[{Cell[BoxData[RowBox[{ButtonBox["XMLExtract", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLExtract"], "[", RowBox[{StyleBox["tree", "TI"], ",", RowBox[{"{", RowBox[{SubscriptBox[StyleBox["pos", "TI"], StyleBox["1", "TR"]], ",", SubscriptBox[StyleBox["pos", "TI"], StyleBox["2", "TR"]], ",", StyleBox["\[Ellipsis]", "TR"]}], "}"}]}], "]"}]], "InlineFormula"], " gives a list of parts. A list is read as several positions when every entry is a list or a path."}], "Notes"],
+
+Cell[TextData[{"A position that is not of these forms gives ", Cell[BoxData["XMLExtract::pos"], "InlineFormula"], ". A position of these forms that the tree does not have gives ", Cell[BoxData["XMLExtract::nopos"], "InlineFormula"], ". Both return ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], "."}], "Notes"],
+
+Cell["The following option can be given:", "Notes"],
+
+Cell[BoxData[GridBox[{
+{Cell["      ", "ModInfo"], StyleBox[Cell["option", "TableText"], FontSlant->"Italic"], StyleBox[Cell["default", "TableText"], FontSlant->"Italic"], StyleBox[Cell["description", "TableText"], FontSlant->"Italic"]},
+{Cell["      ", "ModInfo"], "\"AttributeReadings\"", StyleBox["<||>", "TR"], Cell[TextData[{"entries to add to ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/$AttributeReadings"]], "InlineFormula"], " for this call, for list keys other than ", Cell[BoxData["\"classList\""], "InlineFormula"]}], "TableText"]}
+}]], "3ColumnTableMod"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "See Also",
+ Cell[BoxData[
+  TemplateBox[{"SeeAlso", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell[
+       "Insert links to any related reference (function) pages.", 
+        "MoreInfoText"], BaseStyle -> "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "SeeAlsoSection"],
+
+Cell[TextData[{Cell[BoxData[TemplateBox[{Cell[TextData["XMLPosition"]], "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPosition"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLCases"]], "paclet:MaximilienTirard/HTMLPatterns/ref/XMLCases"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLReplace"]], "paclet:MaximilienTirard/HTMLPatterns/ref/XMLReplace"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["Descendant"]], "paclet:MaximilienTirard/HTMLPatterns/ref/Descendant"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["Extract"]], "paclet:ref/Extract"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}]}], "SeeAlso"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Tech Notes",
+ Cell[BoxData[
+  TemplateBox[{"TechNotes", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell["Insert links to related tech notes.", "MoreInfoText"], BaseStyle -> 
+       "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "TechNotesSection"],
+
+Cell["XXXX", "Tutorials"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Related Guides", "MoreAboutSection"],
+
+Cell[TextData[ButtonBox["HTMLPatterns", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/guide/HTMLPatterns"]], "MoreAbout"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Related Links",
+ Cell[BoxData[
+  TemplateBox[{"RelatedLinks", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell[
+       "Insert links to any related page, including web pages.", 
+        "MoreInfoText"], BaseStyle -> "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "RelatedLinksSection"],
+
+Cell["XXXX", "RelatedLinks"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Examples Initialization",
+ Cell[BoxData[
+  TemplateBox[{"ExamplesInitialization", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell[
+       "Input that is to be evaluated before any examples are run, e.g. \
+Needs[\[Ellipsis]].", "MoreInfoText"], BaseStyle -> "IFrameBox"]], 
+     "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "ExamplesInitializationSection"],
+
+Cell[BoxData[RowBox[{"Needs", "[", "\"MaximilienTirard`HTMLPatterns`\"", "]"}]], "ExampleInitialization"]
+}, Open  ]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[GridBox[{
+    {
+     StyleBox[
+      RowBox[{"Basic", " ", "Examples"}], "PrimaryExamplesSection"], 
+     ButtonBox[
+      RowBox[{
+       RowBox[{"More", " ", "Examples"}], " ", "\[RightTriangle]"}],
+      BaseStyle->"ExtendedExamplesLink",
+      ButtonData:>"ExtendedExamples"]}
+   }],
+  $Line = 0; Null]], "PrimaryExamplesSection"],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give the element at a position:", "ExampleText"], Cell[BoxData["listing=XMLElement[\"ul\",{\"class\"->\"a b\"},{XMLElement[\"li\",{},{\"one\"}],\" \",XMLElement[\"li\",{},{XMLElement[\"a\",{\"href\"->\"/x\"},{\"two\"}]}]}];
+XMLExtract[{listing},{1,2}]"], "Input"],
+
+Cell[BoxData[RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"href\"", "\[Rule]", "\"/x\""}], "}"}], ",", RowBox[{"{", "\"two\"", "}"}]}], "]"}], "}"}]}], "]"}]], "Output"],
+
+Cell["Give the parts at several positions:", "ExampleText"],
+
+Cell[BoxData["XMLExtract[{listing},{{1,0},{1,Key[\"class\"]},{1,2,1,Key[\"href\"]}}]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"\"ul\"", ",", "\"a b\"", ",", "\"/x\""}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give the parts that XMLPosition finds:", "ExampleText"], Cell[BoxData["links=ImportString[\"<p><a href=\\\"/a\\\">A</a> and <a href=\\\"/b\\\">B</a></p>\",{\"HTML\",\"XMLObject\"}];
+XMLExtract[links,XMLPosition[links,XMLPattern[\"a\",\"href\"->h_]:>h]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"\"/a\"", ",", "\"/b\""}], "}"}]], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "More Examples",
+ Cell[BoxData[
+  TemplateBox[{"MoreExamples", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell["Extended examples in standardized sections.", "MoreInfoText"], 
+       BaseStyle -> "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "ExtendedExamplesSection",
+ CellTags->"ExtendedExamples"],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Scope", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give the document, the root element and its tag:", "ExampleText"], Cell[BoxData["listing=XMLElement[\"ul\",{\"class\"->\"a b\"},{XMLElement[\"li\",{},{\"one\"}],\" \",XMLElement[\"li\",{},{XMLElement[\"a\",{\"href\"->\"/x\"},{\"two\"}]}]}];
+{XMLExtract[{listing},{}],XMLExtract[{listing},{1,0}]}"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"ul\"", ",", RowBox[{"{", RowBox[{"\"class\"", "\[Rule]", "\"a b\""}], "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"one\"", "}"}]}], "]"}], ",", "\" \"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"href\"", "\[Rule]", "\"/x\""}], "}"}], ",", RowBox[{"{", "\"two\"", "}"}]}], "]"}], "}"}]}], "]"}]}], "}"}]}], "]"}], "}"}], ",", "\"ul\""}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give the attribute list, an attribute value, the class list and one class:", "ExampleText"], Cell[BoxData["listing=XMLElement[\"ul\",{\"class\"->\"a b\"},{XMLElement[\"li\",{},{\"one\"}],\" \",XMLElement[\"li\",{},{XMLElement[\"a\",{\"href\"->\"/x\"},{\"two\"}]}]}];
+XMLExtract[{listing},{{1,Key[All]},{1,Key[\"class\"]},{1,Key[\"classList\"]},{1,Key[\"classList\"],2}}]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"\"class\"", "\[Rule]", "\"a b\""}], "}"}], ",", "\"a b\"", ",", RowBox[{"{", RowBox[{"\"a\"", ",", "\"b\""}], "}"}], ",", "\"b\""}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give the contents of an element, text included:", "ExampleText"], Cell[BoxData["listing=XMLElement[\"ul\",{\"class\"->\"a b\"},{XMLElement[\"li\",{},{\"one\"}],\" \",XMLElement[\"li\",{},{XMLElement[\"a\",{\"href\"->\"/x\"},{\"two\"}]}]}];
+XMLExtract[{listing},{1,All}]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"one\"", "}"}]}], "]"}], ",", "\" \"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"href\"", "\[Rule]", "\"/x\""}], "}"}], ",", RowBox[{"{", "\"two\"", "}"}]}], "]"}], "}"}]}], "]"}]}], "}"}]], "Output"],
+
+Cell[TextData[{"The element children ", Cell[BoxData[StyleBox["1", "TR"]], "InlineFormula"], " to ", Cell[BoxData[StyleBox["2", "TR"]], "InlineFormula"], " are a sequence, which the text between them is not part of:"}], "ExampleText"],
+
+Cell[BoxData["{XMLExtract[{listing},{1,1;;2}]}"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"one\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"href\"", "\[Rule]", "\"/x\""}], "}"}], ",", RowBox[{"{", "\"two\"", "}"}]}], "]"}], "}"}]}], "]"}]}], "}"}]], "Output"],
+
+Cell[TextData[{"The empty place between them is ", Cell[BoxData[RowBox[{ButtonBox["Sequence", BaseStyle -> "Link", ButtonData -> "paclet:ref/Sequence"], "[", "]"}]], "InlineFormula"], ":"}], "ExampleText"],
+
+Cell[BoxData["{XMLExtract[{listing},{1,2;;1}]}"], "Input"],
+
+Cell[BoxData[RowBox[{"{", "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give the elements between two others, the value of a named path:", "ExampleText"], Cell[BoxData["navs=ImportString[\"<nav id=\\\"outer\\\"><a>Home</a><nav id=\\\"inner\\\"><a>News</a></nav></nav>\",{\"HTML\",\"XMLObject\"}];
+XMLExtract[navs,{1};;{1,2,1}]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"nav\"", ",", RowBox[{"{", RowBox[{"\"id\"", "\[Rule]", "\"inner\""}], "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"shape\"", "\[Rule]", "\"rect\""}], "}"}], ",", RowBox[{"{", "\"News\"", "}"}]}], "]"}], "}"}]}], "]"}], "}"}]], "Output"],
+
+Cell["From the document, the path holds every ancestor of the element:", "ExampleText"],
+
+Cell[BoxData["Map[First,XMLExtract[navs,{};;{1,2,1}]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"\"nav\"", ",", "\"nav\""}], "}"}]], "Output"],
+
+Cell["A child has no elements between it and its parent:", "ExampleText"],
+
+Cell[BoxData["XMLExtract[navs,{1};;{1,1}]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A bare XMLElement given as the tree is at ", Cell[BoxData[RowBox[{"{", StyleBox["1", "TR"], "}"}]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["XMLExtract[XMLElement[\"ul\",{},{XMLElement[\"li\",{},{\"a\"}]}],{1,1}]"], "Input"],
+
+Cell[BoxData[RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"a\"", "}"}]}], "]"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give the tokens of another attribute with a reading:", "ExampleText"], Cell[BoxData["link=XMLElement[\"a\",{\"rel\"->\"nofollow noopener\"},{}];
+XMLExtract[{link},{1,Key[\"relList\"],2},\"AttributeReadings\"-> <|\"rel\"-> <||>|>]"], "Input"],
+
+Cell[BoxData["\"noopener\""], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Generalizations & Extensions", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"]}, Open]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "Options", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "XXXX", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "XXXX", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"]
+}, Open  ]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Applications", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Properties & Relations", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["For a bare pattern, XMLExtract at the positions from XMLPosition gives what XMLCases gives:", "ExampleText"], Cell[BoxData["navs=ImportString[\"<nav id=\\\"outer\\\"><a>Home</a><nav id=\\\"inner\\\"><a>News</a></nav></nav>\",{\"HTML\",\"XMLObject\"}];
+XMLExtract[navs,XMLPosition[navs,XMLPattern[\"a\"]]]===XMLCases[navs,XMLPattern[\"a\"]]"], "Input"],
+
+Cell[BoxData["True"], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Extract counts text and XMLObject parts; XMLExtract counts element children only:", "ExampleText"], Cell[BoxData["tree=ImportString[\"<div><p>a</p>\\n<p>b</p></div>\",{\"HTML\",\"XMLObject\"}];
+{Extract[tree,{2,3,1,3,1,3,3}],XMLExtract[tree,{1,1,1,2}]}"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"b\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"b\"", "}"}]}], "]"}]}], "}"}]], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Possible Issues", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A position that is not of the forms that XMLPosition gives issues a message:", "ExampleText"], Cell[BoxData["XMLExtract[{XMLElement[\"p\",{},{}]},{0}]"], "Input"],
+
+Cell["XMLExtract::pos: {0} is not a position in an XML tree. A position is {} for the document or a list of element-child indices, optionally followed by 0, Key[All], Key[key] (then, for a list key, a token index, run or gap), All, or a run m ;; n or gap n ;; n-1 of element children; a named path is upper ;; lower, where upper is {} or an element above the element lower.", "Message", "MSG"],
+
+Cell[BoxData["$Failed"], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A position that the tree does not have issues a message:", "ExampleText"], Cell[BoxData["XMLExtract[{XMLElement[\"ul\",{},{XMLElement[\"li\",{},{}]}]},{1,2}]"], "Input"],
+
+Cell["XMLExtract::nopos: There is no position {1, 2} in the tree.", "Message", "MSG"],
+
+Cell[BoxData["$Failed"], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A path whose upper end is not above its lower end issues a message:", "ExampleText"], Cell[BoxData["navs=ImportString[\"<nav id=\\\"outer\\\"><a>Home</a><nav id=\\\"inner\\\"><a>News</a></nav></nav>\",{\"HTML\",\"XMLObject\"}];
+XMLExtract[navs,{1,1};;{1,2,1}]"], "Input"],
+
+Cell["XMLExtract::pos: {1, 1} ;; {1, 2, 1} is not a position in an XML tree. A position is {} for the document or a list of element-child indices, optionally followed by 0, Key[All], Key[key] (then, for a list key, a token index, run or gap), All, or a run m ;; n or gap n ;; n-1 of element children; a named path is upper ;; lower, where upper is {} or an element above the element lower.", "Message", "MSG"],
+
+Cell[BoxData["$Failed"], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A run of children is a sequence, so in a list of parts its elements are spliced in:", "ExampleText"], Cell[BoxData["paras=XMLElement[\"div\",{},{XMLElement[\"p\",{},{\"1\"}],XMLElement[\"p\",{},{\"2\"}]}];
+XMLExtract[{paras},{{1,1;;2},{1,1}}]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"1\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"2\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"1\"", "}"}]}], "]"}]}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"With no match, XMLPosition gives ", Cell[BoxData[RowBox[{"{", "}"}]], "InlineFormula"], ", the position of the document:"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"links", "=", RowBox[{"ImportString", "[", RowBox[{"\"<p><a href=\\\"/a\\\">A</a></p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLPosition", "[", RowBox[{"links", ",", RowBox[{"XMLPattern", "[", "\"table\"", "]"}]}], "]"}]}], "Input"],
+
+Cell[BoxData[RowBox[{"{", "}"}]], "Output"],
+
+Cell[TextData[{"XMLExtract reads it as the document, as ", Cell[BoxData[ButtonBox["Extract", BaseStyle -> "Link", ButtonData -> "paclet:ref/Extract"]], "InlineFormula"], " does:"}], "ExampleText"],
+
+Cell[BoxData[RowBox[{RowBox[{"XMLExtract", "[", RowBox[{"links", ",", RowBox[{"{", "}"}]}], "]"}], "===", "links"}]], "Input"],
+
+Cell[BoxData["True"], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Interactive Examples", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Neat Examples", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"]}, Open]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Metadata", "MetadataSection"],
+
+Cell[TextData[{
+ "New in: ",
+ Cell["XX", "HistoryData",
+  CellTags->"New"],
+ " | Modified in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Modified"],
+ " | Obsolete in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Obsolete"]
+}], "History"],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Categorization",
+ Cell[BoxData[
+  TemplateBox[{"Metadata", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell[
+       "Metadata such as page URI, context, and type of documentation page.", 
+        "MoreInfoText"], BaseStyle -> "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "CategorizationSection"],
+
+Cell["Symbol", "Categorization",
+ CellLabel->"Entity Type"],
+
+Cell["MaximilienTirard/HTMLPatterns", "Categorization",
+ CellLabel->"Paclet Name"],
+
+Cell["MaximilienTirard`HTMLPatterns`", "Categorization",
+ CellLabel->"Context"],
+
+Cell["MaximilienTirard/HTMLPatterns/ref/XMLExtract", "Categorization",
+ CellLabel->"URI"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Keywords", "KeywordsSection"],
+
+Cell["XXXX", "Keywords"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Syntax Templates", "TemplatesSection"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Additional Function Template"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Arguments Pattern"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Local Variables"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Color Equal Signs"]
+}, Closed]]
+}, Open  ]]
+},
+TaggingRules->Association["Paclet" -> "None"],
+CellContext->"Global`",
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "FunctionPageStylesExt.nb", 
+  CharacterEncoding -> "UTF-8"]
+]
+(* End of Notebook Content *)

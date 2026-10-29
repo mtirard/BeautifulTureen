@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted (superseded in part by ADR-0023)
 ---
 
 # A message goes on the symbol the mistake is in

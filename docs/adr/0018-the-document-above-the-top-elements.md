@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted (superseded in part by ADR-0023 and ADR-0025)
 ---
 
 # Every input has a document above its top elements, matched by `XMLDocument[]`
