@@ -210,3 +210,12 @@ TestCreate[
   XMLElement["p", {"class" -> "promo card"}, {"promo"}],
   TestID -> "classlist-firstcase-binding-is-original"
 ];
+
+(* An argument of XMLPattern that has already failed with a message fails the
+   consumer quietly after it. *)
+TestCreate[
+  XMLCases[$mixed, XMLPattern["p", HTMLClassList[3]]],
+  $Failed,
+  {HTMLClassList::notelement},
+  TestID -> "classlist-upstream-failure-is-quiet"
+];
