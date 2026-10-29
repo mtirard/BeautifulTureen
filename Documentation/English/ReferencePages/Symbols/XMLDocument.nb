@@ -222,7 +222,7 @@ Cell[CellGroupData[{Cell[BoxData[
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The CSS selectors ", Cell[BoxData[":root"], "InlineFormula"], " and ", Cell[BoxData[":scope"], "InlineFormula"], " translate to patterns rooted at XMLDocument:"}], "ExampleText"], Cell[BoxData["{FromCSSSelector[n:\":root\"],FromCSSSelector[n:\":scope > p\"]}"], "Input"],
 
-Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLDocument", "[", RowBox[{"{", RowBox[{"n", ":", RowBox[{"XMLPattern", "[", "_", "]"}]}], "}"}], "]"}], ",", RowBox[{"XMLDocument", "[", RowBox[{"{", RowBox[{"XMLPattern", "[", RowBox[{"_", ",", "_", ",", RowBox[{"{", RowBox[{"___", ",", RowBox[{"n", ":", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], ",", "___"}], "}"}]}], "]"}], "}"}], "]"}]}], "}"}]], "Output"]}, Open]],
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLDocument", "[", RowBox[{"{", RowBox[{"n", ":", RowBox[{"XMLPattern", "[", "_", "]"}]}], "}"}], "]"}], ",", RowBox[{"XMLDocument", "[", RowBox[{"{", RowBox[{RowBox[{"XMLPattern", "[", "_", "]"}], "[", RowBox[{"{", RowBox[{"___", ",", RowBox[{"n", ":", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], ",", "___"}], "}"}], "]"}], "}"}], "]"}]}], "}"}]], "Output"]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A pattern rooted at XMLDocument with a Descendant constraint gives what the pattern alone gives:", "ExampleText"], Cell[BoxData["page=ImportString[\"<html><body><p>One</p><div><p>Two</p></div></body></html>\",{\"HTML\",\"XMLObject\"}];
 XMLCases[page,XMLDocument[Descendant[x:XMLPattern[\"p\"]]]:>x]===XMLCases[page,XMLPattern[\"p\"]]"], "Input"],
@@ -251,7 +251,7 @@ Cell[BoxData[RowBox[{"{", "}"}]], "Output"]}, Open]],
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["XMLDocument can only be the pattern root:", "ExampleText"], Cell[BoxData["navs=ImportString[\"<nav><a>Home</a></nav>\",{\"HTML\",\"XMLObject\"}];
 XMLCases[navs,XMLPattern[\"nav\"][Descendant[XMLDocument[]]]]"], "Input"],
 
-Cell["XMLDocument::place: XMLDocument[...] matches only the document above the top elements, so it can only be a pattern root: the whole query, named, conditioned or tested, or a branch of alternatives at the top, as in XMLPattern[_, _, L] | XMLDocument[L]. It cannot be inside Descendant, an attribute pattern or an XMLElement pattern. Got XMLDocument[].", "Message", "MSG"],
+Cell["XMLDocument::place: XMLDocument[...] matches only the document above the top elements, so it can only be a pattern root: the whole query, named, conditioned or tested, or a branch of alternatives at the top, as in XMLPattern[_][L] | XMLDocument[L]. It cannot be inside Descendant, an attribute pattern or an XMLElement pattern. Got XMLDocument[].", "Message", "MSG"],
 
 Cell[BoxData["$Failed"], "Output"]}, Open]],
 

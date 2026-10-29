@@ -278,7 +278,7 @@ Cell[CellGroupData[{Cell[BoxData[
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The CSS selector ", Cell[BoxData["\"nav a\""], "InlineFormula"], " translates to a Descendant constraint:"}], "ExampleText"], Cell[BoxData["FromCSSSelector[n:\"nav a\"]"], "Input"],
 
-Cell[BoxData[RowBox[{"XMLPattern", "[", RowBox[{"\"nav\"", ",", "_", ",", RowBox[{"Descendant", "[", RowBox[{"n", ":", RowBox[{"XMLPattern", "[", "\"a\"", "]"}]}], "]"}]}], "]"}]], "Output"],
+Cell[BoxData[RowBox[{RowBox[{"XMLPattern", "[", "\"nav\"", "]"}], "[", RowBox[{"Descendant", "[", RowBox[{"n", ":", RowBox[{"XMLPattern", "[", "\"a\"", "]"}]}], "]"}], "]"}]], "Output"],
 
 Cell["It gives what the translation gives:", "ExampleText"],
 
@@ -302,7 +302,7 @@ Cell[CellGroupData[{Cell[BoxData[
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Descendant is a constraint, not a pattern, so it cannot be the whole query:", "ExampleText"], Cell[BoxData["navs=ImportString[\"<nav><a>Home</a></nav>\",{\"HTML\",\"XMLObject\"}];
 XMLCases[navs,Descendant[XMLPattern[\"a\"]]]"], "Input"],
 
-Cell["Descendant::place: Descendant[XMLPattern[\"a\"]] is a constraint, which can only be an argument of XMLPattern after the attributes, as in XMLPattern[\"nav\", _, Descendant[XMLPattern[\"a\"]]]. To find matching elements at any depth, give the pattern alone.", "Message", "MSG"],
+Cell["Descendant::place: Descendant[XMLPattern[\"a\"]] is a constraint, which can only be an argument of the bracket after XMLPattern[tag, attrs] or of XMLDocument, as in XMLPattern[\"nav\"][Descendant[XMLPattern[\"a\"]]]. To find matching elements at any depth, give the pattern alone.", "Message", "MSG"],
 
 Cell[BoxData["$Failed"], "Output"],
 
@@ -314,7 +314,7 @@ Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBo
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Descendant cannot be an entry of a list pattern, which matches one child or a run of children:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"navs", "=", RowBox[{"ImportString", "[", RowBox[{"\"<nav><p><a>Home</a></p></nav>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"navs", ",", RowBox[{RowBox[{RowBox[{"XMLPattern", "[", "\"nav\"", "]"}], "[", RowBox[{"{", RowBox[{"Descendant", "[", RowBox[{"x", ":", RowBox[{"XMLPattern", "[", "\"a\"", "]"}]}], "]"}], "}"}], "]"}], ":>", "x"}]}], "]"}]}], "Input"],
 
-Cell["XMLPattern::listentry: Descendant[x:XMLPattern[\"a\"]] cannot be an entry in a list of patterns for an element's children. \"An entry is one element child or a sequence of them, and Descendant[...] says what is somewhere below an element. A child containing x is XMLPattern[_, _, Descendant[x]].\"", "Message", "MSG"],
+Cell["XMLPattern::listentry: Descendant[x:XMLPattern[\"a\"]] cannot be an entry in a list of patterns for an element's children. \"An entry is one element child or a sequence of them, and Descendant[...] says what is somewhere below an element. A child containing x is XMLPattern[_][Descendant[x]].\"", "Message", "MSG"],
 
 Cell[BoxData["$Failed"], "Output"],
 
@@ -327,7 +327,7 @@ Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBo
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["The version 3 form with two patterns issues a message:", "ExampleText"], Cell[BoxData["navs=ImportString[\"<nav><a>Home</a></nav>\",{\"HTML\",\"XMLObject\"}];
 XMLCases[navs,Descendant[XMLPattern[\"nav\"],XMLPattern[\"a\"]]]"], "Input"],
 
-Cell["Descendant::level: XMLPattern[\"a\"] is not a level specification in DOM depth. Use n, {n}, {m, n} or Infinity, with every level at least 1. For an element inside an element inside another, nest the patterns: XMLPattern[a, _, Descendant[XMLPattern[b, _, Descendant[c]]]].", "Message", "MSG"],
+Cell["Descendant::level: XMLPattern[\"a\"] is not a level specification in DOM depth. Use n, {n}, {m, n} or Infinity, with every level at least 1. For an element inside an element inside another, nest the patterns: XMLPattern[a][Descendant[XMLPattern[b][Descendant[c]]]].", "Message", "MSG"],
 
 Cell[BoxData["$Failed"], "Output"],
 

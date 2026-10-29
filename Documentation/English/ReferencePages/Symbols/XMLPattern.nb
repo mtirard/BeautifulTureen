@@ -615,7 +615,7 @@ Cell[BoxData["True"], "Output"]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["An argument of the second bracket is a constraint, so an attribute key there issues a message:", "ExampleText"], Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"input\"", ",", RowBox[{"{", RowBox[{RowBox[{"\"type\"", "->", "\"text\""}], ",", RowBox[{"\"required\"", "->", "\"\""}]}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}], ",", RowBox[{RowBox[{"XMLPattern", "[", RowBox[{"\"input\"", ",", RowBox[{"\"type\"", "->", "\"text\""}]}], "]"}], "[", "\"required\"", "]"}]}], "]"}]], "Input"],
 
-Cell["XMLPattern::constraint: \"required\" is not a constraint. The arguments of XMLPattern after the attributes are constraints on what is below the element: a list pattern over its element children, as in {___, p, ___}, or Descendant[p] for an element anywhere below. Several attribute constraints go in one list: XMLPattern[tag, {c1, c2, ...}].", "Message", "MSG"],
+Cell["XMLPattern::constraint: \"required\" is not a constraint. The constraints on what is below an element are the arguments of the bracket after XMLPattern[tag, attrs], as in XMLPattern[tag, attrs][c1, c2, ...]: a list pattern over its element children, as in {___, p, ___}, or Descendant[p] for an element anywhere below. Attribute constraints go in the first bracket, several in one list: XMLPattern[tag, {a1, a2, ...}].", "Message", "MSG"],
 
 Cell[BoxData["$Failed"], "Output"],
 
