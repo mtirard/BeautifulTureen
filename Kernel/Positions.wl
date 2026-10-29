@@ -7,6 +7,13 @@ PackageScoped[elementStepQ]
 PackageScoped[topItems]
 PackageScoped[$keyPad]
 PackageScoped[sequenceKey]
+PackageScoped[tagKey]
+PackageScoped[attributeMapKey]
+PackageScoped[attributeKey]
+PackageScoped[tokenListKey]
+PackageScoped[contentsKey]
+PackageScoped[textItemKey]
+PackageScoped[positionOrdering]
 PackageScoped[wlPositions]
 
 (* =========================================================== *)
@@ -30,15 +37,61 @@ elementStepQ[i_] := IntegerQ[i] && i > 0;
    XMLObject's root element, a list's items, or a bare element itself. *)
 topItems[input_] := Replace[input, {XMLObject["Document"][_, r_, _] :> {r}, l_List :> l, x_ :> {x}}];
 
-(* Position order is by keys, lists of integers that sort as the positions
-   do once padded with $keyPad, below every entry, a container before what it
-   holds. Among the element children (h 4) or tokens (h 2) of one list,
-   sequenceKey gives item n {h, n, 2}, the gap before it {h, n, 0}, and a run
-   n ;; k {h, n, 1, -k}, longest first. *)
+(* ---- Position order (ADR 0024) ---- *)
+
+(* Each position has an order key, a list of integers; keys padded to one
+   length with $keyPad, below every entry, compare as the positions sort, a
+   container before what it holds. An element's key is its element steps',
+   each {4, n, 2}; a terminal step appends the suffix its key function gives,
+   from the indices that locate it in that element:
+   - tagKey, the tag, {0}
+   - attributeMapKey, the attribute map, {1}
+   - attributeKey[j], the j-th attribute's value, {2, j, 0}
+   - tokenListKey[j], the token list read from the j-th attribute (j one past
+     the last attribute when it is absent), {2, j, 1}, followed by a token,
+     run or gap of that list as sequenceKey[2, ...] gives it
+   - contentsKey, the contents, {3}
+   - textItemKey[k], the k-th item of the contents when it is text or another
+     item that is not an element, {3, k}; text is not a position (ADR 0025),
+     so this orders only names a query uses in its tests
+   - an element child, run or gap of the children, as sequenceKey[4, ...]
+     gives it.
+   Among the element children (h 4) or tokens (h 2) of one list, sequenceKey
+   gives item n {h, n, 2}, the gap before it {h, n, 0}, and a run n ;; k
+   {h, n, 1, -k}, longest first. *)
 $keyPad = -10^9;
+
+tagKey[] := {0};
+attributeMapKey[] := {1};
+attributeKey[j_] := {2, j, 0};
+tokenListKey[j_] := {2, j, 1};
+contentsKey[] := {3};
+textItemKey[k_] := {3, k};
 
 sequenceKey[h_, i_Integer] := {h, i, 2};
 sequenceKey[h_, Span[m_, n_]] := If[n == m - 1, {h, m, 0}, {h, m, 1, -n}];
+
+(* The order of positions given on their own, as Ordering gives it.
+   attributesOf gives the original attribute list of the element at element
+   steps, and readings are the readings in force, which tell a list key's
+   token list from an attribute. *)
+positionOrdering[ps_, attributesOf_, readings_] :=
+  With[{keys = positionKey[#, attributesOf, readings] & /@ ps},
+    Ordering[PadRight[#, Max[0, Length /@ keys], $keyPad] & /@ keys]];
+
+positionKey[pos_, attributesOf_, readings_] :=
+  With[{k = LengthWhile[pos, elementStepQ]},
+    Join[Join @@ (sequenceKey[4, #] & /@ Take[pos, k]), terminalKey[Take[pos, k], Drop[pos, k], attributesOf, readings]]];
+
+terminalKey[_, {}, _, _] := {};
+terminalKey[_, {0}, _, _] := tagKey[];
+terminalKey[_, {Key[All]}, _, _] := attributeMapKey[];
+terminalKey[_, {All}, _, _] := contentsKey[];
+terminalKey[_, {s_Span}, _, _] := sequenceKey[4, s];
+terminalKey[steps_, {Key[k_], tail___}, attributesOf_, readings_] :=
+  With[{listQ = KeyExistsQ[readings, k], attrs = attributesOf[steps]},
+    With[{j = Replace[FirstPosition[attrs, Verbatim[Rule][If[listQ, rawKeyOf[readings[k]], k], _], {Length[attrs] + 1}, {1}, Heads -> False], {j_} :> j]},
+      Join[If[listQ, tokenListKey[j], attributeKey[j]], Replace[{tail}, {{} -> {}, {t_} :> sequenceKey[2, t]}]]]];
 
 (* The WL positions in tree of the elements at lists of element steps, each
    step the n-th element among the contents of the one before: an XMLObject's

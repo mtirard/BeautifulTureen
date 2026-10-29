@@ -28,42 +28,14 @@ PackageScoped[treeDelete]
 (* through the reading; All, the contents.                      *)
 (* =========================================================== *)
 
+(* Edits go in position order, as positionOrdering gives it (Positions.wl). *)
 rewritten[input_, edits_] :=
   Block[{$input = input, $nodes = <||>, $originalKids = <||>, $replaced = <||>, $allReplaced = <||>,
       $before = <||>, $after = <||>, $atEnd = <||>, $tokens = <||>, $originalTokens = <||>,
       $readings = readingsInForce[], $joiners = listKeyJoiners[]},
     If[$readings === $Failed, $Failed,
-      Scan[rewriteAt[#[[1]], #[[2]]] &, Reverse[edits[[positionOrdering[edits[[All, 1]]]]]]];
+      Scan[rewriteAt[#[[1]], #[[2]]] &, Reverse[edits[[positionOrdering[edits[[All, 1]], original[#][[2]] &, $readings]]]]];
       assembled[]]];
-
-(* ---- Position order (ADR 0024) ---- *)
-
-(* Each position has a key, a list of integers, that sorts as the positions
-   do once padded with $keyPad: an element step is {4, n, 2}; within an
-   element its tag is {0}, its attribute map {1}, its j-th attribute
-   {2, j, 0}, a list key read from it {2, j, 1}, followed by that list's
-   tails, its contents {3}, and a run or gap of its children as sequenceKey
-   gives it. This is the order of Query/TreePatterns.wl's order keys, for
-   positions given on their own. *)
-
-positionOrdering[ps_] :=
-  With[{keys = positionKey /@ ps}, Ordering[PadRight[#, Max[0, Length /@ keys], $keyPad] & /@ keys]];
-
-positionKey[pos_] :=
-  With[{k = LengthWhile[pos, elementStepQ]},
-    Join[Join @@ (sequenceKey[4, #] & /@ Take[pos, k]), terminalKey[Take[pos, k], Drop[pos, k]]]];
-
-terminalKey[_, {}] := {};
-terminalKey[_, {0}] := {0};
-terminalKey[_, {Key[All]}] := {1};
-terminalKey[_, {All}] := {3};
-terminalKey[_, {s_Span}] := sequenceKey[4, s];
-terminalKey[steps_, {Key[k_], tail___}] :=
-  With[{raw = If[KeyExistsQ[$readings, k], rawKeyOf[$readings[k]], k], attrs = original[steps][[2]]},
-    Join[{2, Replace[FirstPosition[attrs, Verbatim[Rule][raw, _], {Length[attrs] + 1}, {1}, Heads -> False], {j_} :> j],
-        If[KeyExistsQ[$readings, k], 1, 0]},
-      Replace[{tail}, {{} -> {}, {t_} :> sequenceKey[2, t]}]]];
-
 
 (* ---- The original input ---- *)
 

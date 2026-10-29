@@ -323,18 +323,8 @@ materialElems[{}] := Rest[$elem];
 materialElems[r_] := Lookup[$matElems, Key[r], $matElems[r] = Extract[materialise[$tops, r, {1, 2 $indexDepth - 1}], $wlPos]];
 
 (* =========================================================== *)
-(* Position order (ADR 0024)                                    *)
-(*                                                              *)
-(* Each position has a key, a list of integers; keys padded to  *)
-(* one length with $keyPad, below every entry, compare as the   *)
-(* positions sort, a container before what it holds. An element *)
-(* step is {4, n, 2}; within an element, its tag is {0}, its    *)
-(* attribute map {1}, its j-th attribute {2, j, 0}, a list key  *)
-(* read from it {2, j, 1} and that list's tails {2, j, 1, 2,    *)
-(* ...}, its contents {3}, and among its children the gap       *)
-(* before n {4, n, 0}, a run n ;; k {4, n, 1, -k} (longest      *)
-(* first), then child n. Tails order as children do, with 2 for *)
-(* the 4 (sequenceKey, Positions.wl).                           *)
+(* Position order (ADR 0024): order keys as Positions.wl builds *)
+(* them, from the indices the matcher holds.                    *)
 (* =========================================================== *)
 
 elemKey[i_] := Lookup[$keyMemo, i, $keyMemo[i] = If[i == 0, {}, Join[elemKey[$parent[[i + 1]]], sequenceKey[4, $index[[i + 1]]]]]];
@@ -796,13 +786,13 @@ slotMatches[nd_, slot_, x_, i_] :=
 literalPosition[nd_, slot_, name_, v_, x_, i_] :=
   Replace[{Lookup[nd["Slots"], Key[name], None], slot},
     {
-      {k : Except[None], _} :> nameMatch[{Append[posOf[i], k]}, v, Append[elemKey[i], If[k === 0, 0, 1]]],
-      {_, "Tag"} /; v === x[[1]] :> nameMatch[{Append[posOf[i], 0]}, v, Append[elemKey[i], 0]],
+      {k : Except[None], _} :> nameMatch[{Append[posOf[i], k]}, v, Join[elemKey[i], If[k === 0, tagKey[], attributeMapKey[]]]],
+      {_, "Tag"} /; v === x[[1]] :> nameMatch[{Append[posOf[i], 0]}, v, Join[elemKey[i], tagKey[]]],
       {_, "Attrs"} :>
         Replace[FirstPosition[x[[2]], _[_, v], None, {1}, Heads -> False], {
-          {j_} :> nameMatch[{Append[posOf[i], Key[x[[2, j, 1]]]]}, v, Join[elemKey[i], {2, j, 0}]],
-          None :> nameMatch[{Missing["Literal"]}, v, Append[elemKey[i], 1]]}],
-      _ :> nameMatch[{Missing["Literal"]}, v, Append[elemKey[i], 0]]}];
+          {j_} :> nameMatch[{Append[posOf[i], Key[x[[2, j, 1]]]]}, v, Join[elemKey[i], attributeKey[j]]],
+          None :> nameMatch[{Missing["Literal"]}, v, Join[elemKey[i], attributeMapKey[]]]}],
+      _ :> nameMatch[{Missing["Literal"]}, v, Join[elemKey[i], tagKey[]]]}];
 
 literalSlots[XMLElement[t_, a_, c_]] :=
   Association @ Cases[{{Hold[t], 0}, {Hold[a], Key[All]}, {Hold[c], All}}, {Hold[Verbatim[Pattern][s_Symbol, _]], k_} :> (Hold[s] -> k)];
@@ -814,11 +804,11 @@ contentsSolutions[c_, i_] := memoised[{c["Id"], i}, contentsKind[c["Kind"], c, i
 contentsKind["ContentsNamed", c_, i_] :=
   With[{sols = contentsSolutions[c["Sub"], i]},
     If[MemberQ[c["Keep"], c["Name"]],
-      joinAll[sols, <|c["Name"] -> nameMatch[{Append[posOf[i], All]}, elemOf[i][[3]], Append[elemKey[i], 3]]|>], sols]];
+      joinAll[sols, <|c["Name"] -> nameMatch[{Append[posOf[i], All]}, elemOf[i][[3]], Join[elemKey[i], contentsKey[]]]|>], sols]];
 contentsKind["ContentsCond", c_, i_] := conditionFiltered[c, contentsSolutions[c["Sub"], i]];
 contentsKind["ContentsTest", c_, i_] :=
   With[{sols = contentsSolutions[c["Sub"], i]}, If[sols =!= {} && TrueQ[c["F"][elemOf[i][[3]]]], sols, {}]];
-contentsKind["Plain", c_, i_] := plainSolutions[c, elemOf[i][[3]], Append[posOf[i], All], Append[elemKey[i], 3]];
+contentsKind["Plain", c_, i_] := plainSolutions[c, elemOf[i][[3]], Append[posOf[i], All], Join[elemKey[i], contentsKey[]]];
 contentsKind["ContentsList", c_, i_] /; Length[elemOf[i][[3]]] < c["Min"] := {};
 contentsKind["ContentsList", c_, i_] :=
   With[{items = elemOf[i][[3]]},
@@ -849,7 +839,7 @@ itemMissing[v_] := Missing[If[!FreeQ[v, _String, {0, 1}], "Text", "Literal"]];
    only WL's patterns can match it. *)
 textMatch[nd_, i_, k_] := memoised[{"Text", nd["Id"], i, k}, textKind[nd["Kind"], nd, i, k]];
 
-textItemMatch[i_, k_] := With[{v = elemOf[i][[3, k]]}, nameMatch[{itemMissing[v]}, v, Join[elemKey[i], {3, k}]]];
+textItemMatch[i_, k_] := With[{v = elemOf[i][[3, k]]}, nameMatch[{itemMissing[v]}, v, Join[elemKey[i], textItemKey[k]]]];
 
 textKind["Named", nd_, i_, k_] :=
   With[{sols = textMatch[nd["Sub"], i, k]},
@@ -935,11 +925,11 @@ headMatches[nd_, i_] :=
 tagMatches[tag_, x_, i_, need_] :=
   With[{names = Intersection[namesIn[Hold[tag]], need]},
     If[names === {}, {<||>},
-      {Map[nameMatch[{Append[posOf[i], 0]}, #, Append[elemKey[i], 0]] &, firstMatchValues[x[[1]], tag, names]]}]];
+      {Map[nameMatch[{Append[posOf[i], 0]}, #, Join[elemKey[i], tagKey[]]] &, firstMatchValues[x[[1]], tag, names]]}]];
 
 attributeMatches[Verbatim[Pattern][s_Symbol, a_], x_, i_, need_] :=
   If[MemberQ[need, Hold[s]],
-    joinAll[attributeMatches[a, x, i, need], <|Hold[s] -> nameMatch[{Append[posOf[i], Key[All]]}, x[[2]], Append[elemKey[i], 1]]|>],
+    joinAll[attributeMatches[a, x, i, need], <|Hold[s] -> nameMatch[{Append[posOf[i], Key[All]]}, x[[2]], Join[elemKey[i], attributeMapKey[]]]|>],
     attributeMatches[a, x, i, need]];
 attributeMatches[Verbatim[PatternTest][a_, _], x_, i_, need_] := attributeMatches[a, x, i, need];
 attributeMatches[r_Rule, x_, i_, need_] := attributeMatches[{r}, x, i, need];
@@ -969,7 +959,7 @@ plainAttributeMatches[pairs_, x_, i_] :=
   With[{attrs = x[[2]], p = posOf[i], k = elemKey[i]},
     With[{js = First @ FirstPosition[attrs[[All, 1]], #, {0}, {1}] & /@ pairs[[All, 1]]},
       {AssociationThread[pairs[[All, 2]],
-        MapThread[nameMatch[{Append[p, Key[#1]]}, attrs[[#2, 2]], Join[k, {2, #2, 0}]] &, {pairs[[All, 1]], js}]]}]];
+        MapThread[nameMatch[{Append[p, Key[#1]]}, attrs[[#2, 2]], Join[k, attributeKey[#2]]] &, {pairs[[All, 1]], js}]]}]];
 
 (* The places a rule on one of keys can take: each attribute so named, at
    {p, Key[k]}, and the token list of each list key among them, at
@@ -978,10 +968,10 @@ attributeSlots[x_, i_, keys_] :=
   With[{attrs = x[[2]], p = posOf[i], k = elemKey[i]},
     Join[
       <|"Key" -> attrs[[#, 1]], "Value" -> attrs[[#, 2]], "Pos" -> Append[p, Key[attrs[[#, 1]]]],
-        "OrderKey" -> Join[k, {2, #, 0}], "List" -> False|> & /@ Select[Range[Length[attrs]], MemberQ[keys, attrs[[#, 1]]] &],
+        "OrderKey" -> Join[k, attributeKey[#]], "List" -> False|> & /@ Select[Range[Length[attrs]], MemberQ[keys, attrs[[#, 1]]] &],
       KeyValueMap[Function[{listKey, reading},
           <|"Key" -> listKey, "Value" -> splitterOf[reading][Lookup[attrs, rawKeyOf[reading], ""]], "Pos" -> Append[p, Key[listKey]],
-            "OrderKey" -> Join[k, {2, Replace[FirstPosition[attrs[[All, 1]], rawKeyOf[reading], {Length[attrs] + 1}, {1}], {j_} :> j], 1}],
+            "OrderKey" -> Join[k, tokenListKey[Replace[FirstPosition[attrs[[All, 1]], rawKeyOf[reading], {Length[attrs] + 1}, {1}], {j_} :> j]]],
             "List" -> True|>],
         KeyTake[$readings, keys]]]];
 
