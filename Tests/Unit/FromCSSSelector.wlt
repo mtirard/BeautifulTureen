@@ -15,7 +15,7 @@ privateFreeQ[x_] :=
     {0, Infinity}, Heads -> True];
 
 (* A list of patterns over the children of an element or of the document. *)
-inParent[l_] := XMLPattern[_, _, l] | XMLDocument[l];
+inParent[l_] := XMLPattern[_][l] | XMLDocument[l];
 
 element[html_String] :=XMLFirstCase[ImportString[html, {"HTML", "XMLObject"}], XMLPattern["div"]];
 
@@ -120,11 +120,11 @@ TestCreate[
 TestCreate[
   {FromCSSSelector[n : "a b"], FromCSSSelector[n : "a > b"], FromCSSSelector[n : "a + b"], FromCSSSelector[n : "a ~ b"],
     FromCSSSelector[n : "a b c"], FromCSSSelector[n : "a b > c"], FromCSSSelector[n : "a>b+c~d"]},
-  {XMLPattern["a", _, Descendant[n : XMLPattern["b"]]], XMLPattern["a", _, {___, n : XMLPattern["b"], ___}],
+  {XMLPattern["a"][Descendant[n : XMLPattern["b"]]], XMLPattern["a"][{___, n : XMLPattern["b"], ___}],
     inParent[{___, XMLPattern["a"], n : XMLPattern["b"], ___}], inParent[{___, XMLPattern["a"], ___, n : XMLPattern["b"], ___}],
-    XMLPattern["a", _, Descendant[XMLPattern["b", _, Descendant[n : XMLPattern["c"]]]]],
-    XMLPattern["a", _, Descendant[XMLPattern["b", _, {___, n : XMLPattern["c"], ___}]]],
-    XMLPattern["a", _, {___, XMLPattern["b"], XMLPattern["c"], ___, n : XMLPattern["d"], ___}]},
+    XMLPattern["a"][Descendant[XMLPattern["b"][Descendant[n : XMLPattern["c"]]]]],
+    XMLPattern["a"][Descendant[XMLPattern["b"][{___, n : XMLPattern["c"], ___}]]],
+    XMLPattern["a"][{___, XMLPattern["b"], XMLPattern["c"], ___, n : XMLPattern["d"], ___}]},
   TestID -> "css-combinators-exact"
 ];
 
@@ -210,9 +210,9 @@ TestCreate[
 TestCreate[
   {FromCSSSelector["div:has(p)"], FromCSSSelector["div:has(> p)"], FromCSSSelector["div:has(a + b)"],
     FromCSSSelector["div:has(> a, > p)"], FromCSSSelector["div:has(> p:only-child)"]},
-  {XMLPattern["div", _, Descendant[XMLPattern["p"]]], XMLPattern["div", _, {___, XMLPattern["p"], ___}],
-    XMLPattern["div", _, {___, XMLPattern["a"], XMLPattern["b"], ___} | Descendant[XMLPattern[_, _, {___, XMLPattern["a"], XMLPattern["b"], ___}]]],
-    XMLPattern["div", _, {___, XMLPattern["a"], ___} | {___, XMLPattern["p"], ___}], XMLPattern["div", _, {XMLPattern["p"]}]},
+  {XMLPattern["div"][Descendant[XMLPattern["p"]]], XMLPattern["div"][{___, XMLPattern["p"], ___}],
+    XMLPattern["div"][{___, XMLPattern["a"], XMLPattern["b"], ___} | Descendant[XMLPattern[_][{___, XMLPattern["a"], XMLPattern["b"], ___}]]],
+    XMLPattern["div"][{___, XMLPattern["a"], ___} | {___, XMLPattern["p"], ___}], XMLPattern["div"][{XMLPattern["p"]}]},
   TestID -> "css-has-shapes"
 ];
 
@@ -283,10 +283,10 @@ TestCreate[
 TestCreate[
   {FromCSSSelector[n : "li:only-child"], FromCSSSelector[n : "li:only-child a"], FromCSSSelector[n : "ul li:only-child"],
     FromCSSSelector[n : "li:only-of-type"], FromCSSSelector[n : "ul > li:only-child:only-of-type"]},
-  {inParent[{n : XMLPattern["li"]}], inParent[{XMLPattern["li", _, Descendant[n : XMLPattern["a"]]]}],
-    XMLPattern["ul", _, {n : XMLPattern["li"]} | Descendant[XMLPattern[_, _, {n : XMLPattern["li"]}]]],
+  {inParent[{n : XMLPattern["li"]}], inParent[{XMLPattern["li"][Descendant[n : XMLPattern["a"]]]}],
+    XMLPattern["ul"][{n : XMLPattern["li"]} | Descendant[XMLPattern[_][{n : XMLPattern["li"]}]]],
     inParent[{Except[XMLPattern["li"]] ..., n : XMLPattern["li"], Except[XMLPattern["li"]] ...}],
-    XMLPattern["ul", _, {n : XMLPattern["li"]}]},
+    XMLPattern["ul"][{n : XMLPattern["li"]}]},
   TestID -> "css-only-exact"
 ];
 
@@ -309,7 +309,7 @@ TestCreate[
     "tr:nth-child(odd)", "tr:nth-last-child(-n+3)", "p:nth-of-type(2)", "p:last-of-type", "a + b:last-child",
     "a:first-child ~ b", "p:nth-child(0)"},
   {inParent[{n : XMLPattern["li"], ___}], inParent[{___, n : XMLPattern["li"]}],
-    XMLPattern["div", _, {Repeated[_, {2}], n : XMLPattern["p"], ___}],
+    XMLPattern["div"][{Repeated[_, {2}], n : XMLPattern["p"], ___}],
     inParent[{PatternSequence[_, _] ..., n : XMLPattern["tr"], ___}],
     inParent[{PatternSequence[_, _] ..., n : XMLPattern["tr"], ___}],
     inParent[{___, n : XMLPattern["tr"], Repeated[_, {0, 2}]}],
@@ -347,14 +347,14 @@ TestCreate[
    compound with no type is plain entries, through a fresh tag name. *)
 TestCreate[
   {MatchQ[FromCSSSelector[n : "b:has(i) ~ p:nth-child(4)"],
-      Verbatim[Alternatives][XMLPattern[Verbatim[_], Verbatim[_], c : Verbatim[Condition][{_Pattern, Verbatim[Pattern][n, XMLPattern["p"]], _Pattern}, _And]],
+      Verbatim[Alternatives][XMLPattern[Verbatim[_]][c : Verbatim[Condition][{_Pattern, Verbatim[Pattern][n, XMLPattern["p"]], _Pattern}, _And]],
         XMLDocument[c_]]],
     MatchQ[FromCSSSelector[n : ".x:first-of-type"],
-      Verbatim[Alternatives][XMLPattern[Verbatim[_], Verbatim[_], l : {Verbatim[RepeatedNull][Verbatim[Except][XMLPattern[Verbatim[Pattern][t_Symbol, Verbatim[_]]]]],
+      Verbatim[Alternatives][XMLPattern[Verbatim[_]][l : {Verbatim[RepeatedNull][Verbatim[Except][XMLPattern[Verbatim[Pattern][t_Symbol, Verbatim[_]]]]],
         Verbatim[Pattern][n, XMLPattern[Verbatim[Pattern][t_Symbol, Verbatim[_]], "classList" -> "x"]], Verbatim[___]}], XMLDocument[l_]]],
     MatchQ[FromCSSSelector[n : ":has(i):nth-of-type(1)"],
-      Verbatim[Alternatives][XMLPattern[Verbatim[_], Verbatim[_], l : {Verbatim[RepeatedNull][Verbatim[Except][XMLPattern[Verbatim[Pattern][t_Symbol, Verbatim[_]]]]],
-        Verbatim[Pattern][n, XMLPattern[Verbatim[Pattern][t_Symbol, Verbatim[_]], Verbatim[_], Descendant[XMLPattern["i"]]]], Verbatim[___]}], XMLDocument[l_]]],
+      Verbatim[Alternatives][XMLPattern[Verbatim[_]][l : {Verbatim[RepeatedNull][Verbatim[Except][XMLPattern[Verbatim[Pattern][t_Symbol, Verbatim[_]]]]],
+        Verbatim[Pattern][n, XMLPattern[Verbatim[Pattern][t_Symbol, Verbatim[_]]][Descendant[XMLPattern["i"]]]], Verbatim[___]}], XMLDocument[l_]]],
     Lookup[XMLCases[$kids, ":has(i):nth-child(5):first-of-type > i"][[All, 2]], "id"]},
   {True, True, True, {"i1"}},
   TestID -> "css-child-indexed-general-form"
@@ -382,13 +382,13 @@ With[{p = XMLPattern["p"], a = XMLPattern[_, "classList" -> "a"], np = n : XMLPa
       inParent[{Except[p] ..., p, Except[p] ..., np}],
       inParent[{Except[p] ..., np, Except[p] ...}],
       inParent[{Except[XMLPattern[_]] ..., n : XMLPattern[_], ___}],
-      XMLPattern["div", _, {Except[p] ..., p, Except[p] ..., np, ___}]},
+      XMLPattern["div"][{Except[p] ..., p, Except[p] ..., np, ___}]},
     TestID -> "css-child-indexed-counted-exact"
   ]
 ];
 
 (* A selector S is a pattern with no names, so the entries use it as it is. *)
-With[{s = XMLPattern[_, _, Descendant[XMLPattern["i"]]]},
+With[{s = XMLPattern[_][Descendant[XMLPattern["i"]]]},
   TestCreate[
     FromCSSSelector[n : ":nth-child(2 of :has(i))"],
     inParent[{Except[s] ..., s, Except[s] ..., n : s, ___}],
@@ -407,7 +407,7 @@ TestCreate[
     inParent[{_, PatternSequence[_, _] ..., XMLPattern[_, "classList" -> "b"], n : XMLPattern[_, "classList" -> "a"], ___}],
     inParent[{___, XMLPattern["a"], n : XMLPattern["b"]}],
     inParent[{_, _ ..., XMLPattern["a"], XMLPattern["b"], n : XMLPattern["c"], ___}],
-    XMLPattern["div", _, {Repeated[_, {0, 1}], XMLPattern[_, "classList" -> "b"], n : XMLPattern[_, "classList" -> "a"], ___}],
+    XMLPattern["div"][{Repeated[_, {0, 1}], XMLPattern[_, "classList" -> "b"], n : XMLPattern[_, "classList" -> "a"], ___}],
     inParent[{XMLPattern["a"], n : XMLPattern["b"], _}],
     inParent[{___, XMLPattern["a"], XMLPattern["b"], n : XMLPattern["c"], PatternSequence[_, _] ...}],
     inParent[{Except[_], XMLPattern["a"], n : XMLPattern["b"], ___}],
@@ -442,7 +442,7 @@ TestCreate[
    one way. *)
 TestCreate[
   {MatchQ[FromCSSSelector[n : "a ~ b:nth-child(3)"],
-      Verbatim[Alternatives][XMLPattern[Verbatim[_], Verbatim[_], c : Verbatim[Condition][{Verbatim[Pattern][_Symbol, Verbatim[Repeated][Verbatim[_], {2}]],
+      Verbatim[Alternatives][XMLPattern[Verbatim[_]][c : Verbatim[Condition][{Verbatim[Pattern][_Symbol, Verbatim[Repeated][Verbatim[_], {2}]],
           Verbatim[Pattern][n, XMLPattern["b"]], Verbatim[Pattern][_Symbol, Verbatim[___]]}, _]],
         XMLDocument[c_]]],
     ids[$kids, #] & /@ {"span ~ p:nth-child(3)", "span ~ p:nth-child(6)", "b ~ p:nth-child(3)", "p ~ span:nth-last-child(5)"}},
@@ -455,7 +455,7 @@ TestCreate[
    may be of it, and two positions at one end with no fixed index among all
    the siblings, keep the general form. *)
 TestCreate[
-  MatchQ[FromCSSSelector[n : #], Verbatim[Alternatives][XMLPattern[_, _, _Condition], XMLDocument[_Condition]]] & /@
+  MatchQ[FromCSSSelector[n : #], Verbatim[Alternatives][XMLPattern[_][_Condition], XMLDocument[_Condition]]] & /@
     {"a ~ b:nth-child(3)", "a ~ b + c:nth-child(3)", "a + b:nth-child(2 of .x)", "a:nth-last-child(2 of .x) ~ b",
       "a + b:nth-child(odd) + c:nth-child(3)", ".x + b:nth-of-type(2)", ":nth-child(odd):nth-of-type(odd)",
       ".x:first-of-type + b", "a + b:nth-of-type(2)", "a + b:first-of-type", "a:nth-of-type(2) + b", ".x:nth-of-type(2)",
@@ -468,7 +468,7 @@ TestCreate[
    siblings: a named prefix and a count on it. *)
 TestCreate[
   {MatchQ[FromCSSSelector[n : "p:nth-of-type(2):nth-child(4)"],
-      Verbatim[Alternatives][XMLPattern[Verbatim[_], Verbatim[_], c : Verbatim[Condition][{Verbatim[Pattern][g_Symbol, Verbatim[Repeated][Verbatim[_], {3}]],
+      Verbatim[Alternatives][XMLPattern[Verbatim[_]][c : Verbatim[Condition][{Verbatim[Pattern][g_Symbol, Verbatim[Repeated][Verbatim[_], {3}]],
           Verbatim[Pattern][n, XMLPattern["p"]], Verbatim[___]}, HoldPattern[Count[{g_}, XMLElement["p", Verbatim[_], Verbatim[_]]] == 1]]],
         XMLDocument[c_]]],
     FromCSSSelector[n : "li:nth-child(3):nth-last-child(2)"], FromCSSSelector[n : "li:nth-child(1):first-of-type"],
@@ -497,7 +497,7 @@ TestCreate[
    and no name. *)
 TestCreate[
   With[{t = FromCSSSelector["div:has(p):empty"]},
-    {MatchQ[t, Verbatim[PatternTest][XMLPattern["div", Verbatim[_], Descendant[XMLPattern["p"]]], _Function]], FreeQ[t, Verbatim[Pattern]]}],
+    {MatchQ[t, Verbatim[PatternTest][XMLPattern["div"][Descendant[XMLPattern["p"]]], _Function]], FreeQ[t, Verbatim[Pattern]]}],
   {True, True},
   TestID -> "css-one-name-one-condition"
 ];
@@ -509,13 +509,13 @@ TestCreate[
 TestCreate[
   {FromCSSSelector[n : "a > b, a > c"], FromCSSSelector[n : "div p, section p"], FromCSSSelector["h1, h2, .x"],
     FromCSSSelector["h1, h1"], FromCSSSelector[n : "a b, a b, a c"], FromCSSSelector[n : "[x='y'] > b, [x=\"y\"] > c"],
-    MatchQ[FromCSSSelector[n : "p:Empty a, p:empty a"], Verbatim[PatternTest][XMLPattern["p", Verbatim[_], Descendant[Verbatim[Pattern][n, XMLPattern["a"]]]], _]],
+    MatchQ[FromCSSSelector[n : "p:Empty a, p:empty a"], Verbatim[PatternTest][XMLPattern["p"][Descendant[Verbatim[Pattern][n, XMLPattern["a"]]]], _]],
     FromCSSSelector["a[x='y'], a[x=\"y\"]"]},
-  {XMLPattern["a", _, {___, n : XMLPattern["b" | "c"], ___}],
-    XMLPattern["div" | "section", _, Descendant[n : XMLPattern["p"]]],
+  {XMLPattern["a"][{___, n : XMLPattern["b" | "c"], ___}],
+    XMLPattern["div" | "section"][Descendant[n : XMLPattern["p"]]],
     XMLPattern["h1" | "h2"] | XMLPattern[_, "classList" -> "x"], XMLPattern["h1"],
-    XMLPattern["a", _, Descendant[n : XMLPattern["b" | "c"]]],
-    XMLPattern[_, "x" -> "y", {___, n : XMLPattern["b" | "c"], ___}], True, XMLPattern["a", "x" -> "y"]},
+    XMLPattern["a"][Descendant[n : XMLPattern["b" | "c"]]],
+    XMLPattern[_, "x" -> "y"][{___, n : XMLPattern["b" | "c"], ___}], True, XMLPattern["a", "x" -> "y"]},
   TestID -> "css-selector-list-exact"
 ];
 
@@ -530,10 +530,10 @@ TestCreate[
 TestCreate[
   {FromCSSSelector[n : "a > b, c > d"], FromCSSSelector[n : "a b, c > d, e"], FromCSSSelector[n : "a > b, a > c > d, a > b"],
     FromCSSSelector[n : "ul > li:only-child, ul > li"]},
-  {XMLPattern["a", _, {___, n : XMLPattern["b"], ___}] | XMLPattern["c", _, {___, n : XMLPattern["d"], ___}],
-    XMLPattern["a", _, Descendant[n : XMLPattern["b"]]] | XMLPattern["c", _, {___, n : XMLPattern["d"], ___}] | (n : XMLPattern["e"]),
-    XMLPattern["a", _, {___, n : XMLPattern["b"], ___}] | XMLPattern["a", _, {___, XMLPattern["c", _, {___, n : XMLPattern["d"], ___}], ___}],
-    XMLPattern["ul", _, {n : XMLPattern["li"]}] | XMLPattern["ul", _, {___, n : XMLPattern["li"], ___}]},
+  {XMLPattern["a"][{___, n : XMLPattern["b"], ___}] | XMLPattern["c"][{___, n : XMLPattern["d"], ___}],
+    XMLPattern["a"][Descendant[n : XMLPattern["b"]]] | XMLPattern["c"][{___, n : XMLPattern["d"], ___}] | (n : XMLPattern["e"]),
+    XMLPattern["a"][{___, n : XMLPattern["b"], ___}] | XMLPattern["a"][{___, XMLPattern["c"][{___, n : XMLPattern["d"], ___}], ___}],
+    XMLPattern["ul"][{n : XMLPattern["li"]}] | XMLPattern["ul"][{___, n : XMLPattern["li"], ___}]},
   TestID -> "css-selector-list-of-shapes-exact"
 ];
 
@@ -552,11 +552,11 @@ TestCreate[
 TestCreate[
   {FromCSSSelector[n : ":is(a b, c > d)"], FromCSSSelector[n : "b:is(a b)"], FromCSSSelector[n : ".x:where(a b, c > d)"],
     FromCSSSelector[n : "b:is(a b, .y)"], FromCSSSelector[n : ":is(div p, section p)"]},
-  {XMLPattern["a", _, Descendant[n : XMLPattern["b"]]] | XMLPattern["c", _, {___, n : XMLPattern["d"], ___}],
-    XMLPattern["a", _, Descendant[n : XMLPattern["b"]]],
-    XMLPattern["a", _, Descendant[n : XMLPattern["b", "classList" -> "x"]]] | XMLPattern["c", _, {___, n : XMLPattern["d", "classList" -> "x"], ___}],
-    XMLPattern["a", _, Descendant[n : XMLPattern["b"]]] | (n : XMLPattern["b", "classList" -> "y"]),
-    XMLPattern["div" | "section", _, Descendant[n : XMLPattern["p"]]]},
+  {XMLPattern["a"][Descendant[n : XMLPattern["b"]]] | XMLPattern["c"][{___, n : XMLPattern["d"], ___}],
+    XMLPattern["a"][Descendant[n : XMLPattern["b"]]],
+    XMLPattern["a"][Descendant[n : XMLPattern["b", "classList" -> "x"]]] | XMLPattern["c"][{___, n : XMLPattern["d", "classList" -> "x"], ___}],
+    XMLPattern["a"][Descendant[n : XMLPattern["b"]]] | (n : XMLPattern["b", "classList" -> "y"]),
+    XMLPattern["div" | "section"][Descendant[n : XMLPattern["p"]]]},
   TestID -> "css-is-complex-exact"
 ];
 
@@ -678,7 +678,7 @@ TestCreate[
 TestCreate[
   {invalidQ["a/**/b"], FromCSSSelector[n : "a /**/ b"], FromCSSSelector[n : "a/**/ b"], FromCSSSelector["/* x */a/**/.b/**/"],
     FromCSSSelector["a /* unclosed"]},
-  {True, XMLPattern["a", _, Descendant[n : XMLPattern["b"]]], XMLPattern["a", _, Descendant[n : XMLPattern["b"]]],
+  {True, XMLPattern["a"][Descendant[n : XMLPattern["b"]]], XMLPattern["a"][Descendant[n : XMLPattern["b"]]],
     XMLPattern["a", "classList" -> "b"], XMLPattern["a"]},
   TestID -> "css-grammar-comments"
 ];
@@ -686,9 +686,9 @@ TestCreate[
 TestCreate[
   {Union[FromCSSSelector[n : #] & /@ {"div>p", "div > p", "div  >\n p", "div\t>p"}], FromCSSSelector[n : "div .a"],
     FromCSSSelector["  a  "], FromCSSSelector["a ,b"], FromCSSSelector[":not( .a , .b )"] =!= $Failed, FromCSSSelector[n : "a\n\tb"]},
-  {{XMLPattern["div", _, {___, n : XMLPattern["p"], ___}]}, XMLPattern["div", _, Descendant[n : XMLPattern[_, "classList" -> "a"]]],
+  {{XMLPattern["div"][{___, n : XMLPattern["p"], ___}]}, XMLPattern["div"][Descendant[n : XMLPattern[_, "classList" -> "a"]]],
     XMLPattern["a"], XMLPattern["a" | "b"], FromCSSSelector[":not(.a,.b)"] =!= $Failed,
-    XMLPattern["a", _, Descendant[n : XMLPattern["b"]]]},
+    XMLPattern["a"][Descendant[n : XMLPattern["b"]]]},
   TestID -> "css-grammar-whitespace"
 ];
 
@@ -892,10 +892,10 @@ TestCreate[
 TestCreate[
   FromCSSSelector[n : #] & /@ {"html:root", ":scope > p", ":root:first-child", ":ROOT:only-of-type", ":root:nth-child(2)",
     ":root:nth-last-child(-n+3)", ":root p"},
-  {XMLDocument[{n : XMLPattern["html"]}], XMLDocument[{XMLPattern[_, _, {___, n : XMLPattern["p"], ___}]}],
+  {XMLDocument[{n : XMLPattern["html"]}], XMLDocument[{XMLPattern[_][{___, n : XMLPattern["p"], ___}]}],
    XMLDocument[{n : XMLPattern[_]}], XMLDocument[{n : XMLPattern[_]}],
    XMLDocument[{Except[_], n : XMLPattern[_]}], XMLDocument[{n : XMLPattern[_]}],
-   XMLDocument[{XMLPattern[_, _, Descendant[n : XMLPattern["p"]]]}]},
+   XMLDocument[{XMLPattern[_][Descendant[n : XMLPattern["p"]]]}]},
   TestID -> "css-root-exact"
 ];
 

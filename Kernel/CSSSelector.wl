@@ -682,7 +682,7 @@ cssBelow[{lead_, parts_, within_}] := (
   cssNoRoot[parts];
   If[MatchQ[parts, {{_, _, {}}}],
     With[{p = parts[[1, 1]]}, If[lead === cssChild, {___, p, ___}, Descendant[p]]],
-    With[{l = cssTreeRun[parts, within]}, If[lead === cssChild, l, l | Descendant[XMLPattern[_, _, l]]]]]);
+    With[{l = cssTreeRun[parts, within]}, If[lead === cssChild, l, l | Descendant[XMLPattern[_][l]]]]]);
 
 (* The pattern root, from the first run: its one compound; for :root and
    :scope, that compound as the only top element (ADR 0018), its positions
@@ -695,7 +695,7 @@ cssRunRoot[{_, parts_, within_}] :=
         XMLDocument[Append[If[AllTrue[parts[[1, 3]], cssFirstQ], {}, {Except[_]}], parts[[1, 1]]]],
         cssNoRoot[parts]],
     MatchQ[parts, {{_, _, {}}}], parts[[1, 1]],
-    True, With[{l = cssTreeRun[parts, within]}, XMLPattern[_, _, l] | XMLDocument[l]]];
+    True, With[{l = cssTreeRun[parts, within]}, XMLPattern[_][l] | XMLDocument[l]]];
 
 cssNoRoot[parts_] :=
   Replace[FirstCase[parts[[All, 3]], _cssRoot, None, {2}], cssRoot[text_] :> cssRefuse["unsupported", text, $cssRootHow]];
@@ -743,6 +743,7 @@ cssMovedOne[__] := cssUnmoved;
 (* The tags a compound's pattern can have, or All. *)
 cssTagsOf[XMLPattern[t_String, ___]] := {t};
 cssTagsOf[XMLPattern[t : Verbatim[Alternatives][__String], ___]] := List @@ t;
+cssTagsOf[XMLPattern[r__][___]] := cssTagsOf[XMLPattern[r]];
 cssTagsOf[(Verbatim[PatternTest][p_, _]) | (Verbatim[Pattern][_, p_]) | cssPathed[p_, __]] := cssTagsOf[p];
 cssTagsOf[alts_Alternatives] := With[{ts = cssTagsOf /@ List @@ alts}, If[AllTrue[ts, ListQ], Union @@ ts, All]];
 cssTagsOf[_] := All;
@@ -765,6 +766,7 @@ cssOwnTyped[es_, None] := es;
 cssOwnTyped[es_, t_] := es /. cssOwnType -> XMLPattern[Pattern @@ {t, Blank[]}];
 
 cssTagged[XMLPattern[tag_, r___], t_] := XMLPattern[Pattern @@ {t, tag}, r];
+cssTagged[XMLPattern[tag_, r___][cs___], t_] := XMLPattern[Pattern @@ {t, tag}, r][cs];
 cssTagged[Verbatim[PatternTest][p_, f_], t_] := PatternTest[cssTagged[p, t], f];
 cssTagged[Verbatim[Pattern][s_, p_], t_] := Pattern @@ {s, cssTagged[p, t]};
 cssTagged[alts_Alternatives, t_] := cssTagged[#, t] & /@ alts;
@@ -798,15 +800,23 @@ cssFixedSide[ps_, fromEnd_, n_] :=
    strings merged into one, as XMLPattern["h1" | "h2"]. *)
 cssMergedAlternatives[ps_] := cssAlternatives[Values[GroupBy[ps, cssMergeKey, cssMergeTags]]];
 
-cssMergeKey[XMLPattern[t_, r___]] /; StringQ[t] || MatchQ[t, Verbatim[Alternatives][__String]] := {Hold[r]};
+cssMergeKey[XMLPattern[t_, r___]] /; cssStringTagQ[t] := {Hold[r]};
+cssMergeKey[XMLPattern[t_, r___][cs___]] /; cssStringTagQ[t] := {Hold[r], Hold[cs]};
 cssMergeKey[p_] := {p, None};
 
-cssMergeTags[{p_}] := p;
-cssMergeTags[ps_] := XMLPattern[Alternatives @@ DeleteDuplicates[Join @@ (cssTagsOf /@ ps)], Sequence @@ Rest[First[ps]]];
+cssStringTagQ[t_] := StringQ[t] || MatchQ[t, Verbatim[Alternatives][__String]];
 
-(* A constraint added to the XMLPatterns of a compound's pattern. *)
-cssConstrained[XMLPattern[tag_], c_] := XMLPattern[tag, _, c];
-cssConstrained[XMLPattern[tag_, a_, cs___], c_] := XMLPattern[tag, a, cs, c];
+cssMergeTags[{p_}] := p;
+cssMergeTags[ps_] := cssRetagged[First[ps], Alternatives @@ DeleteDuplicates[Join @@ (cssTagsOf /@ ps)]];
+
+cssRetagged[XMLPattern[_, r___], tag_] := XMLPattern[tag, r];
+cssRetagged[XMLPattern[_, r___][cs___], tag_] := XMLPattern[tag, r][cs];
+
+(* A constraint added to the XMLPatterns of a compound's pattern, in their
+   one constraint bracket: a second bracket would be a chain, which
+   XMLPattern refuses. *)
+cssConstrained[XMLPattern[r__][cs___], c_] := XMLPattern[r][cs, c];
+cssConstrained[p : XMLPattern[__], c_] := p[c];
 cssConstrained[Verbatim[PatternTest][p_, f_], c_] := PatternTest[cssConstrained[p, c], f];
 cssConstrained[Verbatim[Pattern][s_, p_], c_] := Pattern @@ {s, cssConstrained[p, c]};
 cssConstrained[alts_Alternatives, c_] := cssConstrained[#, c] & /@ alts;
@@ -834,7 +844,7 @@ cssPathedBy[q_, ps_] := cssPathed[q, DeleteDuplicates[ps[[All, 1]]], ps[[1, 2]]]
    selector of the :has() is an alternative of the run, one that starts with +
    or ~ continuing it with its own first run, as a + b is, and any other a
    constraint on the compound. So n : "a:has(~ b c)" lists {___, n : a, ___,
-   XMLPattern["b", _, Descendant[c]], ___} over the parent's children. Before
+   XMLPattern["b"][Descendant[c]], ___} over the parent's children. Before
    another compound of the run, the two would have to be the same sibling,
    which needs a name, so it is not translated. *)
 cssTreeRun[parts_, within_] /; !FreeQ[parts[[All, 3]], _sibHas] :=
@@ -1059,7 +1069,7 @@ cssFreeTest[r_rel, text_] :=
   Replace[cssHasConstraint[r, text], {
     Descendant[p_] :> Hold[XMLFreeQ[cssSelf, p, {1, Infinity}]],
     {Verbatim[___], p_, Verbatim[___]} :> Hold[XMLFreeQ[cssSelf, p, {1}]],
-    c_ :> With[{q = XMLPattern[_, _, c]}, Hold[! XMLMatchQ[q][cssSelf]]]}];
+    c_ :> With[{q = XMLPattern[_][c]}, Hold[! XMLMatchQ[q][cssSelf]]]}];
 
 cssAnd[{t_}] := t;
 cssAnd[ts_] := Replace[Join @@ ts, Hold[xs___] :> Hold[And[xs]]];
