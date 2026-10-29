@@ -28,21 +28,21 @@ $msgTree = ImportString[
 (* Descendant with one argument is a constraint, which says where it goes. *)
 TestCreate[
   capturedMessages[XMLCases[$msgTree, Descendant[XMLPattern["p"]]]],
-  {"Descendant[XMLPattern[\"p\"]] is a constraint, which can only be an argument of XMLPattern after the attributes, as in XMLPattern[\"nav\", _, Descendant[XMLPattern[\"a\"]]]. To find matching elements at any depth, give the pattern alone."},
+  {"Descendant[XMLPattern[\"p\"]] is a constraint, which can only be an argument of the bracket after XMLPattern[tag, attrs] or of XMLDocument, as in XMLPattern[\"nav\"][Descendant[XMLPattern[\"a\"]]]. To find matching elements at any depth, give the pattern alone."},
   TestID -> "message-descendant-constraint-as-query"
 ];
 
 (* A misplaced XMLDocument[] says where it can stand. *)
 TestCreate[
   capturedMessages[XMLCases[$msgTree, XMLPattern["article", _, Descendant[XMLDocument[]]]]],
-  {"XMLDocument[...] matches only the document above the top elements, so it can only be a pattern root: the whole query, named, conditioned or tested, or a branch of alternatives at the top, as in XMLPattern[_, _, L] | XMLDocument[L]. It cannot be inside Descendant, an attribute pattern or an XMLElement pattern. Got XMLDocument[]."},
+  {"XMLDocument[...] matches only the document above the top elements, so it can only be a pattern root: the whole query, named, conditioned or tested, or a branch of alternatives at the top, as in XMLPattern[_][L] | XMLDocument[L]. It cannot be inside Descendant, an attribute pattern or an XMLElement pattern. Got XMLDocument[]."},
   TestID -> "message-document-placement"
 ];
 
 (* Descendant alone is a constraint, not a pattern to test. *)
 TestCreate[
   capturedMessages[XMLMatchQ[XMLElement["p", {}, {"x"}], Descendant[XMLPattern["p"]]]],
-  {"Descendant[XMLPattern[\"p\"]] is a constraint, which can only be an argument of XMLPattern after the attributes, as in XMLPattern[\"nav\", _, Descendant[XMLPattern[\"a\"]]]. To find matching elements at any depth, give the pattern alone."},
+  {"Descendant[XMLPattern[\"p\"]] is a constraint, which can only be an argument of the bracket after XMLPattern[tag, attrs] or of XMLDocument, as in XMLPattern[\"nav\"][Descendant[XMLPattern[\"a\"]]]. To find matching elements at any depth, give the pattern alone."},
   TestID -> "message-descendant-in-xmlmatchq"
 ];
 
@@ -277,7 +277,38 @@ TestCreate[
    says it looks above the element. *)
 TestCreate[
   capturedMessages[XMLMatchQ[XMLElement["p", {}, {}], "div > p"]],
-  {"The pattern should be an XMLPattern, an XMLElement pattern, an XMLDocument pattern, a list pattern for a list of elements, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f. A rule gives a value, not a test. A CSS selector such as \"nav a\" or \"ul > li\" looks above the element, which a lone element does not have; use XMLCases or XMLPosition to search a tree with it. Child, Adjacent and Sibling were removed in version 4; a test of an element's children constrains them, as in XMLPattern[\"ul\", _, {___, XMLPattern[\"li\"], ___}], and XMLCases searches a tree with a rule, as in XMLPattern[\"ul\", _, {___, x : XMLPattern[\"li\"], ___}] :> x. Got \"div > p\"."},
+  {"The pattern should be an XMLPattern, an XMLElement pattern, an XMLDocument pattern, a list pattern for a list of elements, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f. A rule gives a value, not a test. A CSS selector such as \"nav a\" or \"ul > li\" looks above the element, which a lone element does not have; use XMLCases or XMLPosition to search a tree with it. Child, Adjacent and Sibling were removed in version 4; a test of an element's children constrains them, as in XMLPattern[\"ul\"][{___, XMLPattern[\"li\"], ___}], and XMLCases searches a tree with a rule, as in XMLPattern[\"ul\"][{___, x : XMLPattern[\"li\"], ___}] :> x. Got \"div > p\"."},
   TestID -> "message-css-string-combinator-names-the-string"
 ];
 
+
+(* ---- The bracket form ----
+   Constraints are written in a second bracket, XMLPattern[tag, attrs][c...],
+   so no usage or message text shows an XMLPattern with a third argument. An
+   argument count ignores what is nested in brackets, braces and strings, and
+   the XMLPattern expressions nested in an argument are checked too. *)
+
+threeArgumentForms[text_String] := Join @@ Map[
+  Function[inner, If[StringCount[
+      FixedPoint[StringReplace[RegularExpression["\\[[^\\[\\]]*\\]|\\{[^{}]*\\}|\"[^\"]*\""] -> ""], inner],
+      ","] >= 2,
+    {inner}, threeArgumentForms[inner]]],
+  StringCases[text, RegularExpression["XMLPattern\\[((?:[^\\[\\]]++|\\[(?1)\\])*)\\]"] :> "$1"]];
+
+TestCreate[
+  Union @@ threeArgumentForms /@ Cases[
+    Flatten[Messages /@ Names["MaximilienTirard`HTMLPatterns`*"]], (_ :> s_String) :> s],
+  {},
+  TestID -> "message-texts-use-the-bracket-form"
+];
+
+(* The hints that messages take as arguments use the bracket form too. *)
+TestCreate[
+  With[{texts = Join[
+      Join @@ (capturedMessages[FromCSSSelector[#]] & /@ {"p:lang(en)", "li:not(:first-child)"}),
+      capturedMessages[XMLCases[$msgTree, XMLPattern["article"][{___, Descendant[XMLPattern["p"]], ___}]]],
+      capturedMessages[XMLCases[$msgTree, XMLPattern["article"][{___, {}, ___}]]]]},
+    {Length[texts], Union @@ threeArgumentForms /@ texts}],
+  {4, {}},
+  TestID -> "message-hints-use-the-bracket-form"
+];
