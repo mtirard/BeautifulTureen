@@ -24,7 +24,7 @@ Two substitution statements hold wherever their form is accepted: `s` ⇔ `FromC
 
 ### What the tree form adds
 
-Selector lists become one pattern over alternatives sharing `n`, so their union needs no merge (ADR 0015 ran and merged chains). A parent that may be the document is `XMLPattern[_][L] | XMLDocument[L]`. A translation writes constraints in the bracket form of ADR 0023, and a named child, `"ul > li"` with the `li` named, as `Child[n : …]`; positional selectors keep their list forms, so the position stays visible. Complex `:not()`, `:is()` and `:where()` over descendant and `>` combinators become tests on the subject's path, so `a:not(nav a)` and `x :is(a b)` translate. `:has(+ …)` and `:has(~ …)` translate, rooted at the parent. `:not(:has(…))` is `XMLFreeQ` with a level spec.
+Selector lists become one pattern over alternatives sharing `n`, so their union needs no merge (ADR 0015 ran and merged chains). A parent that may be the document is `XMLPattern[_][L] | XMLDocument[L]`. A translation writes constraints in the bracket form of ADR 0023, and a `>` child as `Child[p]`, named or not, as in `Child[n : XMLPattern["li"]]` for `"ul > li"` with the `li` named; positional selectors keep their list forms, so the position stays visible. Complex `:not()`, `:is()` and `:where()` over descendant and `>` combinators become tests on the subject's path, so `a:not(nav a)` and `x :is(a b)` translate. `:has(+ …)` and `:has(~ …)` translate, rooted at the parent. `:not(:has(…))` is `XMLFreeQ` with a level spec.
 
 ### Counted positions without conditions over runs
 

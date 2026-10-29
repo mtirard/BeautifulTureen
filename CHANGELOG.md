@@ -32,6 +32,7 @@ A breaking release. Patterns are nested as the document is, and a query gives on
 
 - Constraints on what is below an element go in a second bracket: `XMLPattern[tag][c…]` or `XMLPattern[tag, attrs][c…]`. Each `c` is a list pattern over the element children, such as `{XMLPattern["li"], ___}`, `Child[p]` or `Descendant[p]`, and all of them must hold. `XMLPattern[tag, attrs][]` is `XMLPattern[tag, attrs]`.
 - `Child[p]`, a constraint that some element child matches `p`, the same as the list `{___, p, ___}`: `XMLPattern["ul"][Child[x : XMLPattern["li"]]] :> x`. Under `XMLDocument[c…]` the children are the top elements. A name or a test goes inside, `Child[n : p]` or `Child[p?f]`; on `Child` itself it gives `Child::name` or `Child::test`. `Child` takes one pattern; several patterns are several constraints or a list, and `Child[a, b]` gives `Child::args`.
+- A one-element CSS selector string takes constraints as `XMLPattern` does: `"ul.c"[Child[x : "li"]] :> x` gives the `li` children of each `ul` of class `c`.
 - `XMLPosition` and `XMLExtract`: the positions of the results of a query, and the parts of a tree at positions ([ADR 0025](docs/adr/0025-positions-count-element-children-from-the-document.md)).
 - `XMLReplace`: rewrite what the names of a pattern match.
 - `XMLFreeQ`, with a level spec in DOM depth (issue #32).
