@@ -28,7 +28,8 @@ PackageScoped[treeDelete]
 (* through the reading; All, the contents.                      *)
 (* =========================================================== *)
 
-(* Edits go in position order, as positionOrdering gives it (Positions.wl). *)
+(* Edits go in reverse position order, the reverse of what positionOrdering
+   gives (Positions.wl). *)
 rewritten[input_, edits_] :=
   Block[{$input = input, $nodes = <||>, $originalKids = <||>, $replaced = <||>, $allReplaced = <||>,
       $before = <||>, $after = <||>, $atEnd = <||>, $tokens = <||>, $originalTokens = <||>,
