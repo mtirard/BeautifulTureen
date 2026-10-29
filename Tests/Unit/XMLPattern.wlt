@@ -75,12 +75,13 @@ TestCreate[
 (* Refusals fire when a consumer compiles the pattern, so the XMLPattern itself
    stays inert and composes. *)
 
-(* Varargs are gone: several constraints are one list. *)
+(* An attribute rule in the constraint bracket is not a constraint: several
+   attribute rules are one list in the second argument. *)
 TestCreate[
-  XMLCases[$links, XMLPattern["a", "href" -> _, "rel" -> _]],
+  XMLCases[$links, XMLPattern["a", "href" -> _]["rel" -> _]],
   $Failed,
   {XMLPattern::constraint},
-  TestID -> "xmlpattern-refuses-third-argument"
+  TestID -> "xmlpattern-refuses-attribute-rule-as-constraint"
 ];
 
 TestCreate[
@@ -169,7 +170,7 @@ TestCreate[
 
 TestCreate[
   XMLCases[XMLElement["div", {}, {$xy}],
-    XMLPattern["div", _, {___, XMLPattern["p", {("x" | "y") -> v_, "x" -> w_}], ___}] :> {v, w}],
+    XMLPattern["div"][{___, XMLPattern["p", {("x" | "y") -> v_, "x" -> w_}], ___}] :> {v, w}],
   {{"2", "1"}},
   TestID -> "xmlpattern-overlapping-keys-contents-entry"
 ];

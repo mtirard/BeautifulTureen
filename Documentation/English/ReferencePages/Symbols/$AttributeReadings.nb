@@ -328,12 +328,19 @@ XMLCases[{element},XMLPattern[\"input\",\"acceptList\"->types_]:>types,\"Attribu
 
 Cell[BoxData[RowBox[{"{", RowBox[{"{", RowBox[{"\"image/png\"", ",", "\"\"", ",", "\"image/gif\""}], "}"}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Give the ", Cell[BoxData[StyleBox["\"AttributeReadings\"", "TR"]], "InlineFormula"], " option to the function, not to ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["links=ImportString[\"<p><a rel=\\\"nofollow noopener\\\" href=\\\"/ad\\\">Ad</a><a href=\\\"/home\\\">Home</a><a rel=\\\"noopener\\\" href=\\\"/x\\\">X</a></p>\",{\"HTML\",\"XMLObject\"}];
-XMLCases[links,XMLPattern[\"a\",\"relList\"->\"nofollow\",\"AttributeReadings\"-> <|\"rel\"-> <||>|>]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Give the ", Cell[BoxData[StyleBox["\"AttributeReadings\"", "TR"]], "InlineFormula"], " option to the function, not to ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"links", "=", RowBox[{"ImportString", "[", RowBox[{"\"<p><a rel=\\\"nofollow noopener\\\" href=\\\"/ad\\\">Ad</a><a href=\\\"/home\\\">Home</a><a rel=\\\"noopener\\\" href=\\\"/x\\\">X</a></p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"links", ",", RowBox[{RowBox[{"XMLPattern", "[", RowBox[{"\"a\"", ",", RowBox[{"\"relList\"", "->", "\"nofollow\""}]}], "]"}], "[", RowBox[{"\"AttributeReadings\"", "->", RowBox[{"<|", RowBox[{"\"rel\"", "->", RowBox[{"<|", "|>"}]}], "|>"}]}], "]"}]}], "]"}]}], "Input"],
 
-Cell["XMLPattern::nargs: XMLPattern was given 3 arguments, but takes a tag and at most one attribute argument. Put several attribute constraints in one list: XMLPattern[tag, {c1, c2, ...}].", "Message", "MSG"],
+Cell["XMLPattern::nolistreading: The key \"relList\" looks like a list key, but \"rel\" has no reading, so \"relList\" is matched as an attribute of that name. To match the tokens of \"rel\", add a reading: $AttributeReadings[\"rel\"] = <||> for the session, or \"AttributeReadings\" -> <|\"rel\" -> <||>|> in the call.", "Message", "MSG"],
 
-Cell[BoxData["$Failed"], "Output"]}, Open]],
+Cell["XMLPattern::constraint: \"AttributeReadings\" -> <|\"rel\" -> <||>|> is not a constraint. The constraints on what is below an element are the arguments of the bracket after XMLPattern[tag, attrs], as in XMLPattern[tag, attrs][c1, c2, ...]: Child[p] for some element child that matches p, a list pattern over its element children, as in {p} for an only child, or Descendant[p] for an element anywhere below. Attribute constraints go in the first bracket, several in one list: XMLPattern[tag, {a1, a2, ...}].", "Message", "MSG"],
+
+Cell[BoxData["$Failed"], "Output"],
+
+Cell[TextData[{"Give it to ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLCases"]], "InlineFormula"], " instead:"}], "ExampleText"],
+
+Cell[BoxData[RowBox[{"XMLCases", "[", RowBox[{"links", ",", RowBox[{"XMLPattern", "[", RowBox[{"\"a\"", ",", RowBox[{"\"relList\"", "->", "\"nofollow\""}]}], "]"}], ",", RowBox[{"\"AttributeReadings\"", "->", RowBox[{"<|", RowBox[{"\"rel\"", "->", RowBox[{"<|", "|>"}]}], "|>"}]}]}], "]"}]], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{RowBox[{"\"shape\"", "\[Rule]", "\"rect\""}], ",", RowBox[{"\"rel\"", "\[Rule]", "\"nofollow noopener\""}], ",", RowBox[{"\"href\"", "\[Rule]", "\"/ad\""}]}], "}"}], ",", RowBox[{"{", "\"Ad\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A malformed reading gives a message when a function uses it:", "ExampleText"], Cell[BoxData["links=ImportString[\"<p><a rel=\\\"nofollow noopener\\\" href=\\\"/ad\\\">Ad</a><a href=\\\"/home\\\">Home</a><a rel=\\\"noopener\\\" href=\\\"/x\\\">X</a></p>\",{\"HTML\",\"XMLObject\"}];
 XMLCases[links,XMLPattern[\"a\"],\"AttributeReadings\"-> <|\"rel\"-> <|Method->\"TabSeparated\"|>|>]"], "Input"],
@@ -371,7 +378,7 @@ Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"
 
 Cell["XMLPattern::nolistreading: The key \"relList\" looks like a list key, but \"rel\" has no reading, so \"relList\" is matched as an attribute of that name. To match the tokens of \"rel\", add a reading: $AttributeReadings[\"rel\"] = <||> for the session, or \"AttributeReadings\" -> <|\"rel\" -> <||>|> in the call.", "Message", "MSG"],
 
-Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"False", ",", "False", ",", "False"}], "}"}], ",", RowBox[{"{", RowBox[{"True", ",", "False", ",", "False"}], "}"}]}], "}"}]], "Output"]}, Open]],
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", "False", "}"}], ",", RowBox[{"{", RowBox[{"True", ",", "False", ",", "False"}], "}"}]}], "}"}]], "Output"]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"With no reading for ", Cell[BoxData[StyleBox["rel", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["\"relList\"", "TR"]], "InlineFormula"], " names an attribute, with a message:"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"links", "=", RowBox[{"ImportString", "[", RowBox[{"\"<p><a rel=\\\"nofollow\\\" href=\\\"/ad\\\">Ad</a><a href=\\\"/home\\\">Home</a></p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"links", ",", RowBox[{"XMLPattern", "[", RowBox[{"\"a\"", ",", RowBox[{"\"relList\"", "->", "\"nofollow\""}]}], "]"}]}], "]"}]}], "Input"],
 

@@ -51,14 +51,14 @@ TestCreate[
 
 (* A name below the pattern root gives its elements in the same order *)
 TestCreate[
-  XMLCases[$mixed, XMLPattern["body", _, Descendant[XMLPattern[_, "id" -> id_]]] :> id],
+  XMLCases[$mixed, XMLPattern["body"][Descendant[XMLPattern[_, "id" -> id_]]] :> id],
   {"1", "2", "3", "4", "5", "6", "7"},
   TestID -> "order-descendant"
 ];
 
 (* A nested tree pattern too *)
 TestCreate[
-  XMLCases[$mixed, XMLPattern["body", _, Descendant[XMLPattern["section" | "div" | "p", _, {___, XMLPattern[_, "id" -> id_], ___}]]] :> id],
+  XMLCases[$mixed, XMLPattern["body"][Descendant[XMLPattern["section" | "div" | "p"][{___, XMLPattern[_, "id" -> id_], ___}]]] :> id],
   {"2", "3", "4", "5", "6"},
   TestID -> "order-nested-tree-pattern"
 ];
@@ -110,7 +110,7 @@ TestCreate[
 
 (* A name below the pattern root: the first of its elements in document order *)
 TestCreate[
-  XMLFirstCase[$mixed, XMLPattern["body", _, Descendant[XMLPattern["p" | "div", "id" -> id_]]] :> id],
+  XMLFirstCase[$mixed, XMLPattern["body"][Descendant[XMLPattern["p" | "div", "id" -> id_]]] :> id],
   "2",
   TestID -> "first-descendant"
 ];

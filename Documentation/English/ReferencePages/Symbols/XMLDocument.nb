@@ -15,11 +15,11 @@ Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["XMLDocume
 
 Cell[TextData[{"The top elements of a tree are the root element of an ", Cell[BoxData[ButtonBox["XMLObject", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLObject"]], "InlineFormula"], ", each ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], " in a list, or a bare ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], " itself. ", Cell[BoxData[ButtonBox["XMLDocument", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLDocument"]], "InlineFormula"], " stands for the document above them."}], "Notes"],
 
-Cell[TextData[{"Each ", Cell[BoxData[SubscriptBox[StyleBox["c", "TI"], StyleBox["i", "TI"]]], "InlineFormula"], " is a constraint, as in ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], ": a list pattern over the top elements, with text left out, ", Cell[BoxData[RowBox[{ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Descendant"], "[", StyleBox["p", "TI"], "]"}]], "InlineFormula"], ", ", Cell[BoxData[RowBox[{ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Descendant"], "[", RowBox[{StyleBox["p", "TI"], ",", StyleBox["levelspec", "TI"]}], "]"}]], "InlineFormula"], ", or alternatives of these."}], "Notes"],
+Cell[TextData[{"Each ", Cell[BoxData[SubscriptBox[StyleBox["c", "TI"], StyleBox["i", "TI"]]], "InlineFormula"], " is a constraint, as in ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], ": a list pattern over the top elements, with text left out, ", Cell[BoxData[RowBox[{ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Child"], "[", StyleBox["p", "TI"], "]"}]], "InlineFormula"], " for a top element, ", Cell[BoxData[RowBox[{ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Descendant"], "[", StyleBox["p", "TI"], "]"}]], "InlineFormula"], ", ", Cell[BoxData[RowBox[{ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Descendant"], "[", RowBox[{StyleBox["p", "TI"], ",", StyleBox["levelspec", "TI"]}], "]"}]], "InlineFormula"], ", or alternatives of these."}], "Notes"],
 
-Cell[TextData[{Cell[BoxData[ButtonBox["XMLDocument", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLDocument"]], "InlineFormula"], " can only be the ", StyleBox["pattern root", FontWeight->"Bold"], ", the top of a pattern: the whole pattern, named, with a condition or a test, or a branch of alternatives at the top, as in ", Cell[BoxData[RowBox[{ButtonBox["Alternatives", BaseStyle -> "Link", ButtonData -> "paclet:ref/Alternatives"], "[", RowBox[{RowBox[{ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"], "[", RowBox[{StyleBox["_", "TR"], ",", StyleBox["_", "TR"], ",", StyleBox["l", "TI"]}], "]"}], ",", RowBox[{ButtonBox["XMLDocument", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLDocument"], "[", StyleBox["l", "TI"], "]"}]}], "]"}]], "InlineFormula"], ". Elsewhere it gives a message."}], "Notes"],
+Cell[TextData[{Cell[BoxData[ButtonBox["XMLDocument", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLDocument"]], "InlineFormula"], " can only be the ", StyleBox["pattern root", FontWeight->"Bold"], ", the top of a pattern: the whole pattern, named, with a condition or a test, or a branch of alternatives at the top, as in ", Cell[BoxData[RowBox[{ButtonBox["Alternatives", BaseStyle -> "Link", ButtonData -> "paclet:ref/Alternatives"], "[", RowBox[{RowBox[{RowBox[{ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"], "[", StyleBox["_", "TR"], "]"}], "[", StyleBox["l", "TI"], "]"}], ",", RowBox[{ButtonBox["XMLDocument", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLDocument"], "[", StyleBox["l", "TI"], "]"}]}], "]"}]], "InlineFormula"], ". Elsewhere it gives a message."}], "Notes"],
 
-Cell[TextData[{Cell[BoxData[RowBox[{RowBox[{ButtonBox["XMLDocument", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLDocument"], "[", RowBox[{"{", RowBox[{StyleBox["___", "TR"], ",", "x : p$", ",", StyleBox["___", "TR"]}], "}"}], "]"}], "\[RuleDelayed]", StyleBox["x", "TR"]}]], "InlineFormula"], " gives the top elements that match ", Cell[BoxData[StyleBox["p", "TI"]], "InlineFormula"], ". ", Cell[BoxData[RowBox[{ButtonBox["Alternatives", BaseStyle -> "Link", ButtonData -> "paclet:ref/Alternatives"], "[", RowBox[{RowBox[{ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"], "[", RowBox[{StyleBox["_", "TR"], ",", StyleBox["_", "TR"], ",", StyleBox["l", "TI"]}], "]"}], ",", RowBox[{ButtonBox["XMLDocument", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLDocument"], "[", StyleBox["l", "TI"], "]"}]}], "]"}]], "InlineFormula"], " lets the list pattern ", Cell[BoxData[StyleBox["l", "TI"]], "InlineFormula"], " match the children of any element or the top elements."}], "Notes"],
+Cell[TextData[{Cell[BoxData[RowBox[{RowBox[{ButtonBox["XMLDocument", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLDocument"], "[", RowBox[{ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Child"], "[", "x : p$", "]"}], "]"}], "\[RuleDelayed]", StyleBox["x", "TR"]}]], "InlineFormula"], " gives the top elements that match ", Cell[BoxData[StyleBox["p", "TI"]], "InlineFormula"], ". ", Cell[BoxData[RowBox[{ButtonBox["Alternatives", BaseStyle -> "Link", ButtonData -> "paclet:ref/Alternatives"], "[", RowBox[{RowBox[{RowBox[{ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"], "[", StyleBox["_", "TR"], "]"}], "[", StyleBox["l", "TI"], "]"}], ",", RowBox[{ButtonBox["XMLDocument", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLDocument"], "[", StyleBox["l", "TI"], "]"}]}], "]"}]], "InlineFormula"], " lets the list pattern ", Cell[BoxData[StyleBox["l", "TI"]], "InlineFormula"], " match the children of any element or the top elements."}], "Notes"],
 
 Cell[TextData[{"Under ", Cell[BoxData[ButtonBox["XMLDocument", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLDocument"]], "InlineFormula"], ", a named ", Cell[BoxData[ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Descendant"]], "InlineFormula"], " constraint, as in ", Cell[BoxData["path : Descendant[p$]"], "InlineFormula"], ", gives every ancestor of the match. A test on the constraint, such as ", Cell[BoxData["Descendant[p$]?(NoneTrue[XMLMatchQ[\"nav\"]])"], "InlineFormula"], ", tests them all."}], "Notes"],
 
@@ -123,7 +123,7 @@ Cell[CellGroupData[{Cell[BoxData[
   $Line = 0; Null]], "PrimaryExamplesSection"],
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give the p elements at the top of a list, and not those nested in other elements:", "ExampleText"], Cell[BoxData["fragment={XMLElement[\"p\",{},{\"One\"}],\"text\",XMLElement[\"div\",{},{XMLElement[\"p\",{},{\"Nested\"}]}],XMLElement[\"p\",{},{\"Two\"}]};
-XMLCases[fragment,XMLDocument[{___,x:XMLPattern[\"p\"],___}]:>x]"], "Input"],
+XMLCases[fragment,XMLDocument[Child[x:XMLPattern[\"p\"]]]:>x]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"One\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Two\"", "}"}]}], "]"}]}], "}"}]], "Output"]}, Open]],
 
@@ -163,7 +163,7 @@ XMLMatchQ[page,XMLDocument[{XMLPattern[\"html\"]}]]"], "Input"],
 Cell[BoxData["True"], "Output"]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Share one list pattern between any element and the document to get first children:", "ExampleText"], Cell[BoxData["fragment={XMLElement[\"li\",{},{\"Top\"}],XMLElement[\"ul\",{},{XMLElement[\"li\",{},{\"In a list\"}],XMLElement[\"li\",{},{\"Second\"}]}]};
-XMLCases[fragment,Alternatives[XMLPattern[_,_,{x:XMLPattern[\"li\"],___}],XMLDocument[{x:XMLPattern[\"li\"],___}]]:>HTMLTextContent[x]]"], "Input"],
+XMLCases[fragment,Alternatives[XMLPattern[_][{x:XMLPattern[\"li\"],___}],XMLDocument[{x:XMLPattern[\"li\"],___}]]:>HTMLTextContent[x]]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"\"Top\"", ",", "\"In a list\""}], "}"}]], "Output"]}, Open]],
 
@@ -173,12 +173,12 @@ XMLCases[page,XMLDocument[path:Descendant[XMLPattern[\"a\"]]]:>Map[First,path]]"
 Cell[BoxData[RowBox[{"{", RowBox[{"{", RowBox[{"\"html\"", ",", "\"body\"", ",", "\"nav\""}], "}"}], "}"}]], "Output"]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Find the direct children of an element, as BeautifulSoup's ", Cell[BoxData["recursive=False"], "InlineFormula"], " does:"}], "ExampleText"], Cell[BoxData["section=XMLElement[\"section\",{},{XMLElement[\"p\",{},{\"Direct\"}],XMLElement[\"div\",{},{XMLElement[\"p\",{},{\"Nested\"}]}]}];
-XMLCases[section,XMLDocument[{XMLPattern[_,_,{___,x:XMLPattern[\"p\"],___}]}]:>x]"], "Input"],
+XMLCases[section,XMLDocument[{XMLPattern[_][Child[x:XMLPattern[\"p\"]]]}]:>x]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Direct\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Delete the top p elements of a list:", "ExampleText"], Cell[BoxData["fragment={XMLElement[\"p\",{},{\"One\"}],XMLElement[\"div\",{},{XMLElement[\"p\",{},{\"Nested\"}]}]};
-XMLDeleteCases[fragment,XMLDocument[{___,x:XMLPattern[\"p\"],___}]:>x]"], "Input"],
+XMLDeleteCases[fragment,XMLDocument[Child[x:XMLPattern[\"p\"]]]:>x]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Nested\"", "}"}]}], "]"}], "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
 
@@ -222,7 +222,7 @@ Cell[CellGroupData[{Cell[BoxData[
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The CSS selectors ", Cell[BoxData[":root"], "InlineFormula"], " and ", Cell[BoxData[":scope"], "InlineFormula"], " translate to patterns rooted at XMLDocument:"}], "ExampleText"], Cell[BoxData["{FromCSSSelector[n:\":root\"],FromCSSSelector[n:\":scope > p\"]}"], "Input"],
 
-Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLDocument", "[", RowBox[{"{", RowBox[{"n", ":", RowBox[{"XMLPattern", "[", "_", "]"}]}], "}"}], "]"}], ",", RowBox[{"XMLDocument", "[", RowBox[{"{", RowBox[{"XMLPattern", "[", RowBox[{"_", ",", "_", ",", RowBox[{"{", RowBox[{"___", ",", RowBox[{"n", ":", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], ",", "___"}], "}"}]}], "]"}], "}"}], "]"}]}], "}"}]], "Output"]}, Open]],
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLDocument", "[", RowBox[{"{", RowBox[{"n", ":", RowBox[{"XMLPattern", "[", "_", "]"}]}], "}"}], "]"}], ",", RowBox[{"XMLDocument", "[", RowBox[{"{", RowBox[{RowBox[{"XMLPattern", "[", "_", "]"}], "[", RowBox[{"Child", "[", RowBox[{"n", ":", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "]"}], "]"}], "}"}], "]"}]}], "}"}]], "Output"]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A pattern rooted at XMLDocument with a Descendant constraint gives what the pattern alone gives:", "ExampleText"], Cell[BoxData["page=ImportString[\"<html><body><p>One</p><div><p>Two</p></div></body></html>\",{\"HTML\",\"XMLObject\"}];
 XMLCases[page,XMLDocument[Descendant[x:XMLPattern[\"p\"]]]:>x]===XMLCases[page,XMLPattern[\"p\"]]"], "Input"],
@@ -249,9 +249,9 @@ Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"
 Cell[BoxData[RowBox[{"{", "}"}]], "Output"]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["XMLDocument can only be the pattern root:", "ExampleText"], Cell[BoxData["navs=ImportString[\"<nav><a>Home</a></nav>\",{\"HTML\",\"XMLObject\"}];
-XMLCases[navs,XMLPattern[\"nav\",_,Descendant[XMLDocument[]]]]"], "Input"],
+XMLCases[navs,XMLPattern[\"nav\"][Descendant[XMLDocument[]]]]"], "Input"],
 
-Cell["XMLDocument::place: XMLDocument[...] matches only the document above the top elements, so it can only be a pattern root: the whole query, named, conditioned or tested, or a branch of alternatives at the top, as in XMLPattern[_, _, L] | XMLDocument[L]. It cannot be inside Descendant, an attribute pattern or an XMLElement pattern. Got XMLDocument[].", "Message", "MSG"],
+Cell["XMLDocument::place: XMLDocument[...] matches only the document above the top elements, so it can only be a pattern root: the whole query, named, conditioned or tested, or a branch of alternatives at the top, as in XMLPattern[_][L] | XMLDocument[L]. It cannot be inside Descendant, an attribute pattern or an XMLElement pattern. Got XMLDocument[].", "Message", "MSG"],
 
 Cell[BoxData["$Failed"], "Output"]}, Open]],
 
@@ -266,7 +266,7 @@ Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}],
 
 Cell["Give a list pattern over the top elements instead:", "ExampleText"],
 
-Cell[BoxData["XMLCases[fragment,XMLDocument[{___,x:XMLPattern[\"p\"],___}]:>x]"], "Input"],
+Cell[BoxData["XMLCases[fragment,XMLDocument[Child[x:XMLPattern[\"p\"]]]:>x]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"One\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Two\"", "}"}]}], "]"}]}], "}"}]], "Output"]}, Open]],
 
@@ -278,7 +278,7 @@ Cell["XMLDeleteCases::root: The root element of an XMLObject cannot be deleted; 
 Cell[BoxData["True"], "Output"]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A list pattern over the top elements matches them, not the elements nested in them:", "ExampleText"], Cell[BoxData["fragment={XMLElement[\"p\",{},{\"One\"}],XMLElement[\"div\",{},{XMLElement[\"p\",{},{\"Nested\"}]}]};
-XMLCases[fragment,XMLDocument[{___,x:XMLPattern[\"p\"],___}]:>x]"], "Input"],
+XMLCases[fragment,XMLDocument[Child[x:XMLPattern[\"p\"]]]:>x]"], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"One\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]]}, Open]],
 

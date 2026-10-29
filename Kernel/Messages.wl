@@ -27,14 +27,15 @@ Scan[Function[h,
 HTMLToNotebook::notrule = "Each \"Roles\" or \"Constructs\" entry should be a rule pattern -> value or pattern :> value. Got `1`.";
 
 (* ---- badpat ----
-   Each consumer's text lists what it accepts. Child, Adjacent and Sibling
-   were removed in 4.0.0, and a query that still uses one stays unevaluated,
-   so the text says what to write instead. *)
+   Each consumer's text lists what it accepts. Adjacent and Sibling were
+   removed in 4.0.0, and a query that still uses one stays unevaluated, so
+   the text says what to write instead. Child is a constraint since 4.0.0,
+   and a query that is Child gives Child::place. *)
 
 $patternForms = "A pattern is an XMLPattern, which can take constraints on the elements below it, an XMLDocument pattern, an XMLElement pattern, or a CSS selector string, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f.";
 $contextForms = "A CSS selector that looks above or beside the element it selects, such as \"nav a\", gives that element when given alone; on the left of a rule, name the element, as in n : \"nav a\" :> n.";
-$removedForms = "Child, Adjacent and Sibling were removed in version 4; nest the patterns as the document is: XMLPattern[\"ul\", _, {___, x : XMLPattern[\"li\"], ___}] :> x gives the li children of each ul, XMLPattern[\"nav\", _, Descendant[x : XMLPattern[\"a\"]]] :> x the links inside a nav, XMLPattern[_, _, {___, XMLPattern[\"h2\"], ___, x : XMLPattern[\"p\"], ___}] :> x each p after an h2 among its siblings, and XMLPattern[_, _, {___, XMLPattern[\"h2\"], x : XMLPattern[\"p\"], ___}] :> x each p right after one.";
-$removedTests = "Child, Adjacent and Sibling were removed in version 4; a test of an element's children constrains them, as in XMLPattern[\"ul\", _, {___, XMLPattern[\"li\"], ___}], and XMLCases searches a tree with a rule, as in XMLPattern[\"ul\", _, {___, x : XMLPattern[\"li\"], ___}] :> x.";
+$removedForms = "Adjacent and Sibling were removed in version 4; nest the patterns as the document is: XMLPattern[\"ul\"][Child[x : XMLPattern[\"li\"]]] :> x gives the li children of each ul, XMLPattern[\"nav\"][Descendant[x : XMLPattern[\"a\"]]] :> x the links inside a nav, XMLPattern[_][{___, XMLPattern[\"h2\"], ___, x : XMLPattern[\"p\"], ___}] :> x each p after an h2 among its siblings, and XMLPattern[_][{___, XMLPattern[\"h2\"], x : XMLPattern[\"p\"], ___}] :> x each p right after one.";
+$removedTests = "Adjacent and Sibling were removed in version 4; a test of an element's children constrains them, as in XMLPattern[\"ul\"][Child[XMLPattern[\"li\"]]], and XMLCases searches a tree with a rule, as in XMLPattern[\"ul\"][Child[x : XMLPattern[\"li\"]]] :> x.";
 
 Scan[Function[h,
     MessageName[h, "badpat"] = StringRiffle[{"The second argument should be a pattern, or a rule pattern -> rhs or pattern :> rhs.",
@@ -53,7 +54,7 @@ HTMLToTree::badquery = StringRiffle[{"The value of the `1` option should be `2`,
 (* The keys of "Roles" and "Constructs" rules:
    an element test, or a query whose counted element positions get the value. *)
 Scan[Function[h,
-    MessageName[h, "badpat"] = StringRiffle[{"The key of a rule should be an element test or a query. An element test is an XMLPattern, an XMLElement pattern, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f; each element is tested as the pattern root, and its names can be used in the value. A query is a rule such as XMLPattern[\"nav\", _, Descendant[x : XMLPattern[\"a\"]]] :> x, or a CSS selector string such as \"nav a\"; the elements it selects get the value. An XMLDocument pattern tests no element: name the elements it finds and give the rule, as in (XMLDocument[Descendant[x : XMLPattern[\"a\"]]] :> x) -> value.", $removedForms, "Got `1`."}, " "];
+    MessageName[h, "badpat"] = StringRiffle[{"The key of a rule should be an element test or a query. An element test is an XMLPattern, an XMLElement pattern, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f; each element is tested as the pattern root, and its names can be used in the value. A query is a rule such as XMLPattern[\"nav\"][Descendant[x : XMLPattern[\"a\"]]] :> x, or a CSS selector string such as \"nav a\"; the elements it selects get the value. An XMLDocument pattern tests no element: name the elements it finds and give the rule, as in (XMLDocument[Descendant[x : XMLPattern[\"a\"]]] :> x) -> value.", $removedForms, "Got `1`."}, " "];
     MessageName[h, "keytarget"] = "A query key selects the position `1`, which is not an element. A \"Roles\" or \"Constructs\" query should select elements only."],
   {HTMLInnerText, HTMLToNotebook, HTMLToTree}];
 

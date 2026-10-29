@@ -6,23 +6,23 @@ A breaking release. Patterns are nested as the document is, and a query gives on
 
 ### Breaking changes
 
-- **`Child`, `Adjacent` and `Sibling` are removed.** A query that still uses one stays unevaluated inside the function it is given to, which gives `::badpat`, whose text shows the tree form. Rewrite each as a nested pattern that names what it gives:
+- **`Adjacent` and `Sibling` are removed, and `Child` is a constraint.** A query that still uses `Adjacent` or `Sibling` stays unevaluated inside the function it is given to, which gives `::badpat`, whose text shows the tree form; `Child` as a query gives `Child::place`. Rewrite each as a nested pattern that names what it gives:
 
   | 3.0.0 | 4.0.0 |
   |---|---|
-  | `Child[XMLPattern["ul"], XMLPattern["li"]]` | `XMLPattern["ul", _, {___, x : XMLPattern["li"], ___}] :> x` |
-  | `Descendant[XMLPattern["nav"], XMLPattern["a"]]` | `XMLPattern["nav", _, Descendant[x : XMLPattern["a"]]] :> x` |
-  | `Sibling[XMLPattern["h2"], XMLPattern["p"]]` | `XMLPattern[_, _, {___, XMLPattern["h2"], ___, x : XMLPattern["p"], ___}] :> x` |
-  | `Adjacent[XMLPattern["h2"], XMLPattern["p"]]` | `XMLPattern[_, _, {___, XMLPattern["h2"], x : XMLPattern["p"], ___}] :> x` |
-  | `Child[XMLPattern["ul"], {XMLPattern["li"], ___}]` (a list stage) | `XMLPattern["ul", _, {x : XMLPattern["li"], ___}] :> x` |
+  | `Child[XMLPattern["ul"], XMLPattern["li"]]` | `XMLPattern["ul"][Child[x : XMLPattern["li"]]] :> x` |
+  | `Descendant[XMLPattern["nav"], XMLPattern["a"]]` | `XMLPattern["nav"][Descendant[x : XMLPattern["a"]]] :> x` |
+  | `Sibling[XMLPattern["h2"], XMLPattern["p"]]` | `XMLPattern[_][{___, XMLPattern["h2"], ___, x : XMLPattern["p"], ___}] :> x` |
+  | `Adjacent[XMLPattern["h2"], XMLPattern["p"]]` | `XMLPattern[_][{___, XMLPattern["h2"], x : XMLPattern["p"], ___}] :> x` |
+  | `Child[XMLPattern["ul"], {XMLPattern["li"], ___}]` (a list stage) | `XMLPattern["ul"][{x : XMLPattern["li"], ___}] :> x` |
 
   CSS selector strings keep working as before: `"nav a"` still gives the links inside a `nav`.
-- **`Descendant` is a constraint**, an argument of `XMLPattern` or `XMLDocument` after the attributes: `Descendant[p]` or `Descendant[p, levelspec]`, with the level spec in DOM depth. The two-pattern form `Descendant[a, b]` gives `Descendant::level`, and `Descendant` as a whole query gives `Descendant::place`.
-- **List stages are removed.** A list pattern over an element's children is now a constraint: `XMLPattern[tag, attrs, {…}]`.
+- **`Descendant` is a constraint**, an argument of the constraint bracket of `XMLPattern[tag, attrs][c…]` or of `XMLDocument[c…]`: `Descendant[p]` or `Descendant[p, levelspec]`, with the level spec in DOM depth. The two-pattern form `Descendant[a, b]` gives `Descendant::level`, and `Descendant` as a whole query gives `Descendant::place`.
+- **List stages are removed.** A list pattern over an element's children is now a constraint: `XMLPattern[tag, attrs][{…}]`.
 - **`XMLDocument[]` is no longer a first stage.** `XMLDocument[c…]` is a pattern root, which takes constraints on the top elements and can be named (its position is `{}`) or be a branch of alternatives at the top.
 - **A query whose right-hand side uses no names gives at most one result.** More generally, `XMLCases[t, p :> rhs]` gives one result per distinct combination of the positions of the names `rhs` uses, not one per match: `XMLCases[t, XMLPattern["a"] -> 1]` gives `{1}`. A bare pattern still gives each match, as `Cases` does.
 - **`XMLDeleteCases` accepts rules**: `XMLDeleteCases[t, p :> x]` deletes what the name `x` matches, which can be an element, a run of children, an attribute, a token or the contents of an element.
-- **`FromCSSSelector` of a selector that looks above or beside its element**, such as `"nav a"`, gives `FromCSSSelector::name` and `$Failed`: name the element it selects, as in `FromCSSSelector[n : "nav a"]`, which gives `XMLPattern["nav", _, Descendant[n : XMLPattern["a"]]]`.
+- **`FromCSSSelector` of a selector that looks above or beside its element**, such as `"nav a"`, gives `FromCSSSelector::name` and `$Failed`: name the element it selects, as in `FromCSSSelector[n : "nav a"]`, which gives `XMLPattern["nav"][Descendant[n : XMLPattern["a"]]]`.
 - **`XMLMatchQ` accepts tree patterns, `XMLDocument` patterns and list patterns, and refuses rules.**
 - **`XMLElement` patterns are accepted everywhere**, with their literal WL meaning (issue #31 is closed as not planned).
 - **`"Roles"` and `"Constructs"` accept query keys**: a rule key, or a CSS selector that looks above the element such as `"nav a"`, is matched once against the whole input, and the elements it selects get the value.
@@ -30,10 +30,13 @@ A breaking release. Patterns are nested as the document is, and a query gives on
 
 ### New
 
+- Constraints on what is below an element go in a second bracket: `XMLPattern[tag][c…]` or `XMLPattern[tag, attrs][c…]`. Each `c` is a list pattern over the element children, such as `{XMLPattern["li"], ___}`, `Child[p]` or `Descendant[p]`, and all of them must hold. `XMLPattern[tag, attrs][]` is `XMLPattern[tag, attrs]`.
+- `Child[p]`, a constraint that some element child matches `p`, the same as the list `{___, p, ___}`: `XMLPattern["ul"][Child[x : XMLPattern["li"]]] :> x`. Under `XMLDocument[c…]` the children are the top elements. A name or a test goes inside, `Child[n : p]` or `Child[p?f]`; on `Child` itself it gives `Child::name` or `Child::test`. `Child` takes one pattern; several patterns are several constraints or a list, and `Child[a, b]` gives `Child::args`.
+- A one-element CSS selector string takes constraints as `XMLPattern` does: `"ul.c"[Child[x : "li"]] :> x` gives the `li` children of each `ul` of class `c`.
 - `XMLPosition` and `XMLExtract`: the positions of the results of a query, and the parts of a tree at positions ([ADR 0025](docs/adr/0025-positions-count-element-children-from-the-document.md)).
 - `XMLReplace`: rewrite what the names of a pattern match.
 - `XMLFreeQ`, with a level spec in DOM depth (issue #32).
-- `FromCSSSelector[n : "selector"]` names the element a selector selects ([ADR 0026](docs/adr/0026-fromcssselector-names-the-subject.md)).
+- `FromCSSSelector[n : "selector"]` names the element a selector selects ([ADR 0026](docs/adr/0026-fromcssselector-names-the-subject.md)). Translations write the bracket form, and `>` as `Child`: `FromCSSSelector[n : "ul > li"]` gives `XMLPattern["ul"][Child[n : XMLPattern["li"]]]`.
 - `HTMLToTree`'s `"Focus"` and `"Hide"` take rules, and act on the positions of the names the right-hand side uses.
 
 ### Performance

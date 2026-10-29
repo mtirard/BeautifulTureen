@@ -26,24 +26,25 @@ PackageScoped[treeSolutions]
 (* =========================================================== *)
 (* Tree patterns (ADR 0023, 0024, 0025)                         *)
 (*                                                              *)
-(* XMLPattern[tag, attrs, c...] takes constraints on what is    *)
-(* below the element: list patterns over its element children,  *)
-(* Descendant[p, levelspec], and alternatives of these; a named  *)
-(* Descendant binds its path. XMLDocument[c...] takes the same  *)
-(* constraints on the document. A query gives one result for    *)
-(* each distinct tuple of positions of its counted names, the   *)
-(* names its right-hand side uses; a bare pattern p is first    *)
-(* r$ : p :> r$.                                                *)
+(* XMLPattern[tag, attrs][c...] takes constraints on what is    *)
+(* below the element (read by xmlPatternParts, Compiler.wl):    *)
+(* list patterns over its element children, Child[p], which is  *)
+(* the list {___, p, ___}, Descendant[p, levelspec], and        *)
+(* alternatives of these; a named Descendant binds its path.    *)
+(* XMLDocument[c...] takes the same constraints on the          *)
+(* document. A query gives one result for each distinct tuple   *)
+(* of positions of its counted names, the names its right-hand  *)
+(* side uses; a bare pattern p is first r$ : p :> r$.           *)
 (*                                                              *)
 (* The input is indexed once: node 0 is the document, elements  *)
 (* are numbered in preorder from 1. The query compiles to a     *)
 (* tree of nodes. Matching a node at a document node gives its  *)
-(* solutions, each an Association name -> match, projected      *)
-(* onto the names something above it needs ("Keep"), so an      *)
-(* unnamed part, or a name nothing uses, costs a test and never  *)
-(* an enumeration. The element's tag and attributes are tested  *)
-(* by a plain WL pattern (Query/Compiler.wl); everything below  *)
-(* it is this engine's own: contents lists are walked as        *)
+(* solutions, each an Association name -> match, projected onto *)
+(* the names something above it needs ("Keep"), so an unnamed   *)
+(* part, or a name nothing uses, costs a test and never an      *)
+(* enumeration. The element's tag and attributes are tested by  *)
+(* a plain WL pattern (Query/Compiler.wl); everything below it  *)
+(* is this engine's own: contents lists are walked as           *)
 (* reachability over 0/1 vectors of the places between          *)
 (* children, branching only at entries that bind a needed name, *)
 (* so ___ gaps and ordered entries stay linear.                 *)
@@ -64,11 +65,12 @@ constraintFormQ[c_] := MatchQ[c, _List | _Descendant | _Shortest | _Longest] ||
 namesIn[s_] :=
   DeleteDuplicates @ Cases[s, Verbatim[Pattern][n_Symbol, _] :> Hold[n], {0, Infinity}, Heads -> True];
 
-(* Child, Adjacent and Sibling were removed in 4.0.0 (ADR 0023). A query
-   that still uses one holds it unevaluated, in the caller's context, so it
-   is found by name; it is badpat, whose text gives the tree forms. *)
+(* Adjacent and Sibling were removed in 4.0.0 (ADR 0023). A query that
+   still uses one holds it unevaluated, in the caller's context, so it is
+   found by name; it is badpat, whose text gives the tree forms. Child is a
+   constraint now, with messages of its own. *)
 removedCombinatorQ[held_] :=
-  !FreeQ[held, (h_Symbol /; MemberQ[{"Child", "Adjacent", "Sibling"}, SymbolName[Unevaluated[h]]])[___]];
+  !FreeQ[held, (h_Symbol /; MemberQ[{"Adjacent", "Sibling"}, SymbolName[Unevaluated[h]]])[___]];
 
 (* =========================================================== *)
 (* Running a query                                              *)
@@ -391,9 +393,7 @@ cRoot[XMLDocument[cs___], need_] /; $place === "query" :=
         "Constraints" -> cons, "MinKids" -> Max[0, minKids /@ cons]]]];
 cRoot[x_XMLDocument, _] := If[$place === "entry", refuseListEntry[x, "document"], refuse[XMLDocument::place, x]];
 
-cRoot[XMLPattern[tag_], need_] := cRoot[XMLPattern[tag, _], need];
-cRoot[x : XMLPattern[tag_, attrs_, cs___], need_] := cTreePattern[x, need];
-cRoot[x_XMLPattern, _] := refuseHere["badpat", x];
+cRoot[x_ /; xmlPatternFormQ[x], need_] := cTreePattern[xmlPatternPartsOrRefuse[x, refuseHere["badpat", #] &], need];
 
 cRoot[x_XMLElement, need_] := cLiteral[x, need];
 
@@ -411,6 +411,11 @@ cRoot[s_String, need_] :=
     $Failed :> Throw[$Failed, $refusal],
     {"context", _} :> refuseHere["badpat", s],
     {"one", t_} :> translationRoot[t, need]}];
+
+(* A selector string with constraints, "sel"[c...] (bracketedTree,
+   CSSSelector.wl), is a pattern wherever a selector string is. *)
+cRoot[x_ /; bracketedFormQ[x], need_] /; $place =!= "literal" :=
+  Replace[bracketedTree[x], {$Failed :> Throw[$Failed, $refusal], {"one", t_} :> translationRoot[t, need]}];
 
 cRoot[Verbatim[Pattern][n_Symbol, s_String], need_] /; $place === "query" && $contextOK :=
   translationRoot[Replace[cssNamedTree[s, n], $Failed :> Throw[$Failed, $refusal]], need];
@@ -446,6 +451,9 @@ cRoot[d_Descendant, _] :=
     "entry", refuseListEntry[d, "descendant"],
     "query" | "literal", refuse[Descendant::place, d],
     _, refuseHere["badpat", d]];
+(* Child is a constraint only, an argument of a constraint bracket, which
+   cConstraints expands before this. *)
+cRoot[c_Child, _] := If[$place === "entry", refuseListEntry[c, "child"], refuse[Child::place, c]];
 cRoot[l_List, _] /; $place === "entry" := refuseListEntry[l, "list"];
 (* Any other pattern in an XMLElement pattern's contents is WL's, over one
    item: an element or text. *)
@@ -458,9 +466,10 @@ refuseBlank[b_] := If[$place === "descendant", refuse[Descendant::blank, b], ref
 refuseListEntry[x_, reason_] := With[{h = $owner}, refuse[MessageName[h, "listentry"], x, $listEntryReasons[reason]]];
 
 $listEntryReasons = <|
-  "document" -> "An entry is one element child or a sequence of them, and XMLDocument[...] is the document above every element. It can only be the pattern root, as in XMLDocument[{___, x : p, ___}].",
-  "descendant" -> "An entry is one element child or a sequence of them, and Descendant[...] says what is somewhere below an element. A child containing x is XMLPattern[_, _, Descendant[x]].",
-  "list" -> "An entry is one element child or a sequence of them, not a list. Several constraints on one element are separate arguments of XMLPattern."|>;
+  "document" -> "An entry is one element child or a sequence of them, and XMLDocument[...] is the document above every element. It can only be the pattern root, as in XMLDocument[Child[x : p]].",
+  "descendant" -> "An entry is one element child or a sequence of them, and Descendant[...] says what is somewhere below an element. A child containing x is XMLPattern[_][Descendant[x]].",
+  "child" -> "An entry is one element child or a sequence of them, and Child[...] says that some child of an element matches. A child with a child x is XMLPattern[_][Child[x]].",
+  "list" -> "An entry is one element child or a sequence of them, not a list. Several constraints on one element are separate arguments of its bracket, as in XMLPattern[tag][c1, c2]."|>;
 
 conditionNode[kind_, sub_, test_, need_] :=
   With[{tested = mentioned[test, Keys[$seen]]},
@@ -479,7 +488,8 @@ alternativesNode[kind_, subs_, namesBy_, need_] :=
 (* The tag and attributes are tested by today's compiled XMLPattern, on the
    elements materialised for its readings; the names in them that something
    needs are bound here, from the original element. *)
-cTreePattern[XMLPattern[tag_, attrs_, cs___], need_] :=
+cTreePattern[{{tag_}, cs_}, need_] := cTreePattern[{{tag, _}, cs}, need];
+cTreePattern[{{tag_, attrs_}, {cs___}}, need_] :=
   Module[{c, headNames, cons, plainRules},
     If[!FreeQ[attrs, _Descendant], refuse[Descendant::place, FirstCase[attrs, _Descendant, Null, {0, Infinity}]]];
     refuseDocumentIn[{tag, attrs}];
@@ -566,9 +576,23 @@ $countedNames = {};
 (* The constraints of an XMLPattern or XMLDocument, $owner, which names the
    messages. *)
 cConstraints[cs_List, need_] :=
-  With[{h = $owner},
-    Scan[If[!constraintFormQ[#], refuse[MessageName[h, "constraint"], #]] &, cs];
-    Block[{$place = "constraint"}, cConstraint[#, need] & /@ cs]];
+  With[{h = $owner, expanded = childExpanded /@ cs},
+    Scan[If[!constraintFormQ[#], refuse[MessageName[h, "constraint"], #]] &, expanded];
+    Block[{$place = "constraint"}, cConstraint[#, need] & /@ expanded]];
+
+(* Child[p] is the list constraint {___, p, ___}, and compiles as that list,
+   wherever it is a constraint: alone, or inside alternatives, a name, a
+   test, a Condition, Shortest or Longest, which keep their meaning. Only a
+   name or a test on Child itself would have no value: between an element
+   and its child there is nothing. *)
+childExpanded[Child[p_]] := {___, p, ___};
+childExpanded[c_Child] := refuse[Child::args, c];
+childExpanded[c : Verbatim[Pattern][_, _Child]] := refuse[Child::name, c];
+childExpanded[c : Verbatim[PatternTest][_Child, _]] := refuse[Child::test, c];
+(* MapAt rewrites the pattern in place, without evaluating a test. *)
+childExpanded[c : (h : Verbatim[Pattern] | Verbatim[PatternTest] | Verbatim[Condition] | Alternatives | Shortest | Longest)[___]] :=
+  MapAt[childExpanded, c, Replace[h, {Verbatim[Pattern] -> 2, Alternatives -> All, _ -> 1}]];
+childExpanded[c_] := c;
 
 cConstraint[d_Descendant, need_] := cDescendant[d, need, None];
 cConstraint[c_, need_] /; pathFormQ[c] :=
@@ -755,7 +779,7 @@ matchKind["Alt", nd_, i_] :=
 (* The solutions of several parts joined and projected on keep. Each part's
    solutions are distinct, and their names among keep, so the projection is
    needed only where two parts have solutions; as a CSS translation is
-   XMLPattern[_, _, L] | XMLDocument[L], at most one part has, and projecting
+   XMLPattern[_][L] | XMLDocument[L], at most one part has, and projecting
    every solution again costs a few microseconds each. *)
 distinctJoin[parts_, keep_] := If[Count[parts, Except[{}]] <= 1, Join @@ parts, project[Join @@ parts, keep]];
 
@@ -1813,7 +1837,8 @@ pathTo[nd_, id_] :=
    operator form, applied to every element. A selector that is not
    translated, or a context selector, is left to this engine, which gives
    its message. *)
-plainRootQ[x : XMLPattern[_] | XMLPattern[_, _]] := FreeQ[x, _Descendant | _XMLDocument] && !removedCombinatorQ[Hold[x]];
+plainRootQ[x_ /; xmlPatternFormQ[x]] :=
+  MatchQ[xmlPatternParts[x], {_, {}}] && FreeQ[x, _Descendant | _XMLDocument] && !removedCombinatorQ[Hold[x]];
 plainRootQ[s_String] := MatchQ[Quiet[cssTree[s]], {"one", t_} /; plainRootQ[t]];
 plainRootQ[Verbatim[Pattern][_, p_] | Verbatim[Condition][p_, _] | Verbatim[PatternTest][p_, _]] := plainRootQ[p];
 plainRootQ[alts_Alternatives] := AllTrue[List @@ alts, plainRootQ];

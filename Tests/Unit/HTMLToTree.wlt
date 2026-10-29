@@ -234,7 +234,7 @@ $list3 = XMLElement["ul", {}, {XMLElement["li", {}, {"1"}], XMLElement["li", {},
   XMLElement["li", {}, {"3"}]}];
 
 TestCreate[
-  shape[HTMLToTree[$list3, "Hide" -> (XMLPattern["ul", _, {___, XMLPattern["li"], x : XMLPattern["li"], ___}] :> x)]],
+  shape[HTMLToTree[$list3, "Hide" -> (XMLPattern["ul"][{___, XMLPattern["li"], x : XMLPattern["li"], ___}] :> x)]],
   shell["ul"] -> {shell["li"] -> {"1"}},
   TestID -> "htt-hide-adjacent-original-input"
 ];
@@ -348,7 +348,7 @@ TestCreate[
 
 (* Matching is on the original input, for rules, CSS and alternatives *)
 TestCreate[
-  shape[HTMLToTree[$list3, "Focus" -> (XMLPattern["ul", _, {___, XMLPattern["li"], x : XMLPattern["li"], ___}] :> x)]],
+  shape[HTMLToTree[$list3, "Focus" -> (XMLPattern["ul"][{___, XMLPattern["li"], x : XMLPattern["li"], ___}] :> x)]],
   shell["ul"] -> {collapsed[1], shell["li"] -> {"2"}, shell["li"] -> {"3"}},
   TestID -> "htt-focus-adjacent"
 ];
@@ -477,16 +477,16 @@ TestCreate[
 $nav6 = doc[e["nav", "o", e["a", "a1"], e["nav", "i", e["a", "a2"]], e["a", "a3"]]];
 
 TestCreate[
-  shape /@ {HTMLToTree[$nav6, "Hide" -> (XMLPattern["nav", _, {___, x : XMLPattern["nav"], ___}] :> x)],
-    HTMLToTree[$nav6, "Focus" -> (XMLPattern["nav", _, {___, x : XMLPattern["nav"], ___}] :> x)]},
+  shape /@ {HTMLToTree[$nav6, "Hide" -> (XMLPattern["nav"][{___, x : XMLPattern["nav"], ___}] :> x)],
+    HTMLToTree[$nav6, "Focus" -> (XMLPattern["nav"][{___, x : XMLPattern["nav"], ___}] :> x)]},
   {"#document" -> {shell["nav", {"id" -> "o"}] -> {shell["a", {"id" -> "a1"}], shell["a", {"id" -> "a3"}]}},
     "#document" -> {collapsed[1], shell["nav", {"id" -> "i"}] -> {shell["a", {"id" -> "a2"}]}, collapsed[1]}},
   TestID -> "htt-rule-target-element"
 ];
 
 TestCreate[
-  shape /@ {HTMLToTree[$nav6, "Hide" -> (XMLPattern["nav", _, {_, s__}] :> s)],
-    HTMLToTree[$nav6, "Focus" -> (XMLPattern["nav", _, {_, s__}] :> s)]},
+  shape /@ {HTMLToTree[$nav6, "Hide" -> (XMLPattern["nav"][{_, s__}] :> s)],
+    HTMLToTree[$nav6, "Focus" -> (XMLPattern["nav"][{_, s__}] :> s)]},
   {"#document" -> {shell["nav", {"id" -> "o"}] -> {shell["a", {"id" -> "a1"}]}},
     "#document" -> {collapsed[1], shell["nav", {"id" -> "i"}] -> {shell["a", {"id" -> "a2"}]}, shell["a", {"id" -> "a3"}]}},
   TestID -> "htt-rule-target-run"
@@ -507,8 +507,8 @@ $refusedTargets = {
   XMLPattern["a", "href" -> h_] :> h,
   XMLPattern["p", "classList" -> c_] :> c,
   XMLPattern["p", "classList" -> {___, c : "lead", ___}] :> c,
-  XMLPattern["p", _, {_, g___, _}] :> g,
-  XMLPattern["body", _, p : Descendant[XMLPattern["a"]]] :> p};
+  XMLPattern["p"][{_, g___, _}] :> g,
+  XMLPattern["body"][p : Descendant[XMLPattern["a"]]] :> p};
 $refusedInput = doc[el["body", XMLElement["p", {"class" -> "lead"}, {XMLElement["a", {"href" -> "/x"}, {}], el["b"]}]]];
 
 $refusedPositions = {"{1, 0}", "{1, 1, 1, Key[All]}", "{1, 1, 1, Key[\"href\"]}", "{1, 1, Key[\"classList\"]}",
@@ -1120,7 +1120,7 @@ TestCreate[
 (* A bad query, "Focus" -> None or "Hide" -> All gives badquery,
    naming the option, and $Failed. *)
 $badquery[name_, off_, got_] := "The value of the \"" <> name <> "\" option should be " <> off <>
-  ", Automatic, a pattern, or a rule pattern -> rhs or pattern :> rhs, which acts on the positions of the names that rhs uses. A pattern is an XMLPattern, which can take constraints on the elements below it, an XMLDocument pattern, an XMLElement pattern, or a CSS selector string, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f. Child, Adjacent and Sibling were removed in version 4; nest the patterns as the document is: XMLPattern[\"ul\", _, {___, x : XMLPattern[\"li\"], ___}] :> x gives the li children of each ul, XMLPattern[\"nav\", _, Descendant[x : XMLPattern[\"a\"]]] :> x the links inside a nav, XMLPattern[_, _, {___, XMLPattern[\"h2\"], ___, x : XMLPattern[\"p\"], ___}] :> x each p after an h2 among its siblings, and XMLPattern[_, _, {___, XMLPattern[\"h2\"], x : XMLPattern[\"p\"], ___}] :> x each p right after one. Got " <> got <> ".";
+  ", Automatic, a pattern, or a rule pattern -> rhs or pattern :> rhs, which acts on the positions of the names that rhs uses. A pattern is an XMLPattern, which can take constraints on the elements below it, an XMLDocument pattern, an XMLElement pattern, or a CSS selector string, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f. Adjacent and Sibling were removed in version 4; nest the patterns as the document is: XMLPattern[\"ul\"][Child[x : XMLPattern[\"li\"]]] :> x gives the li children of each ul, XMLPattern[\"nav\"][Descendant[x : XMLPattern[\"a\"]]] :> x the links inside a nav, XMLPattern[_][{___, XMLPattern[\"h2\"], ___, x : XMLPattern[\"p\"], ___}] :> x each p after an h2 among its siblings, and XMLPattern[_][{___, XMLPattern[\"h2\"], x : XMLPattern[\"p\"], ___}] :> x each p right after one. Got " <> got <> ".";
 
 TestCreate[
   withMessages[HTMLToTree[$p, #1 -> #2]] & @@@ {{"Focus", 1}, {"Focus", None}, {"Hide", All}},
@@ -1208,7 +1208,7 @@ TestCreate[
 $badRoles = {{3}, {5 -> "Block"}};
 $badRolesMessages = {
   "Each \"Roles\" entry should be a rule pattern -> value or pattern :> value. Got 3.",
-  "The key of a rule should be an element test or a query. An element test is an XMLPattern, an XMLElement pattern, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f; each element is tested as the pattern root, and its names can be used in the value. A query is a rule such as XMLPattern[\"nav\", _, Descendant[x : XMLPattern[\"a\"]]] :> x, or a CSS selector string such as \"nav a\"; the elements it selects get the value. An XMLDocument pattern tests no element: name the elements it finds and give the rule, as in (XMLDocument[Descendant[x : XMLPattern[\"a\"]]] :> x) -> value. Child, Adjacent and Sibling were removed in version 4; nest the patterns as the document is: XMLPattern[\"ul\", _, {___, x : XMLPattern[\"li\"], ___}] :> x gives the li children of each ul, XMLPattern[\"nav\", _, Descendant[x : XMLPattern[\"a\"]]] :> x the links inside a nav, XMLPattern[_, _, {___, XMLPattern[\"h2\"], ___, x : XMLPattern[\"p\"], ___}] :> x each p after an h2 among its siblings, and XMLPattern[_, _, {___, XMLPattern[\"h2\"], x : XMLPattern[\"p\"], ___}] :> x each p right after one. Got 5."};
+  "The key of a rule should be an element test or a query. An element test is an XMLPattern, an XMLElement pattern, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f; each element is tested as the pattern root, and its names can be used in the value. A query is a rule such as XMLPattern[\"nav\"][Descendant[x : XMLPattern[\"a\"]]] :> x, or a CSS selector string such as \"nav a\"; the elements it selects get the value. An XMLDocument pattern tests no element: name the elements it finds and give the rule, as in (XMLDocument[Descendant[x : XMLPattern[\"a\"]]] :> x) -> value. Adjacent and Sibling were removed in version 4; nest the patterns as the document is: XMLPattern[\"ul\"][Child[x : XMLPattern[\"li\"]]] :> x gives the li children of each ul, XMLPattern[\"nav\"][Descendant[x : XMLPattern[\"a\"]]] :> x the links inside a nav, XMLPattern[_][{___, XMLPattern[\"h2\"], ___, x : XMLPattern[\"p\"], ___}] :> x each p after an h2 among its siblings, and XMLPattern[_][{___, XMLPattern[\"h2\"], x : XMLPattern[\"p\"], ___}] :> x each p right after one. Got 5."};
 
 TestCreate[
   Table[withMessages[HTMLToTree[$mergeP, "Roles" -> r, "MergeText" -> m]], {m, {Automatic, HTMLInnerText}}, {r, $badRoles}],

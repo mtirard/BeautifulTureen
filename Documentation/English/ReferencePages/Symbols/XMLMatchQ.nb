@@ -145,7 +145,7 @@ Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Test whether a list has an item, with a constraint on its children:", "ExampleText"], Cell[BoxData["XMLMatchQ[XMLElement[\"ul\",{},{XMLElement[\"li\",{},{\"Miso\"}]}],XMLPattern[\"ul\",_,{___,XMLPattern[\"li\"],___}]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Test whether a list has an item, with a constraint on its children:", "ExampleText"], Cell[BoxData["XMLMatchQ[XMLElement[\"ul\", {}, {XMLElement[\"li\", {}, {\"Miso\"}]}], XMLPattern[\"ul\"][Child[XMLPattern[\"li\"]]]]"], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
@@ -190,8 +190,7 @@ Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Test for an element anywhere below, or at a given depth:", "ExampleText"], Cell[BoxData["element=XMLElement[\"p\",{},{XMLElement[\"i\",{},{XMLElement[\"b\",{},{\"bold\"}]}]}];
-{XMLMatchQ[element,XMLPattern[\"p\",_,Descendant[XMLPattern[\"b\"]]]],XMLMatchQ[element,XMLPattern[\"p\",_,Descendant[XMLPattern[\"b\"],{1}]]]}"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Test for an element anywhere below, or at a given depth:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"element", "=", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"i\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"b\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"bold\"", "}"}]}], "]"}], "}"}]}], "]"}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"{", RowBox[{RowBox[{"XMLMatchQ", "[", RowBox[{"element", ",", RowBox[{RowBox[{"XMLPattern", "[", "\"p\"", "]"}], "[", RowBox[{"Descendant", "[", RowBox[{"XMLPattern", "[", "\"b\"", "]"}], "]"}], "]"}]}], "]"}], ",", RowBox[{"XMLMatchQ", "[", RowBox[{"element", ",", RowBox[{RowBox[{"XMLPattern", "[", "\"p\"", "]"}], "[", RowBox[{"Descendant", "[", RowBox[{RowBox[{"XMLPattern", "[", "\"b\"", "]"}], ",", RowBox[{"{", "1", "}"}]}], "]"}], "]"}]}], "]"}]}], "}"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"True", ",", "False"}], "}"}]], "Output"]}, Open]],
 
@@ -324,7 +323,7 @@ Cell[CellGroupData[{Cell[BoxData[
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A CSS selector that looks above the element gives ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["XMLMatchQ[XMLElement[\"a\",{},{}],\"nav a\"]"], "Input"],
 
-Cell["XMLMatchQ::badpat: The pattern should be an XMLPattern, an XMLElement pattern, an XMLDocument pattern, a list pattern for a list of elements, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f. A rule gives a value, not a test. A CSS selector such as \"nav a\" or \"ul > li\" looks above the element, which a lone element does not have; use XMLCases or XMLPosition to search a tree with it. Child, Adjacent and Sibling were removed in version 4; a test of an element's children constrains them, as in XMLPattern[\"ul\", _, {___, XMLPattern[\"li\"], ___}], and XMLCases searches a tree with a rule, as in XMLPattern[\"ul\", _, {___, x : XMLPattern[\"li\"], ___}] :> x. Got \"nav a\".", "Message", "MSG"],
+Cell["XMLMatchQ::badpat: The pattern should be an XMLPattern, an XMLElement pattern, an XMLDocument pattern, a list pattern for a list of elements, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f. A rule gives a value, not a test. A CSS selector such as \"nav a\" or \"ul > li\" looks above the element, which a lone element does not have; use XMLCases or XMLPosition to search a tree with it. Adjacent and Sibling were removed in version 4; a test of an element's children constrains them, as in XMLPattern[\"ul\"][Child[XMLPattern[\"li\"]]], and XMLCases searches a tree with a rule, as in XMLPattern[\"ul\"][Child[x : XMLPattern[\"li\"]]] :> x. Got \"nav a\".", "Message", "MSG"],
 
 Cell[BoxData["$Failed"], "Output"],
 
@@ -336,7 +335,7 @@ Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBo
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A rule gives ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], ", since it gives a value rather than a test:"}], "ExampleText"], Cell[BoxData["XMLMatchQ[XMLElement[\"a\",{},{}],x:XMLPattern[\"a\"]:>x]"], "Input"],
 
-Cell["XMLMatchQ::badpat: The pattern should be an XMLPattern, an XMLElement pattern, an XMLDocument pattern, a list pattern for a list of elements, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f. A rule gives a value, not a test. A CSS selector such as \"nav a\" or \"ul > li\" looks above the element, which a lone element does not have; use XMLCases or XMLPosition to search a tree with it. Child, Adjacent and Sibling were removed in version 4; a test of an element's children constrains them, as in XMLPattern[\"ul\", _, {___, XMLPattern[\"li\"], ___}], and XMLCases searches a tree with a rule, as in XMLPattern[\"ul\", _, {___, x : XMLPattern[\"li\"], ___}] :> x. Got x:XMLPattern[\"a\"] :> x.", "Message", "MSG"],
+Cell["XMLMatchQ::badpat: The pattern should be an XMLPattern, an XMLElement pattern, an XMLDocument pattern, a list pattern for a list of elements, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f. A rule gives a value, not a test. A CSS selector such as \"nav a\" or \"ul > li\" looks above the element, which a lone element does not have; use XMLCases or XMLPosition to search a tree with it. Adjacent and Sibling were removed in version 4; a test of an element's children constrains them, as in XMLPattern[\"ul\"][Child[XMLPattern[\"li\"]]], and XMLCases searches a tree with a rule, as in XMLPattern[\"ul\"][Child[x : XMLPattern[\"li\"]]] :> x. Got x:XMLPattern[\"a\"] :> x.", "Message", "MSG"],
 
 Cell[BoxData["$Failed"], "Output"]}, Open]],
 
@@ -350,13 +349,13 @@ Cell[BoxData["False"], "Output"]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The version 3 combinators are removed, and a pattern that uses one gives ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["XMLMatchQ[XMLElement[\"div\",{},{XMLElement[\"p\",{},{}]}],Child[XMLPattern[\"div\"],XMLPattern[\"p\"]]]"], "Input"],
 
-Cell["XMLMatchQ::badpat: The pattern should be an XMLPattern, an XMLElement pattern, an XMLDocument pattern, a list pattern for a list of elements, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f. A rule gives a value, not a test. A CSS selector such as \"nav a\" or \"ul > li\" looks above the element, which a lone element does not have; use XMLCases or XMLPosition to search a tree with it. Child, Adjacent and Sibling were removed in version 4; a test of an element's children constrains them, as in XMLPattern[\"ul\", _, {___, XMLPattern[\"li\"], ___}], and XMLCases searches a tree with a rule, as in XMLPattern[\"ul\", _, {___, x : XMLPattern[\"li\"], ___}] :> x. Got Child[XMLPattern[\"div\"], XMLPattern[\"p\"]].", "Message", "MSG"],
+Cell["Child::place: Child[XMLPattern[\"div\"], XMLPattern[\"p\"]] is not a pattern. Child is a constraint, which can only be an argument of the bracket after XMLPattern[tag, attrs] or of XMLDocument: XMLPattern[\"ul\"][Child[x : XMLPattern[\"li\"]]] :> x gives the li children of each ul. In version 3, Child[a, b] gave the children that match b of the elements that match a; in version 4 that is the rule above. Child takes one pattern: for children that match several patterns, give several constraints, Child[a], Child[b], or a list, {___, a, ___, b, ___}.", "Message", "MSG"],
 
 Cell[BoxData["$Failed"], "Output"],
 
 Cell["Test the children with a constraint instead:", "ExampleText"],
 
-Cell[BoxData["XMLMatchQ[XMLElement[\"div\",{},{XMLElement[\"p\",{},{}]}],XMLPattern[\"div\",_,{___,XMLPattern[\"p\"],___}]]"], "Input"],
+Cell[BoxData["XMLMatchQ[XMLElement[\"div\", {}, {XMLElement[\"p\", {}, {}]}], XMLPattern[\"div\"][Child[XMLPattern[\"p\"]]]]"], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]],
 

@@ -30,7 +30,7 @@ TestCreate[
 (* Targets form: a replacement uses a value from elsewhere in the pattern. *)
 TestCreate[
   XMLReplace[doc[XMLElement["div", {"class" -> "c"}, {el["p", "x"]}]],
-    XMLPattern["div", "class" -> c_, {___, p : XMLPattern["p"], ___}] :> {p -> XMLElement["p", {"class" -> c}, p[[3]]]}],
+    XMLPattern["div", "class" -> c_][{___, p : XMLPattern["p"], ___}] :> {p -> XMLElement["p", {"class" -> c}, p[[3]]]}],
   doc[XMLElement["div", {"class" -> "c"}, {XMLElement["p", {"class" -> "c"}, {"x"}]}]],
   TestID -> "replace-targets-form"
 ];
@@ -49,7 +49,7 @@ TestCreate[
    original id, and the gap the original tag, while the tag reads the new id. *)
 TestCreate[
   XMLReplace[doc[XMLElement["div", {"id" -> "d", "class" -> "x y"}, {el["p", "1"], el["p", "2"]}]],
-    XMLPattern[t_, {"id" -> a_, "classList" -> {___, k : "y", ___}}, {p : XMLPattern["p"], g : PatternSequence[], ___}] :>
+    XMLPattern[t_, {"id" -> a_, "classList" -> {___, k : "y", ___}}][{p : XMLPattern["p"], g : PatternSequence[], ___}] :>
       {t -> "section-" <> a, a -> "e", k -> "Y", p -> XMLElement["p", {"title" -> a}, p[[3]]], g -> el["hr", t]}],
   doc[XMLElement["section-e", {"id" -> "e", "class" -> "x Y"}, {XMLElement["p", {"title" -> "d"}, {"1"}], el["hr", "div"], el["p", "2"]}]],
   TestID -> "replace-order-within-element"
@@ -57,7 +57,7 @@ TestCreate[
 
 (* Insertion is replacement at a gap. *)
 TestCreate[
-  XMLReplace[doc[el["ul"]], XMLPattern["ul", _, {___, g : PatternSequence[]}] :> {g -> el["li", "new"]}],
+  XMLReplace[doc[el["ul"]], XMLPattern["ul"][{___, g : PatternSequence[]}] :> {g -> el["li", "new"]}],
   doc[el["ul", el["li", "new"]]],
   TestID -> "replace-gap-insert"
 ];
@@ -71,7 +71,7 @@ TestCreate[
 
 TestCreate[
   XMLReplace[doc[el["ul", el["li"], el["li"], el["li"]]],
-    XMLPattern["ul", _, {___, x : XMLPattern["li"], ___, y : XMLPattern["li"], ___}] :> {x -> "first", y -> "second"}],
+    XMLPattern["ul"][{___, x : XMLPattern["li"], ___, y : XMLPattern["li"], ___}] :> {x -> "first", y -> "second"}],
   doc[el["ul", "first", "second", "second"]],
   {XMLReplace::conflict},
   TestID -> "replace-conflict"
@@ -79,7 +79,7 @@ TestCreate[
 
 TestCreate[
   XMLReplace[doc[el["div", e["p", "1"], e["p", "2"]]],
-    XMLPattern["div", _, {x : XMLPattern["p"], y : XMLPattern["p"]}] :> {x -> y, y -> Nothing}],
+    XMLPattern["div"][{x : XMLPattern["p"], y : XMLPattern["p"]}] :> {x -> y, y -> Nothing}],
   doc[el["div", e["p", "2"]]],
   {XMLReplace::stale},
   TestID -> "replace-stale"
@@ -89,7 +89,7 @@ TestCreate[
 
 (* An element takes an element, a string, Splice[list] or Nothing. *)
 TestCreate[
-  XMLReplace[links, XMLPattern["p", _, {x_, y_, z_}] :> {x -> el["b"], y -> Splice[{"s", el["i"]}], z -> Nothing}],
+  XMLReplace[links, XMLPattern["p"][{x_, y_, z_}] :> {x -> el["b"], y -> Splice[{"s", el["i"]}], z -> Nothing}],
   doc[el["p", el["b"], "s", el["i"]]],
   TestID -> "replace-kind-element"
 ];
@@ -158,15 +158,15 @@ TestCreate[
 (* A run takes Splice[list], a list or Nothing; the text between its
    elements is not element children, and stays, as when a run is deleted. *)
 TestCreate[
-  {XMLReplace[doc[el["div", e["p", "1"], "x", e["p", "2"], "y", e["p", "3"]]], XMLPattern["div", _, {_, r__}] :> {r -> {el["hr"]}}],
-    XMLReplace[links, XMLPattern["p", _, {r__, _}] :> {r -> Splice[{"s"}]}],
-    XMLReplace[links, XMLPattern["p", _, {_, r__}] :> {r -> Nothing}]},
+  {XMLReplace[doc[el["div", e["p", "1"], "x", e["p", "2"], "y", e["p", "3"]]], XMLPattern["div"][{_, r__}] :> {r -> {el["hr"]}}],
+    XMLReplace[links, XMLPattern["p"][{r__, _}] :> {r -> Splice[{"s"}]}],
+    XMLReplace[links, XMLPattern["p"][{_, r__}] :> {r -> Nothing}]},
   {doc[el["div", e["p", "1"], "x", el["hr"], "y"]], doc[el["p", "s", e["a", "3"]]], doc[el["p", e["a", "1"]]]},
   TestID -> "replace-kind-run"
 ];
 
 TestCreate[
-  XMLReplace[links, XMLPattern["p", _, {_, g : PatternSequence[], ___}] :> {g -> Splice[{"s", el["b"]}]}],
+  XMLReplace[links, XMLPattern["p"][{_, g : PatternSequence[], ___}] :> {g -> Splice[{"s", el["b"]}]}],
   doc[el["p", e["a", "1"], "s", el["b"], e["a", "2"], e["a", "3"]]],
   TestID -> "replace-kind-gap"
 ];
@@ -179,7 +179,7 @@ TestCreate[
 ];
 
 TestCreate[
-  XMLReplace[doc[e["nav", "o", e["a", "a1"]]], XMLPattern["nav", _, p : Descendant[XMLPattern["a"]]] :> {p -> {}}],
+  XMLReplace[doc[e["nav", "o", e["a", "a1"]]], XMLPattern["nav"][p : Descendant[XMLPattern["a"]]] :> {p -> {}}],
   $Failed,
   {XMLReplace::pathtarget},
   TestID -> "replace-kind-path-refused"

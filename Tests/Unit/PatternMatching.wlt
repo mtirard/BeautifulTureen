@@ -145,7 +145,7 @@ TestCreate[
 
 (* A Condition on a tree pattern sees the names bound in its constraints. *)
 TestCreate[
-  XMLCases[$treeCond, XMLPattern["div", _, {___, s : XMLPattern["span"], ___}] /; HTMLTextContent[s] === "y" :> s],
+  XMLCases[$treeCond, XMLPattern["div"][{___, s : XMLPattern["span"], ___}] /; HTMLTextContent[s] === "y" :> s],
   {XMLElement["span", {}, {"y"}]},
   TestID -> "cond-tree-pattern"
 ];
@@ -302,13 +302,13 @@ TestCreate[
 ];
 
 TestCreate[
-  XMLCases[$cross, XMLPattern["div", _, {___, x : $crossPattern, ___}] /; StringContainsQ[h, d] :> x][[All, 3]],
+  XMLCases[$cross, XMLPattern["div"][{___, x : $crossPattern, ___}] /; StringContainsQ[h, d] :> x][[All, 3]],
   {{"x"}},
   TestID -> "cond-cross-field-tree-pattern"
 ];
 
 TestCreate[
-  XMLCases[$cross, XMLPattern["div", _, {___, $crossPattern /; StringContainsQ[h, d], ___}] :> h],
+  XMLCases[$cross, XMLPattern["div"][{___, $crossPattern /; StringContainsQ[h, d], ___}] :> h],
   {"/buy"},
   TestID -> "cond-cross-field-contents-entry"
 ];
@@ -426,19 +426,19 @@ TestCreate[
    right-hand side that uses no name gives at most one result. *)
 TestCreate[
   XMLCases[$ruleTree,
-    (XMLPattern["div", _, {___, XMLPattern["a", "href" -> h_], ___}] /; StringEndsQ[h, "two"]) -> h],
+    (XMLPattern["div"][{___, XMLPattern["a", "href" -> h_], ___}] /; StringEndsQ[h, "two"]) -> h],
   {"/two"},
   TestID -> "rule-tree-pattern-condition"
 ];
 
 TestCreate[
-  XMLCases[$ruleTree, XMLPattern[_, _, {___, XMLPattern["p", "id" -> i_], XMLPattern["a", "href" -> h_], ___}] -> {i, h}],
+  XMLCases[$ruleTree, XMLPattern[_][{___, XMLPattern["p", "id" -> i_], XMLPattern["a", "href" -> h_], ___}] -> {i, h}],
   {{"a", "/one"}, {"b", "/two"}},
   TestID -> "rule-tree-pattern-names"
 ];
 
 TestCreate[
-  XMLCases[$ruleTree, XMLPattern["div", _, {___, XMLPattern["p"], ___}] -> 1],
+  XMLCases[$ruleTree, XMLPattern["div"][{___, XMLPattern["p"], ___}] -> 1],
   {1},
   TestID -> "rule-tree-pattern-constant-rhs"
 ];
@@ -487,14 +487,14 @@ TestCreate[
 ];
 
 TestCreate[
-  Reap[XMLCases[$testedTree, XMLPattern["p", _, {___, x : XMLPattern["sup", "classList" -> "ref"]?((Sow[#]; True) &), ___}] :> x]],
+  Reap[XMLCases[$testedTree, XMLPattern["p"][{___, x : XMLPattern["sup", "classList" -> "ref"]?((Sow[#]; True) &), ___}] :> x]],
   {{$testedSup1}, {{$testedSup1}}},
   TestID -> "patterntest-entry-sees-original-element"
 ];
 
 (* As a contents-list entry, around alternatives, with names and Conditions. *)
 TestCreate[
-  {XMLCases[$testedTree, XMLPattern["p", "id" -> i_, {___, XMLPattern["sup"]?$testedHasLink, ___}] :> i],
+  {XMLCases[$testedTree, XMLPattern["p", "id" -> i_][{___, XMLPattern["sup"]?$testedHasLink, ___}] :> i],
    XMLCases[$testedTree, (XMLPattern["sup"] | XMLPattern["p"])?$testedHasLink],
    XMLCases[$testedTree, e : XMLPattern["sup"]?$testedHasLink :> e],
    XMLCases[$testedTree, (e : XMLPattern["sup", "classList" -> "note"])?$testedHasLink :> e],
@@ -523,7 +523,7 @@ $testedA = XMLElement["div", {}, {XMLElement["a", {"x" -> "1", "y" -> "2"}, {}]}
 TestCreate[
   {XMLCases[$testedA, (($testedXY?(False &)) | $testedX) /; True :> {h, i, j}],
    XMLCases[$testedA, ((n : $testedXY /; False) | $testedX) /; True :> {h, i, j}],
-   XMLCases[$testedA, XMLPattern["div", _, {___, (($testedXY?(False &)) | $testedX) /; True, ___}] :> {h, i, j}],
+   XMLCases[$testedA, XMLPattern["div"][{___, (($testedXY?(False &)) | $testedX) /; True, ___}] :> {h, i, j}],
    XMLCases[$testedA, (($testedXY?(True &)) | $testedX) /; True :> {h, i, j}]},
   {{{"1"}}, {{"1"}}, {{"1"}}, {{"1", "2"}, {"1"}}},
   TestID -> "patterntest-two-step-failed-branch"

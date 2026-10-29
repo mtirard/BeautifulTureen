@@ -7,6 +7,8 @@ PackageScoped[cssTree]
 
 (* Used by Query/TreePatterns.wl *)
 PackageScoped[cssNamedTree]
+PackageScoped[bracketedFormQ]
+PackageScoped[bracketedTree]
 
 (* =========================================================== *)
 (* FromCSSSelector (ADR 0026)                                   *)
@@ -30,12 +32,14 @@ PackageScoped[cssNamedTree]
 (* =========================================================== *)
 
 PackageExported[FromCSSSelector]
-FromCSSSelector::usage = "FromCSSSelector[\"selector\"] gives the XML pattern that a CSS selector describes, when the selector looks only at the element it selects and below it, as \"a.note\" and \"div:has(> table)\" do. FromCSSSelector[n : \"selector\"] gives the pattern with the selected element named n, for any selector; one that picks its element by what is above or beside it, such as \"nav a\" or \"li:first-child\", gives a tree pattern rooted at its first compound, as XMLPattern[\"nav\", _, Descendant[n : XMLPattern[\"a\"]]] for \"nav a\". A CSS selector string can also be given directly wherever a pattern goes, and means its translation: given as the whole query, it selects the elements the selector selects, and on the left of a rule, n : \"selector\" names them. The selector is matched as written: letter case matters in tag names, attribute names and values, and attributes that the HTML importer adds, such as rowspan=\"1\", count as present. [foo~=\"x\"] becomes \"fooList\" -> \"x\", which needs a reading for foo in $AttributeReadings or in the \"AttributeReadings\" option of the function that runs the query.";
+FromCSSSelector::usage = "FromCSSSelector[\"selector\"] gives the XML pattern that a CSS selector describes, when the selector looks only at the element it selects and below it, as \"a.note\" and \"div:has(> table)\" do. FromCSSSelector[n : \"selector\"] gives the pattern with the selected element named n, for any selector; one that picks its element by what is above or beside it, such as \"nav a\" or \"li:first-child\", gives a tree pattern rooted at its first compound, as XMLPattern[\"nav\"][Descendant[n : XMLPattern[\"a\"]]] for \"nav a\". A CSS selector string can also be given directly wherever a pattern goes, and means its translation: given as the whole query, it selects the elements the selector selects, and on the left of a rule, n : \"selector\" names them. A one-element selector string takes constraints as XMLPattern does, as in \"ul.c\"[Child[x : \"li\"]] :> x. The selector is matched as written: letter case matters in tag names, attribute names and values, and attributes that the HTML importer adds, such as rowspan=\"1\", count as present. [foo~=\"x\"] becomes \"fooList\" -> \"x\", which needs a reading for foo in $AttributeReadings or in the \"AttributeReadings\" option of the function that runs the query.";
 FromCSSSelector::invalid = "`1` is not a valid CSS selector: `2`.";
 FromCSSSelector::unsupported = "`1` is valid CSS, but `2` cannot be translated to an XML pattern. `3`";
 FromCSSSelector::impossible = "`2` in `1` depends on a browser, such as user input, layout or the page's URL, and cannot be matched in a static document. `3`";
 
 FromCSSSelector::name = "`1` picks its element by what is above or beside it, so its pattern is rooted higher up and the element it selects needs a name. Use FromCSSSelector[n : `1`], which names it n.";
+
+FromCSSSelector::constraints = "`1` gives constraints to `2`, which picks its element by what is above or beside it, so its pattern is rooted at another element. Only a selector that describes one element takes constraints. Nest the selectors as the tree is, as in \"nav\"[Descendant[x : \"a\"[c]]] :> x.";
 
 FromCSSSelector[s_String] :=
   Replace[cssTree[s], {{"one", p_} :> p, {"context", _} :> (Message[FromCSSSelector::name, s]; $Failed)}];
@@ -348,7 +352,7 @@ $cssNth = <|"nth-child" -> {False, None}, "nth-last-child" -> {True, None},
   "nth-of-type" -> {False, "type"}, "nth-last-of-type" -> {True, "type"}|>;
 
 (* Valid Selectors 4 that is not translated, with the workaround. *)
-$cssChildIndexedHow = "It needs the element's parent, so it can be in a compound of the selector or of a relative selector in :has(), but not in an argument of :not(), :is() or :where(). Write a list pattern over the parent's children instead, as in XMLPattern[_, _, {x : XMLPattern[\"li\"], ___}] :> x.";
+$cssChildIndexedHow = "It needs the element's parent, so it can be in a compound of the selector or of a relative selector in :has(), but not in an argument of :not(), :is() or :where(). Write a list pattern over the parent's children instead, as in XMLPattern[_][{x : XMLPattern[\"li\"], ___}] :> x.";
 $cssFormHow = "Write the test as a condition on an XMLPattern.";
 (* :root and :scope are the only top element (ADR 0018), at the start of a
    selector. *)
@@ -359,7 +363,7 @@ $cssUnsupported = Join[
     "default", "unchecked", "indeterminate", "valid", "invalid", "in-range", "out-of-range",
     "required", "optional", "defined"}]];
 $cssUnsupportedFunctions =
-  <|"lang" -> "Use XMLPattern[_, \"lang\" -> ..., Descendant[x : ...]] :> x, which takes the lang of any ancestor, not only the nearest.",
+  <|"lang" -> "Use XMLPattern[_, \"lang\" -> ...][Descendant[x : ...]] :> x, which takes the lang of any ancestor, not only the nearest.",
     "dir" -> $cssFormHow|>;
 
 (* Valid, but true only in a browser. *)
@@ -675,14 +679,14 @@ cssLinked[{run_}, subject_] := MapAt[{Pattern @@ {subject, First[#]}, subject, L
 cssLinked[{run_, rest__}, subject_] := MapAt[cssConstrained[#, cssBelow[cssLinked[{rest}, subject]]] &, run, {2, -1, 1}];
 
 (* The constraint a run puts on the element its first compound is below: one
-   compound alone is an entry or a Descendant; a longer run, or one with a
+   compound alone is a Child or a Descendant; a longer run, or one with a
    position, is a list over its parent's children, which after a descendant
    combinator are the element's or those of any element below it. *)
 cssBelow[{lead_, parts_, within_}] := (
   cssNoRoot[parts];
   If[MatchQ[parts, {{_, _, {}}}],
-    With[{p = parts[[1, 1]]}, If[lead === cssChild, {___, p, ___}, Descendant[p]]],
-    With[{l = cssTreeRun[parts, within]}, If[lead === cssChild, l, l | Descendant[XMLPattern[_, _, l]]]]]);
+    With[{p = parts[[1, 1]]}, If[lead === cssChild, Child[p], Descendant[p]]],
+    With[{l = cssTreeRun[parts, within]}, If[lead === cssChild, l, l | Descendant[XMLPattern[_][l]]]]]);
 
 (* The pattern root, from the first run: its one compound; for :root and
    :scope, that compound as the only top element (ADR 0018), its positions
@@ -695,7 +699,7 @@ cssRunRoot[{_, parts_, within_}] :=
         XMLDocument[Append[If[AllTrue[parts[[1, 3]], cssFirstQ], {}, {Except[_]}], parts[[1, 1]]]],
         cssNoRoot[parts]],
     MatchQ[parts, {{_, _, {}}}], parts[[1, 1]],
-    True, With[{l = cssTreeRun[parts, within]}, XMLPattern[_, _, l] | XMLDocument[l]]];
+    True, With[{l = cssTreeRun[parts, within]}, XMLPattern[_][l] | XMLDocument[l]]];
 
 cssNoRoot[parts_] :=
   Replace[FirstCase[parts[[All, 3]], _cssRoot, None, {2}], cssRoot[text_] :> cssRefuse["unsupported", text, $cssRootHow]];
@@ -741,11 +745,12 @@ cssMovedOne[cssPos[e_, a_, b_, XMLPattern[type_String], t_], _, crossed_] /;
 cssMovedOne[__] := cssUnmoved;
 
 (* The tags a compound's pattern can have, or All. *)
-cssTagsOf[XMLPattern[t_String, ___]] := {t};
-cssTagsOf[XMLPattern[t : Verbatim[Alternatives][__String], ___]] := List @@ t;
-cssTagsOf[(Verbatim[PatternTest][p_, _]) | (Verbatim[Pattern][_, p_]) | cssPathed[p_, __]] := cssTagsOf[p];
-cssTagsOf[alts_Alternatives] := With[{ts = cssTagsOf /@ List @@ alts}, If[AllTrue[ts, ListQ], Union @@ ts, All]];
-cssTagsOf[_] := All;
+cssTagsOf[p_] :=
+  With[{ts = Replace[xmlPatternParts[#], {
+        {{t_String, ___}, _} :> {t},
+        {{t : Verbatim[Alternatives][__String], ___}, _} :> List @@ t,
+        _ -> All}] & /@ cssRootsOf[p]},
+    If[AllTrue[ts, ListQ], DeleteDuplicates[Join @@ ts], All]];
 
 (* Plain entries. -of-type on a compound with no type counts the siblings of
    its own tag through a fresh tag name, bound on the compound and shared into
@@ -764,10 +769,8 @@ cssPlainRun[parts_, within_, fwd_, bwd_] :=
 cssOwnTyped[es_, None] := es;
 cssOwnTyped[es_, t_] := es /. cssOwnType -> XMLPattern[Pattern @@ {t, Blank[]}];
 
-cssTagged[XMLPattern[tag_, r___], t_] := XMLPattern[Pattern @@ {t, tag}, r];
-cssTagged[Verbatim[PatternTest][p_, f_], t_] := PatternTest[cssTagged[p, t], f];
-cssTagged[Verbatim[Pattern][s_, p_], t_] := Pattern @@ {s, cssTagged[p, t]};
-cssTagged[alts_Alternatives, t_] := cssTagged[#, t] & /@ alts;
+(* The pattern with the tag of each XMLPattern named t. *)
+cssTagged[p_, t_] := cssAtRoots[MapAt[Pattern @@ {t, #} &, #, {1, 1}] &, p];
 
 (* An end with at most one position, written as entries, or with a fixed
    index among all the siblings. *)
@@ -798,19 +801,78 @@ cssFixedSide[ps_, fromEnd_, n_] :=
    strings merged into one, as XMLPattern["h1" | "h2"]. *)
 cssMergedAlternatives[ps_] := cssAlternatives[Values[GroupBy[ps, cssMergeKey, cssMergeTags]]];
 
-cssMergeKey[XMLPattern[t_, r___]] /; StringQ[t] || MatchQ[t, Verbatim[Alternatives][__String]] := {Hold[r]};
-cssMergeKey[p_] := {p, None};
+cssMergeKey[p_] :=
+  Replace[xmlPatternParts[p], {{{t_?cssStringTagQ, r___}, cs_} :> {Hold[r], Hold @@ cs}, _ :> {p, None}}];
+
+cssStringTagQ[t_] := StringQ[t] || MatchQ[t, Verbatim[Alternatives][__String]];
 
 cssMergeTags[{p_}] := p;
-cssMergeTags[ps_] := XMLPattern[Alternatives @@ DeleteDuplicates[Join @@ (cssTagsOf /@ ps)], Sequence @@ Rest[First[ps]]];
+cssMergeTags[ps_] :=
+  With[{tag = Alternatives @@ DeleteDuplicates[Join @@ (cssTagsOf /@ ps)]},
+    cssAtRoots[ReplacePart[#, {1, 1} -> tag] &, First[ps]]];
 
-(* A constraint added to the XMLPatterns of a compound's pattern. *)
-cssConstrained[XMLPattern[tag_], c_] := XMLPattern[tag, _, c];
-cssConstrained[XMLPattern[tag_, a_, cs___], c_] := XMLPattern[tag, a, cs, c];
-cssConstrained[Verbatim[PatternTest][p_, f_], c_] := PatternTest[cssConstrained[p, c], f];
-cssConstrained[Verbatim[Pattern][s_, p_], c_] := Pattern @@ {s, cssConstrained[p, c]};
-cssConstrained[alts_Alternatives, c_] := cssConstrained[#, c] & /@ alts;
-cssConstrained[cssPathed[p_, ts_, t_], c_] := cssPathed[cssConstrained[p, c], ts, t];
+(* A constraint added to the XMLPatterns of a compound's pattern, in their
+   one constraint bracket: a second bracket would be a chain, which
+   XMLPattern refuses. *)
+cssConstrained[p_, c_] := cssAtRoots[MapAt[Append[c], #, 2] &, p];
+
+(* ---- The pattern roots of a compound's pattern ----
+
+   A compound's pattern is an XMLPattern, or alternatives of patterns, each
+   possibly named, tested or cssPathed; its roots are the patterns inside
+   these. Each XMLPattern root is read and written through its parts, as
+   xmlPatternParts (Compiler.wl) gives them, {{tag, attrs...}, {c...}}. *)
+
+cssRootPositions[Verbatim[PatternTest][p_, _] | cssPathed[p_, __]] := Prepend[#, 1] & /@ cssRootPositions[p];
+cssRootPositions[Verbatim[Pattern][_, p_]] := Prepend[#, 2] & /@ cssRootPositions[p];
+cssRootPositions[alts_Alternatives] :=
+  Join @@ MapIndexed[Function[{a, i}, Join[i, #] & /@ cssRootPositions[a]], List @@ alts];
+cssRootPositions[_] := {{}};
+
+cssRootsOf[p_] := Extract[p, cssRootPositions[p]];
+
+(* p with f applied to the parts of each XMLPattern root. *)
+cssAtRoots[f_, p_] :=
+  MapAt[Replace[xmlPatternParts[#], {parts : {_, _} :> cssBuilt[f[parts]], _ -> #}] &, p, cssRootPositions[p]];
+
+cssBuilt[{args_, {}}] := XMLPattern @@ args;
+cssBuilt[{args_, cs_}] := (XMLPattern @@ args) @@ cs;
+
+(* ---- Constraints on a selector string ----
+
+   "sel"[c...] is the translation of a one-element selector with c... added
+   to each of its pattern roots by cssConstrained: to each branch of a
+   selector list, through names and tests, and beside the constraints its
+   :has() gives. A context selector's pattern is rooted at another element
+   than the one it selects, so it takes none. A second bracket is the chain
+   XMLPattern refuses.
+
+   A bracket on alternatives or a test, as on the FromCSSSelector result of
+   a selector list, is refused too: the message gives the pattern with the
+   constraints in the bracket of each XMLPattern. *)
+
+bracketedFormQ[x_] := stringBracketQ[x] || bracketOnAltsOrTestQ[x];
+
+stringBracketQ[x_] := !AtomQ[x] && StringQ[innermostHead[x]];
+
+bracketOnAltsOrTestQ[(h : _Alternatives | Verbatim[PatternTest][_, _] | Verbatim[Pattern][_, _])[___]] :=
+  AllTrue[cssRootsOf[h], MatchQ[xmlPatternParts[#], {_, _}] &];
+bracketOnAltsOrTestQ[_] := False;
+
+(* {"one", pattern} for a bracketed form, or $Failed after the message. *)
+bracketedTree[x_ /; bracketOnAltsOrTestQ[x]] :=
+  (Message[XMLPattern::bracket, x, Fold[cssConstrained, Head[x], List @@ x]]; $Failed);
+bracketedTree[x_] :=
+  Replace[cssBrackets[x], {
+    {s_, {cs_}} :> Replace[cssTree[s], {
+      {"one", p_} :> {"one", Fold[cssConstrained, p, cs]},
+      {"context", _} :> (Message[FromCSSSelector::constraints, x, s]; $Failed),
+      f_ :> f}],
+    {s_, bs_} :> (Message[XMLPattern::chain, x, s @@ Join @@ bs]; $Failed)}];
+
+(* {selector, {the constraints of each bracket, ...}} *)
+cssBrackets[(s_String)[cs___]] := {s, {{cs}}};
+cssBrackets[(h_)[cs___]] := MapAt[Append[#, {cs}] &, cssBrackets[h], 2];
 
 (* :has() of a relative selector that starts below the element: the
    constraint its runs put on the element. *)
@@ -834,7 +896,7 @@ cssPathedBy[q_, ps_] := cssPathed[q, DeleteDuplicates[ps[[All, 1]]], ps[[1, 2]]]
    selector of the :has() is an alternative of the run, one that starts with +
    or ~ continuing it with its own first run, as a + b is, and any other a
    constraint on the compound. So n : "a:has(~ b c)" lists {___, n : a, ___,
-   XMLPattern["b", _, Descendant[c]], ___} over the parent's children. Before
+   XMLPattern["b"][Descendant[c]], ___} over the parent's children. Before
    another compound of the run, the two would have to be the same sibling,
    which needs a name, so it is not translated. *)
 cssTreeRun[parts_, within_] /; !FreeQ[parts[[All, 3]], _sibHas] :=
@@ -1058,8 +1120,8 @@ cssDownHasQ[_] := False;
 cssFreeTest[r_rel, text_] :=
   Replace[cssHasConstraint[r, text], {
     Descendant[p_] :> Hold[XMLFreeQ[cssSelf, p, {1, Infinity}]],
-    {Verbatim[___], p_, Verbatim[___]} :> Hold[XMLFreeQ[cssSelf, p, {1}]],
-    c_ :> With[{q = XMLPattern[_, _, c]}, Hold[! XMLMatchQ[q][cssSelf]]]}];
+    Child[p_] :> Hold[XMLFreeQ[cssSelf, p, {1}]],
+    c_ :> With[{q = XMLPattern[_][c]}, Hold[! XMLMatchQ[q][cssSelf]]]}];
 
 cssAnd[{t_}] := t;
 cssAnd[ts_] := Replace[Join @@ ts, Hold[xs___] :> Hold[And[xs]]];

@@ -21,7 +21,7 @@ cells   = doc[el["tr", el["th"], e["td", "a"], e["td", "b"]]];
 (* === Section 1: the tree syntax === *)
 
 TestCreate[
-  XMLCases[holiday, XMLPattern["tr", _, {XMLPattern["th", _, {XMLPattern["time", "datetime" -> d_]}], ___, n : XMLPattern["td"]}] :>
+  XMLCases[holiday, XMLPattern["tr"][{XMLPattern["th"][{XMLPattern["time", "datetime" -> d_]}], ___, n : XMLPattern["td"]}] :>
     {d, HTMLInnerText[n]}],
   {{"2026-12-25", "Christmas Day"}},
   TestID -> "tree-holiday-row"
@@ -30,19 +30,19 @@ TestCreate[
 (* A list constraint means what the same list means to MatchQ, over the
    element children. *)
 TestCreate[
-  XMLCases[links, XMLPattern["p", _, {x : XMLPattern["a"], ___}] :> id[x]],
+  XMLCases[links, XMLPattern["p"][{x : XMLPattern["a"], ___}] :> id[x]],
   {"1"},
   TestID -> "tree-first-child"
 ];
 
 TestCreate[
-  XMLCases[links, XMLPattern["p", _, {___, x : XMLPattern["a"]}] :> id[x]],
+  XMLCases[links, XMLPattern["p"][{___, x : XMLPattern["a"]}] :> id[x]],
   {"3"},
   TestID -> "tree-last-child"
 ];
 
 TestCreate[
-  XMLCases[links, XMLPattern["p", _, {PatternSequence[_, _] ..., x : XMLPattern["a"], ___}] :> id[x]],
+  XMLCases[links, XMLPattern["p"][{PatternSequence[_, _] ..., x : XMLPattern["a"], ___}] :> id[x]],
   {"1", "3"},
   TestID -> "tree-odd-children"
 ];
@@ -50,14 +50,14 @@ TestCreate[
 (* Descendant counts DOM depth: {1} is a child. a2 is a child of the inner
    nav; one counted name gives document order. *)
 TestCreate[
-  XMLCases[nav, XMLPattern["nav", _, Descendant[x : XMLPattern["a"], {1}]] :> id[x]],
+  XMLCases[nav, XMLPattern["nav"][Descendant[x : XMLPattern["a"], {1}]] :> id[x]],
   {"a1", "a2", "a3"},
   TestID -> "tree-descendant-level-one"
 ];
 
 (* Rooting higher: each link once, nested navs included. *)
 TestCreate[
-  XMLCases[nav, XMLPattern["nav", _, Descendant[x : XMLPattern["a"]]] :> id[x]],
+  XMLCases[nav, XMLPattern["nav"][Descendant[x : XMLPattern["a"]]] :> id[x]],
   {"a1", "a2", "a3"},
   TestID -> "tree-descendant-each-once"
 ];
@@ -73,14 +73,14 @@ TestCreate[
 
 (* Two counted names give every pair. *)
 TestCreate[
-  XMLCases[links, XMLPattern["p", _, {___, x : XMLPattern["a"], ___, y : XMLPattern["a"], ___}] :> {id[x], id[y]}],
+  XMLCases[links, XMLPattern["p"][{___, x : XMLPattern["a"], ___, y : XMLPattern["a"], ___}] :> {id[x], id[y]}],
   {{"1", "2"}, {"1", "3"}, {"2", "3"}},
   TestID -> "result-pairs"
 ];
 
 (* A name the right-hand side does not use is a test. *)
 TestCreate[
-  XMLCases[links, XMLPattern["p", _, {___, x : XMLPattern["a"], ___, y : XMLPattern["a"], ___}] :> id[x]],
+  XMLCases[links, XMLPattern["p"][{___, x : XMLPattern["a"], ___, y : XMLPattern["a"], ___}] :> id[x]],
   {"1", "2"},
   TestID -> "result-uncounted-name-is-a-test"
 ];
@@ -88,13 +88,13 @@ TestCreate[
 (* A Condition relating two names filters, in the pattern or in the
    right-hand side; the uncounted y needs one passing position. *)
 TestCreate[
-  XMLCases[ranks, (XMLPattern["ul", _, Descendant[x : XMLPattern["li"]], Descendant[y : XMLPattern["li"]]] /; num[x] < num[y]) :> id[x]],
+  XMLCases[ranks, (XMLPattern["ul"][Descendant[x : XMLPattern["li"]], Descendant[y : XMLPattern["li"]]] /; num[x] < num[y]) :> id[x]],
   {"1", "2"},
   TestID -> "result-pattern-condition"
 ];
 
 TestCreate[
-  XMLCases[ranks, XMLPattern["ul", _, Descendant[x : XMLPattern["li"]], Descendant[y : XMLPattern["li"]]] :> id[x] /; num[x] < num[y]],
+  XMLCases[ranks, XMLPattern["ul"][Descendant[x : XMLPattern["li"]], Descendant[y : XMLPattern["li"]]] :> id[x] /; num[x] < num[y]],
   {"1", "2"},
   TestID -> "result-rhs-condition"
 ];
@@ -108,7 +108,7 @@ TestCreate[
 
 (* A named sequence binds a run or a gap: gap 2;;1, run 2;;2, gap 3;;2. *)
 TestCreate[
-  XMLCases[paras, XMLPattern["div", _, {___, XMLPattern["p"], g___, XMLPattern["p"], ___}] :> {g}],
+  XMLCases[paras, XMLPattern["div"][{___, XMLPattern["p"], g___, XMLPattern["p"], ___}] :> {g}],
   {{}, {e["p", "2"]}, {}},
   TestID -> "result-gaps-and-runs"
 ];
@@ -116,7 +116,7 @@ TestCreate[
 (* A sequence as the whole right-hand side is spliced into the results, as in
    Cases: an empty gap adds nothing, but is still a result for the count. *)
 TestCreate[
-  With[{q = XMLPattern["div", _, {___, XMLPattern["p"], g___, XMLPattern["p"], ___}] :> g},
+  With[{q = XMLPattern["div"][{___, XMLPattern["p"], g___, XMLPattern["p"], ___}] :> g},
     {XMLCases[paras, q], XMLCases[paras, q, 1], XMLCases[paras, q, 2],
       XMLCases[doc[el["div", el["p"], el["b"], el["i"], el["p"]]], q]}],
   {{e["p", "2"]}, {}, {e["p", "2"]}, {el["b"], el["i"]}},
@@ -126,14 +126,14 @@ TestCreate[
 (* XMLFirstCase gives the first result as FirstCase does: an empty gap is
    Sequence[]. *)
 TestCreate[
-  {XMLFirstCase[paras, XMLPattern["div", _, {___, XMLPattern["p"], g___, XMLPattern["p"], ___}] :> g]},
+  {XMLFirstCase[paras, XMLPattern["div"][{___, XMLPattern["p"], g___, XMLPattern["p"], ___}] :> g]},
   {},
   TestID -> "first-sequence-spliced"
 ];
 
 (* A name in a branch that did not match is Sequence[]. *)
 TestCreate[
-  XMLCases[alt, XMLPattern["li", _, {___, (x : XMLPattern["a"]) | (y : XMLPattern["span"]), ___}] :> {x, y}],
+  XMLCases[alt, XMLPattern["li"][{___, (x : XMLPattern["a"]) | (y : XMLPattern["span"]), ___}] :> {x, y}],
   {{el["a"]}, {el["span"]}},
   TestID -> "result-alternatives-absent-name"
 ];
@@ -152,7 +152,7 @@ TestCreate[
 ];
 
 TestCreate[
-  XMLCases[links, XMLPattern["p", _, {Except[x : XMLPattern["a"]] ..., ___}] :> x],
+  XMLCases[links, XMLPattern["p"][{Except[x : XMLPattern["a"]] ..., ___}] :> x],
   $Failed,
   {XMLCases::exceptname},
   TestID -> "result-except-name-in-rhs"
@@ -160,7 +160,7 @@ TestCreate[
 
 (* A bare pattern gives each match, as Cases does. *)
 TestCreate[
-  XMLCases[nav, XMLPattern["nav", _, Descendant[XMLPattern["a"]]]],
+  XMLCases[nav, XMLPattern["nav"][Descendant[XMLPattern["a"]]]],
   {nav[[2]], nav[[2, 3, 2]]},
   TestID -> "result-bare-pattern-each-match"
 ];
@@ -185,46 +185,46 @@ TestCreate[
 (* Grouped by the first counted name in pattern order, whatever the order in
    the right-hand side. *)
 TestCreate[
-  XMLCases[nav, n : XMLPattern["nav", _, Descendant[x : XMLPattern["a"]]] :> {id[x], id[n]}],
+  XMLCases[nav, n : XMLPattern["nav"][Descendant[x : XMLPattern["a"]]] :> {id[x], id[n]}],
   {{"a1", "o"}, {"a2", "o"}, {"a3", "o"}, {"a2", "i"}},
   TestID -> "order-grouped-by-first-name"
 ];
 
 (* The branches of one Alternatives share a slot. *)
 TestCreate[
-  XMLCases[alt, XMLPattern["li", _, {___, (y : XMLPattern["span"]) | (x : XMLPattern["a"]), ___}] :> {x, y}],
+  XMLCases[alt, XMLPattern["li"][{___, (y : XMLPattern["span"]) | (x : XMLPattern["a"]), ___}] :> {x, y}],
   {{el["a"]}, {el["span"]}},
   TestID -> "order-alternatives-one-slot"
 ];
 
 TestCreate[
-  XMLCases[alt2, XMLPattern["li", _, {___, (x : XMLPattern["a"]) | XMLPattern["span"], ___}] :> {x}],
+  XMLCases[alt2, XMLPattern["li"][{___, (x : XMLPattern["a"]) | XMLPattern["span"], ___}] :> {x}],
   {{}, {el["a"]}},
   TestID -> "order-absent-tuple-where-alternatives-matched"
 ];
 
 (* An uncounted name takes its first passing position. *)
 TestCreate[
-  Block[{seen}, {XMLCases[cells, XMLPattern["tr", _, {x : XMLPattern["th"], ___}, Descendant[y : XMLPattern["td"]]] :> x /; (seen = y; True)], id[seen]}],
+  Block[{seen}, {XMLCases[cells, XMLPattern["tr"][{x : XMLPattern["th"], ___}, Descendant[y : XMLPattern["td"]]] :> x /; (seen = y; True)], id[seen]}],
   {{el["th"]}, "a"},
   TestID -> "order-uncounted-first-passing"
 ];
 
 TestCreate[
-  XMLCases[nav, n : XMLPattern["nav", _, Descendant[x : XMLPattern["a"]]] :> {id[n], id[x]}, 2],
+  XMLCases[nav, n : XMLPattern["nav"][Descendant[x : XMLPattern["a"]]] :> {id[n], id[x]}, 2],
   {{"o", "a1"}, {"o", "a2"}},
   TestID -> "order-count"
 ];
 
 TestCreate[
-  XMLFirstCase[nav, n : XMLPattern["nav", _, Descendant[x : XMLPattern["a"]]] :> {id[n], id[x]}],
+  XMLFirstCase[nav, n : XMLPattern["nav"][Descendant[x : XMLPattern["a"]]] :> {id[n], id[x]}],
   {"o", "a1"},
   TestID -> "order-first-case"
 ];
 
 TestCreate[
   {XMLFirstCase[nav, XMLPattern["table"] :> 1], XMLFirstCase[nav, XMLPattern["table"] :> 1, "none"],
-    XMLFirstCase[links, XMLPattern["p", _, {___, x : XMLPattern["a"]}]]},
+    XMLFirstCase[links, XMLPattern["p"][{___, x : XMLPattern["a"]}]]},
   {Missing["NotFound"], "none", links[[2]]},
   TestID -> "order-first-case-default"
 ];
@@ -236,7 +236,7 @@ TestCreate[
 TestCreate[
   {XMLCases[{e["a", "1"], " ", e["a", "2"]}, x : XMLPattern["a"] :> id[x]],
     XMLCases[links[[2]], x : XMLPattern[_] :> id[x]],
-    XMLCases[links[[2]], XMLPattern["p", _, {___, x : XMLPattern["a"]}] :> id[x]],
+    XMLCases[links[[2]], XMLPattern["p"][{___, x : XMLPattern["a"]}] :> id[x]],
     XMLCases[links[[2]], XMLPattern["p"] -> 1]},
   {{"1", "2"}, {"1", "2", "3"}, {"3"}, {1}},
   TestID -> "input-kinds"
@@ -244,16 +244,16 @@ TestCreate[
 
 (* Text is not a child: a list constraint sees element children only. *)
 TestCreate[
-  XMLCases[doc[el["p", "text", e["a", "1"], " ", e["a", "2"]]], XMLPattern["p", _, {x : XMLPattern["a"], _}] :> id[x]],
+  XMLCases[doc[el["p", "text", e["a", "1"], " ", e["a", "2"]]], XMLPattern["p"][{x : XMLPattern["a"], _}] :> id[x]],
   {"1"},
   TestID -> "list-constraint-skips-text"
 ];
 
 (* Several constraints hold independently, and _ is any one child. *)
 TestCreate[
-  {XMLCases[links, XMLPattern["p", _, {_, _, _}, Descendant[XMLPattern["a", "id" -> "2"]]] :> 1],
-    XMLCases[links, XMLPattern["p", _, {_, _}] :> 1],
-    XMLCases[links, XMLPattern["p", _, {x_, ___}, {___, y_}] :> {id[x], id[y]}]},
+  {XMLCases[links, XMLPattern["p"][{_, _, _}, Descendant[XMLPattern["a", "id" -> "2"]]] :> 1],
+    XMLCases[links, XMLPattern["p"][{_, _}] :> 1],
+    XMLCases[links, XMLPattern["p"][{x_, ___}, {___, y_}] :> {id[x], id[y]}]},
   {{1}, {}, {{"1", "3"}}},
   TestID -> "constraints-independent"
 ];
@@ -261,47 +261,133 @@ TestCreate[
 (* A CSS string that is one element is an entry or a pattern. *)
 TestCreate[
   XMLCases[doc[el["ul", XMLElement["li", {"class" -> "x", "id" -> "1"}, {}], e["li", "2"]]],
-    XMLPattern["ul", _, {___, x : "li.x", ___}] :> id[x]],
+    XMLPattern["ul"][{___, x : "li.x", ___}] :> id[x]],
   {"1"},
   TestID -> "css-string-entry"
 ];
 
 (* Level specs in DOM depth. *)
 TestCreate[
-  {XMLCases[nav, XMLPattern["nav", _, Descendant[x : XMLPattern["a"], {2}]] :> id[x]],
-    XMLCases[nav, XMLPattern["nav", _, Descendant[x : XMLPattern["a"], 1]] :> id[x]],
-    XMLCases[nav, XMLPattern["nav", _, Descendant[x : XMLPattern["a"], {1, Infinity}]] :> id[x]]},
+  {XMLCases[nav, XMLPattern["nav"][Descendant[x : XMLPattern["a"], {2}]] :> id[x]],
+    XMLCases[nav, XMLPattern["nav"][Descendant[x : XMLPattern["a"], 1]] :> id[x]],
+    XMLCases[nav, XMLPattern["nav"][Descendant[x : XMLPattern["a"], {1, Infinity}]] :> id[x]]},
   {{"a2"}, {"a1", "a2", "a3"}, {"a1", "a2", "a3"}},
   TestID -> "descendant-level-specs"
 ];
 
 (* Names on tags, attribute maps and token runs. *)
 TestCreate[
-  {XMLCases[links, XMLPattern[t_, _, {_, _, _}] :> t],
+  {XMLCases[links, XMLPattern[t_][{_, _, _}] :> t],
     XMLCases[hrefs, XMLPattern["a", a_] :> a],
     XMLCases[doc[XMLElement["p", {"class" -> "a b c"}, {}]], XMLPattern["p", "classList" -> {___, "a", r___}] :> {r}]},
   {{"p"}, {{"href" -> "/x"}, {"href" -> "/x"}}, {{"b", "c"}}},
   TestID -> "names-on-tags-attributes-tokens"
 ];
 
+(* === Constraints in a second bracket ===
+
+   XMLPattern[tag, attrs][c...] takes the constraints in a bracket of their
+   own, so the attribute argument can be left out: XMLPattern[tag][c...].
+   Each test gives what the same constraints after the attributes give. *)
+
+TestCreate[
+  XMLCases[links, XMLPattern["p"][{x : XMLPattern["a"], ___}] :> id[x]],
+  {"1"},
+  TestID -> "bracket-list-constraint"
+];
+
+TestCreate[
+  {XMLCases[nav, XMLPattern["nav"][Descendant[x : XMLPattern["a"], {1}]] :> id[x]],
+    XMLCases[hrefs, XMLPattern["p", _][{___, x : XMLPattern["a", "href" -> "/x"]}] :> First[x]]},
+  {{"a1", "a2", "a3"}, {"a"}},
+  TestID -> "bracket-descendant-and-attributes"
+];
+
+TestCreate[
+  {XMLCases[links, XMLPattern["p"][{_, _, _}, Descendant[XMLPattern["a", "id" -> "2"]]] :> 1],
+    XMLCases[links, XMLPattern["p"][{x_, ___}, {___, y_}] :> {id[x], id[y]}]},
+  {{1}, {{"1", "3"}}},
+  TestID -> "bracket-several-constraints"
+];
+
+(* Alternatives of constraints, and of patterns in the bracket form. *)
+TestCreate[
+  {XMLCases[alt, XMLPattern["li"][{___, (y : XMLPattern["span"]) | (x : XMLPattern["a"]), ___}] :> {x, y}],
+    XMLCases[links, XMLPattern["p"][{_, _} | {_, _, _}] :> 1],
+    XMLCases[nav, (n : XMLPattern["nav"][{___, XMLPattern["nav"], ___}]) | (n : XMLPattern["p"][{}]) :> id[n]]},
+  {{{el["a"]}, {el["span"]}}, {1}, {"o"}},
+  TestID -> "bracket-alternatives"
+];
+
+(* A name in two constraints names one place. *)
+TestCreate[
+  XMLCases[cells, XMLPattern["tr"][{x : XMLPattern[_], ___}, Descendant[x : XMLPattern["th"], {1}]] :> First[x]],
+  {"th"},
+  TestID -> "bracket-name-in-two-constraints"
+];
+
+(* Named, conditioned and tested constraints, and bracket patterns nested in
+   list constraints and in Descendant. *)
+TestCreate[
+  {XMLCases[links, XMLPattern["p"][l : {___}] :> Length[l]],
+    XMLCases[links, XMLPattern["p"][{___} /; True, {___}?(Length[#] == 3 &)] :> 1],
+    XMLCases[holiday, XMLPattern["tr"][{XMLPattern["th"][{XMLPattern["time", "datetime" -> d_]}], ___}] :> d],
+    XMLCases[nav, XMLPattern["nav"][Descendant[n : XMLPattern["nav"][{x : XMLPattern["a"]}]]] :> {id[n], id[x]}]},
+  {{3}, {1}, {"2026-12-25"}, {{"i", "a2"}}},
+  TestID -> "bracket-named-tested-nested"
+];
+
+(* The whole pattern named, conditioned and tested, and an XMLDocument
+   branch beside it. *)
+TestCreate[
+  {XMLCases[links, (p : XMLPattern["p"][{___}]) /; Length[p[[3]]] == 3 :> 1],
+    XMLCases[links, XMLPattern["p"][{___}]?(Length[#[[3]]] == 3 &) :> 1],
+    XMLCases[links, XMLDocument[{XMLPattern["ul"]}] | (x : XMLPattern["p"][{___, XMLPattern["a"]}]) :> First[x]]},
+  {{1}, {1}, {"p"}},
+  TestID -> "bracket-whole-pattern-wrapped"
+];
+
+(* An empty bracket is the pattern without it. *)
+TestCreate[
+  {XMLCases[hrefs, x : XMLPattern["a"][] :> First[x]], XMLCases[hrefs, XMLPattern["a", "href" -> "/y"][] :> 1],
+    XMLMatchQ[links[[2]], XMLPattern["p"][]], XMLMatchQ[XMLPattern["a", "href" -> "/x"][]][hrefs[[2, 3, 1]]]},
+  {{"a", "a"}, {}, True, True},
+  TestID -> "bracket-empty"
+];
+
+TestCreate[
+  {XMLMatchQ[links[[2]], XMLPattern["p"][{_, _, _}]], XMLMatchQ[XMLPattern["p"][{_, _}]][links[[2]]],
+    XMLFreeQ[nav, XMLPattern["nav"][{XMLPattern["a"], ___}]], XMLFreeQ[XMLPattern["nav"][{}]][nav]},
+  {True, False, False, True},
+  TestID -> "bracket-matchq-freeq"
+];
+
+TestCreate[
+  With[{page = doc[el["body", el["nav", el["a", "Home"], el["a", "News"]], el["p", "Text"]]]},
+    {HTMLInnerText[page, "Roles" -> {XMLPattern["nav"][{___}] -> "Skip"}],
+      HTMLInnerText[page, "Roles" -> {(XMLPattern["nav"][Descendant[x : XMLPattern["a"]]] :> x) -> "Block"}]}],
+  {"Text", "Home\nNews\nText"},
+  TestID -> "bracket-roles-keys"
+];
+
 (* === Messages === *)
 
 TestCreate[
-  XMLCases[links, XMLPattern["div", _, XMLPattern["p"]]],
+  XMLCases[links, XMLPattern["div"][XMLPattern["p"]]],
   $Failed,
   {XMLPattern::constraint},
   TestID -> "message-constraint"
 ];
 
 TestCreate[
-  XMLCases[links, XMLPattern["ul", _, {Descendant[XMLPattern["a"]]}]],
+  XMLCases[links, XMLPattern["ul"][{Descendant[XMLPattern["a"]]}]],
   $Failed,
   {XMLPattern::listentry},
   TestID -> "message-listentry-descendant"
 ];
 
 TestCreate[
-  XMLCases[links, XMLPattern["ul", _, {{XMLPattern["a"]}}]],
+  XMLCases[links, XMLPattern["ul"][{{XMLPattern["a"]}}]],
   $Failed,
   {XMLPattern::listentry},
   TestID -> "message-listentry-list"
@@ -315,8 +401,8 @@ TestCreate[
 ];
 
 TestCreate[
-  {XMLCases[links, XMLPattern["p", _, Descendant[XMLPattern["a"], XMLPattern["b"]]]],
-    XMLCases[links, XMLPattern["p", _, Descendant[XMLPattern["a"], {0}]]]},
+  {XMLCases[links, XMLPattern["p"][Descendant[XMLPattern["a"], XMLPattern["b"]]]],
+    XMLCases[links, XMLPattern["p"][Descendant[XMLPattern["a"], {0}]]]},
   {$Failed, $Failed},
   {Descendant::level, Descendant::level},
   TestID -> "message-descendant-level"
@@ -325,7 +411,7 @@ TestCreate[
 (* A blank is refused as the whole query and as Descendant's pattern, not as
    a list entry. *)
 TestCreate[
-  {XMLCases[links, _], XMLCases[links, XMLPattern["p", _, Descendant[_]]], XMLCases[links, XMLPattern["p", _, {_, x_, _}] :> id[x]]},
+  {XMLCases[links, _], XMLCases[links, XMLPattern["p"][Descendant[_]]], XMLCases[links, XMLPattern["p"][{_, x_, _}] :> id[x]]},
   {$Failed, $Failed, {"2"}},
   {XMLCases::blank, Descendant::blank},
   TestID -> "message-blank-narrowed"
