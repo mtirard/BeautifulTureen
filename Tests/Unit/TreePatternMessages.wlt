@@ -192,6 +192,30 @@ TestCreate[
   TestID -> "tree-message-chain-text"
 ];
 
+(* Constraints after the attributes, XMLPattern[tag, attrs, c...], are no
+   pattern: the message shows the bracket form, wherever a pattern goes. *)
+TestCreate[
+  {XMLCases[links, XMLPattern["p", _, {___, XMLPattern["a"]}]],
+    XMLMatchQ[links, XMLDocument[{XMLPattern["p", _, Descendant[XMLPattern["a"]], {___}]}]]},
+  {$Failed, $Failed},
+  {XMLPattern::attrsthen, XMLPattern::attrsthen},
+  TestID -> "tree-message-attrsthen"
+];
+
+TestCreate[
+  messageTexts[XMLCases[links, XMLPattern["p", _, {___, XMLPattern["a"]}, Descendant[XMLPattern["a"]]]]],
+  {"XMLPattern[\"p\", _, {___, XMLPattern[\"a\"]}, Descendant[XMLPattern[\"a\"]]] gives constraints after the attributes. Constraints are the arguments of a second bracket: XMLPattern[\"p\", _][{___, XMLPattern[\"a\"]}, Descendant[XMLPattern[\"a\"]]]."},
+  TestID -> "tree-message-attrsthen-text"
+];
+
+(* With a bracket as well, it is the chain the one bracket means. *)
+TestCreate[
+  XMLCases[links, XMLPattern["p", _, {___}][Descendant[XMLPattern["a"]]]],
+  $Failed,
+  {XMLPattern::chain},
+  TestID -> "tree-message-attrsthen-bracket"
+];
+
 (* XMLPattern needs a tag, in either form. *)
 TestCreate[
   {XMLCases[links, XMLPattern[]], XMLMatchQ[links[[2]], XMLPattern[][{_, _, _}]]},

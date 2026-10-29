@@ -218,7 +218,7 @@ TestCreate[
     XMLPattern, Descendant}, "ArgumentsPattern"],
   {{_, _, _., OptionsPattern[]}, {_, _, _., OptionsPattern[]}, {_, _, OptionsPattern[]},
     {_, _., OptionsPattern[]}, {_, OptionsPattern[]}, {_}, {_, OptionsPattern[]}, {_},
-    {_, _., ___}, {_, _.}},
+    {_, _.}, {_, _.}},
   TestID -> "syntax-information-arguments-pattern"
 ];
 
