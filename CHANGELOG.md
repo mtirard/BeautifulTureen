@@ -35,7 +35,7 @@ A breaking release. Patterns are nested as the document is, and a query gives on
 - `XMLPosition` and `XMLExtract`: the positions of the results of a query, and the parts of a tree at positions ([ADR 0025](docs/adr/0025-positions-count-element-children-from-the-document.md)).
 - `XMLReplace`: rewrite what the names of a pattern match.
 - `XMLFreeQ`, with a level spec in DOM depth (issue #32).
-- `FromCSSSelector[n : "selector"]` names the element a selector selects ([ADR 0026](docs/adr/0026-fromcssselector-names-the-subject.md)).
+- `FromCSSSelector[n : "selector"]` names the element a selector selects ([ADR 0026](docs/adr/0026-fromcssselector-names-the-subject.md)). Translations write the bracket form, and `>` as `Child`: `FromCSSSelector[n : "ul > li"]` gives `XMLPattern["ul"][Child[n : XMLPattern["li"]]]`.
 - `HTMLToTree`'s `"Focus"` and `"Hide"` take rules, and act on the positions of the names the right-hand side uses.
 
 ### Performance
