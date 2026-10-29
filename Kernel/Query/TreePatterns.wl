@@ -973,7 +973,7 @@ attributeSlots[x_, i_, keys_] :=
         "OrderKey" -> Join[k, attributeKey[#]], "List" -> False|> & /@ Select[Range[Length[attrs]], MemberQ[keys, attrs[[#, 1]]] &],
       KeyValueMap[Function[{listKey, reading},
           <|"Key" -> listKey, "Value" -> splitterOf[reading][Lookup[attrs, rawKeyOf[reading], ""]], "Pos" -> Append[p, Key[listKey]],
-            "OrderKey" -> Join[k, tokenListKey[Replace[FirstPosition[attrs[[All, 1]], rawKeyOf[reading], {Length[attrs] + 1}, {1}], {j_} :> j]]],
+            "OrderKey" -> Join[k, tokenListKey[attributeIndex[attrs, rawKeyOf[reading]]]],
             "List" -> True|>],
         KeyTake[$readings, keys]]]];
 
