@@ -6,6 +6,9 @@ PackageScoped[conditionWith]
 
 (* Used by Query/TreePatterns.wl *)
 PackageScoped[compileWith]
+PackageScoped[xmlPatternFormQ]
+PackageScoped[xmlPatternParts]
+PackageScoped[xmlPatternPartsOrRefuse]
 PackageScoped[bodyConditionQ]
 
 (* Used by Positions.wl, Query/TreePatterns.wl, Readings.wl and Rewrite.wl *)
@@ -107,7 +110,10 @@ badQuery[name_, v_] := Message[HTMLToTree::badquery, name, $treeQueryOff[name], 
 
 (* ---- Element patterns ---- *)
 
-cElem[XMLPattern[args___]] := cXMLPattern[{args}];
+(* An XMLPattern with constraints is no element pattern: what is below the
+   element is the tree-pattern engine's. *)
+cElem[x_ /; xmlPatternFormQ[x]] :=
+  Replace[xmlPatternPartsOrRefuse[x, badpat], {{args_, {}} :> cXMLPattern[args], _ :> badpat[x]}];
 (* A string is a CSS selector, and means its translation (ADR 0026). *)
 cElem[s_String] :=
   Replace[cssTree[s], {$Failed :> refuseQuietly[], {"one", t_} :> cElem[t], _ :> badpat[s]}];
@@ -131,7 +137,23 @@ conditionWith[p_, test_Hold] := Condition @@ Join[Hold[p], test];
 
 cXMLPattern[{tag_}] := XMLElement[cTag[tag], _, _];
 cXMLPattern[{tag_, attrs_}] := With[{t = cTag[tag]}, XMLElement[t, cAttrs[attrs], _]];
-cXMLPattern[args_] := badpat[XMLPattern @@ args];
+
+(* ---- The parts of an XMLPattern ----
+
+   The one place that reads an XMLPattern's tag, attributes and constraints.
+   xmlPatternParts[x] gives {{tag}, {c...}} or {{tag, attrs}, {c...}}: the
+   arguments of XMLPattern itself, and the constraints; None for anything
+   else. *)
+
+xmlPatternFormQ[x_] := MatchQ[x, _XMLPattern];
+
+xmlPatternParts[XMLPattern[tag_, attrs_, cs__]] := {{tag, attrs}, {cs}};
+xmlPatternParts[XMLPattern[args : Repeated[_, {1, 2}]]] := {{args}, {}};
+xmlPatternParts[_] := None;
+
+(* The parts of x, an XMLPattern; anything else is refused by notOne[x], as
+   the caller's badpat: each package has its own $head. *)
+xmlPatternPartsOrRefuse[x_, notOne_] := Replace[xmlPatternParts[x], None :> notOne[x]];
 
 cTag[tag_] := (
   noStringPatterns[tag];

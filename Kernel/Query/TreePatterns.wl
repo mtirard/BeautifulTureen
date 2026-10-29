@@ -27,7 +27,8 @@ PackageScoped[treeSolutions]
 (* Tree patterns (ADR 0023, 0024, 0025)                         *)
 (*                                                              *)
 (* XMLPattern[tag, attrs, c...] takes constraints on what is    *)
-(* below the element: list patterns over its element children,  *)
+(* below the element (read by xmlPatternParts, Compiler.wl):    *)
+(* list patterns over its element children,                     *)
 (* Descendant[p, levelspec], and alternatives of these; a named  *)
 (* Descendant binds its path. XMLDocument[c...] takes the same  *)
 (* constraints on the document. A query gives one result for    *)
@@ -391,9 +392,7 @@ cRoot[XMLDocument[cs___], need_] /; $place === "query" :=
         "Constraints" -> cons, "MinKids" -> Max[0, minKids /@ cons]]]];
 cRoot[x_XMLDocument, _] := If[$place === "entry", refuseListEntry[x, "document"], refuse[XMLDocument::place, x]];
 
-cRoot[XMLPattern[tag_], need_] := cRoot[XMLPattern[tag, _], need];
-cRoot[x : XMLPattern[tag_, attrs_, cs___], need_] := cTreePattern[x, need];
-cRoot[x_XMLPattern, _] := refuseHere["badpat", x];
+cRoot[x_ /; xmlPatternFormQ[x], need_] := cTreePattern[xmlPatternPartsOrRefuse[x, refuseHere["badpat", #] &], need];
 
 cRoot[x_XMLElement, need_] := cLiteral[x, need];
 
@@ -479,7 +478,8 @@ alternativesNode[kind_, subs_, namesBy_, need_] :=
 (* The tag and attributes are tested by today's compiled XMLPattern, on the
    elements materialised for its readings; the names in them that something
    needs are bound here, from the original element. *)
-cTreePattern[XMLPattern[tag_, attrs_, cs___], need_] :=
+cTreePattern[{{tag_}, cs_}, need_] := cTreePattern[{{tag, _}, cs}, need];
+cTreePattern[{{tag_, attrs_}, {cs___}}, need_] :=
   Module[{c, headNames, cons, plainRules},
     If[!FreeQ[attrs, _Descendant], refuse[Descendant::place, FirstCase[attrs, _Descendant, Null, {0, Infinity}]]];
     refuseDocumentIn[{tag, attrs}];
@@ -1813,7 +1813,8 @@ pathTo[nd_, id_] :=
    operator form, applied to every element. A selector that is not
    translated, or a context selector, is left to this engine, which gives
    its message. *)
-plainRootQ[x : XMLPattern[_] | XMLPattern[_, _]] := FreeQ[x, _Descendant | _XMLDocument] && !removedCombinatorQ[Hold[x]];
+plainRootQ[x_ /; xmlPatternFormQ[x]] :=
+  MatchQ[xmlPatternParts[x], {_, {}}] && FreeQ[x, _Descendant | _XMLDocument] && !removedCombinatorQ[Hold[x]];
 plainRootQ[s_String] := MatchQ[Quiet[cssTree[s]], {"one", t_} /; plainRootQ[t]];
 plainRootQ[Verbatim[Pattern][_, p_] | Verbatim[Condition][p_, _] | Verbatim[PatternTest][p_, _]] := plainRootQ[p];
 plainRootQ[alts_Alternatives] := AllTrue[List @@ alts, plainRootQ];
