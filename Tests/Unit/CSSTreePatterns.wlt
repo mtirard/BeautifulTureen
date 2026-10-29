@@ -25,7 +25,7 @@ TestCreate[
 
 TestCreate[
   {FromCSSSelector["nav > a"], FromCSSSelector[n : "nav > a"]},
-  {$Failed, XMLPattern["nav"][{___, n : XMLPattern["a"], ___}]},
+  {$Failed, XMLPattern["nav"][Child[n : XMLPattern["a"]]]},
   {FromCSSSelector::name},
   TestID -> "css-tree-table-child"
 ];
@@ -39,7 +39,7 @@ TestCreate[
 
 TestCreate[
   {FromCSSSelector["div:has(> table)"], FromCSSSelector[n : "div:has(> table)"]},
-  {XMLPattern["div"][{___, XMLPattern["table"], ___}], n : XMLPattern["div"][{___, XMLPattern["table"], ___}]},
+  {XMLPattern["div"][Child[XMLPattern["table"]]], n : XMLPattern["div"][Child[XMLPattern["table"]]]},
   TestID -> "css-tree-table-has-child"
 ];
 
@@ -82,13 +82,13 @@ TestCreate[
 
 TestCreate[
   FromCSSSelector[n : ":root > p"],
-  XMLDocument[{XMLPattern[_][{___, n : XMLPattern["p"], ___}]}],
+  XMLDocument[{XMLPattern[_][Child[n : XMLPattern["p"]]]}],
   TestID -> "css-tree-table-root"
 ];
 
 TestCreate[
   FromCSSSelector[n : "a, b > c"],
-  (n : XMLPattern["a"]) | XMLPattern["b"][{___, n : XMLPattern["c"], ___}],
+  (n : XMLPattern["a"]) | XMLPattern["b"][Child[n : XMLPattern["c"]]],
   TestID -> "css-tree-table-list-context"
 ];
 
@@ -234,7 +234,7 @@ TestCreate[
 (* A test on the path below another compound, which hangs below it. *)
 TestCreate[
   {id /@ XMLCases[zs, "nav:not(div nav) > .z"], FromCSSSelector[n : "nav:not(div nav) > .z"]},
-  {{"inz"}, XMLDocument[Descendant[XMLPattern["nav"][{___, n : XMLPattern[_, "classList" -> "z"], ___}]]?(! XMLMatchQ[{___, XMLPattern["div"], ___}][#] &)]},
+  {{"inz"}, XMLDocument[Descendant[XMLPattern["nav"][Child[n : XMLPattern[_, "classList" -> "z"]]]]?(! XMLMatchQ[{___, XMLPattern["div"], ___}][#] &)]},
   TestID -> "css-tree-path-not-on-subject"
 ];
 

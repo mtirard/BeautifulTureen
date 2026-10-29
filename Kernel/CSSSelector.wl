@@ -679,13 +679,13 @@ cssLinked[{run_}, subject_] := MapAt[{Pattern @@ {subject, First[#]}, subject, L
 cssLinked[{run_, rest__}, subject_] := MapAt[cssConstrained[#, cssBelow[cssLinked[{rest}, subject]]] &, run, {2, -1, 1}];
 
 (* The constraint a run puts on the element its first compound is below: one
-   compound alone is an entry or a Descendant; a longer run, or one with a
+   compound alone is a Child or a Descendant; a longer run, or one with a
    position, is a list over its parent's children, which after a descendant
    combinator are the element's or those of any element below it. *)
 cssBelow[{lead_, parts_, within_}] := (
   cssNoRoot[parts];
   If[MatchQ[parts, {{_, _, {}}}],
-    With[{p = parts[[1, 1]]}, If[lead === cssChild, {___, p, ___}, Descendant[p]]],
+    With[{p = parts[[1, 1]]}, If[lead === cssChild, Child[p], Descendant[p]]],
     With[{l = cssTreeRun[parts, within]}, If[lead === cssChild, l, l | Descendant[XMLPattern[_][l]]]]]);
 
 (* The pattern root, from the first run: its one compound; for :root and
@@ -1113,7 +1113,7 @@ cssDownHasQ[_] := False;
 cssFreeTest[r_rel, text_] :=
   Replace[cssHasConstraint[r, text], {
     Descendant[p_] :> Hold[XMLFreeQ[cssSelf, p, {1, Infinity}]],
-    {Verbatim[___], p_, Verbatim[___]} :> Hold[XMLFreeQ[cssSelf, p, {1}]],
+    Child[p_] :> Hold[XMLFreeQ[cssSelf, p, {1}]],
     c_ :> With[{q = XMLPattern[_][c]}, Hold[! XMLMatchQ[q][cssSelf]]]}];
 
 cssAnd[{t_}] := t;
