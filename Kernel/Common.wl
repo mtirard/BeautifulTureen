@@ -1,7 +1,7 @@
 (* ::Package:: *)
 (* HTMLPatterns: validation helpers, the inert public symbols the queries
-   give meaning to, HTMLWhitespace, HTMLClassList, CSSClass, and argument
-   counts and options *)
+   give meaning to, HTMLWhitespace, HTMLClassList, and argument counts
+   and options *)
 
 (* Used by CSSSelector.wl *)
 PackageScoped[argumentCountMessage]
@@ -165,17 +165,6 @@ HTMLClassList[other_] :=
   (Message[HTMLClassList::notelement, Head[other]]; $Failed);
 
 HTMLClassList[args___] /; (countMessage[HTMLClassList, {args}, {1, 1}]; False) := Null;
-
-(* =========================================================== *)
-(* CSSClass                                                     *)
-(* Obsolete (ADR 0011): the class list is the "classList" key.  *)
-(* =========================================================== *)
-
-PackageExported[CSSClass]
-CSSClass::usage = "CSSClass is obsolete. Match an element's class list with the \"classList\" key of XMLPattern instead: XMLPattern[tag, \"classList\" -> \"cls\"].";
-CSSClass::obs = "CSSClass is obsolete. Match the class list with the \"classList\" key instead: XMLPattern[tag, \"classList\" -> \"cls\"] for .cls, or \"classList\" -> _?(FreeQ[\"cls\"]) for :not(.cls).";
-
-CSSClass[___] := (Message[CSSClass::obs]; $Failed);
 
 (* =========================================================== *)
 (* Argument counts and options                                  *)

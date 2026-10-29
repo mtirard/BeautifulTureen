@@ -60,11 +60,7 @@ Cell[TextData[{Cell[BoxData[ButtonBox["HTMLToNotebook", BaseStyle -> "Link", But
 
 Cell[TextData[{Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"]], "InlineGuideFunction"], " \[LongDash] the classes of an element, as a list of strings"}], "GuideText"],
 
-Cell[TextData[{Cell[BoxData[ButtonBox["HTMLToTree", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLToTree"]], "InlineGuideFunction"], " \[LongDash] draw a tree as a ", Cell[BoxData[ButtonBox["Tree", BaseStyle -> "Link", ButtonData -> "paclet:ref/Tree"]], "InlineFormula"], ", to see its structure as patterns match it"}], "GuideText"]}, Open]],
-
-Cell["\t", "GuideDelimiter"],
-
-Cell[CellGroupData[{Cell["Obsolete", "GuideFunctionsSubsection"], Cell[TextData[{Cell[BoxData[ButtonBox["CSSClass", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/CSSClass"]], "InlineGuideFunction"], " \[LongDash] removed in 2.0.0; use the \"classList\" key of ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"]}], "GuideText"]}, Open]]
+Cell[TextData[{Cell[BoxData[ButtonBox["HTMLToTree", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLToTree"]], "InlineGuideFunction"], " \[LongDash] draw a tree as a ", Cell[BoxData[ButtonBox["Tree", BaseStyle -> "Link", ButtonData -> "paclet:ref/Tree"]], "InlineFormula"], ", to see its structure as patterns match it"}], "GuideText"]}, Open]]
 }, Open  ]],
 
 Cell[CellGroupData[{

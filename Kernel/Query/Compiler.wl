@@ -90,7 +90,7 @@ firstWarningQ[k_] := !KeyExistsQ[$warnedListKeys, k] && ($warnedListKeys[k] = Tr
 (* Held, since a MessageName evaluates to its text. *)
 SetAttributes[refuse, HoldFirst];
 refuse[msg_, args___] := (Message[msg, args]; Throw[$Failed, $refusal]);
-(* An upstream failure (CSSClass::obs) has already said what went wrong. *)
+(* An upstream failure has already said what went wrong. *)
 refuseQuietly[] := Throw[$Failed, $refusal];
 
 (* A pattern that is not an element pattern is the consumer's badpat, or for

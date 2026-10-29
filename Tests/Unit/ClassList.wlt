@@ -210,20 +210,3 @@ TestCreate[
   XMLElement["p", {"class" -> "promo card"}, {"promo"}],
   TestID -> "classlist-firstcase-binding-is-original"
 ];
-
-(* === CSSClass is obsolete === *)
-
-TestCreate[
-  CSSClass["lead"],
-  $Failed,
-  {CSSClass::obs},
-  TestID -> "cssclass-is-obsolete"
-];
-
-(* Inside a pattern it says so once, and the consumer fails quietly after it. *)
-TestCreate[
-  XMLCases[$mixed, XMLPattern["p", CSSClass["lead"]]],
-  $Failed,
-  {CSSClass::obs},
-  TestID -> "cssclass-is-obsolete-inside-xmlpattern"
-];
