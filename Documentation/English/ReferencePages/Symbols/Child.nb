@@ -1,0 +1,386 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 12.0' *)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["Child", "ObjectName"],
+
+Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Child"], "[", StyleBox["p", "TI"], "]"}]], "InlineFormula"], " \[LineSeparator]is a constraint on an element in an ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], ", met when some element child of it matches ", Cell[BoxData[StyleBox["p", "TI"]], "InlineFormula"], "."}], "Usage"],
+
+Cell[TextData[{Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Child"]], "InlineFormula"], " is a constraint: an argument of the second bracket of ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], ", or of ", Cell[BoxData[ButtonBox["XMLDocument", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLDocument"]], "InlineFormula"], ". ", Cell[BoxData[RowBox[{RowBox[{RowBox[{ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"], "[", "\"ul\"", "]"}], "[", RowBox[{ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Child"], "[", "x : XMLPattern[\"li\"]", "]"}], "]"}], "\[RuleDelayed]", StyleBox["x", "TR"]}]], "InlineFormula"], " gives each li child of a ul, as the CSS selector ", Cell[BoxData["\"ul > li\""], "InlineFormula"], " does."}], "Notes"],
+
+Cell[TextData[{Cell[BoxData[RowBox[{ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Child"], "[", StyleBox["p", "TI"], "]"}]], "InlineFormula"], " is the list constraint ", Cell[BoxData[RowBox[{"{", RowBox[{StyleBox["___", "TR"], ",", StyleBox["p", "TI"], ",", StyleBox["___", "TR"]}], "}"}]], "InlineFormula"], ", and gives the same results in the same order. Text among the children is left out."}], "Notes"],
+
+Cell[TextData[{Cell[BoxData[StyleBox["p", "TI"]], "InlineFormula"], " can be an ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], ", an ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], " pattern, a CSS selector string that describes one element, or alternatives of these. Each can be named, have a condition or have a test, and can have constraints of its own."}], "Notes"],
+
+Cell[TextData[{"Under ", Cell[BoxData[ButtonBox["XMLDocument", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLDocument"]], "InlineFormula"], ", the children are the top elements of the input."}], "Notes"],
+
+Cell[TextData[{"Several ", Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Child"]], "InlineFormula"], " constraints on one element are independent, and one child may meet several of them. For children in an order, or next to each other, give a list constraint, such as ", Cell[BoxData[RowBox[{"{", RowBox[{StyleBox["___", "TR"], ",", StyleBox["a", "TI"], ",", StyleBox["___", "TR"], ",", StyleBox["b", "TI"], ",", StyleBox["___", "TR"]}], "}"}]], "InlineFormula"], " or ", Cell[BoxData[RowBox[{"{", RowBox[{StyleBox["___", "TR"], ",", StyleBox["a", "TI"], ",", StyleBox["b", "TI"], ",", StyleBox["___", "TR"]}], "}"}]], "InlineFormula"], "."}], "Notes"],
+
+Cell[TextData[{"A name or a test goes inside the constraint, as in ", Cell[BoxData[RowBox[{ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Child"], "[", "n$ : p$", "]"}]], "InlineFormula"], " or ", Cell[BoxData[RowBox[{ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Child"], "[", "p$?f$", "]"}]], "InlineFormula"], ". On the constraint itself, as in ", Cell[BoxData["n$ : Child[p$]"], "InlineFormula"], " or ", Cell[BoxData["Child[p$]?f$"], "InlineFormula"], ", it gives a message, as there is nothing between an element and its child to bind or test."}], "Notes"],
+
+Cell[TextData[{Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Child"]], "InlineFormula"], " takes one pattern. ", Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Child"]], "InlineFormula"], " with no pattern or several gives ", Cell[BoxData["Child::args"], "InlineFormula"], "."}], "Notes"],
+
+Cell[TextData[{Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Child"]], "InlineFormula"], " can only be an argument of the second bracket of ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], ", or of ", Cell[BoxData[ButtonBox["XMLDocument", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLDocument"]], "InlineFormula"], ". Elsewhere, such as the whole pattern or an entry of a list pattern, it gives a message."}], "Notes"],
+
+Cell[TextData[{"The version 3 form ", Cell[BoxData[RowBox[{ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Child"], "[", RowBox[{StyleBox["a", "TI"], ",", StyleBox["b", "TI"]}], "]"}]], "InlineFormula"], ", the children that match ", Cell[BoxData[StyleBox["b", "TI"]], "InlineFormula"], " of the elements that match ", Cell[BoxData[StyleBox["a", "TI"]], "InlineFormula"], ", is ", Cell[BoxData[RowBox[{RowBox[{RowBox[{ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"], "[", StyleBox["t", "TI"], "]"}], "[", RowBox[{ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Child"], "[", "x : b$", "]"}], "]"}], "\[RuleDelayed]", StyleBox["x", "TR"]}]], "InlineFormula"], " in version 4, where ", Cell[BoxData[StyleBox["t", "TI"]], "InlineFormula"], " is the tag of ", Cell[BoxData[StyleBox["a", "TI"]], "InlineFormula"], "."}], "Notes"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "See Also",
+ Cell[BoxData[
+  TemplateBox[{"SeeAlso", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell[
+       "Insert links to any related reference (function) pages.", 
+        "MoreInfoText"], BaseStyle -> "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "SeeAlsoSection"],
+
+Cell[TextData[{Cell[BoxData[TemplateBox[{Cell[TextData["XMLPattern"]], "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["Descendant"]], "paclet:MaximilienTirard/HTMLPatterns/ref/Descendant"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLDocument"]], "paclet:MaximilienTirard/HTMLPatterns/ref/XMLDocument"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLCases"]], "paclet:MaximilienTirard/HTMLPatterns/ref/XMLCases"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["XMLMatchQ"]], "paclet:MaximilienTirard/HTMLPatterns/ref/XMLMatchQ"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}], Cell[TextData[StyleBox[" \[FilledVerySmallSquare] ", "InlineSeparator"]]], Cell[BoxData[TemplateBox[{Cell[TextData["FromCSSSelector"]], "paclet:MaximilienTirard/HTMLPatterns/ref/FromCSSSelector"}, "RefLink"]], "InlineSeeAlsoFunction", TaggingRules -> {"PageType" -> "Function"}]}], "SeeAlso"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Tech Notes",
+ Cell[BoxData[
+  TemplateBox[{"TechNotes", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell["Insert links to related tech notes.", "MoreInfoText"], BaseStyle -> 
+       "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "TechNotesSection"],
+
+Cell[TextData[ButtonBox["Scraping HTML with Patterns", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/tutorial/ScrapingHTMLWithPatterns"]], "Tutorials"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Related Guides", "MoreAboutSection"],
+
+Cell[TextData[ButtonBox["HTMLPatterns", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/guide/HTMLPatterns"]], "MoreAbout"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Related Links",
+ Cell[BoxData[
+  TemplateBox[{"RelatedLinks", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell[
+       "Insert links to any related page, including web pages.", 
+        "MoreInfoText"], BaseStyle -> "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "RelatedLinksSection"],
+
+Cell["XXXX", "RelatedLinks"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Examples Initialization",
+ Cell[BoxData[
+  TemplateBox[{"ExamplesInitialization", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell[
+       "Input that is to be evaluated before any examples are run, e.g. \
+Needs[\[Ellipsis]].", "MoreInfoText"], BaseStyle -> "IFrameBox"]], 
+     "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "ExamplesInitializationSection"],
+
+Cell[BoxData[RowBox[{"Needs", "[", "\"MaximilienTirard`HTMLPatterns`\"", "]"}]], "ExampleInitialization"]
+}, Open  ]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[GridBox[{
+    {
+     StyleBox[
+      RowBox[{"Basic", " ", "Examples"}], "PrimaryExamplesSection"], 
+     ButtonBox[
+      RowBox[{
+       RowBox[{"More", " ", "Examples"}], " ", "\[RightTriangle]"}],
+      BaseStyle->"ExtendedExamplesLink",
+      ButtonData:>"ExtendedExamples"]}
+   }],
+  $Line = 0; Null]], "PrimaryExamplesSection"],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give each li child of a ul, but not those of an ol:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"lists", "=", RowBox[{"ImportString", "[", RowBox[{"\"<ul><li>Home</li><li>Docs</li></ul><ol><li>Step one</li></ol>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"lists", ",", RowBox[{RowBox[{RowBox[{"XMLPattern", "[", "\"ul\"", "]"}], "[", RowBox[{"Child", "[", RowBox[{"x", ":", RowBox[{"XMLPattern", "[", "\"li\"", "]"}]}], "]"}], "]"}], ":>", RowBox[{"HTMLTextContent", "[", "x", "]"}]}]}], "]"}]}], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"\"Home\"", ",", "\"Docs\""}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Test whether a figure has an img child:", "ExampleText"], Cell[BoxData["XMLMatchQ[XMLElement[\"figure\", {}, {XMLElement[\"img\", {\"src\" -> \"a.png\"}, {}], XMLElement[\"figcaption\", {}, {\"A\"}]}], XMLPattern[\"figure\"][Child[XMLPattern[\"img\"]]]]"], "Input"],
+
+Cell[BoxData["True"], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "More Examples",
+ Cell[BoxData[
+  TemplateBox[{"MoreExamples", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell["Extended examples in standardized sections.", "MoreInfoText"], 
+       BaseStyle -> "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "ExtendedExamplesSection",
+ CellTags->"ExtendedExamples"],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Scope", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give several Child constraints, all of which must hold:", "ExampleText"], Cell[BoxData["page = ImportString[\"<section id=\\\"a\\\"><h2>Rates</h2><table></table></section><section id=\\\"b\\\"><h2>Notes</h2><p>None.</p></section>\", {\"HTML\", \"XMLObject\"}];
+XMLCases[page, XMLPattern[\"section\", \"id\" -> id_][Child[XMLPattern[\"h2\"]], Child[XMLPattern[\"table\"]]] :> id]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", "\"a\"", "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Name the match of each constraint to get them together:", "ExampleText"], Cell[BoxData["page = ImportString[\"<dl><dt>Term</dt><dd>Definition</dd></dl>\", {\"HTML\", \"XMLObject\"}];
+XMLCases[page, XMLPattern[\"dl\"][Child[t : XMLPattern[\"dt\"]], Child[d : XMLPattern[\"dd\"]]] :> HTMLTextContent[t] -> HTMLTextContent[d]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"\"Term\"", "\[Rule]", "\"Definition\""}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Nest a pattern with a Child constraint of its own, as the selector ", Cell[BoxData["table > tr > td"], "InlineFormula"], " does:"}], "ExampleText"], Cell[BoxData["table = ImportString[\"<table><tr><th>Day</th><td>Friday</td></tr></table>\", {\"HTML\", \"XMLObject\"}];
+XMLCases[table, XMLPattern[\"table\"][Child[XMLPattern[\"tr\"][Child[x : XMLPattern[\"td\"]]]]] :> HTMLTextContent[x]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", "\"Friday\"", "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Combine Child with Descendant, here for a nav with a ul child and a link anywhere below:", "ExampleText"], Cell[BoxData["navs = ImportString[\"<nav id=\\\"main\\\"><ul><li><a href=\\\"/\\\">Home</a></li></ul></nav><nav id=\\\"crumbs\\\"><a href=\\\"/\\\">Home</a></nav>\", {\"HTML\", \"XMLObject\"}];
+XMLCases[navs, XMLPattern[\"nav\", \"id\" -> id_][Child[XMLPattern[\"ul\"]], Descendant[XMLPattern[\"a\"]]] :> id]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", "\"main\"", "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give a CSS selector string for one element as the pattern:", "ExampleText"], Cell[BoxData["lists = ImportString[\"<ul><li class=\\\"done\\\">Draft</li><li>Review</li></ul>\", {\"HTML\", \"XMLObject\"}];
+XMLCases[lists, XMLPattern[\"ul\"][Child[x : \"li:not(.done)\"]] :> HTMLTextContent[x]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", "\"Review\"", "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give alternatives of constraints, here for a div that has an img child or no element children:", "ExampleText"], Cell[BoxData["divs = XMLElement[\"body\", {}, {XMLElement[\"div\", {\"id\" -> \"a\"}, {XMLElement[\"img\", {}, {}]}], XMLElement[\"div\", {\"id\" -> \"b\"}, {\"text\"}], XMLElement[\"div\", {\"id\" -> \"c\"}, {XMLElement[\"p\", {}, {}]}]}];
+XMLCases[divs, XMLPattern[\"div\", \"id\" -> id_][Child[XMLPattern[\"img\"]] | {}] :> id]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"\"a\"", ",", "\"b\""}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Under XMLDocument, Child constrains the top elements of the input:", "ExampleText"], Cell[BoxData["fragments = {XMLElement[\"p\", {}, {\"Intro\"}], XMLElement[\"table\", {\"id\" -> \"rates\"}, {}]};
+XMLCases[fragments, XMLDocument[Child[x : XMLPattern[\"table\"]]] :> x]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"table\"", ",", RowBox[{"{", RowBox[{"\"id\"", "\[Rule]", "\"rates\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "}"}]], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Generalizations & Extensions", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"]}, Open]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "Options", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "XXXX", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "XXXX", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection"]
+}, Open  ]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Applications", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Properties & Relations", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[RowBox[{ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Child"], "[", StyleBox["p", "TI"], "]"}]], "InlineFormula"], " gives what the list constraint ", Cell[BoxData[RowBox[{"{", RowBox[{StyleBox["___", "TR"], ",", StyleBox["p", "TI"], ",", StyleBox["___", "TR"]}], "}"}]], "InlineFormula"], " gives:"}], "ExampleText"], Cell[BoxData["tree = ImportString[\"<ul><li>A<ul><li>B</li></ul></li></ul><ol><li>C</li></ol>\", {\"HTML\", \"XMLObject\"}];
+XMLCases[tree, XMLPattern[_][Child[x : XMLPattern[\"li\"]]] :> x] === XMLCases[tree, XMLPattern[_][{___, x : XMLPattern[\"li\"], ___}] :> x]"], "Input"],
+
+Cell[BoxData["True"], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"It is met by the same elements as ", Cell[BoxData[RowBox[{ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Descendant"], "[", RowBox[{StyleBox["p", "TI"], ",", RowBox[{"{", StyleBox["1", "TR"], "}"}]}], "]"}]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["tree = ImportString[\"<ul><li>A<ul><li>B</li></ul></li></ul><ol><li>C</li></ol>\", {\"HTML\", \"XMLObject\"}];
+XMLCases[tree, XMLPattern[_][Child[XMLPattern[\"li\"]]]] === XMLCases[tree, XMLPattern[_][Descendant[XMLPattern[\"li\"], {1}]]]"], "Input"],
+
+Cell[BoxData["True"], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The CSS selector ", Cell[BoxData["\"ul > li\""], "InlineFormula"], " gives the li children of each ul:"}], "ExampleText"], Cell[BoxData["lists = ImportString[\"<ul><li>Home</li><li>Docs</li></ul><ol><li>Step one</li></ol>\", {\"HTML\", \"XMLObject\"}];
+XMLCases[lists, \"ul > li\"] === XMLCases[lists, XMLPattern[\"ul\"][Child[x : XMLPattern[\"li\"]]] :> x]"], "Input"],
+
+Cell[BoxData["True"], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Possible Issues", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A name on the constraint itself issues a message:", "ExampleText"], Cell[BoxData["lists = ImportString[\"<ul><li>Home</li></ul>\", {\"HTML\", \"XMLObject\"}];
+XMLCases[lists, XMLPattern[\"ul\"][x : Child[XMLPattern[\"li\"]]] :> x]"], "Input"],
+
+Cell["Child::name: x:Child[XMLPattern[\"li\"]] names a Child constraint, which has nothing to bind: between an element and its child there is no element. Name the child instead, as in Child[n : p].", "Message", "MSG"],
+
+Cell[BoxData["$Failed"], "Output"],
+
+Cell["Name the child instead:", "ExampleText"],
+
+Cell[BoxData["XMLCases[lists, XMLPattern[\"ul\"][Child[x : XMLPattern[\"li\"]]] :> x]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Home\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Child takes one pattern:", "ExampleText"], Cell[BoxData["page = ImportString[\"<dl><dt>Term</dt><dd>Definition</dd></dl>\", {\"HTML\", \"XMLObject\"}];
+XMLCases[page, XMLPattern[\"dl\"][Child[XMLPattern[\"dt\"], XMLPattern[\"dd\"]]]]"], "Input"],
+
+Cell["Child::args: Child[XMLPattern[\"dt\"], XMLPattern[\"dd\"]] is not a constraint: Child takes one pattern. For children that match several patterns, give several constraints, as in XMLPattern[tag][Child[a], Child[b]], or, for children in an order, a list, as in XMLPattern[tag][{___, a, ___, b, ___}].", "Message", "MSG"],
+
+Cell[BoxData["$Failed"], "Output"],
+
+Cell["Give two constraints for children in any order:", "ExampleText"],
+
+Cell[BoxData["XMLCases[page, XMLPattern[\"dl\"][Child[XMLPattern[\"dd\"]], Child[XMLPattern[\"dt\"]]]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"dl\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"dt\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Term\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"dd\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Definition\"", "}"}]}], "]"}]}], "}"}]}], "]"}], "}"}]], "Output"],
+
+Cell["Give a list for children in an order, here next to each other:", "ExampleText"],
+
+Cell[BoxData["XMLCases[page, XMLPattern[\"dl\"][{___, XMLPattern[\"dt\"], XMLPattern[\"dd\"], ___}]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"dl\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"dt\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Term\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"dd\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Definition\"", "}"}]}], "]"}]}], "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Child is a constraint, so the version 3 form as a query issues a message:", "ExampleText"], Cell[BoxData["lists = ImportString[\"<ul><li>Home</li><li>Docs</li></ul>\", {\"HTML\", \"XMLObject\"}];
+XMLCases[lists, Child[XMLPattern[\"ul\"], XMLPattern[\"li\"]]]"], "Input"],
+
+Cell["Child::place: Child[XMLPattern[\"ul\"], XMLPattern[\"li\"]] is not a pattern. Child is a constraint, which can only be an argument of the bracket after XMLPattern[tag, attrs] or of XMLDocument: XMLPattern[\"ul\"][Child[x : XMLPattern[\"li\"]]] :> x gives the li children of each ul. In version 3, Child[a, b] gave the children that match b of the elements that match a; in version 4 that is the rule above. Child takes one pattern: for children that match several patterns, give several constraints, Child[a], Child[b], or a list, {___, a, ___, b, ___}.", "Message", "MSG"],
+
+Cell[BoxData["$Failed"], "Output"],
+
+Cell["Nest the patterns as the document is, and name what to give:", "ExampleText"],
+
+Cell[BoxData["XMLCases[lists, XMLPattern[\"ul\"][Child[x : XMLPattern[\"li\"]]] :> x]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Home\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Docs\"", "}"}]}], "]"}]}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["An element pattern alone is not a constraint:", "ExampleText"], Cell[BoxData["lists = ImportString[\"<ul><li>Home</li></ul>\", {\"HTML\", \"XMLObject\"}];
+XMLCases[lists, XMLPattern[\"ul\"][XMLPattern[\"li\"]]]"], "Input"],
+
+Cell["XMLPattern::constraint: XMLPattern[\"li\"] is not a constraint. The constraints on what is below an element are the arguments of the bracket after XMLPattern[tag, attrs], as in XMLPattern[tag, attrs][c1, c2, ...]: Child[p] for some element child that matches p, a list pattern over its element children, as in {p} for an only child, or Descendant[p] for an element anywhere below. Attribute constraints go in the first bracket, several in one list: XMLPattern[tag, {a1, a2, ...}].", "Message", "MSG"],
+
+Cell[BoxData["$Failed"], "Output"],
+
+Cell[TextData[{"Give ", Cell[BoxData[RowBox[{ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Child"], "[", StyleBox["p", "TI"], "]"}]], "InlineFormula"], " for some child that matches ", Cell[BoxData[StyleBox["p", "TI"]], "InlineFormula"], ", or ", Cell[BoxData[RowBox[{"{", StyleBox["p", "TI"], "}"}]], "InlineFormula"], " for an only child:"}], "ExampleText"],
+
+Cell[BoxData["{XMLCases[lists, XMLPattern[\"ul\"][Child[XMLPattern[\"li\"]]]], XMLCases[lists, XMLPattern[\"ul\"][{XMLPattern[\"li\"]}]]}"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"ul\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Home\"", "}"}]}], "]"}], "}"}]}], "]"}], "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"ul\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Home\"", "}"}]}], "]"}], "}"}]}], "]"}], "}"}]}], "}"}]], "Output"]}, Open]]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Interactive Examples", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[
+ InterpretationBox[Cell[
+  "Neat Examples", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection"]}, Open]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Metadata", "MetadataSection"],
+
+Cell[TextData[{
+ "New in: ",
+ Cell["XX", "HistoryData",
+  CellTags->"New"],
+ " | Modified in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Modified"],
+ " | Obsolete in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Obsolete"]
+}], "History"],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Categorization",
+ Cell[BoxData[
+  TemplateBox[{"Metadata", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell[
+       "Metadata such as page URI, context, and type of documentation page.", 
+        "MoreInfoText"], BaseStyle -> "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "CategorizationSection"],
+
+Cell["Symbol", "Categorization",
+ CellLabel->"Entity Type"],
+
+Cell["MaximilienTirard/HTMLPatterns", "Categorization",
+ CellLabel->"Paclet Name"],
+
+Cell["MaximilienTirard`HTMLPatterns`", "Categorization",
+ CellLabel->"Context"],
+
+Cell["MaximilienTirard/HTMLPatterns/ref/Child", "Categorization",
+ CellLabel->"URI"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Keywords", "KeywordsSection"],
+
+Cell["XXXX", "Keywords"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Syntax Templates", "TemplatesSection"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Additional Function Template"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Arguments Pattern"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Local Variables"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Color Equal Signs"]
+}, Closed]]
+}, Open  ]]
+},
+TaggingRules->Association["Paclet" -> "None"],
+CellContext->"Global`",
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "FunctionPageStylesExt.nb", 
+  CharacterEncoding -> "UTF-8"]
+]
+(* End of Notebook Content *)

@@ -332,7 +332,7 @@ Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"
 
 Cell["XMLPattern::nolistreading: The key \"relList\" looks like a list key, but \"rel\" has no reading, so \"relList\" is matched as an attribute of that name. To match the tokens of \"rel\", add a reading: $AttributeReadings[\"rel\"] = <||> for the session, or \"AttributeReadings\" -> <|\"rel\" -> <||>|> in the call.", "Message", "MSG"],
 
-Cell["XMLPattern::constraint: \"AttributeReadings\" -> <|\"rel\" -> <||>|> is not a constraint. The constraints on what is below an element are the arguments of the bracket after XMLPattern[tag, attrs], as in XMLPattern[tag, attrs][c1, c2, ...]: a list pattern over its element children, as in {___, p, ___}, or Descendant[p] for an element anywhere below. Attribute constraints go in the first bracket, several in one list: XMLPattern[tag, {a1, a2, ...}].", "Message", "MSG"],
+Cell["XMLPattern::constraint: \"AttributeReadings\" -> <|\"rel\" -> <||>|> is not a constraint. The constraints on what is below an element are the arguments of the bracket after XMLPattern[tag, attrs], as in XMLPattern[tag, attrs][c1, c2, ...]: Child[p] for some element child that matches p, a list pattern over its element children, as in {p} for an only child, or Descendant[p] for an element anywhere below. Attribute constraints go in the first bracket, several in one list: XMLPattern[tag, {a1, a2, ...}].", "Message", "MSG"],
 
 Cell[BoxData["$Failed"], "Output"],
 

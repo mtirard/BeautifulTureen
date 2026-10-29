@@ -173,7 +173,7 @@ Cell[BoxData[RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBo
 
 Cell["Find the first link that is a child of a list item:", "ExampleText"],
 
-Cell[BoxData[RowBox[{"XMLFirstCase", "[", RowBox[{"tree", ",", RowBox[{RowBox[{RowBox[{"XMLPattern", "[", "\"li\"", "]"}], "[", RowBox[{"{", RowBox[{"___", ",", RowBox[{"x", ":", RowBox[{"XMLPattern", "[", "\"a\"", "]"}]}], ",", "___"}], "}"}], "]"}], ":>", "x"}]}], "]"}]], "Input"],
+Cell[BoxData["XMLFirstCase[tree, XMLPattern[\"li\"][Child[x : XMLPattern[\"a\"]]] :> x]"], "Input"],
 
 Cell[BoxData[RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{RowBox[{"\"shape\"", "\[Rule]", "\"rect\""}], ",", RowBox[{"\"href\"", "\[Rule]", "\"/miso\""}]}], "}"}], ",", RowBox[{"{", "\"Miso\"", "}"}]}], "]"}]], "Output"],
 
