@@ -7,6 +7,7 @@ PackageScoped[conditionWith]
 (* Used by Query/TreePatterns.wl *)
 PackageScoped[compileWith]
 PackageScoped[xmlPatternFormQ]
+PackageScoped[innermostHead]
 PackageScoped[xmlPatternParts]
 PackageScoped[xmlPatternPartsOrRefuse]
 PackageScoped[bodyConditionQ]
@@ -150,8 +151,10 @@ cXMLPattern[{tag_, attrs_}] := With[{t = cTag[tag]}, XMLElement[t, cAttrs[attrs]
    XMLPattern[tag, attrs, c...], which is no pattern, bracketed its bracket
    form; and None for anything else. *)
 
-xmlPatternFormQ[(h_)[___]] := h === XMLPattern || xmlPatternFormQ[h];
-xmlPatternFormQ[_] := False;
+xmlPatternFormQ[x_] := !AtomQ[x] && innermostHead[x] === XMLPattern;
+
+(* The head that x's heads lead down to, as "sel" for "sel"[a][b]. *)
+innermostHead[x_] := NestWhile[Head, x, !AtomQ[#] &];
 
 xmlPatternParts[XMLPattern[args : Repeated[_, {1, 2}]]] := {{args}, {}};
 xmlPatternParts[XMLPattern[tag_, attrs_, cs__]] := attrsThen[XMLPattern[tag, attrs][cs]];

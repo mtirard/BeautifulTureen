@@ -745,12 +745,12 @@ cssMovedOne[cssPos[e_, a_, b_, XMLPattern[type_String], t_], _, crossed_] /;
 cssMovedOne[__] := cssUnmoved;
 
 (* The tags a compound's pattern can have, or All. *)
-cssTagsOf[XMLPattern[t_String, ___]] := {t};
-cssTagsOf[XMLPattern[t : Verbatim[Alternatives][__String], ___]] := List @@ t;
-cssTagsOf[XMLPattern[r__][___]] := cssTagsOf[XMLPattern[r]];
-cssTagsOf[(Verbatim[PatternTest][p_, _]) | (Verbatim[Pattern][_, p_]) | cssPathed[p_, __]] := cssTagsOf[p];
-cssTagsOf[alts_Alternatives] := With[{ts = cssTagsOf /@ List @@ alts}, If[AllTrue[ts, ListQ], Union @@ ts, All]];
-cssTagsOf[_] := All;
+cssTagsOf[p_] :=
+  With[{ts = Replace[xmlPatternParts[#], {
+        {{t_String, ___}, _} :> {t},
+        {{t : Verbatim[Alternatives][__String], ___}, _} :> List @@ t,
+        _ -> All}] & /@ cssRootsOf[p]},
+    If[AllTrue[ts, ListQ], DeleteDuplicates[Join @@ ts], All]];
 
 (* Plain entries. -of-type on a compound with no type counts the siblings of
    its own tag through a fresh tag name, bound on the compound and shared into
@@ -769,11 +769,8 @@ cssPlainRun[parts_, within_, fwd_, bwd_] :=
 cssOwnTyped[es_, None] := es;
 cssOwnTyped[es_, t_] := es /. cssOwnType -> XMLPattern[Pattern @@ {t, Blank[]}];
 
-cssTagged[XMLPattern[tag_, r___], t_] := XMLPattern[Pattern @@ {t, tag}, r];
-cssTagged[XMLPattern[tag_, r___][cs___], t_] := XMLPattern[Pattern @@ {t, tag}, r][cs];
-cssTagged[Verbatim[PatternTest][p_, f_], t_] := PatternTest[cssTagged[p, t], f];
-cssTagged[Verbatim[Pattern][s_, p_], t_] := Pattern @@ {s, cssTagged[p, t]};
-cssTagged[alts_Alternatives, t_] := cssTagged[#, t] & /@ alts;
+(* The pattern with the tag of each XMLPattern named t. *)
+cssTagged[p_, t_] := cssAtRoots[MapAt[Pattern @@ {t, #} &, #, {1, 1}] &, p];
 
 (* An end with at most one position, written as entries, or with a fixed
    index among all the siblings. *)
@@ -804,27 +801,42 @@ cssFixedSide[ps_, fromEnd_, n_] :=
    strings merged into one, as XMLPattern["h1" | "h2"]. *)
 cssMergedAlternatives[ps_] := cssAlternatives[Values[GroupBy[ps, cssMergeKey, cssMergeTags]]];
 
-cssMergeKey[XMLPattern[t_, r___]] /; cssStringTagQ[t] := {Hold[r]};
-cssMergeKey[XMLPattern[t_, r___][cs___]] /; cssStringTagQ[t] := {Hold[r], Hold[cs]};
-cssMergeKey[p_] := {p, None};
+cssMergeKey[p_] :=
+  Replace[xmlPatternParts[p], {{{t_?cssStringTagQ, r___}, cs_} :> {Hold[r], Hold @@ cs}, _ :> {p, None}}];
 
 cssStringTagQ[t_] := StringQ[t] || MatchQ[t, Verbatim[Alternatives][__String]];
 
 cssMergeTags[{p_}] := p;
-cssMergeTags[ps_] := cssRetagged[First[ps], Alternatives @@ DeleteDuplicates[Join @@ (cssTagsOf /@ ps)]];
-
-cssRetagged[XMLPattern[_, r___], tag_] := XMLPattern[tag, r];
-cssRetagged[XMLPattern[_, r___][cs___], tag_] := XMLPattern[tag, r][cs];
+cssMergeTags[ps_] :=
+  With[{tag = Alternatives @@ DeleteDuplicates[Join @@ (cssTagsOf /@ ps)]},
+    cssAtRoots[ReplacePart[#, {1, 1} -> tag] &, First[ps]]];
 
 (* A constraint added to the XMLPatterns of a compound's pattern, in their
    one constraint bracket: a second bracket would be a chain, which
    XMLPattern refuses. *)
-cssConstrained[XMLPattern[r__][cs___], c_] := XMLPattern[r][cs, c];
-cssConstrained[p : XMLPattern[__], c_] := p[c];
-cssConstrained[Verbatim[PatternTest][p_, f_], c_] := PatternTest[cssConstrained[p, c], f];
-cssConstrained[Verbatim[Pattern][s_, p_], c_] := Pattern @@ {s, cssConstrained[p, c]};
-cssConstrained[alts_Alternatives, c_] := cssConstrained[#, c] & /@ alts;
-cssConstrained[cssPathed[p_, ts_, t_], c_] := cssPathed[cssConstrained[p, c], ts, t];
+cssConstrained[p_, c_] := cssAtRoots[MapAt[Append[c], #, 2] &, p];
+
+(* ---- The pattern roots of a compound's pattern ----
+
+   A compound's pattern is an XMLPattern, or alternatives of patterns, each
+   possibly named, tested or cssPathed; its roots are the patterns inside
+   these. Each XMLPattern root is read and written through its parts, as
+   xmlPatternParts (Compiler.wl) gives them, {{tag, attrs...}, {c...}}. *)
+
+cssRootPositions[Verbatim[PatternTest][p_, _] | cssPathed[p_, __]] := Prepend[#, 1] & /@ cssRootPositions[p];
+cssRootPositions[Verbatim[Pattern][_, p_]] := Prepend[#, 2] & /@ cssRootPositions[p];
+cssRootPositions[alts_Alternatives] :=
+  Join @@ MapIndexed[Function[{a, i}, Join[i, #] & /@ cssRootPositions[a]], List @@ alts];
+cssRootPositions[_] := {{}};
+
+cssRootsOf[p_] := Extract[p, cssRootPositions[p]];
+
+(* p with f applied to the parts of each XMLPattern root. *)
+cssAtRoots[f_, p_] :=
+  MapAt[Replace[xmlPatternParts[#], {parts : {_, _} :> cssBuilt[f[parts]], _ -> #}] &, p, cssRootPositions[p]];
+
+cssBuilt[{args_, {}}] := XMLPattern @@ args;
+cssBuilt[{args_, cs_}] := (XMLPattern @@ args) @@ cs;
 
 (* ---- Constraints on a selector string ----
 
@@ -839,21 +851,16 @@ cssConstrained[cssPathed[p_, ts_, t_], c_] := cssPathed[cssConstrained[p, c], ts
    a selector list, is refused too: the message gives the pattern with the
    constraints in the bracket of each XMLPattern. *)
 
-bracketedFormQ[x_] := stringBracketQ[x] || outerBracketQ[x];
+bracketedFormQ[x_] := stringBracketQ[x] || bracketOnAltsOrTestQ[x];
 
-stringBracketQ[(h_)[___]] := StringQ[h] || stringBracketQ[h];
-stringBracketQ[_] := False;
+stringBracketQ[x_] := !AtomQ[x] && StringQ[innermostHead[x]];
 
-outerBracketQ[(h : _Alternatives | Verbatim[PatternTest][_, _] | Verbatim[Pattern][_, _])[___]] :=
+bracketOnAltsOrTestQ[(h : _Alternatives | Verbatim[PatternTest][_, _] | Verbatim[Pattern][_, _])[___]] :=
   AllTrue[cssRootsOf[h], MatchQ[xmlPatternParts[#], {_, _}] &];
-outerBracketQ[_] := False;
-
-cssRootsOf[Verbatim[PatternTest][p_, _] | Verbatim[Pattern][_, p_]] := cssRootsOf[p];
-cssRootsOf[alts_Alternatives] := Join @@ (cssRootsOf /@ List @@ alts);
-cssRootsOf[p_] := {p};
+bracketOnAltsOrTestQ[_] := False;
 
 (* {"one", pattern} for a bracketed form, or $Failed after the message. *)
-bracketedTree[x_ /; outerBracketQ[x]] :=
+bracketedTree[x_ /; bracketOnAltsOrTestQ[x]] :=
   (Message[XMLPattern::bracket, x, Fold[cssConstrained, Head[x], List @@ x]]; $Failed);
 bracketedTree[x_] :=
   Replace[cssBrackets[x], {
