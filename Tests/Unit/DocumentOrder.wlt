@@ -114,3 +114,39 @@ TestCreate[
   "2",
   TestID -> "first-descendant"
 ];
+
+(* A name that only a Condition on a rule's body uses tries its candidates in
+   the order of the source, text and elements interleaved, though text is not
+   a position. Each Condition passes only on the last item, so every item is
+   sown once. *)
+$textOrderLiteral[items_] := XMLElement["body", {}, {XMLElement["p", {}, items]}];
+
+TestCreate[
+  Reap[XMLCases[$textOrderLiteral[{XMLElement["b", {}, {}], "a"}],
+    XMLElement["p", _, {___, x_, ___}] :> "p" /; (Sow[x]; x === "a")]],
+  {{"p"}, {{XMLElement["b", {}, {}], "a"}}},
+  TestID -> "condition-name-element-before-text"
+];
+
+TestCreate[
+  Reap[XMLCases[$textOrderLiteral[{"a", XMLElement["b", {}, {}]}],
+    XMLElement["p", _, {___, x_, ___}] :> "p" /; (Sow[x]; x === XMLElement["b", {}, {}])]],
+  {{"p"}, {{"a", XMLElement["b", {}, {}]}}},
+  TestID -> "condition-name-text-before-element"
+];
+
+(* Text after the last element child *)
+TestCreate[
+  Reap[XMLCases[$textOrderLiteral[{"a", XMLElement["b", {}, {}], "c"}],
+    XMLElement["p", _, {___, x_, ___}] :> "p" /; (Sow[x]; x === "c")]],
+  {{"p"}, {{"a", XMLElement["b", {}, {}], "c"}}},
+  TestID -> "condition-name-text-after-last-element"
+];
+
+(* Two text items between the same two element children *)
+TestCreate[
+  Reap[XMLCases[$textOrderLiteral[{XMLElement["b", {}, {}], "a", "c", XMLElement["i", {}, {}]}],
+    XMLElement["p", _, {___, x_, ___}] :> "p" /; (Sow[x]; x === XMLElement["i", {}, {}])]],
+  {{"p"}, {{XMLElement["b", {}, {}], "a", "c", XMLElement["i", {}, {}]}}},
+  TestID -> "condition-name-two-texts-in-one-gap"
+];
