@@ -122,7 +122,7 @@ TestCreate[
     "Roles" -> {XMLPattern["span", "classList" -> "sr-only"] -> "Skip"}
   ],
   "keep this",
-  TestID -> "innertext-roles-cssclass-skip"
+  TestID -> "innertext-roles-classlist-sr-only-skip"
 ];
 
 (* Roles: a bare string LHS sugars to XMLPattern[string] (exact tag match) *)

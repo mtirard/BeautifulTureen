@@ -211,19 +211,11 @@ TestCreate[
   TestID -> "classlist-firstcase-binding-is-original"
 ];
 
-(* === CSSClass is obsolete === *)
-
+(* An argument of XMLPattern that has already failed with a message fails the
+   consumer quietly after it. *)
 TestCreate[
-  CSSClass["lead"],
+  XMLCases[$mixed, XMLPattern["p", HTMLClassList[3]]],
   $Failed,
-  {CSSClass::obs},
-  TestID -> "cssclass-is-obsolete"
-];
-
-(* Inside a pattern it says so once, and the consumer fails quietly after it. *)
-TestCreate[
-  XMLCases[$mixed, XMLPattern["p", CSSClass["lead"]]],
-  $Failed,
-  {CSSClass::obs},
-  TestID -> "cssclass-is-obsolete-inside-xmlpattern"
+  {HTMLClassList::notelement},
+  TestID -> "classlist-upstream-failure-is-quiet"
 ];
