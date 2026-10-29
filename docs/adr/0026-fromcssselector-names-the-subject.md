@@ -17,14 +17,14 @@ Static Selectors Level 4, literal case, no namespaces, no soupsieve extensions; 
 A **one-element selector** looks only at its subject and below (a compound, downward `:has()`, `:not()`/`:is()`/`:where()` over compounds, a list of these). It is a pattern. A **context selector** picks its subject by what is above or beside it. It is a pattern only once its subject is named.
 
 - `FromCSSSelector[s]` accepts one-element selectors only. A context selector is `FromCSSSelector::name`, which suggests `FromCSSSelector[n : s]`.
-- `FromCSSSelector[n : s]` gives the pattern rooted at the first compound with the subject named `n`: `FromCSSSelector[n : "nav a"]` is `XMLPattern["nav", _, Descendant[n : XMLPattern["a"]]]`.
+- `FromCSSSelector[n : s]` gives the pattern rooted at the first compound with the subject named `n`: `FromCSSSelector[n : "nav a"]` is `XMLPattern["nav"][Descendant[n : XMLPattern["a"]]]`.
 - Consumers that accept an unnamed context selector name its subject themselves, out of sight.
 
 Two substitution statements hold wherever their form is accepted: `s` ⇔ `FromCSSSelector[n : s] :> n` for a fresh `n`, and `n : s` ⇔ `FromCSSSelector[n : s]`. Naming is transparent: where adding `n :` would change an answer, the named form is refused.
 
 ### What the tree form adds
 
-Selector lists become one pattern over alternatives sharing `n`, so their union needs no merge (ADR 0015 ran and merged chains). A parent that may be the document is `XMLPattern[_, _, L] | XMLDocument[L]`. Complex `:not()`, `:is()` and `:where()` over descendant and `>` combinators become tests on the subject's path, so `a:not(nav a)` and `x :is(a b)` translate. `:has(+ …)` and `:has(~ …)` translate, rooted at the parent. `:not(:has(…))` is `XMLFreeQ` with a level spec.
+Selector lists become one pattern over alternatives sharing `n`, so their union needs no merge (ADR 0015 ran and merged chains). A parent that may be the document is `XMLPattern[_][L] | XMLDocument[L]`. A translation writes constraints in the bracket form of ADR 0023, and a named child, `"ul > li"` with the `li` named, as `Child[n : …]`; positional selectors keep their list forms, so the position stays visible. Complex `:not()`, `:is()` and `:where()` over descendant and `>` combinators become tests on the subject's path, so `a:not(nav a)` and `x :is(a b)` translate. `:has(+ …)` and `:has(~ …)` translate, rooted at the parent. `:not(:has(…))` is `XMLFreeQ` with a level spec.
 
 ### Counted positions without conditions over runs
 
