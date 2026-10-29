@@ -42,7 +42,7 @@ TestCreate[
 (* Child: one pattern, named and tested inside, a constraint only. *)
 TestCreate[
   {XMLCases[links, XMLPattern["p"][n : Child[XMLPattern["a"]]] :> n],
-    XMLCases[links, XMLDocument[n : (Child[XMLPattern["a"]] | {})]]},
+    XMLCases[links, XMLDocument[n : Child[XMLPattern["a"]]]]},
   {$Failed, $Failed},
   {Child::name, Child::name},
   TestID -> "tree-message-child-name"
@@ -55,10 +55,20 @@ TestCreate[
 ];
 
 TestCreate[
-  {XMLCases[links, XMLPattern["p"][Child[XMLPattern["a"]]?f]], XMLMatchQ[links[[2]], XMLPattern["p"][(Child[XMLPattern["a"]] | {})?f]]},
+  {XMLCases[links, XMLPattern["p"][Child[XMLPattern["a"]]?f]], XMLMatchQ[links[[2]], XMLPattern["p"][Child[XMLPattern["a"]]?f]]},
   {$Failed, $Failed},
   {Child::test, Child::test},
   TestID -> "tree-message-child-test"
+];
+
+(* A name or a test on alternatives that hold Child is on the alternatives,
+   not on Child: the query is refused as the one with lists for Child is. *)
+TestCreate[
+  {messageTexts[XMLCases[links, XMLPattern["p"][n : Child[XMLPattern["a"]] | {}] :> n]],
+    messageTexts[XMLCases[links, XMLPattern["p"][(Child[XMLPattern["a"]] | {})?f]]]},
+  {messageTexts[XMLCases[links, XMLPattern["p"][n : {___, XMLPattern["a"], ___} | {}] :> n]],
+    messageTexts[XMLCases[links, XMLPattern["p"][({___, XMLPattern["a"], ___} | {})?f]]]},
+  TestID -> "tree-message-child-alternatives-as-lists"
 ];
 
 TestCreate[

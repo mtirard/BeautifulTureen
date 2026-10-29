@@ -582,24 +582,18 @@ cConstraints[cs_List, need_] :=
     Block[{$place = "constraint"}, cConstraint[#, need] & /@ expanded]];
 
 (* Child[p] is the list constraint {___, p, ___}, and compiles as that list,
-   wherever it is a constraint: alone, or a branch of alternatives, under a
-   Condition, Shortest or Longest. A name or a test on it would have no
-   value: between an element and its child there is nothing. *)
+   wherever it is a constraint: alone, or inside alternatives, a name, a
+   test, a Condition, Shortest or Longest, which keep their meaning. Only a
+   name or a test on Child itself would have no value: between an element
+   and its child there is nothing. *)
 childExpanded[Child[p_]] := {___, p, ___};
 childExpanded[c_Child] := refuse[Child::args, c];
-childExpanded[c : Verbatim[Pattern][_, x_]] /; childFormQ[x] := refuse[Child::name, c];
-childExpanded[c : Verbatim[PatternTest][x_, _]] /; childFormQ[x] := refuse[Child::test, c];
-childExpanded[alts_Alternatives] := childExpanded /@ alts;
-(* Not With[..., Condition[e, t]], which would be a condition on this
-   definition and evaluate the test. *)
-childExpanded[c : Verbatim[Condition][x_, _]] := ReplacePart[c, 1 -> childExpanded[x]];
-childExpanded[(h : Shortest | Longest)[x_]] := h[childExpanded[x]];
+childExpanded[c : Verbatim[Pattern][_, _Child]] := refuse[Child::name, c];
+childExpanded[c : Verbatim[PatternTest][_Child, _]] := refuse[Child::test, c];
+(* MapAt rewrites the pattern in place, without evaluating a test. *)
+childExpanded[c : (h : Verbatim[Pattern] | Verbatim[PatternTest] | Verbatim[Condition] | Alternatives | Shortest | Longest)[___]] :=
+  MapAt[childExpanded, c, Replace[h, {Verbatim[Pattern] -> 2, Alternatives -> All, _ -> 1}]];
 childExpanded[c_] := c;
-
-(* A constraint that is Child, or holds one as a branch. *)
-childFormQ[c_] := MatchQ[c, _Child] ||
-  MatchQ[c, Verbatim[Pattern][_, x_] | Verbatim[Condition][x_, _] | Verbatim[PatternTest][x_, _] | (Shortest | Longest)[x_] /; childFormQ[x]] ||
-  MatchQ[c, _Alternatives] && AnyTrue[List @@ c, childFormQ];
 
 cConstraint[d_Descendant, need_] := cDescendant[d, need, None];
 cConstraint[c_, need_] /; pathFormQ[c] :=
