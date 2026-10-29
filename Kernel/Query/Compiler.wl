@@ -145,11 +145,10 @@ cXMLPattern[{tag_, attrs_}] := With[{t = cTag[tag]}, XMLElement[t, cAttrs[attrs]
    written XMLPattern[tag, attrs][c...], with attrs optional and the bracket
    possibly empty. xmlPatternParts[x] gives {{tag}, {c...}} or
    {{tag, attrs}, {c...}}: the arguments of XMLPattern itself, and the
-   constraints. It gives chained[merged] for a pattern with constraints in
-   more than one bracket, p[a][b], merged the one way to write it, p[a, b];
-   attrsThen[bracketed] for constraints after the attributes,
-   XMLPattern[tag, attrs, c...], which is no pattern, bracketed its bracket
-   form; and None for anything else. *)
+   constraints. Two forms are refused, and given with the form to write:
+   chainAsOneBracket[p[a, b]] for p[a][b], and
+   attrsThenAsBracket[XMLPattern[tag, attrs][c...]] for
+   XMLPattern[tag, attrs, c...]. Anything else gives None. *)
 
 xmlPatternFormQ[x_] := !AtomQ[x] && innermostHead[x] === XMLPattern;
 
@@ -157,23 +156,23 @@ xmlPatternFormQ[x_] := !AtomQ[x] && innermostHead[x] === XMLPattern;
 innermostHead[x_] := NestWhile[Head, x, !AtomQ[#] &];
 
 xmlPatternParts[XMLPattern[args : Repeated[_, {1, 2}]]] := {{args}, {}};
-xmlPatternParts[XMLPattern[tag_, attrs_, cs__]] := attrsThen[XMLPattern[tag, attrs][cs]];
+xmlPatternParts[XMLPattern[tag_, attrs_, cs__]] := attrsThenAsBracket[XMLPattern[tag, attrs][cs]];
 xmlPatternParts[(h_)[cs___]] /; xmlPatternFormQ[h] :=
   Replace[xmlPatternParts[h], {
     {head_, {}} /; !MatchQ[h, (_)[___][___]] :> {head, {cs}},
-    {head_, prior_} :> chained[(XMLPattern @@ head) @@ Join[prior, {cs}]],
-    (chained | attrsThen)[XMLPattern[args__][prior___]] :> chained[XMLPattern[args][prior, cs]],
+    {head_, prior_} :> chainAsOneBracket[(XMLPattern @@ head) @@ Join[prior, {cs}]],
+    (chainAsOneBracket | attrsThenAsBracket)[XMLPattern[args__][prior___]] :> chainAsOneBracket[XMLPattern[args][prior, cs]],
     _ -> None}];
 xmlPatternParts[_] := None;
 
 (* The parts of x, an XMLPattern; a chain is refused with XMLPattern::chain,
    constraints after the attributes with XMLPattern::attrsthen, anything else
-   by notOne[x], as the caller's badpat: each package has its own $head. *)
-xmlPatternPartsOrRefuse[x_, notOne_] :=
+   by refuseOther[x], the caller's badpat: each package has its own $head. *)
+xmlPatternPartsOrRefuse[x_, refuseOther_] :=
   Replace[xmlPatternParts[x], {
-    chained[m_] :> refuse[XMLPattern::chain, x, m],
-    attrsThen[b_] :> refuse[XMLPattern::attrsthen, x, b],
-    None :> notOne[x]}];
+    chainAsOneBracket[m_] :> refuse[XMLPattern::chain, x, m],
+    attrsThenAsBracket[b_] :> refuse[XMLPattern::attrsthen, x, b],
+    None :> refuseOther[x]}];
 
 cTag[tag_] := (
   noStringPatterns[tag];
