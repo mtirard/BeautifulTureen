@@ -66,26 +66,26 @@ TestCreate[
 ];
 
 TestCreate[
-  XMLCases[$countNested, XMLPattern["body", _, Descendant[XMLPattern["div", "id" -> id_]]] :> id, 3],
+  XMLCases[$countNested, XMLPattern["body"][Descendant[XMLPattern["div", "id" -> id_]]] :> id, 3],
   {"a", "b", "c"},
   TestID -> "count-tree-pattern-first-n"
 ];
 
 TestCreate[
-  XMLCases[$tree, XMLPattern["div", _, {___, x : XMLPattern["p"], ___}] :> x, 2],
-  Take[XMLCases[$tree, XMLPattern["div", _, {___, x : XMLPattern["p"], ___}] :> x], 2],
+  XMLCases[$tree, XMLPattern["div"][{___, x : XMLPattern["p"], ___}] :> x, 2],
+  Take[XMLCases[$tree, XMLPattern["div"][{___, x : XMLPattern["p"], ___}] :> x], 2],
   TestID -> "count-tree-pattern-gives-elements"
 ];
 
 TestCreate[
-  Reap[XMLCases[$countFlat, XMLPattern["ul", _, {___, x : XMLPattern["li"], ___}] :> (Sow[HTMLTextContent[x]]; HTMLTextContent[x]), 2]],
+  Reap[XMLCases[$countFlat, XMLPattern["ul"][{___, x : XMLPattern["li"], ___}] :> (Sow[HTMLTextContent[x]]; HTMLTextContent[x]), 2]],
   {{"1", "2"}, {{"1", "2"}}},
   TestID -> "count-tree-pattern-body-evaluated-only-for-returned-matches"
 ];
 
 TestCreate[
   XMLCases[$countFlat,
-    XMLPattern["ul", _, {___, x : XMLPattern["li"], ___}] :> HTMLTextContent[x] /; EvenQ[ToExpression[HTMLTextContent[x]]], 1],
+    XMLPattern["ul"][{___, x : XMLPattern["li"], ___}] :> HTMLTextContent[x] /; EvenQ[ToExpression[HTMLTextContent[x]]], 1],
   {"2"},
   TestID -> "count-tree-pattern-body-condition"
 ];
@@ -96,7 +96,7 @@ TestCreate[
    early. *)
 TestCreate[
   Reap[XMLCases[$countFlat,
-    XMLPattern["ul", _, {___, x : XMLPattern["li"]?((Sow[First[Last[#]]]; True) &), ___}] :> x, 2]][[2]],
+    XMLPattern["ul"][{___, x : XMLPattern["li"]?((Sow[First[Last[#]]]; True) &), ___}] :> x, 2]][[2]],
   {{"1", "2"}},
   TestID -> "count-tree-pattern-traversal-stops-at-nth-match"
 ] // TagTest["KnownIssue"];

@@ -155,14 +155,14 @@ TestCreate[
 
 TestCreate[
   {XMLMatchQ[el["a"], "nav a"], XMLMatchQ[el["a"], n : "nav a"], XMLFreeQ[nav, "nav a"],
-    XMLCases[nav, XMLPattern["nav", _, {___, "nav a", ___}]], XMLCases[nav, XMLPattern["nav", _, Descendant["nav a"]]]},
+    XMLCases[nav, XMLPattern["nav"][{___, "nav a", ___}]], XMLCases[nav, XMLPattern["nav"][Descendant["nav a"]]]},
   {$Failed, $Failed, $Failed, $Failed, $Failed},
   {XMLMatchQ::badpat, XMLMatchQ::badpat, XMLFreeQ::badpat, XMLCases::badpat, XMLCases::badpat},
   TestID -> "css-tree-context-refused-in-element-slots"
 ];
 
 TestCreate[
-  {XMLMatchQ[e["a", "x"], "a.y, a#x"], XMLCases[nav, n : XMLPattern["nav", _, {___, "a", ___}] :> id[n]]},
+  {XMLMatchQ[e["a", "x"], "a.y, a#x"], XMLCases[nav, n : XMLPattern["nav"][{___, "a", ___}] :> id[n]]},
   {True, {"o", "i"}},
   TestID -> "css-tree-one-element-in-element-slots"
 ];

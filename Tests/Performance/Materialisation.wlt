@@ -22,7 +22,7 @@ TestCreate[
    71 ms. *)
 TestCreate[
   Length @ XMLCases[$big,
-    XMLPattern["body", "classList" -> {}, {___, n : XMLPattern["div", "classList" -> {___, "lead"}], ___}] :> n],
+    XMLPattern["body", "classList" -> {}][{___, n : XMLPattern["div", "classList" -> {___, "lead"}], ___}] :> n],
   5000,
   TimeConstraint -> 0.25,
   TestID -> "perf-tree-classlist-list-5000-elements"
@@ -70,7 +70,7 @@ $deep = XMLObject["Document"][{},
   XMLElement["body", {}, {Nest[XMLElement["div", {}, Append[Table[XMLElement["p", {}, {"x"}], 100], #]] &,
     XMLElement["div", {}, {}], 50]}], {}];
 
-(* As XMLPattern["div", _, Descendant[n : XMLPattern["p"]]]: only the
+(* As XMLPattern["div"][Descendant[n : XMLPattern["p"]]]: only the
    outermost matching div is searched below, as a pattern root whose every
    constraint is a Descendant has a subset of its solutions at an element
    inside another it matches. 18 ms in 3.0.0, 143 ms; 3.2 s searching below
@@ -115,7 +115,7 @@ $trs = XMLElement["tbody", {}, Table[
 (* 9 ms in 3.0.0, 9 ms. *)
 TestCreate[
   Length @ XMLCases[$trs,
-    XMLPattern["tbody", _, {g1___, c : XMLPattern["tr", "classList" -> "a"], g2___} /; c[[3, 1, 3, 1]] === "501"] :> c],
+    XMLPattern["tbody"][{g1___, c : XMLPattern["tr", "classList" -> "a"], g2___} /; c[[3, 1, 3, 1]] === "501"] :> c],
   1,
   TimeConstraint -> 0.1,
   TestID -> "perf-tree-list-condition-unused-names-1000-siblings"

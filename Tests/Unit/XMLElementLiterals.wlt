@@ -12,13 +12,13 @@ listing = doc[XMLElement["ul", {"class" -> "a b"}, {el["li"], " ", el["li", XMLE
 
 (* t is uncounted and repeated, so the two texts must be equal. *)
 TestCreate[
-  XMLCases[row, XMLPattern["tr", _, {h : XMLElement["th", _, {t_String}], ___, XMLElement["td", _, {t_String}], ___}] :> h],
+  XMLCases[row, XMLPattern["tr"][{h : XMLElement["th", _, {t_String}], ___, XMLElement["td", _, {t_String}], ___}] :> h],
   {XMLElement["th", {}, {"a"}]},
   TestID -> "literal-text-repeated-uncounted"
 ];
 
 TestCreate[
-  XMLCases[row, XMLPattern["tr", _, {XMLElement["th", _, {t_String}], ___}] :> t],
+  XMLCases[row, XMLPattern["tr"][{XMLElement["th", _, {t_String}], ___}] :> t],
   $Failed,
   {XMLCases::text},
   TestID -> "literal-text-counted-static"
@@ -26,22 +26,22 @@ TestCreate[
 
 (* A sequence is known to bind text only while matching. *)
 TestCreate[
-  XMLCases[row, XMLPattern["tr", _, {XMLElement["th", _, {s___}], ___}] :> {s}],
+  XMLCases[row, XMLPattern["tr"][{XMLElement["th", _, {s___}], ___}] :> {s}],
   $Failed,
   {XMLCases::text},
   TestID -> "literal-text-counted-sequence"
 ];
 
 TestCreate[
-  XMLPosition[row, XMLPattern["tr", _, {XMLElement["th", _, {t_}], ___}] :> t],
+  XMLPosition[row, XMLPattern["tr"][{XMLElement["th", _, {t_}], ___}] :> t],
   $Failed,
   {XMLPosition::text},
   TestID -> "literal-text-counted-blank-xmlposition"
 ];
 
 TestCreate[
-  {XMLDeleteCases[row, XMLPattern["tr", _, {XMLElement["th", _, {t_String}], ___}] :> t],
-    XMLReplace[row, XMLPattern["tr", _, {XMLElement["th", _, {t_String}], ___}] :> {t -> "b"}]},
+  {XMLDeleteCases[row, XMLPattern["tr"][{XMLElement["th", _, {t_String}], ___}] :> t],
+    XMLReplace[row, XMLPattern["tr"][{XMLElement["th", _, {t_String}], ___}] :> {t -> "b"}]},
   {$Failed, $Failed},
   {XMLDeleteCases::text, XMLReplace::text},
   TestID -> "literal-text-counted-rewrite"
@@ -49,7 +49,7 @@ TestCreate[
 
 (* Uncounted, a name may bind text. *)
 TestCreate[
-  XMLCases[row, (h : XMLPattern["tr", _, {XMLElement["th", _, {s___}], ___}]) /; {s} === {"a"} :> h],
+  XMLCases[row, (h : XMLPattern["tr"][{XMLElement["th", _, {s___}], ___}]) /; {s} === {"a"} :> h],
   {row[[2]]},
   TestID -> "literal-text-uncounted-sequence"
 ];
@@ -69,19 +69,19 @@ TestCreate[
 ];
 
 TestCreate[
-  XMLCases[row, XMLPattern["tr", _, {XMLElement["th", _, {"a"}], x : XMLPattern["td"], ___}] :> x],
+  XMLCases[row, XMLPattern["tr"][{XMLElement["th", _, {"a"}], x : XMLPattern["td"], ___}] :> x],
   {el["td", "a"]},
   TestID -> "literal-contents-list-entry"
 ];
 
 TestCreate[
-  XMLCases[row, XMLPattern["tr", _, Descendant[x : XMLElement["td", _, {"b"}]]] :> x],
+  XMLCases[row, XMLPattern["tr"][Descendant[x : XMLElement["td", _, {"b"}]]] :> x],
   {el["td", "b"]},
   TestID -> "literal-inside-descendant"
 ];
 
 TestCreate[
-  XMLCases[listing, XMLPattern["ul", _, Descendant[x : XMLElement["li", _, {XMLPattern["a"]}]]] :> x],
+  XMLCases[listing, XMLPattern["ul"][Descendant[x : XMLElement["li", _, {XMLPattern["a"]}]]] :> x],
   {listing[[2, 3, 3]]},
   TestID -> "literal-inside-descendant-nested-xmlpattern"
 ];
@@ -109,7 +109,7 @@ TestCreate[
 ];
 
 TestCreate[
-  XMLMatchQ[row[[2]], XMLElement["tr", _, {XMLPattern["th"], XMLPattern["td"], XMLPattern["td", _, {}]}]],
+  XMLMatchQ[row[[2]], XMLElement["tr", _, {XMLPattern["th"], XMLPattern["td"], XMLPattern["td"][{}]}]],
   True,
   TestID -> "literal-xmlmatchq-nested-xmlpattern"
 ];
@@ -130,7 +130,7 @@ TestCreate[
 
 (* Positions count element children only, so the " " between is skipped. *)
 TestCreate[
-  XMLPosition[listing, XMLElement["ul", _, {_, _, x : XMLPattern["li", _, {XMLPattern["a"]}]}] :> x],
+  XMLPosition[listing, XMLElement["ul", _, {_, _, x : XMLPattern["li"][{XMLPattern["a"]}]}] :> x],
   {{1, 2}},
   TestID -> "literal-deep-xmlpattern-position-counts-elements"
 ];
@@ -183,14 +183,14 @@ TestCreate[
 ];
 
 TestCreate[
-  XMLCases[row, XMLPattern["tr", _, {XMLElement["th", _, Except[{x_, y_} /; x =!= y]], ___}] :> x],
+  XMLCases[row, XMLPattern["tr"][{XMLElement["th", _, Except[{x_, y_} /; x =!= y]], ___}] :> x],
   $Failed,
   {XMLCases::exceptname},
   TestID -> "literal-except-name-in-rhs"
 ];
 
 TestCreate[
-  XMLCases[links, XMLPattern["p", _, {Except[x : XMLPattern["a"]] ..., ___}] :> x],
+  XMLCases[links, XMLPattern["p"][{Except[x : XMLPattern["a"]] ..., ___}] :> x],
   $Failed,
   {XMLCases::exceptname},
   TestID -> "literal-except-name-in-rhs"

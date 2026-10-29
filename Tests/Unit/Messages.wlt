@@ -34,7 +34,7 @@ TestCreate[
 
 (* A misplaced XMLDocument[] says where it can stand. *)
 TestCreate[
-  capturedMessages[XMLCases[$msgTree, XMLPattern["article", _, Descendant[XMLDocument[]]]]],
+  capturedMessages[XMLCases[$msgTree, XMLPattern["article"][Descendant[XMLDocument[]]]]],
   {"XMLDocument[...] matches only the document above the top elements, so it can only be a pattern root: the whole query, named, conditioned or tested, or a branch of alternatives at the top, as in XMLPattern[_, _, L] | XMLDocument[L]. It cannot be inside Descendant, an attribute pattern or an XMLElement pattern. Got XMLDocument[]."},
   TestID -> "message-document-placement"
 ];

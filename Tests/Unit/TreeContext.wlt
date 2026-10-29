@@ -53,7 +53,7 @@ TestCreate[
    elements too, as Adjacent was. *)
 TestCreate[
   With[{L = {___, XMLPattern["a"], x : XMLPattern["b"], ___}},
-    XMLCases[{e["a", "1"], e["b", "2"], el["div", e["a", "3"], e["b", "4"]]}, (XMLPattern[_, _, L] | XMLDocument[L]) :> id[x]]],
+    XMLCases[{e["a", "1"], e["b", "2"], el["div", e["a", "3"], e["b", "4"]]}, (XMLPattern[_][L] | XMLDocument[L]) :> id[x]]],
   {"2", "4"},
   TestID -> "document-alternatives-branch"
 ];
@@ -71,7 +71,7 @@ TestCreate[
 (* A named path binds the elements strictly between: a child gives {}, and
    the match's DOM depth below the root is Length[p] + 1. *)
 TestCreate[
-  XMLCases[nav, n : XMLPattern["nav", _, p : Descendant[x : XMLPattern["a"]]] :> {id[n], id[x], Length[p] + 1}],
+  XMLCases[nav, n : XMLPattern["nav"][p : Descendant[x : XMLPattern["a"]]] :> {id[n], id[x], Length[p] + 1}],
   {{"o", "a1", 1}, {"o", "a2", 2}, {"o", "a3", 1}, {"i", "a2", 1}},
   TestID -> "path-named-depth"
 ];
@@ -79,13 +79,13 @@ TestCreate[
 (* Counting a path counts both its ends; it sorts by its lower end, then its
    upper end. *)
 TestCreate[
-  XMLCases[nav, XMLPattern["nav", _, p : Descendant[x : XMLPattern["a"]]] :> {id[x], Length[p] + 1}],
+  XMLCases[nav, XMLPattern["nav"][p : Descendant[x : XMLPattern["a"]]] :> {id[x], Length[p] + 1}],
   {{"a1", 1}, {"a2", 2}, {"a2", 1}, {"a3", 1}},
   TestID -> "path-counts-both-ends"
 ];
 
 TestCreate[
-  {XMLCases[nav, XMLPattern["nav", "id" -> "o", p : Descendant[XMLPattern["a", "id" -> "a2"]]] :> id /@ p],
+  {XMLCases[nav, XMLPattern["nav", "id" -> "o"][p : Descendant[XMLPattern["a", "id" -> "a2"]]] :> id /@ p],
     XMLCases[nav, XMLDocument[p : Descendant[XMLPattern["a", "id" -> "a2"]]] :> id /@ p]},
   {{{"i"}}, {{"o", "i"}}},
   TestID -> "path-value"
@@ -94,26 +94,26 @@ TestCreate[
 (* === Shortest and Longest === *)
 
 TestCreate[
-  XMLCases[nav, n : XMLPattern["nav", _, Descendant[x : XMLPattern["a"]]] :> {id[n], id[x]}],
+  XMLCases[nav, n : XMLPattern["nav"][Descendant[x : XMLPattern["a"]]] :> {id[n], id[x]}],
   {{"o", "a1"}, {"o", "a2"}, {"o", "a3"}, {"i", "a2"}},
   TestID -> "nearest-unfiltered"
 ];
 
 TestCreate[
-  XMLCases[nav, n : XMLPattern["nav", _, Shortest@Descendant[x : XMLPattern["a"]]] :> {id[n], id[x]}],
+  XMLCases[nav, n : XMLPattern["nav"][Shortest@Descendant[x : XMLPattern["a"]]] :> {id[n], id[x]}],
   {{"o", "a1"}, {"o", "a3"}, {"i", "a2"}},
   TestID -> "nearest-shortest"
 ];
 
 TestCreate[
-  XMLCases[nav, n : XMLPattern["nav", _, Longest@Descendant[x : XMLPattern["a"]]] :> {id[n], id[x]}],
+  XMLCases[nav, n : XMLPattern["nav"][Longest@Descendant[x : XMLPattern["a"]]] :> {id[n], id[x]}],
   {{"o", "a1"}, {"o", "a2"}, {"o", "a3"}},
   TestID -> "nearest-longest"
 ];
 
 (* With the root not counted, Shortest changes nothing. *)
 TestCreate[
-  XMLCases[nav, XMLPattern["nav", _, Shortest@Descendant[x : XMLPattern["a"]]] :> id[x]],
+  XMLCases[nav, XMLPattern["nav"][Shortest@Descendant[x : XMLPattern["a"]]] :> id[x]],
   {"a1", "a2", "a3"},
   TestID -> "nearest-root-uncounted"
 ];
@@ -121,13 +121,13 @@ TestCreate[
 (* Shortest compares the whole root pattern; a path test compares what it
    says. B has no caption, so it does not shadow A. *)
 TestCreate[
-  XMLCases[tables, n : XMLPattern["table", _, {XMLPattern["caption"], ___}, Shortest@Descendant[x : XMLPattern["td"]]] :> {id[n], id[x]}],
+  XMLCases[tables, n : XMLPattern["table"][{XMLPattern["caption"], ___}, Shortest@Descendant[x : XMLPattern["td"]]] :> {id[n], id[x]}],
   {{"A", "o"}, {"A", "t"}},
   TestID -> "nearest-whole-root-pattern"
 ];
 
 TestCreate[
-  XMLCases[tables, n : XMLPattern["table", _, {XMLPattern["caption"], ___}, Descendant[x : XMLPattern["td"]]?(NoneTrue[XMLMatchQ["table"]])] :> {id[n], id[x]}],
+  XMLCases[tables, n : XMLPattern["table"][{XMLPattern["caption"], ___}, Descendant[x : XMLPattern["td"]]?(NoneTrue[XMLMatchQ["table"]])] :> {id[n], id[x]}],
   {{"A", "o"}},
   TestID -> "path-test-whole-path"
 ];
@@ -137,17 +137,17 @@ TestCreate[
    result. *)
 TestCreate[
   {XMLCases[nav, XMLDocument[Shortest@Descendant[x : XMLPattern["a"]]] :> id[x]],
-    XMLCases[links, XMLPattern["p", _, {Shortest[x__], ___}] :> Length[{x}]],
-    XMLCases[links, XMLPattern["p", _, {x__, ___}] :> Length[{x}]]},
+    XMLCases[links, XMLPattern["p"][{Shortest[x__], ___}] :> Length[{x}]],
+    XMLCases[links, XMLPattern["p"][{x__, ___}] :> Length[{x}]]},
   {{"a1", "a2", "a3"}, {3, 2, 1}, {3, 2, 1}},
   TestID -> "nearest-no-effect"
 ];
 
 (* A path can be conditioned, and a test on it can be uncounted. *)
 TestCreate[
-  {XMLCases[nav, XMLPattern["nav", _, (p : Descendant[x : XMLPattern["a"]]) /; Length[p] > 0] :> id[x]],
-    XMLCases[nav, XMLPattern["nav", _, p : Descendant[x : XMLPattern["a"]]] :> id[x] /; Length[p] > 0],
-    XMLFirstCase[nav, n : XMLPattern["nav", _, p : Descendant[x : XMLPattern["a"]]] :> {id[n], id[x], Length[p]}]},
+  {XMLCases[nav, XMLPattern["nav"][(p : Descendant[x : XMLPattern["a"]]) /; Length[p] > 0] :> id[x]],
+    XMLCases[nav, XMLPattern["nav"][p : Descendant[x : XMLPattern["a"]]] :> id[x] /; Length[p] > 0],
+    XMLFirstCase[nav, n : XMLPattern["nav"][p : Descendant[x : XMLPattern["a"]]] :> {id[n], id[x], Length[p]}]},
   {{"a2"}, {"a2"}, {"o", "a1", 0}},
   TestID -> "path-conditioned"
 ];
@@ -155,9 +155,9 @@ TestCreate[
 (* A bare input is context: a tuple counting its position, directly or as
    the upper end of a counted path, is dropped. *)
 TestCreate[
-  {XMLCases[nav[[2]], n : XMLPattern["nav", _, Descendant[x : XMLPattern["a"]]] :> {id[n], id[x]}],
-    XMLCases[nav[[2]], XMLPattern["nav", _, p : Descendant[x : XMLPattern["a"]]] :> {id[x], Length[p] + 1}],
-    XMLCases[nav[[2]], XMLPattern["nav", _, Descendant[x : XMLPattern["a"]]] :> id[x]],
+  {XMLCases[nav[[2]], n : XMLPattern["nav"][Descendant[x : XMLPattern["a"]]] :> {id[n], id[x]}],
+    XMLCases[nav[[2]], XMLPattern["nav"][p : Descendant[x : XMLPattern["a"]]] :> {id[x], Length[p] + 1}],
+    XMLCases[nav[[2]], XMLPattern["nav"][Descendant[x : XMLPattern["a"]]] :> id[x]],
     XMLCases[nav[[2]], XMLDocument[p : Descendant[x : XMLPattern["a", "id" -> "a2"]]] :> id /@ p]},
   {{{"i", "a2"}}, {{"a2", 1}}, {"a1", "a2", "a3"}, {{"o", "i"}}},
   TestID -> "path-bare-input"
@@ -166,7 +166,7 @@ TestCreate[
 (* === Refusals === *)
 
 TestCreate[
-  {XMLCases[links, XMLPattern["ul", _, Shortest[{___, XMLPattern["li"]}]]],
+  {XMLCases[links, XMLPattern["ul"][Shortest[{___, XMLPattern["li"]}]]],
     XMLCases[links, XMLDocument[Longest[{___}]]]},
   {$Failed, $Failed},
   {XMLPattern::shortest, XMLDocument::shortest},
@@ -176,7 +176,7 @@ TestCreate[
 (* === XMLDocument refusals === *)
 
 TestCreate[
-  {XMLCases[nav, XMLPattern["nav", _, Descendant[XMLDocument[]]]],
+  {XMLCases[nav, XMLPattern["nav"][Descendant[XMLDocument[]]]],
     XMLCases[nav, XMLPattern["nav", "id" -> XMLDocument[]]],
     XMLCases[nav, XMLElement["nav", _, {XMLDocument[]}]]},
   {$Failed, $Failed, $Failed},
@@ -185,7 +185,7 @@ TestCreate[
 ];
 
 TestCreate[
-  {XMLCases[nav, XMLPattern["nav", _, {___, XMLDocument[], ___}]],
+  {XMLCases[nav, XMLPattern["nav"][{___, XMLDocument[], ___}]],
     XMLCases[nav, XMLDocument[{___, XMLDocument[], ___}]],
     XMLCases[nav, XMLDocument[{___, Descendant[XMLPattern["a"]]}]]},
   {$Failed, $Failed, $Failed},

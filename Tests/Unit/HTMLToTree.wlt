@@ -234,7 +234,7 @@ $list3 = XMLElement["ul", {}, {XMLElement["li", {}, {"1"}], XMLElement["li", {},
   XMLElement["li", {}, {"3"}]}];
 
 TestCreate[
-  shape[HTMLToTree[$list3, "Hide" -> (XMLPattern["ul", _, {___, XMLPattern["li"], x : XMLPattern["li"], ___}] :> x)]],
+  shape[HTMLToTree[$list3, "Hide" -> (XMLPattern["ul"][{___, XMLPattern["li"], x : XMLPattern["li"], ___}] :> x)]],
   shell["ul"] -> {shell["li"] -> {"1"}},
   TestID -> "htt-hide-adjacent-original-input"
 ];
@@ -348,7 +348,7 @@ TestCreate[
 
 (* Matching is on the original input, for rules, CSS and alternatives *)
 TestCreate[
-  shape[HTMLToTree[$list3, "Focus" -> (XMLPattern["ul", _, {___, XMLPattern["li"], x : XMLPattern["li"], ___}] :> x)]],
+  shape[HTMLToTree[$list3, "Focus" -> (XMLPattern["ul"][{___, XMLPattern["li"], x : XMLPattern["li"], ___}] :> x)]],
   shell["ul"] -> {collapsed[1], shell["li"] -> {"2"}, shell["li"] -> {"3"}},
   TestID -> "htt-focus-adjacent"
 ];
@@ -477,16 +477,16 @@ TestCreate[
 $nav6 = doc[e["nav", "o", e["a", "a1"], e["nav", "i", e["a", "a2"]], e["a", "a3"]]];
 
 TestCreate[
-  shape /@ {HTMLToTree[$nav6, "Hide" -> (XMLPattern["nav", _, {___, x : XMLPattern["nav"], ___}] :> x)],
-    HTMLToTree[$nav6, "Focus" -> (XMLPattern["nav", _, {___, x : XMLPattern["nav"], ___}] :> x)]},
+  shape /@ {HTMLToTree[$nav6, "Hide" -> (XMLPattern["nav"][{___, x : XMLPattern["nav"], ___}] :> x)],
+    HTMLToTree[$nav6, "Focus" -> (XMLPattern["nav"][{___, x : XMLPattern["nav"], ___}] :> x)]},
   {"#document" -> {shell["nav", {"id" -> "o"}] -> {shell["a", {"id" -> "a1"}], shell["a", {"id" -> "a3"}]}},
     "#document" -> {collapsed[1], shell["nav", {"id" -> "i"}] -> {shell["a", {"id" -> "a2"}]}, collapsed[1]}},
   TestID -> "htt-rule-target-element"
 ];
 
 TestCreate[
-  shape /@ {HTMLToTree[$nav6, "Hide" -> (XMLPattern["nav", _, {_, s__}] :> s)],
-    HTMLToTree[$nav6, "Focus" -> (XMLPattern["nav", _, {_, s__}] :> s)]},
+  shape /@ {HTMLToTree[$nav6, "Hide" -> (XMLPattern["nav"][{_, s__}] :> s)],
+    HTMLToTree[$nav6, "Focus" -> (XMLPattern["nav"][{_, s__}] :> s)]},
   {"#document" -> {shell["nav", {"id" -> "o"}] -> {shell["a", {"id" -> "a1"}]}},
     "#document" -> {collapsed[1], shell["nav", {"id" -> "i"}] -> {shell["a", {"id" -> "a2"}]}, shell["a", {"id" -> "a3"}]}},
   TestID -> "htt-rule-target-run"
@@ -507,8 +507,8 @@ $refusedTargets = {
   XMLPattern["a", "href" -> h_] :> h,
   XMLPattern["p", "classList" -> c_] :> c,
   XMLPattern["p", "classList" -> {___, c : "lead", ___}] :> c,
-  XMLPattern["p", _, {_, g___, _}] :> g,
-  XMLPattern["body", _, p : Descendant[XMLPattern["a"]]] :> p};
+  XMLPattern["p"][{_, g___, _}] :> g,
+  XMLPattern["body"][p : Descendant[XMLPattern["a"]]] :> p};
 $refusedInput = doc[el["body", XMLElement["p", {"class" -> "lead"}, {XMLElement["a", {"href" -> "/x"}, {}], el["b"]}]]];
 
 $refusedPositions = {"{1, 0}", "{1, 1, 1, Key[All]}", "{1, 1, 1, Key[\"href\"]}", "{1, 1, Key[\"classList\"]}",
