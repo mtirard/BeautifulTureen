@@ -839,7 +839,9 @@ itemMissing[v_] := Missing[If[!FreeQ[v, _String, {0, 1}], "Text", "Literal"]];
    only WL's patterns can match it. *)
 textMatch[nd_, i_, k_] := memoised[{"Text", nd["Id"], i, k}, textKind[nd["Kind"], nd, i, k]];
 
-textItemMatch[i_, k_] := With[{v = elemOf[i][[3, k]]}, nameMatch[{itemMissing[v]}, v, Join[elemKey[i], textItemKey[k]]]];
+textItemMatch[i_, k_] :=
+  With[{items = elemOf[i][[3]]},
+    nameMatch[{itemMissing[items[[k]]]}, items[[k]], Join[elemKey[i], textItemKey[Count[Take[items, k], _XMLElement] + 1, k]]]];
 
 textKind["Named", nd_, i_, k_] :=
   With[{sols = textMatch[nd["Sub"], i, k]},

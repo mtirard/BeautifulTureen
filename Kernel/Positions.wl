@@ -51,9 +51,14 @@ topItems[input_] := Replace[input, {XMLObject["Document"][_, r_, _] :> {r}, l_Li
      the last attribute when it is absent), {2, j, 1}, followed by a token,
      run or gap of that list as sequenceKey[2, ...] gives it
    - contentsKey, the contents, {3}
-   - textItemKey[k], the k-th item of the contents when it is text or another
-     item that is not an element, {3, k}; text is not a position (ADR 0025),
-     so this orders only names a query uses in its tests
+   - textItemKey[m, k], the k-th item of the contents when it is text or
+     another item that is not an element, with m - 1 element children before
+     it: the gap before element child m, then k, {4, m, 0, k}. Text is not a
+     position (ADR 0025), so this orders only names a query uses in its tests,
+     in the order of the source: after element child m - 1's subtree and the
+     gap, before the runs that start at element child m and before element
+     child m itself. Text after the last element child is in the gap at the
+     end
    - an element child, run or gap of the children, as sequenceKey[4, ...]
      gives it.
    Among the element children (h 4) or tokens (h 2) of one list, sequenceKey
@@ -66,7 +71,7 @@ attributeMapKey[] := {1};
 attributeKey[j_] := {2, j, 0};
 tokenListKey[j_] := {2, j, 1};
 contentsKey[] := {3};
-textItemKey[k_] := {3, k};
+textItemKey[m_, k_] := Append[sequenceKey[4, m ;; m - 1], k];
 
 sequenceKey[h_, i_Integer] := {h, i, 2};
 sequenceKey[h_, Span[m_, n_]] := If[n == m - 1, {h, m, 0}, {h, m, 1, -n}];
