@@ -29,7 +29,8 @@ Cell[BoxData[GridBox[{
 {Cell["      ", "ModInfo"], Cell[TextData[{"left of a rule, ", Cell[BoxData[RowBox[{"n : \"selector$\"", "\[RuleDelayed]", StyleBox["rhs", "TI"]}]], "InlineFormula"]}], "TableText"], Cell[TextData[{Cell[BoxData[StyleBox["n", "TR"]], "InlineFormula"], " is the element"}], "TableText"], Cell[TextData[{Cell[BoxData[StyleBox["n", "TR"]], "InlineFormula"], " is the selected element"}], "TableText"]},
 {Cell["      ", "ModInfo"], Cell[TextData[{"left of a rule, ", Cell[BoxData[RowBox[{"\"\<\!\(\*StyleBox[\"selector\", \"TI\"]\)\>\"", "\[RuleDelayed]", StyleBox["rhs", "TI"]}]], "InlineFormula"]}], "TableText"], Cell["the element is the pattern root", "TableText"], Cell["not accepted", "TableText"]},
 {Cell["      ", "ModInfo"], Cell[TextData[{"a key in ", Cell[BoxData["\"Roles\""], "InlineFormula"], " or ", Cell[BoxData["\"Constructs\""], "InlineFormula"]}], "TableText"], Cell["a test of each element", "TableText"], Cell["a query over the whole tree", "TableText"]},
-{Cell["      ", "ModInfo"], Cell[TextData[{Cell[BoxData[ButtonBox["XMLMatchQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLMatchQ"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["XMLFreeQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLFreeQ"]], "InlineFormula"], ", a list entry, ", Cell[BoxData[ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Descendant"]], "InlineFormula"]}], "TableText"], Cell["a test of the element", "TableText"], Cell["not accepted", "TableText"]}
+{Cell["      ", "ModInfo"], Cell[TextData[{Cell[BoxData[ButtonBox["XMLMatchQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLMatchQ"]], "InlineFormula"], ", ", Cell[BoxData[ButtonBox["XMLFreeQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLFreeQ"]], "InlineFormula"], ", a list entry, ", Cell[BoxData[ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Descendant"]], "InlineFormula"]}], "TableText"], Cell["a test of the element", "TableText"], Cell["not accepted", "TableText"]},
+{Cell["      ", "ModInfo"], Cell[TextData[{Cell[BoxData["\"selector$\"[c$1, c$2, $$]"], "InlineFormula"], ", with constraints"}], "TableText"], Cell[TextData[{"the pattern with each ", Cell[BoxData[SubscriptBox[StyleBox["c", "TI"], StyleBox["i", "TI"]]], "InlineFormula"], " added to each ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], " in it"}], "TableText"], Cell["not accepted", "TableText"]}
 }]], "3ColumnTableMod"],
 
 Cell[TextData[{"A selector list such as ", Cell[BoxData["\"h2, h3 > p\""], "InlineFormula"], " gives alternatives that share the name of the selected element. Each element it selects is given once, in document order."}], "Notes"],
@@ -66,7 +67,9 @@ Cell[TextData[{"The arguments of ", Cell[BoxData[":not"], "InlineFormula"], ", "
 
 Cell[TextData[{Cell[BoxData["[a~=v]"], "InlineFormula"], " needs a reading for ", Cell[BoxData[StyleBox["a", "TR"]], "InlineFormula"], " unless ", Cell[BoxData[StyleBox["a", "TR"]], "InlineFormula"], " is ", Cell[BoxData[StyleBox["class", "TR"]], "InlineFormula"], ": the reading for ", Cell[BoxData[StyleBox["class", "TR"]], "InlineFormula"], " is in ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/$AttributeReadings"]], "InlineFormula"], " by default. Give it with ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/$AttributeReadings"]], "InlineFormula"], " or with the ", Cell[BoxData["\"AttributeReadings\""], "InlineFormula"], " option of the function that runs the query."}], "Notes"],
 
-Cell[TextData[{Cell[BoxData[ButtonBox["FromCSSSelector", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/FromCSSSelector"]], "InlineFormula"], " issues a message and returns ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], " for a string that is not a valid CSS selector, for a valid selector that it cannot translate, such as ", Cell[BoxData[":lang(fr)"], "InlineFormula"], ", and for one that only a browser can match, such as ", Cell[BoxData[":hover"], "InlineFormula"], "."}], "Notes"]
+Cell[TextData[{Cell[BoxData[ButtonBox["FromCSSSelector", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/FromCSSSelector"]], "InlineFormula"], " issues a message and returns ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], " for a string that is not a valid CSS selector, for a valid selector that it cannot translate, such as ", Cell[BoxData[":lang(fr)"], "InlineFormula"], ", and for one that only a browser can match, such as ", Cell[BoxData[":hover"], "InlineFormula"], "."}], "Notes"],
+
+Cell[TextData[{"A one-element selector string takes constraints as ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], " does: ", Cell[BoxData["\"ul.c\"[{___, x : \"li\", ___}]"], "InlineFormula"], " is ", Cell[BoxData[RowBox[{ButtonBox["FromCSSSelector", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/FromCSSSelector"], "[", "\"ul.c\"", "]"}]], "InlineFormula"], " with the constraint in its bracket, and on a selector list each selector takes the constraints. A bracket can be added to ", Cell[BoxData[RowBox[{ButtonBox["FromCSSSelector", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/FromCSSSelector"], "[", "\"\<\!\(\*StyleBox[\"selector\", \"TI\"]\)\>\"", "]"}]], "InlineFormula"], " itself only when the result is one ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], " with no constraints; otherwise give the constraints to the selector string."}], "Notes"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -310,7 +313,17 @@ Cell[BoxData[RowBox[{RowBox[{"XMLPattern", "[", "\"tr\"", "]"}], "[", RowBox[{"{
 
 Cell[BoxData[RowBox[{"XMLCases", "[", RowBox[{"holidays", ",", RowBox[{RowBox[{RowBox[{"XMLPattern", "[", "\"tr\"", "]"}], "[", RowBox[{"{", RowBox[{RowBox[{"d", ":", RowBox[{"XMLPattern", "[", "\"th\"", "]"}]}], ",", "___", ",", RowBox[{"n", ":", RowBox[{"XMLPattern", "[", "\"td\"", "]"}]}], ",", "___"}], "}"}], "]"}], ":>", RowBox[{"HTMLTextContent", "/@", RowBox[{"{", RowBox[{"d", ",", "n"}], "}"}]}]}]}], "]"}]], "Input"],
 
-Cell[BoxData[RowBox[{"{", RowBox[{"{", RowBox[{"\"25 December\"", ",", "\"Christmas Day\""}], "}"}], "}"}]], "Output"]}, Open]]}, Open]]}, Open]],
+Cell[BoxData[RowBox[{"{", RowBox[{"{", RowBox[{"\"25 December\"", ",", "\"Christmas Day\""}], "}"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give constraints to a selector string to name several elements below its element:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"menus", "=", RowBox[{"ImportString", "[", RowBox[{"\"<ul class=\\\"menu\\\"><li>Home</li><li>Shop</li><li>Contact</li></ul><ol><li>One</li></ol>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"menus", ",", RowBox[{RowBox[{"\"ul.menu\"", "[", RowBox[{"{", RowBox[{RowBox[{"first", ":", "\"li\""}], ",", "___", ",", RowBox[{"last", ":", "\"li\""}]}], "}"}], "]"}], ":>", RowBox[{"HTMLTextContent", "/@", RowBox[{"{", RowBox[{"first", ",", "last"}], "}"}]}]}]}], "]"}]}], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"{", RowBox[{"\"Home\"", ",", "\"Contact\""}], "}"}], "}"}]], "Output"],
+
+Cell["On a selector list, each selector takes the constraints:", "ExampleText"],
+
+Cell[BoxData[RowBox[{"XMLCases", "[", RowBox[{"menus", ",", RowBox[{RowBox[{"\"ul, ol\"", "[", RowBox[{"{", RowBox[{RowBox[{"x", ":", "\"li\""}], ",", "___"}], "}"}], "]"}], ":>", RowBox[{"HTMLTextContent", "[", "x", "]"}]}]}], "]"}]], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"\"Home\"", ",", "\"One\""}], "}"}]], "Output"]}, Open]]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
@@ -454,7 +467,19 @@ Cell[BoxData["$Failed"], "Output"]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A list pattern skips text, so top-level text does not stop ", Cell[BoxData[":root"], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["XMLCases[{\"Text\",XMLElement[\"p\",{},{\"Para\"}]},\":root\"]"], "Input"],
 
-Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Para\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]]}, Open]],
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Para\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A bracket on the translation of a selector list gives a message:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"menus", "=", RowBox[{"ImportString", "[", RowBox[{"\"<ul class=\\\"menu\\\"><li>Home</li></ul><ol><li>One</li></ol>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"menus", ",", RowBox[{RowBox[{RowBox[{"FromCSSSelector", "[", "\"ul.menu, ol\"", "]"}], "[", RowBox[{"{", RowBox[{RowBox[{"x", ":", "\"li\""}], ",", "___"}], "}"}], "]"}], ":>", "x"}]}], "]"}]}], "Input"],
+
+Cell["XMLPattern::bracket: (XMLPattern[\"ul\", \"classList\" -> \"menu\"] | XMLPattern[\"ol\"])[{x:\"li\", ___}] gives constraints to alternatives or a test, not to an XMLPattern. Constraints go in the bracket of each XMLPattern: XMLPattern[\"ul\", \"classList\" -> \"menu\"][{x:\"li\", ___}] | XMLPattern[\"ol\"][{x:\"li\", ___}]. For a pattern from FromCSSSelector[\"selector\"], give them to the selector string instead, as in \"selector\"[c1, c2, ...].", "Message", "MSG"],
+
+Cell[BoxData["$Failed"], "Output"],
+
+Cell["Give the constraints to the selector string:", "ExampleText"],
+
+Cell[BoxData[RowBox[{"XMLCases", "[", RowBox[{"menus", ",", RowBox[{RowBox[{"\"ul.menu, ol\"", "[", RowBox[{"{", RowBox[{RowBox[{"x", ":", "\"li\""}], ",", "___"}], "}"}], "]"}], ":>", RowBox[{"HTMLTextContent", "[", "x", "]"}]}]}], "]"}]], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"\"Home\"", ",", "\"One\""}], "}"}]], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[

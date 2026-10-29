@@ -89,6 +89,8 @@ Cell[TextData[{"A name inside a constraint can be bound to an element below the 
 
 Cell[TextData[{"A name for the whole element, as in ", Cell[BoxData["e : XMLPattern[\"p\"]"], "InlineFormula"], ", gives the element as it is in the tree, without list keys such as ", Cell[BoxData["\"classList\""], "InlineFormula"], ". So does a name for ", Cell[BoxData[StyleBox["attrs", "TI"]], "InlineFormula"], "."}], "Notes"],
 
+Cell[TextData[{"A CSS selector string for one element takes constraints in the same way: ", Cell[BoxData["\"sel$\"[c$1, c$2, $$]"], "InlineFormula"], " is ", Cell[BoxData[RowBox[{ButtonBox["FromCSSSelector", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/FromCSSSelector"], "[", "\"\<\!\(\*StyleBox[\"sel\", \"TI\"]\)\>\"", "]"}]], "InlineFormula"], " with the constraints added to each ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], " in it, so ", Cell[BoxData["\"ul, ol\"[c$]"], "InlineFormula"], " constrains both lists. It can be given wherever a CSS selector string can. A selector that picks its element by what is above or beside it, such as ", Cell[BoxData["\"nav a\""], "InlineFormula"], ", takes no constraints."}], "Notes"],
+
 Cell[TextData[{"A malformed ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], " is reported only when a function interprets it. That function issues a message, such as ", Cell[BoxData["XMLPattern::badkey"], "InlineFormula"], ", and returns ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], "."}], "Notes"]
 }, Open  ]],
 
@@ -411,7 +413,11 @@ Cell[BoxData[RowBox[{"{", RowBox[{"{", RowBox[{"\"2026-12-25\"", ",", "\"Christm
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give a CSS selector string for one element as an entry of a list pattern:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"cards", "=", RowBox[{"ImportString", "[", RowBox[{"\"<div><p class=\\\"lead\\\">A</p><p>B</p></div>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"cards", ",", RowBox[{RowBox[{RowBox[{"XMLPattern", "[", "\"div\"", "]"}], "[", RowBox[{"{", RowBox[{RowBox[{"x", ":", "\"p.lead\""}], ",", "___"}], "}"}], "]"}], ":>", RowBox[{"HTMLTextContent", "[", "x", "]"}]}]}], "]"}]}], "Input"],
 
-Cell[BoxData[RowBox[{"{", "\"A\"", "}"}]], "Output"]}, Open]]}, Open]]}, Open]],
+Cell[BoxData[RowBox[{"{", "\"A\"", "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Name several elements below a root given as a CSS selector string:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"menus", "=", RowBox[{"ImportString", "[", RowBox[{"\"<ul class=\\\"menu\\\"><li>Home</li><li>Shop</li><li>Contact</li></ul><ul><li>Other</li></ul>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"menus", ",", RowBox[{RowBox[{"\"ul.menu\"", "[", RowBox[{"{", RowBox[{RowBox[{"first", ":", "\"li\""}], ",", "___", ",", RowBox[{"last", ":", "\"li\""}]}], "}"}], "]"}], ":>", RowBox[{"HTMLTextContent", "/@", RowBox[{"{", RowBox[{"first", ",", "last"}], "}"}]}]}]}], "]"}]}], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"{", RowBox[{"\"Home\"", ",", "\"Contact\""}], "}"}], "}"}]], "Output"]}, Open]]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
@@ -673,7 +679,19 @@ Cell["Give the constraints as arguments of one bracket:", "ExampleText"],
 
 Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{"forecast", ",", RowBox[{RowBox[{"XMLPattern", "[", "\"div\"", "]"}], "[", RowBox[{RowBox[{"Descendant", "[", "\"span.high\"", "]"}], ",", RowBox[{"Descendant", "[", "\"span.low\"", "]"}]}], "]"}]}], "]"}]], "Input"],
 
-Cell[BoxData["True"], "Output"]}, Open]]}, Open]],
+Cell[BoxData["True"], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A CSS selector that picks its element by what is above it takes no constraints:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"menus", "=", RowBox[{"ImportString", "[", RowBox[{"\"<nav><ul><li>Home</li><li>Shop</li></ul></nav>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"menus", ",", RowBox[{RowBox[{"\"nav ul\"", "[", RowBox[{"{", RowBox[{RowBox[{"x", ":", "\"li\""}], ",", "___"}], "}"}], "]"}], ":>", "x"}]}], "]"}]}], "Input"],
+
+Cell["FromCSSSelector::constraints: \"nav ul\"[{x:\"li\", ___}] gives constraints to \"nav ul\", which picks its element by what is above or beside it, so its pattern is rooted at another element. Only a selector that describes one element takes constraints. Nest the selectors as the tree is, as in \"nav\"[Descendant[x : \"a\"[c]]] :> x.", "Message", "MSG"],
+
+Cell[BoxData["$Failed"], "Output"],
+
+Cell["Nest the selectors as the tree is:", "ExampleText"],
+
+Cell[BoxData[RowBox[{"XMLCases", "[", RowBox[{"menus", ",", RowBox[{RowBox[{"\"nav\"", "[", RowBox[{"Descendant", "[", RowBox[{"\"ul\"", "[", RowBox[{"{", RowBox[{RowBox[{"x", ":", "\"li\""}], ",", "___"}], "}"}], "]"}], "]"}], "]"}], ":>", RowBox[{"HTMLTextContent", "[", "x", "]"}]}]}], "]"}]], "Input"],
+
+Cell[BoxData[RowBox[{"{", "\"Home\"", "}"}]], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
