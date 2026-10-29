@@ -97,7 +97,7 @@ Child::usage = "Child[p] is a constraint, an argument of XMLPattern[tag, attrs][
 Child::args = "`1` is not a constraint: Child takes one pattern. For children that match several patterns, give several constraints, as in XMLPattern[tag][Child[a], Child[b]], or, for children in an order, a list, as in XMLPattern[tag][{___, a, ___, b, ___}].";
 Child::name = "`1` names a Child constraint, which has nothing to bind: between an element and its child there is no element. Name the child instead, as in Child[n : p].";
 Child::test = "`1` tests a Child constraint, which has nothing to test. Test the child instead, as in Child[p?f].";
-Child::place = "`1` is a constraint, which can only be an argument of the bracket after XMLPattern[tag, attrs] or of XMLDocument: XMLPattern[\"ul\"][Child[x : XMLPattern[\"li\"]]] :> x gives the li children of each ul. In version 3, Child[a, b] gave the children that match b of the elements that match a; in version 4 that is the rule above. Child takes one pattern: for children that match several patterns, give several constraints, Child[a], Child[b], or a list, {___, a, ___, b, ___}.";
+Child::place = "`1` is not a pattern. Child is a constraint, which can only be an argument of the bracket after XMLPattern[tag, attrs] or of XMLDocument: XMLPattern[\"ul\"][Child[x : XMLPattern[\"li\"]]] :> x gives the li children of each ul. In version 3, Child[a, b] gave the children that match b of the elements that match a; in version 4 that is the rule above. Child takes one pattern: for children that match several patterns, give several constraints, Child[a], Child[b], or a list, {___, a, ___, b, ___}.";
 
 (* Valid tree for XMLCases *)
 validTreeQ[XMLObject["Document"][_, _XMLElement, _]] := True;
