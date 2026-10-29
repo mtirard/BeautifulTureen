@@ -82,7 +82,7 @@ TestCreate[
    55 ms. *)
 TestCreate[
   MemoryConstrained[
-    Length @ XMLCases[$fiveThousandSections, XMLPattern["section", _, {___, XMLPattern["h2"], ___, c : XMLPattern["p"], ___}] :> c[[1]]],
+    Length @ XMLCases[$fiveThousandSections, XMLPattern["section"][{___, XMLPattern["h2"], ___, c : XMLPattern["p"], ___}] :> c[[1]]],
     2*^9, $Failed],
   1667,
   TimeConstraint -> 0.2,
@@ -92,7 +92,7 @@ TestCreate[
 (* With a Condition in the body: 15 ms, 53 ms. *)
 TestCreate[
   MemoryConstrained[
-    Length @ XMLCases[$fiveThousandSections, XMLPattern["section", _, {_, PatternSequence[_, _, _]..., c : XMLPattern["p"], ___}] :> c[[1]] /; True],
+    Length @ XMLCases[$fiveThousandSections, XMLPattern["section"][{_, PatternSequence[_, _, _]..., c : XMLPattern["p"], ___}] :> c[[1]] /; True],
     2*^9, $Failed],
   1667,
   TimeConstraint -> 0.2,
@@ -141,7 +141,7 @@ $fiveThousandIds = Replace[$fiveThousandClassed, XMLElement[t_, a_, c_] :> XMLEl
 TestCreate[
   MemoryConstrained[TimeConstrained[
     XMLCases[$fiveThousandIds,
-      XMLPattern["ul", _, {Except[XMLPattern[t_]]..., XMLPattern[t_], Except[XMLPattern[t_]]..., c : XMLPattern[t_, {"class" -> k_, "id" -> i_}], ___}] :> First[c]],
+      XMLPattern["ul"][{Except[XMLPattern[t_]]..., XMLPattern[t_], Except[XMLPattern[t_]]..., c : XMLPattern[t_, {"class" -> k_, "id" -> i_}], ___}] :> First[c]],
     5, $Failed], 2*^9, $Failed],
   {"li"},
   TimeConstraint -> 0.15,

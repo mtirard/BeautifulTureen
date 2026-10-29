@@ -9,14 +9,14 @@ hrefs   = doc[el["p", XMLElement["a", {"href" -> "/x"}, {}], XMLElement["a", {"h
 (* === Examples === *)
 
 TestCreate[
-  XMLDeleteCases[nav, XMLPattern["nav", _, Descendant[a : XMLPattern["a"]]] :> a],
+  XMLDeleteCases[nav, XMLPattern["nav"][Descendant[a : XMLPattern["a"]]] :> a],
   doc[e["nav", "o", e["nav", "i"]]],
   TestID -> "delete-rule-element"
 ];
 
 (* Several names: the union of their positions over all results. *)
 TestCreate[
-  XMLDeleteCases[doc[el["h1", el["b"], el["i"], el["u"], el["s"]]], XMLPattern["h1", _, {x_, _, y_, ___}] :> {x, y}],
+  XMLDeleteCases[doc[el["h1", el["b"], el["i"], el["u"], el["s"]]], XMLPattern["h1"][{x_, _, y_, ___}] :> {x, y}],
   doc[el["h1", el["i"], el["s"]]],
   TestID -> "delete-rule-names"
 ];
@@ -99,14 +99,14 @@ TestCreate[
 (* A run of element children is removed; the text between them is not an
    element child, and stays. *)
 TestCreate[
-  XMLDeleteCases[doc[el["div", e["p", "1"], "x", e["p", "2"], "y", e["p", "3"]]], XMLPattern["div", _, {_, r__}] :> r],
+  XMLDeleteCases[doc[el["div", e["p", "1"], "x", e["p", "2"], "y", e["p", "3"]]], XMLPattern["div"][{_, r__}] :> r],
   doc[el["div", e["p", "1"], "x", "y"]],
   TestID -> "delete-kind-run"
 ];
 
 (* A gap, of children or of tokens, deletes nothing. *)
 TestCreate[
-  {XMLDeleteCases[links, XMLPattern["p", _, {___, XMLPattern["a"], g : PatternSequence[], ___}] :> g],
+  {XMLDeleteCases[links, XMLPattern["p"][{___, XMLPattern["a"], g : PatternSequence[], ___}] :> g],
     XMLDeleteCases[doc[XMLElement["p", {"class" -> "a b"}, {}]], XMLPattern["p", "classList" -> {___, g : PatternSequence[], ___}] :> g]},
   {links, doc[XMLElement["p", {"class" -> "a b"}, {}]]},
   TestID -> "delete-kind-gaps"
@@ -127,7 +127,7 @@ TestCreate[
 ];
 
 TestCreate[
-  XMLDeleteCases[nav, XMLPattern["nav", _, p : Descendant[XMLPattern["a"]]] :> p],
+  XMLDeleteCases[nav, XMLPattern["nav"][p : Descendant[XMLPattern["a"]]] :> p],
   $Failed,
   {XMLDeleteCases::pathtarget},
   TestID -> "delete-kind-path-refused"
@@ -146,9 +146,9 @@ TestCreate[
 (* A target inside another deleted target goes with it, whichever order the
    results give them in. *)
 TestCreate[
-  {XMLDeleteCases[nav, n : XMLPattern["nav", _, Descendant[x : XMLPattern["a"]]] :> {n, x}],
-    XMLDeleteCases[doc[el["div", e["p", "1"], e["p", "2"], e["p", "3"]]], XMLPattern["div", _, {___, r__, ___}] :> r],
-    XMLDeleteCases[doc[el["div", XMLElement["p", {"class" -> "a"}, {}]]], XMLPattern["div", _, {p : XMLPattern["p", "classList" -> {c_}]}] :> {c, p}]},
+  {XMLDeleteCases[nav, n : XMLPattern["nav"][Descendant[x : XMLPattern["a"]]] :> {n, x}],
+    XMLDeleteCases[doc[el["div", e["p", "1"], e["p", "2"], e["p", "3"]]], XMLPattern["div"][{___, r__, ___}] :> r],
+    XMLDeleteCases[doc[el["div", XMLElement["p", {"class" -> "a"}, {}]]], XMLPattern["div"][{p : XMLPattern["p", "classList" -> {c_}]}] :> {c, p}]},
   {doc[e["nav", "o"]], doc[el["div"]], doc[el["div"]]},
   {XMLDeleteCases::root},
   TestID -> "delete-nested-targets"

@@ -50,8 +50,8 @@ TestCreate[
 
 (* Tree patterns, each element tested as the pattern root. *)
 TestCreate[
-  {XMLFreeQ[nav[[2]], XMLPattern["nav", _, {XMLPattern["a"], ___, XMLPattern["a"]}], {1, Infinity}],
-    XMLFreeQ[nav[[2]], XMLPattern["nav", _, {XMLPattern["a"], ___, XMLPattern["a"]}]],
+  {XMLFreeQ[nav[[2]], XMLPattern["nav"][{XMLPattern["a"], ___, XMLPattern["a"]}], {1, Infinity}],
+    XMLFreeQ[nav[[2]], XMLPattern["nav"][{XMLPattern["a"], ___, XMLPattern["a"]}]],
     XMLFreeQ[nav, n : XMLPattern["nav"] /; Length[n[[3]]] == 3, {2, Infinity}],
     XMLFreeQ[nav, "nav#i"], XMLFreeQ[nav, XMLElement["a", {"id" -> "a2"}, {}]]},
   {True, False, True, False, False},

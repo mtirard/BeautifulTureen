@@ -24,14 +24,14 @@ messageTexts[expr_] := Module[{texts = {}},
 (* === New === *)
 
 TestCreate[
-  XMLCases[links, XMLPattern["div", _, XMLPattern["p"]]],
+  XMLCases[links, XMLPattern["div"][XMLPattern["p"]]],
   $Failed,
   {XMLPattern::constraint},
   TestID -> "tree-message-constraint"
 ];
 
 TestCreate[
-  {XMLCases[links, XMLPattern["ul", _, {Descendant[XMLPattern["a"]]}]],
+  {XMLCases[links, XMLPattern["ul"][{Descendant[XMLPattern["a"]]}]],
     XMLCases[links, XMLDocument[{XMLDocument[]}]],
     XMLMatchQ[{el["a"]}, {{XMLPattern["a"]}}]},
   {$Failed, $Failed, $Failed},
@@ -48,15 +48,15 @@ TestCreate[
 
 (* The old two-pattern form is a level spec that is not one. *)
 TestCreate[
-  {XMLCases[links, XMLPattern["p", _, Descendant[XMLPattern["a"], XMLPattern["b"]]]],
-    XMLCases[links, XMLPattern["p", _, Descendant[XMLPattern["a"], {0}]]]},
+  {XMLCases[links, XMLPattern["p"][Descendant[XMLPattern["a"], XMLPattern["b"]]]],
+    XMLCases[links, XMLPattern["p"][Descendant[XMLPattern["a"], {0}]]]},
   {$Failed, $Failed},
   {Descendant::level, Descendant::level},
   TestID -> "tree-message-descendant-level"
 ];
 
 TestCreate[
-  {XMLCases[links, XMLPattern["ul", _, Shortest[{___, XMLPattern["li"]}]]],
+  {XMLCases[links, XMLPattern["ul"][Shortest[{___, XMLPattern["li"]}]]],
     XMLCases[links, XMLDocument[Longest[{___, XMLPattern["p"]}]]]},
   {$Failed, $Failed},
   {XMLPattern::shortest, XMLDocument::shortest},
@@ -64,7 +64,7 @@ TestCreate[
 ];
 
 TestCreate[
-  With[{q = XMLPattern["tr", _, {XMLElement["th", _, {t_String}], ___}] :> t},
+  With[{q = XMLPattern["tr"][{XMLElement["th", _, {t_String}], ___}] :> t},
     {XMLCases[row, q], XMLFirstCase[row, q], XMLPosition[row, q], XMLDeleteCases[row, q]}],
   {$Failed, $Failed, $Failed, $Failed},
   {XMLCases::text, XMLFirstCase::text, XMLPosition::text, XMLDeleteCases::text},
@@ -72,7 +72,7 @@ TestCreate[
 ];
 
 TestCreate[
-  With[{q = XMLPattern["p", _, {Except[x : XMLPattern["b"]] ..., ___}] :> x},
+  With[{q = XMLPattern["p"][{Except[x : XMLPattern["b"]] ..., ___}] :> x},
     {XMLCases[links, q], XMLFirstCase[links, q], XMLPosition[links, q], XMLDeleteCases[links, q]}],
   {$Failed, $Failed, $Failed, $Failed},
   {XMLCases::exceptname, XMLFirstCase::exceptname, XMLPosition::exceptname, XMLDeleteCases::exceptname},
@@ -94,8 +94,8 @@ TestCreate[
 ];
 
 TestCreate[
-  {XMLDeleteCases[nav, XMLPattern["nav", _, p : Descendant[XMLPattern["a"]]] :> p],
-    XMLReplace[nav, XMLPattern["nav", _, p : Descendant[XMLPattern["a"]]] :> {p -> el["b"]}]},
+  {XMLDeleteCases[nav, XMLPattern["nav"][p : Descendant[XMLPattern["a"]]] :> p],
+    XMLReplace[nav, XMLPattern["nav"][p : Descendant[XMLPattern["a"]]] :> {p -> el["b"]}]},
   {$Failed, $Failed},
   {XMLDeleteCases::pathtarget, XMLReplace::pathtarget},
   TestID -> "tree-message-pathtarget"
@@ -118,7 +118,7 @@ TestCreate[
 
 TestCreate[
   XMLReplace[doc[el["ul", el["li"], el["li"], el["li"]]],
-    XMLPattern["ul", _, {___, x : XMLPattern["li"], ___, y : XMLPattern["li"], ___}] :> {x -> "first", y -> "second"}],
+    XMLPattern["ul"][{___, x : XMLPattern["li"], ___, y : XMLPattern["li"], ___}] :> {x -> "first", y -> "second"}],
   doc[el["ul", "first", "second", "second"]],
   {XMLReplace::conflict},
   TestID -> "tree-message-conflict"
@@ -126,7 +126,7 @@ TestCreate[
 
 TestCreate[
   XMLReplace[doc[el["div", e["p", "1"], e["p", "2"]]],
-    XMLPattern["div", _, {x : XMLPattern["p"], y : XMLPattern["p"]}] :> {x -> y, y -> Nothing}],
+    XMLPattern["div"][{x : XMLPattern["p"], y : XMLPattern["p"]}] :> {x -> y, y -> Nothing}],
   doc[el["div", e["p", "2"]]],
   {XMLReplace::stale},
   TestID -> "tree-message-stale"
@@ -233,7 +233,7 @@ TestCreate[
 ];
 
 TestCreate[
-  {XMLCases[links, XMLPattern["p", _, Descendant[XMLDocument[]]]],
+  {XMLCases[links, XMLPattern["p"][Descendant[XMLDocument[]]]],
     XMLCases[links, XMLPattern["p", "id" -> XMLDocument[]]],
     XMLCases[links, XMLElement["p", _, {XMLDocument[]}]]},
   {$Failed, $Failed, $Failed},
@@ -244,8 +244,8 @@ TestCreate[
 (* A blank as the whole query or as Descendant's pattern; any one child as a
    contents-list entry. *)
 TestCreate[
-  {XMLCases[links, _], XMLCases[links, XMLPattern["p", _, Descendant[_]]],
-    XMLCases[links, XMLPattern["p", _, {_, x : XMLPattern["a"], ___}] :> x[[2, 1, 2]]]},
+  {XMLCases[links, _], XMLCases[links, XMLPattern["p"][Descendant[_]]],
+    XMLCases[links, XMLPattern["p"][{_, x : XMLPattern["a"], ___}] :> x[[2, 1, 2]]]},
   {$Failed, $Failed, {"2"}},
   {XMLCases::blank, Descendant::blank},
   TestID -> "tree-message-blank"
@@ -274,7 +274,7 @@ TestCreate[
 TestCreate[
   With[{texts = Join[messageTexts[XMLCases[links, Child[XMLPattern["p"], XMLPattern["a"]]]],
       messageTexts[XMLFirstCase[links, Sibling[XMLPattern["a"], XMLPattern["a"]]]],
-      messageTexts[XMLDeleteCases[links, XMLPattern["p", _, {___, Adjacent[XMLPattern["a"], XMLPattern["a"]], ___}]]]]},
+      messageTexts[XMLDeleteCases[links, XMLPattern["p"][{___, Adjacent[XMLPattern["a"], XMLPattern["a"]], ___}]]]]},
     {Length[texts], AllTrue[texts, StringContainsQ["Child, Adjacent and Sibling were removed"]],
       AllTrue[texts, StringContainsQ["x : XMLPattern[\"li\"]"]]}],
   {3, True, True},

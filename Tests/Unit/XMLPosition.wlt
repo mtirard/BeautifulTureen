@@ -10,7 +10,7 @@ listing = doc[XMLElement["ul", {"class" -> "a b"}, {el["li"], " ", el["li", XMLE
 
 (* A bare pattern gives the positions of its pattern root's matches. *)
 TestCreate[
-  XMLPosition[nav, XMLPattern["nav", _, Descendant[XMLPattern["a"]]]],
+  XMLPosition[nav, XMLPattern["nav"][Descendant[XMLPattern["a"]]]],
   {{1}, {1, 2}},
   TestID -> "position-bare"
 ];
@@ -18,7 +18,7 @@ TestCreate[
 (* A rule gives its right-hand side with each counted name replaced by its
    position, one per result, in result order. *)
 TestCreate[
-  XMLPosition[nav, n : XMLPattern["nav", _, Descendant[x : XMLPattern["a"]]] :> {n, x}],
+  XMLPosition[nav, n : XMLPattern["nav"][Descendant[x : XMLPattern["a"]]] :> {n, x}],
   {{{1}, {1, 1}}, {{1}, {1, 2, 1}}, {{1}, {1, 3}}, {{1, 2}, {1, 2, 1}}},
   TestID -> "position-rule-tuples"
 ];
@@ -32,7 +32,7 @@ TestCreate[
 
 (* A counted path is replaced by its span upper ;; lower. *)
 TestCreate[
-  XMLPosition[nav, XMLPattern["nav", _, p : Descendant[XMLPattern["a"]]] :> p],
+  XMLPosition[nav, XMLPattern["nav"][p : Descendant[XMLPattern["a"]]] :> p],
   {{1} ;; {1, 1}, {1} ;; {1, 2, 1}, {1, 2} ;; {1, 2, 1}, {1} ;; {1, 3}},
   TestID -> "position-path-span"
 ];
@@ -41,7 +41,7 @@ TestCreate[
    positions. A name in an Alternatives branch that did not match is absent. *)
 TestCreate[
   {XMLPosition[nav, XMLPattern["a", "id" -> i_] :> i /; i =!= "a2"],
-    XMLPosition[nav, XMLPattern["nav", _, {___, (x : XMLPattern["nav"]) | (y : XMLPattern["a", "id" -> "a3"]), ___}] :> {x, y}]},
+    XMLPosition[nav, XMLPattern["nav"][{___, (x : XMLPattern["nav"]) | (y : XMLPattern["a", "id" -> "a3"]), ___}] :> {x, y}]},
   {{{1, 1, Key["id"]}, {1, 3, Key["id"]}}, {{{1, 2}}, {{1, 3}}}},
   TestID -> "position-rhs-condition-and-alternatives"
 ];
@@ -58,9 +58,9 @@ TestCreate[
     (x : XMLPattern["p"]) | XMLPattern[t : "p", _] | XMLPattern["p", a_] | XMLPattern["p", "id" -> v_] |
       XMLPattern["p", "class" -> w_] | XMLPattern["p", "classList" -> l_] |
       XMLPattern["p", "classList" -> {___, k___, ___}] | XMLPattern["p", "classList" -> {___, tk_, ___}] |
-      XMLElement["p", _, ct_] | XMLPattern["p", _, {___, g___, ___}] | XMLPattern["p", _, {c_}] |
-      XMLPattern["p", _, {XMLPattern[bt : "b", _]}] | XMLPattern["p", _, {XMLPattern["b", ba_]}] |
-      XMLPattern["p", _, {XMLElement["b", _, bc_]}] | XMLPattern["p", _, {XMLPattern["b", _, {bg___}]}] :>
+      XMLElement["p", _, ct_] | XMLPattern["p"][{___, g___, ___}] | XMLPattern["p"][{c_}] |
+      XMLPattern["p"][{XMLPattern[bt : "b", _]}] | XMLPattern["p"][{XMLPattern["b", ba_]}] |
+      XMLPattern["p"][{XMLElement["b", _, bc_]}] | XMLPattern["p"][{XMLPattern["b"][{bg___}]}] :>
       {x, t, a, v, w, l, k, tk, ct, g, c, bt, ba, bc, bg}],
   {{1}, {1, 0}, {1, Key[All]}, {1, Key["id"]}, {1, Key["class"]}, {1, Key["classList"]},
     {1, Key["classList"], 1 ;; 0}, {1, Key["classList"], 1 ;; 2}, {1, Key["classList"], 1 ;; 1}, {1, Key["classList"], 1},
@@ -160,8 +160,8 @@ TestCreate[
 
 (* XMLExtract at the positions XMLPosition gives is what XMLCases gives. *)
 TestCreate[
-  {With[{q = XMLPattern["nav", _, p : Descendant[XMLPattern["a"]]] :> p}, (XMLExtract[nav, #] &) /@ XMLPosition[nav, q] === XMLCases[nav, q]],
-    With[{p = XMLPattern["nav", _, Descendant[XMLPattern["a"]]]}, XMLExtract[nav, XMLPosition[nav, p]] === XMLCases[nav, p]]},
+  {With[{q = XMLPattern["nav"][p : Descendant[XMLPattern["a"]]] :> p}, (XMLExtract[nav, #] &) /@ XMLPosition[nav, q] === XMLCases[nav, q]],
+    With[{p = XMLPattern["nav"][Descendant[XMLPattern["a"]]]}, XMLExtract[nav, XMLPosition[nav, p]] === XMLCases[nav, p]]},
   {True, True},
   TestID -> "extract-round-trip-examples"
 ];
@@ -177,19 +177,19 @@ $roundTripTrees = Join[#, doc /@ #] & @ randomTrees[10, 2];
 (* Bare patterns, and rules whose right-hand side is one counted name or
    path. *)
 $roundTripPatterns = {XMLPattern["p"], "li.b", XMLPattern["div", "classList" -> {___, "a", ___}],
-  XMLPattern["div", _, {___, XMLPattern["p"], ___}], XMLPattern["p", _, {}],
-  XMLPattern["div", _, Descendant[XMLPattern["span", "classList" -> "c"]]],
-  XMLPattern["li"] | XMLPattern["span", _, {_, ___}], XMLDocument[{___, XMLPattern["div"], ___}]};
+  XMLPattern["div"][{___, XMLPattern["p"], ___}], XMLPattern["p"][{}],
+  XMLPattern["div"][Descendant[XMLPattern["span", "classList" -> "c"]]],
+  XMLPattern["li"] | XMLPattern["span"][{_, ___}], XMLDocument[{___, XMLPattern["div"], ___}]};
 
-$roundTripRules = {XMLPattern["div", _, p : Descendant[XMLPattern["span"]]] :> p,
+$roundTripRules = {XMLPattern["div"][p : Descendant[XMLPattern["span"]]] :> p,
   XMLDocument[p : Descendant[XMLPattern["li", "classList" -> "a"]]] :> p,
-  XMLPattern["div", _, {___, x : XMLPattern["p"], ___}] :> x,
-  n : XMLPattern["div", _, Shortest @ Descendant[XMLPattern["li"]]] :> n,
+  XMLPattern["div"][{___, x : XMLPattern["p"], ___}] :> x,
+  n : XMLPattern["div"][Shortest @ Descendant[XMLPattern["li"]]] :> n,
   XMLPattern["li", "class" -> c_] :> c,
   XMLPattern["div", "classList" -> {___, c_, ___}] :> c,
-  XMLPattern[t_, _, {}] :> t,
+  XMLPattern[t_][{}] :> t,
   XMLPattern["span", a_] :> a,
-  XMLPattern["div", "id" -> i_, Descendant[XMLPattern["p"], {2}]] :> i};
+  XMLPattern["div", "id" -> i_][Descendant[XMLPattern["p"], {2}]] :> i};
 
 (* A bare pattern's positions extract to its matches. No positions, {}, is
    the document's position, as Extract[expr, {}] is expr, so it is compared

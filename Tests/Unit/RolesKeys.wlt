@@ -15,7 +15,7 @@ TestCreate[
 ];
 
 TestCreate[
-  HTMLInnerText[page, "Roles" -> {(XMLPattern["nav", _, Descendant[x : XMLPattern["a"]]] :> x) -> "Block"}],
+  HTMLInnerText[page, "Roles" -> {(XMLPattern["nav"][Descendant[x : XMLPattern["a"]]] :> x) -> "Block"}],
   "Home\nNews\nText",
   TestID -> "roles-rule-key"
 ];
@@ -32,7 +32,7 @@ $pageCells = Notebook[{Cell[TextData[{"Home"}], "Text"], Cell[TextData[{"News"}]
 
 TestCreate[
   {HTMLToNotebook[page, "Roles" -> {"nav a" -> "Block"}],
-   HTMLToNotebook[page, "Roles" -> {(XMLPattern["nav", _, Descendant[x : XMLPattern["a"]]] :> x) -> "Block"}]},
+   HTMLToNotebook[page, "Roles" -> {(XMLPattern["nav"][Descendant[x : XMLPattern["a"]]] :> x) -> "Block"}]},
   {$pageCells, $pageCells},
   TestID -> "tonotebook-roles-query-keys"
 ];
@@ -56,7 +56,7 @@ TestCreate[
 (* The value takes the matches of the element's first result. *)
 TestCreate[
   HTMLToNotebook[doc[el["body", el["div", XMLElement["h2", {"class" -> "Section"}, {}], XMLElement["h2", {"class" -> "Subsection"}, {}], "x"]]],
-    "Constructs" -> {XMLPattern["div", _, Descendant[XMLPattern["h2", "class" -> s_]]] :> s}],
+    "Constructs" -> {XMLPattern["div"][Descendant[XMLPattern["h2", "class" -> s_]]] :> s}],
   Notebook[{Cell[TextData[{"x"}], "Section"]}],
   TestID -> "constructs-key-first-result-matches"
 ];
@@ -64,7 +64,7 @@ TestCreate[
 (* A function value is given the element as it is in the input. *)
 TestCreate[
   HTMLToNotebook[doc[el["body", XMLElement["a", {"href" -> "/x"}, {"go"}]]],
-    "Constructs" -> {"a" -> Function[e, {e}], (XMLPattern["body", _, {x_}] :> x) -> "Bold"}],
+    "Constructs" -> {"a" -> Function[e, {e}], (XMLPattern["body"][{x_}] :> x) -> "Bold"}],
   Notebook[{Cell[TextData[{Cell[BoxData[XMLElement["a", {"href" -> "/x"}, {"go"}]]]}], "Text"]}],
   TestID -> "constructs-function-gets-the-element-as-given"
 ];
@@ -75,7 +75,7 @@ same = doc[el["ul", el["li", "x"], el["li", "x"], el["li", "x"]]];
 
 TestCreate[
   {HTMLInnerText[same, "Roles" -> {"li:first-child" -> "Skip"}],
-   HTMLInnerText[same, "Roles" -> {(XMLPattern["ul", _, {___, x_}] :> x) -> "Skip"}]},
+   HTMLInnerText[same, "Roles" -> {(XMLPattern["ul"][{___, x_}] :> x) -> "Skip"}]},
   {"x\nx", "x\nx"},
   TestID -> "roles-query-key-equal-elements"
 ];
@@ -106,7 +106,7 @@ TestCreate[
 ];
 
 TestCreate[
-  HTMLToNotebook[doc[el["p", XMLElement["a", {"href" -> "/x"}, {"go"}]]], "Constructs" -> {(XMLPattern["p", _, {x__}] :> x) -> "Bold"}],
+  HTMLToNotebook[doc[el["p", XMLElement["a", {"href" -> "/x"}, {"go"}]]], "Constructs" -> {(XMLPattern["p"][{x__}] :> x) -> "Bold"}],
   $Failed,
   {HTMLToNotebook::keytarget},
   TestID -> "constructs-keytarget-run"

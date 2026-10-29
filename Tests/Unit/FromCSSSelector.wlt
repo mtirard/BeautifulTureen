@@ -590,9 +590,9 @@ TestCreate[
 
 (* A translation can sit next to the user's names. *)
 TestCreate[
-  {Lookup[XMLCases[$nested, XMLPattern[_, _, {___, "section:not([id=q])", ___}, {___, e : XMLPattern["p"], ___}] :> e][[All, 2]], "id"],
-    Lookup[XMLCases[$nested, XMLPattern[_, _, {___, FromCSSSelector["section:has(h2)"], ___}, {___, e : XMLPattern["p"], ___}] :> e][[All, 2]], "id"],
-    Lookup[XMLCases[$nested, XMLPattern[_, _, {___, s : FromCSSSelector["section:has(h2)"], ___}] :> s][[All, 2]], "id"]},
+  {Lookup[XMLCases[$nested, XMLPattern[_][{___, "section:not([id=q])", ___}, {___, e : XMLPattern["p"], ___}] :> e][[All, 2]], "id"],
+    Lookup[XMLCases[$nested, XMLPattern[_][{___, FromCSSSelector["section:has(h2)"], ___}, {___, e : XMLPattern["p"], ___}] :> e][[All, 2]], "id"],
+    Lookup[XMLCases[$nested, XMLPattern[_][{___, s : FromCSSSelector["section:has(h2)"], ___}] :> s][[All, 2]], "id"]},
   {{"p3"}, {"p3"}, {"s"}},
   TestID -> "css-names-splice-beside-the-users"
 ];
@@ -807,7 +807,7 @@ $note = ImportString["<div class='note' id='n1'><p id='q1'>a <span id='t1'>x</sp
 (* A context selector on the left of a rule is named; a right-hand side that
    uses no name gives one result (ADR 0024). *)
 TestCreate[
-  {XMLCases[$note, "div.note > p"] === XMLCases[$note, XMLPattern["div", "classList" -> "note", {___, x : XMLPattern["p"], ___}] :> x],
+  {XMLCases[$note, "div.note > p"] === XMLCases[$note, XMLPattern["div", "classList" -> "note"][{___, x : XMLPattern["p"], ___}] :> x],
     Length[XMLCases[$note, "div.note > p"]],
     XMLCases[$note, n : "div.note > p" :> 1], XMLCases[$note, "p" -> 2],
     XMLFirstCase[$note, "div:not(.note) p"][[2]], Length[XMLCases[XMLDeleteCases[$note, "div.note"], "p"]],
@@ -939,7 +939,7 @@ TestCreate[
 ];
 
 TestCreate[
-  {XMLCases[$rootDoc, XMLPattern["html", _, {___, x : ":root", ___}] :> x], XMLCases[$rootDoc, XMLPattern["html", _, Descendant[x : ":scope > p"]] :> x],
+  {XMLCases[$rootDoc, XMLPattern["html"][{___, x : ":root", ___}] :> x], XMLCases[$rootDoc, XMLPattern["html"][Descendant[x : ":scope > p"]] :> x],
    XMLMatchQ[XMLElement["html", {}, {}], ":root"]},
   {$Failed, $Failed, $Failed},
   {XMLCases::badpat, XMLCases::badpat, XMLMatchQ::badpat},

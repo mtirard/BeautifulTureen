@@ -89,7 +89,7 @@ TestCreate[
 ];
 
 TestCreate[
-  XMLMatchQ[$lead, XMLPattern["p", "a", "b"]],
+  XMLMatchQ[$lead, XMLPattern["p", "a"]["b"]],
   $Failed,
   {XMLPattern::constraint},
   TestID -> "xmlmatchq-xmlpattern-refusal"
@@ -117,8 +117,8 @@ row = doc[el["tr", el["th", "a"], el["td", "a"], el["td", "b"]]];
 
 (* The element is the pattern root; constraints look below it. *)
 TestCreate[
-  {XMLMatchQ[nav[[2]], XMLPattern["nav", _, Descendant[XMLPattern["a"], {2}]]],
-    XMLMatchQ[nav[[2]], XMLPattern["nav", _, Descendant[XMLPattern["a"], {3}]]]},
+  {XMLMatchQ[nav[[2]], XMLPattern["nav"][Descendant[XMLPattern["a"], {2}]]],
+    XMLMatchQ[nav[[2]], XMLPattern["nav"][Descendant[XMLPattern["a"], {3}]]]},
   {True, False},
   TestID -> "xmlmatchq-tree-pattern-root"
 ];
@@ -142,7 +142,7 @@ TestCreate[
 (* A kind mismatch is False: a document or a list against an element
    pattern. *)
 TestCreate[
-  {XMLMatchQ[nav, XMLPattern["nav"]], XMLMatchQ[nav, XMLPattern[_, _, Descendant[XMLPattern["a"]]]],
+  {XMLMatchQ[nav, XMLPattern["nav"]], XMLMatchQ[nav, XMLPattern[_][Descendant[XMLPattern["a"]]]],
     XMLMatchQ[{el["a"]}, XMLPattern["a"]], XMLMatchQ[{el["a"]}, XMLDocument[{XMLPattern["a"]}]]},
   {False, False, False, False},
   TestID -> "xmlmatchq-kind-mismatch"
@@ -203,7 +203,7 @@ TestCreate[
 
 (* The operator form takes tree patterns and list patterns. *)
 TestCreate[
-  {Select[{nav[[2]], nav[[2, 3, 2]], nav}, XMLMatchQ[XMLPattern[_, _, Descendant[XMLPattern["a"]]]]],
+  {Select[{nav[[2]], nav[[2, 3, 2]], nav}, XMLMatchQ[XMLPattern[_][Descendant[XMLPattern["a"]]]]],
     Select[{row[[2, 3]], {}}, XMLMatchQ[{___, XMLPattern["td"]}]]},
   {{nav[[2]], nav[[2, 3, 2]]}, {row[[2, 3]]}},
   TestID -> "xmlmatchq-operator-form-tree-patterns"
