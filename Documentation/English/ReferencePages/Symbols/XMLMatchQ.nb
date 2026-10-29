@@ -145,7 +145,7 @@ Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Test whether a list has an item, with a constraint on its children:", "ExampleText"], Cell[BoxData["XMLMatchQ[XMLElement[\"ul\",{},{XMLElement[\"li\",{},{\"Miso\"}]}],XMLPattern[\"ul\",_,{___,XMLPattern[\"li\"],___}]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Test whether a list has an item, with a constraint on its children:", "ExampleText"], Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"ul\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Miso\"", "}"}]}], "]"}], "}"}]}], "]"}], ",", RowBox[{RowBox[{"XMLPattern", "[", "\"ul\"", "]"}], "[", RowBox[{"{", RowBox[{"___", ",", RowBox[{"XMLPattern", "[", "\"li\"", "]"}], ",", "___"}], "}"}], "]"}]}], "]"}]], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
@@ -190,8 +190,7 @@ Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Test for an element anywhere below, or at a given depth:", "ExampleText"], Cell[BoxData["element=XMLElement[\"p\",{},{XMLElement[\"i\",{},{XMLElement[\"b\",{},{\"bold\"}]}]}];
-{XMLMatchQ[element,XMLPattern[\"p\",_,Descendant[XMLPattern[\"b\"]]]],XMLMatchQ[element,XMLPattern[\"p\",_,Descendant[XMLPattern[\"b\"],{1}]]]}"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Test for an element anywhere below, or at a given depth:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"element", "=", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"i\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"b\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"bold\"", "}"}]}], "]"}], "}"}]}], "]"}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"{", RowBox[{RowBox[{"XMLMatchQ", "[", RowBox[{"element", ",", RowBox[{RowBox[{"XMLPattern", "[", "\"p\"", "]"}], "[", RowBox[{"Descendant", "[", RowBox[{"XMLPattern", "[", "\"b\"", "]"}], "]"}], "]"}]}], "]"}], ",", RowBox[{"XMLMatchQ", "[", RowBox[{"element", ",", RowBox[{RowBox[{"XMLPattern", "[", "\"p\"", "]"}], "[", RowBox[{"Descendant", "[", RowBox[{RowBox[{"XMLPattern", "[", "\"b\"", "]"}], ",", RowBox[{"{", "1", "}"}]}], "]"}], "]"}]}], "]"}]}], "}"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"True", ",", "False"}], "}"}]], "Output"]}, Open]],
 
@@ -356,7 +355,7 @@ Cell[BoxData["$Failed"], "Output"],
 
 Cell["Test the children with a constraint instead:", "ExampleText"],
 
-Cell[BoxData["XMLMatchQ[XMLElement[\"div\",{},{XMLElement[\"p\",{},{}]}],XMLPattern[\"div\",_,{___,XMLPattern[\"p\"],___}]]"], "Input"],
+Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "}"}]}], "]"}], ",", RowBox[{RowBox[{"XMLPattern", "[", "\"div\"", "]"}], "[", RowBox[{"{", RowBox[{"___", ",", RowBox[{"XMLPattern", "[", "\"p\"", "]"}], ",", "___"}], "}"}], "]"}]}], "]"}]], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]],
 

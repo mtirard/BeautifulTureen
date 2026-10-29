@@ -180,8 +180,7 @@ XMLFreeQ[page,\"a.ext\"]"], "Input"],
 
 Cell[BoxData["False"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give a pattern with constraints of its own:", "ExampleText"], Cell[BoxData["page=ImportString[\"<ul><li>Miso</li></ul><ol></ol>\",{\"HTML\",\"XMLObject\"}];
-XMLFreeQ[page,XMLPattern[\"ol\"|\"ul\",_,{}]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give a pattern with constraints of its own:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"page", "=", RowBox[{"ImportString", "[", RowBox[{"\"<ul><li>Miso</li></ul><ol></ol>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLFreeQ", "[", RowBox[{"page", ",", RowBox[{RowBox[{"XMLPattern", "[", RowBox[{"\"ol\"", "|", "\"ul\""}], "]"}], "[", RowBox[{"{", "}"}], "]"}]}], "]"}]}], "Input"],
 
 Cell[BoxData["False"], "Output"]}, Open]],
 
@@ -237,8 +236,7 @@ Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"
 
 Cell[BoxData[RowBox[{RowBox[{"(", RowBox[{"XMLPattern", "[", "\"p\"", "]"}], ")"}], "?", RowBox[{"(", RowBox[{RowBox[{"XMLFreeQ", "[", RowBox[{"#1", ",", RowBox[{"XMLPattern", "[", "\"b\"", "]"}], ",", RowBox[{"{", RowBox[{"1", ",", "\[Infinity]"}], "}"}]}], "]"}], "&"}], ")"}]}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["XMLFreeQ at depths 1 and below gives the opposite of a Descendant constraint:", "ExampleText"], Cell[BoxData["element=XMLElement[\"p\",{},{XMLElement[\"i\",{},{XMLElement[\"b\",{},{\"x\"}]}]}];
-{XMLFreeQ[element,XMLPattern[\"b\"],{1,Infinity}],XMLMatchQ[element,XMLPattern[\"p\",_,Descendant[XMLPattern[\"b\"]]]]}"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["XMLFreeQ at depths 1 and below gives the opposite of a Descendant constraint:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"element", "=", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"i\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"b\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"x\"", "}"}]}], "]"}], "}"}]}], "]"}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"{", RowBox[{RowBox[{"XMLFreeQ", "[", RowBox[{"element", ",", RowBox[{"XMLPattern", "[", "\"b\"", "]"}], ",", RowBox[{"{", RowBox[{"1", ",", "Infinity"}], "}"}]}], "]"}], ",", RowBox[{"XMLMatchQ", "[", RowBox[{"element", ",", RowBox[{RowBox[{"XMLPattern", "[", "\"p\"", "]"}], "[", RowBox[{"Descendant", "[", RowBox[{"XMLPattern", "[", "\"b\"", "]"}], "]"}], "]"}]}], "]"}]}], "}"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"False", ",", "True"}], "}"}]], "Output"]}, Open]],
 
@@ -281,7 +279,7 @@ Cell[BoxData["$Failed"], "Output"],
 
 Cell["Root the test at the element instead:", "ExampleText"],
 
-Cell[BoxData["XMLFreeQ[XMLElement[\"nav\",{},{XMLElement[\"a\",{},{}]}],XMLPattern[\"nav\",_,Descendant[XMLPattern[\"a\"]]]]"], "Input"],
+Cell[BoxData[RowBox[{"XMLFreeQ", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"nav\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "}"}]}], "]"}], ",", RowBox[{RowBox[{"XMLPattern", "[", "\"nav\"", "]"}], "[", RowBox[{"Descendant", "[", RowBox[{"XMLPattern", "[", "\"a\"", "]"}], "]"}], "]"}]}], "]"}]], "Input"],
 
 Cell[BoxData["False"], "Output"]}, Open]]}, Open]],
 
