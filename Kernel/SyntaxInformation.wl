@@ -4,15 +4,15 @@
 
 (* =========================================================== *)
 (* Syntax information                                           *)
-(* The front end colours a call with a wrong argument count.   *)
+(* The front end colours a call with a wrong argument count.    *)
 (* XMLPattern, Descendant and Child are inert, but their counts *)
-(* are fixed too: a tag and attributes, the constraints being  *)
-(* in a second bracket, which cannot be described here; a      *)
-(* pattern and a level spec; one pattern. The query of         *)
-(* XMLCases, XMLFirstCase and                                   *)
-(* XMLDeleteCases is required: in an optional position the     *)
-(* front end reads a query pattern :> rhs as an option and     *)
-(* colours its pattern red, as it does not for Cases.          *)
+(* are fixed too: a tag and attributes, the constraints being   *)
+(* in a second bracket, which cannot be described here; a       *)
+(* pattern and a level spec; one pattern. The query of          *)
+(* XMLCases, XMLFirstCase and XMLDeleteCases is required: in an *)
+(* optional position the front end would read a query pattern   *)
+(* :> rhs as an option and colour its pattern red, which it     *)
+(* does not do for Cases.                                       *)
 (* =========================================================== *)
 
 Scan[
