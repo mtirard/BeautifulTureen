@@ -411,6 +411,11 @@ cRoot[s_String, need_] :=
     {"context", _} :> refuseHere["badpat", s],
     {"one", t_} :> translationRoot[t, need]}];
 
+(* A selector string with constraints, "sel"[c...] (bracketedTree,
+   CSSSelector.wl), is a pattern wherever a selector string is. *)
+cRoot[x_ /; bracketedFormQ[x], need_] /; $place =!= "literal" :=
+  Replace[bracketedTree[x], {$Failed :> Throw[$Failed, $refusal], {"one", t_} :> translationRoot[t, need]}];
+
 cRoot[Verbatim[Pattern][n_Symbol, s_String], need_] /; $place === "query" && $contextOK :=
   translationRoot[Replace[cssNamedTree[s, n], $Failed :> Throw[$Failed, $refusal]], need];
 

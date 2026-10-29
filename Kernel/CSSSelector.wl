@@ -7,6 +7,8 @@ PackageScoped[cssTree]
 
 (* Used by Query/TreePatterns.wl *)
 PackageScoped[cssNamedTree]
+PackageScoped[bracketedFormQ]
+PackageScoped[bracketedTree]
 
 (* =========================================================== *)
 (* FromCSSSelector (ADR 0026)                                   *)
@@ -36,6 +38,8 @@ FromCSSSelector::unsupported = "`1` is valid CSS, but `2` cannot be translated t
 FromCSSSelector::impossible = "`2` in `1` depends on a browser, such as user input, layout or the page's URL, and cannot be matched in a static document. `3`";
 
 FromCSSSelector::name = "`1` picks its element by what is above or beside it, so its pattern is rooted higher up and the element it selects needs a name. Use FromCSSSelector[n : `1`], which names it n.";
+
+FromCSSSelector::constraints = "`1` gives constraints to `2`, which picks its element by what is above or beside it, so its pattern is rooted at another element. Only a selector that describes one element takes constraints. Nest the selectors as the tree is, as in \"nav\"[Descendant[x : \"a\"[c]]] :> x.";
 
 FromCSSSelector[s_String] :=
   Replace[cssTree[s], {{"one", p_} :> p, {"context", _} :> (Message[FromCSSSelector::name, s]; $Failed)}];
@@ -821,6 +825,47 @@ cssConstrained[Verbatim[PatternTest][p_, f_], c_] := PatternTest[cssConstrained[
 cssConstrained[Verbatim[Pattern][s_, p_], c_] := Pattern @@ {s, cssConstrained[p, c]};
 cssConstrained[alts_Alternatives, c_] := cssConstrained[#, c] & /@ alts;
 cssConstrained[cssPathed[p_, ts_, t_], c_] := cssPathed[cssConstrained[p, c], ts, t];
+
+(* ---- Constraints on a selector string ----
+
+   "sel"[c...] is the translation of a one-element selector with c... added
+   to each of its pattern roots by cssConstrained: to each branch of a
+   selector list, through names and tests, and beside the constraints its
+   :has() gives. A context selector's pattern is rooted at another element
+   than the one it selects, so it takes none. A second bracket is the chain
+   XMLPattern refuses.
+
+   A bracket on alternatives or a test, as on the FromCSSSelector result of
+   a selector list, is refused too: the message gives the pattern with the
+   constraints in the bracket of each XMLPattern. *)
+
+bracketedFormQ[x_] := stringBracketQ[x] || outerBracketQ[x];
+
+stringBracketQ[(h_)[___]] := StringQ[h] || stringBracketQ[h];
+stringBracketQ[_] := False;
+
+outerBracketQ[(h : _Alternatives | Verbatim[PatternTest][_, _] | Verbatim[Pattern][_, _])[___]] :=
+  AllTrue[cssRootsOf[h], MatchQ[xmlPatternParts[#], {_, _}] &];
+outerBracketQ[_] := False;
+
+cssRootsOf[Verbatim[PatternTest][p_, _] | Verbatim[Pattern][_, p_]] := cssRootsOf[p];
+cssRootsOf[alts_Alternatives] := Join @@ (cssRootsOf /@ List @@ alts);
+cssRootsOf[p_] := {p};
+
+(* {"one", pattern} for a bracketed form, or $Failed after the message. *)
+bracketedTree[x_ /; outerBracketQ[x]] :=
+  (Message[XMLPattern::bracket, x, Fold[cssConstrained, Head[x], List @@ x]]; $Failed);
+bracketedTree[x_] :=
+  Replace[cssBrackets[x], {
+    {s_, {cs_}} :> Replace[cssTree[s], {
+      {"one", p_} :> {"one", Fold[cssConstrained, p, cs]},
+      {"context", _} :> (Message[FromCSSSelector::constraints, x, s]; $Failed),
+      f_ :> f}],
+    {s_, bs_} :> (Message[XMLPattern::chain, x, s @@ Join @@ bs]; $Failed)}];
+
+(* {selector, {the constraints of each bracket, ...}} *)
+cssBrackets[(s_String)[cs___]] := {s, {{cs}}};
+cssBrackets[(h_)[cs___]] := MapAt[Append[#, {cs}] &, cssBrackets[h], 2];
 
 (* :has() of a relative selector that starts below the element: the
    constraint its runs put on the element. *)
