@@ -30,6 +30,82 @@ TestCreate[
   TestID -> "tree-message-constraint"
 ];
 
+(* A bare element pattern could mean some child or the only child. *)
+TestCreate[
+  With[{texts = Join[messageTexts[XMLCases[links, XMLPattern["div"][XMLPattern["p"]]]],
+      messageTexts[XMLCases[links, XMLDocument[XMLPattern["p"]]]]]},
+    {Length[texts], AllTrue[texts, StringContainsQ["Child[p]"]], AllTrue[texts, StringContainsQ["{p}"]]}],
+  {2, True, True},
+  TestID -> "tree-message-constraint-text"
+];
+
+(* Child: one pattern, named and tested inside, a constraint only. *)
+TestCreate[
+  {XMLCases[links, XMLPattern["p"][n : Child[XMLPattern["a"]]] :> n],
+    XMLCases[links, XMLDocument[n : (Child[XMLPattern["a"]] | {})]]},
+  {$Failed, $Failed},
+  {Child::name, Child::name},
+  TestID -> "tree-message-child-name"
+];
+
+TestCreate[
+  First[messageTexts[XMLCases[links, XMLPattern["p"][n : Child[XMLPattern["a"]]] :> n]]],
+  "n:Child[XMLPattern[\"a\"]] names a Child constraint, which has nothing to bind: between an element and its child there is no element. Name the child instead, as in Child[n : p].",
+  TestID -> "tree-message-child-name-text"
+];
+
+TestCreate[
+  {XMLCases[links, XMLPattern["p"][Child[XMLPattern["a"]]?f]], XMLMatchQ[links[[2]], XMLPattern["p"][(Child[XMLPattern["a"]] | {})?f]]},
+  {$Failed, $Failed},
+  {Child::test, Child::test},
+  TestID -> "tree-message-child-test"
+];
+
+TestCreate[
+  {XMLCases[links, XMLPattern["p"][Child[]]], XMLCases[links, XMLPattern["p"][Child[XMLPattern["a"], XMLPattern["b"]]]]},
+  {$Failed, $Failed},
+  {Child::args, Child::args},
+  TestID -> "tree-message-child-args"
+];
+
+TestCreate[
+  With[{text = First[messageTexts[XMLCases[links, XMLPattern["p"][Child[XMLPattern["a"], XMLPattern["b"]]]]]]},
+    {StringContainsQ[text, "Child[a], Child[b]"], StringContainsQ[text, "{___, a, ___, b, ___}"]}],
+  {True, True},
+  TestID -> "tree-message-child-args-text"
+];
+
+(* As a query, inside Descendant, or as a list entry, Child is out of place. *)
+TestCreate[
+  {XMLCases[links, Child[XMLPattern["a"]]], XMLCases[links, Child[XMLPattern["p"], XMLPattern["a"]]]},
+  {$Failed, $Failed},
+  {Child::place, Child::place},
+  TestID -> "tree-message-child-place"
+];
+
+TestCreate[
+  {XMLMatchQ[links[[2]], Child[XMLPattern["a"]]], XMLCases[links, XMLPattern["p"][Descendant[Child[XMLPattern["a"]]]]]},
+  {$Failed, $Failed},
+  {Child::place, Child::place},
+  TestID -> "tree-message-child-place-elsewhere"
+];
+
+(* The text shows the constraint and the 3.0 form it replaces. *)
+TestCreate[
+  With[{text = First[messageTexts[XMLCases[links, Child[XMLPattern["p"], XMLPattern["a"]]]]]},
+    {StringContainsQ[text, "XMLPattern[\"ul\"][Child[x : XMLPattern[\"li\"]]] :> x"], StringContainsQ[text, "version 3"],
+      StringContainsQ[text, "Child[a], Child[b]"]}],
+  {True, True, True},
+  TestID -> "tree-message-child-place-text"
+];
+
+TestCreate[
+  XMLCases[links, XMLPattern["p"][{___, Child[XMLPattern["a"]], ___}]],
+  $Failed,
+  {XMLPattern::listentry},
+  TestID -> "tree-message-child-listentry"
+];
+
 TestCreate[
   {XMLCases[links, XMLPattern["ul"][{Descendant[XMLPattern["a"]]}]],
     XMLCases[links, XMLDocument[{XMLDocument[]}]],
@@ -244,7 +320,7 @@ TestCreate[
       messageTexts[XMLDeleteCases[links, 5]], messageTexts[XMLPosition[links, 5]], messageTexts[XMLReplace[links, 5 :> 6]],
       messageTexts[XMLMatchQ[el["a"], 5]], messageTexts[XMLFreeQ[links, 5]], messageTexts[HTMLInnerText[links, "Roles" -> {5 -> "Block"}]]}},
     {Length[texts], AllTrue[texts, StringContainsQ["XMLPattern"]], AllTrue[texts, StringContainsQ["XMLDocument"]],
-      AllTrue[texts, StringContainsQ["CSS selector"]], NoneTrue[texts, StringContainsQ["combinator" | "Child[" | "list stage"]]}],
+      AllTrue[texts, StringContainsQ["CSS selector"]], NoneTrue[texts, StringContainsQ["combinator" | "Sibling[" | "list stage"]]}],
   {8, True, True, True, True},
   TestID -> "tree-message-badpat-text"
 ];
@@ -285,30 +361,30 @@ TestCreate[
 (* === Removed === *)
 
 TestCreate[
-  {Names["MaximilienTirard`HTMLPatterns`" <> #] & /@ {"Child", "Adjacent", "Sibling"},
+  {Names["MaximilienTirard`HTMLPatterns`" <> #] & /@ {"Adjacent", "Sibling"},
     Cases[{XMLCases::stages, XMLCases::testcombinator, XMLFirstCase::condcombinator, XMLMatchQ::combinator,
       XMLMatchQ::condcombinator, HTMLInnerText::stages, XMLCases::liststage, XMLMatchQ::liststage, XMLPattern::nargs,
       Descendant::stages, Descendant::liststage}, _String]},
-  {{{}, {}, {}}, {}},
+  {{{}, {}}, {}},
   TestID -> "tree-message-removed"
 ];
 
-(* Child, Adjacent and Sibling stay unevaluated in a consumer, which gives
+(* Adjacent and Sibling stay unevaluated in a consumer, which gives
    ::badpat, whose text names the tree form. *)
 TestCreate[
-  With[{texts = Join[messageTexts[XMLCases[links, Child[XMLPattern["p"], XMLPattern["a"]]]],
+  With[{texts = Join[messageTexts[XMLCases[links, Adjacent[XMLPattern["p"], XMLPattern["a"]]]],
       messageTexts[XMLFirstCase[links, Sibling[XMLPattern["a"], XMLPattern["a"]]]],
       messageTexts[XMLDeleteCases[links, XMLPattern["p"][{___, Adjacent[XMLPattern["a"], XMLPattern["a"]], ___}]]]]},
-    {Length[texts], AllTrue[texts, StringContainsQ["Child, Adjacent and Sibling were removed"]],
-      AllTrue[texts, StringContainsQ["x : XMLPattern[\"li\"]"]]}],
+    {Length[texts], AllTrue[texts, StringContainsQ["Adjacent and Sibling were removed"]],
+      AllTrue[texts, StringContainsQ["Child[x : XMLPattern[\"li\"]]"]]}],
   {3, True, True},
   TestID -> "tree-message-combinator-badpat"
 ];
 
 TestCreate[
-  {XMLCases[links, Child[XMLPattern["p"], XMLPattern["a"]]], XMLMatchQ[el["a"], Child[XMLPattern["p"], XMLPattern["a"]]],
+  {XMLCases[links, Sibling[XMLPattern["p"], XMLPattern["a"]]], XMLMatchQ[el["a"], Adjacent[XMLPattern["p"], XMLPattern["a"]]],
     XMLPosition[links, Sibling[XMLPattern["a"], XMLPattern["a"]]], XMLReplace[links, Adjacent[XMLPattern["a"], XMLPattern["a"]] :> "z"],
-    HTMLInnerText[links, "Roles" -> {Child[XMLPattern["p"], XMLPattern["a"]] -> "Block"}]},
+    HTMLInnerText[links, "Roles" -> {Sibling[XMLPattern["p"], XMLPattern["a"]] -> "Block"}]},
   {$Failed, $Failed, $Failed, $Failed, $Failed},
   {XMLCases::badpat, XMLMatchQ::badpat, XMLPosition::badpat, XMLReplace::badpat, HTMLInnerText::badpat},
   TestID -> "tree-message-combinator-badpat-heads"

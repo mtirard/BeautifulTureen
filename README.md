@@ -26,7 +26,7 @@ XMLCases[html, "li.active a"]
 XMLCases[html, XMLPattern["a", {"href" -> h_}] :> h]
 (* {"/a", "/b"} *)
 
-XMLCases[html, XMLPattern["li", "classList" -> "active"][{___, x : XMLPattern["a"], ___}] :> x]
+XMLCases[html, XMLPattern["li", "classList" -> "active"][Child[x : XMLPattern["a"]]] :> x]
 (* {XMLElement["a", {"shape" -> "rect", "href" -> "/b"}, {"Docs"}]} *)
 
 HTMLInnerText[XMLFirstCase[html, "ul.menu"]]

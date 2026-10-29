@@ -28,8 +28,9 @@ PackageScoped[treeSolutions]
 (*                                                              *)
 (* XMLPattern[tag, attrs][c...] takes constraints on what is    *)
 (* below the element (read by xmlPatternParts, Compiler.wl):    *)
-(* list patterns over its element children,                     *)
-(* Descendant[p, levelspec], and alternatives of these; a named  *)
+(* list patterns over its element children, Child[p], which is  *)
+(* the list {___, p, ___}, Descendant[p, levelspec], and         *)
+(* alternatives of these; a named                                *)
 (* Descendant binds its path. XMLDocument[c...] takes the same  *)
 (* constraints on the document. A query gives one result for    *)
 (* each distinct tuple of positions of its counted names, the   *)
@@ -65,11 +66,12 @@ constraintFormQ[c_] := MatchQ[c, _List | _Descendant | _Shortest | _Longest] ||
 namesIn[s_] :=
   DeleteDuplicates @ Cases[s, Verbatim[Pattern][n_Symbol, _] :> Hold[n], {0, Infinity}, Heads -> True];
 
-(* Child, Adjacent and Sibling were removed in 4.0.0 (ADR 0023). A query
-   that still uses one holds it unevaluated, in the caller's context, so it
-   is found by name; it is badpat, whose text gives the tree forms. *)
+(* Adjacent and Sibling were removed in 4.0.0 (ADR 0023). A query that
+   still uses one holds it unevaluated, in the caller's context, so it is
+   found by name; it is badpat, whose text gives the tree forms. Child is a
+   constraint now, with messages of its own. *)
 removedCombinatorQ[held_] :=
-  !FreeQ[held, (h_Symbol /; MemberQ[{"Child", "Adjacent", "Sibling"}, SymbolName[Unevaluated[h]]])[___]];
+  !FreeQ[held, (h_Symbol /; MemberQ[{"Adjacent", "Sibling"}, SymbolName[Unevaluated[h]]])[___]];
 
 (* =========================================================== *)
 (* Running a query                                              *)
@@ -445,6 +447,9 @@ cRoot[d_Descendant, _] :=
     "entry", refuseListEntry[d, "descendant"],
     "query" | "literal", refuse[Descendant::place, d],
     _, refuseHere["badpat", d]];
+(* Child is a constraint only, an argument of a constraint bracket, which
+   cConstraints expands before this. *)
+cRoot[c_Child, _] := If[$place === "entry", refuseListEntry[c, "child"], refuse[Child::place, c]];
 cRoot[l_List, _] /; $place === "entry" := refuseListEntry[l, "list"];
 (* Any other pattern in an XMLElement pattern's contents is WL's, over one
    item: an element or text. *)
@@ -457,8 +462,9 @@ refuseBlank[b_] := If[$place === "descendant", refuse[Descendant::blank, b], ref
 refuseListEntry[x_, reason_] := With[{h = $owner}, refuse[MessageName[h, "listentry"], x, $listEntryReasons[reason]]];
 
 $listEntryReasons = <|
-  "document" -> "An entry is one element child or a sequence of them, and XMLDocument[...] is the document above every element. It can only be the pattern root, as in XMLDocument[{___, x : p, ___}].",
+  "document" -> "An entry is one element child or a sequence of them, and XMLDocument[...] is the document above every element. It can only be the pattern root, as in XMLDocument[Child[x : p]].",
   "descendant" -> "An entry is one element child or a sequence of them, and Descendant[...] says what is somewhere below an element. A child containing x is XMLPattern[_][Descendant[x]].",
+  "child" -> "An entry is one element child or a sequence of them, and Child[...] says that some child of an element matches. A child with a child x is XMLPattern[_][Child[x]].",
   "list" -> "An entry is one element child or a sequence of them, not a list. Several constraints on one element are separate arguments of its bracket, as in XMLPattern[tag][c1, c2]."|>;
 
 conditionNode[kind_, sub_, test_, need_] :=
@@ -566,9 +572,29 @@ $countedNames = {};
 (* The constraints of an XMLPattern or XMLDocument, $owner, which names the
    messages. *)
 cConstraints[cs_List, need_] :=
-  With[{h = $owner},
-    Scan[If[!constraintFormQ[#], refuse[MessageName[h, "constraint"], #]] &, cs];
-    Block[{$place = "constraint"}, cConstraint[#, need] & /@ cs]];
+  With[{h = $owner, expanded = childExpanded /@ cs},
+    Scan[If[!constraintFormQ[#], refuse[MessageName[h, "constraint"], #]] &, expanded];
+    Block[{$place = "constraint"}, cConstraint[#, need] & /@ expanded]];
+
+(* Child[p] is the list constraint {___, p, ___}, and compiles as that list,
+   wherever it is a constraint: alone, or a branch of alternatives, under a
+   Condition, Shortest or Longest. A name or a test on it would have no
+   value: between an element and its child there is nothing. *)
+childExpanded[Child[p_]] := {___, p, ___};
+childExpanded[c_Child] := refuse[Child::args, c];
+childExpanded[c : Verbatim[Pattern][_, x_]] /; childFormQ[x] := refuse[Child::name, c];
+childExpanded[c : Verbatim[PatternTest][x_, _]] /; childFormQ[x] := refuse[Child::test, c];
+childExpanded[alts_Alternatives] := childExpanded /@ alts;
+(* Not With[..., Condition[e, t]], which would be a condition on this
+   definition and evaluate the test. *)
+childExpanded[c : Verbatim[Condition][x_, _]] := ReplacePart[c, 1 -> childExpanded[x]];
+childExpanded[(h : Shortest | Longest)[x_]] := h[childExpanded[x]];
+childExpanded[c_] := c;
+
+(* A constraint that is Child, or holds one as a branch. *)
+childFormQ[c_] := MatchQ[c, _Child] ||
+  MatchQ[c, Verbatim[Pattern][_, x_] | Verbatim[Condition][x_, _] | Verbatim[PatternTest][x_, _] | (Shortest | Longest)[x_] /; childFormQ[x]] ||
+  MatchQ[c, _Alternatives] && AnyTrue[List @@ c, childFormQ];
 
 cConstraint[d_Descendant, need_] := cDescendant[d, need, None];
 cConstraint[c_, need_] /; pathFormQ[c] :=

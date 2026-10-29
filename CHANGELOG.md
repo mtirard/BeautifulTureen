@@ -6,11 +6,11 @@ A breaking release. Patterns are nested as the document is, and a query gives on
 
 ### Breaking changes
 
-- **`Child`, `Adjacent` and `Sibling` are removed.** A query that still uses one stays unevaluated inside the function it is given to, which gives `::badpat`, whose text shows the tree form. Rewrite each as a nested pattern that names what it gives:
+- **`Adjacent` and `Sibling` are removed, and `Child` is a constraint.** A query that still uses `Adjacent` or `Sibling` stays unevaluated inside the function it is given to, which gives `::badpat`, whose text shows the tree form; `Child` as a query gives `Child::place`. Rewrite each as a nested pattern that names what it gives:
 
   | 3.0.0 | 4.0.0 |
   |---|---|
-  | `Child[XMLPattern["ul"], XMLPattern["li"]]` | `XMLPattern["ul"][{___, x : XMLPattern["li"], ___}] :> x` |
+  | `Child[XMLPattern["ul"], XMLPattern["li"]]` | `XMLPattern["ul"][Child[x : XMLPattern["li"]]] :> x` |
   | `Descendant[XMLPattern["nav"], XMLPattern["a"]]` | `XMLPattern["nav"][Descendant[x : XMLPattern["a"]]] :> x` |
   | `Sibling[XMLPattern["h2"], XMLPattern["p"]]` | `XMLPattern[_][{___, XMLPattern["h2"], ___, x : XMLPattern["p"], ___}] :> x` |
   | `Adjacent[XMLPattern["h2"], XMLPattern["p"]]` | `XMLPattern[_][{___, XMLPattern["h2"], x : XMLPattern["p"], ___}] :> x` |
@@ -30,7 +30,8 @@ A breaking release. Patterns are nested as the document is, and a query gives on
 
 ### New
 
-- Constraints on what is below an element go in a second bracket: `XMLPattern[tag][c…]` or `XMLPattern[tag, attrs][c…]`. Each `c` is a list pattern over the element children, such as `{___, XMLPattern["li"], ___}`, or `Descendant[p]`, and all of them must hold. `XMLPattern[tag, attrs][]` is `XMLPattern[tag, attrs]`.
+- Constraints on what is below an element go in a second bracket: `XMLPattern[tag][c…]` or `XMLPattern[tag, attrs][c…]`. Each `c` is a list pattern over the element children, such as `{XMLPattern["li"], ___}`, `Child[p]` or `Descendant[p]`, and all of them must hold. `XMLPattern[tag, attrs][]` is `XMLPattern[tag, attrs]`.
+- `Child[p]`, a constraint that some element child matches `p`, the same as the list `{___, p, ___}`: `XMLPattern["ul"][Child[x : XMLPattern["li"]]] :> x`. Under `XMLDocument[c…]` the children are the top elements. A name or a test goes inside, `Child[n : p]` or `Child[p?f]`; on `Child` itself it gives `Child::name` or `Child::test`. `Child` takes one pattern; several patterns are several constraints or a list, and `Child[a, b]` gives `Child::args`.
 - `XMLPosition` and `XMLExtract`: the positions of the results of a query, and the parts of a tree at positions ([ADR 0025](docs/adr/0025-positions-count-element-children-from-the-document.md)).
 - `XMLReplace`: rewrite what the names of a pattern match.
 - `XMLFreeQ`, with a level spec in DOM depth (issue #32).

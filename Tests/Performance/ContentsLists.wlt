@@ -17,6 +17,16 @@ TestCreate[
   TestID -> "perf-tree-anywhere-10000-siblings"
 ];
 
+(* Child[p] is that list, {___, p, ___}, and runs within its bound. *)
+TestCreate[
+  MemoryConstrained[
+    TimeConstrained[Length @ XMLCases[$tenThousand, XMLPattern["ul"][Child[x : XMLPattern["li", "classList" -> "a"]]] :> x], 5, $Aborted],
+    2*^9, $Failed],
+  2500,
+  TimeConstraint -> 0.15,
+  TestID -> "perf-tree-child-10000-siblings"
+];
+
 (* 5,000 sibling li in one list. *)
 $fiveThousand = XMLElement["body", {}, {XMLElement["ul", {}, Table[XMLElement["li", {}, {"x"}], 5000]]}];
 
