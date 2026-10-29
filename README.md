@@ -7,7 +7,7 @@ Pattern-based HTML element selection and text extraction for the Wolfram Languag
 
 HTMLPatterns works on the `XMLObject` tree that `Import[…, {"HTML", "XMLObject"}]` gives. It adds:
 
-- **XML patterns**: `XMLPattern[tag, attrs, constraints…]`, nested as the document is, with constraints on an element's children and on what is below it (`Descendant`), and CSS selector strings through `FromCSSSelector`
+- **XML patterns**: `XMLPattern[tag, attrs][constraints…]`, nested as the document is, with constraints on an element's children and on what is below it (`Descendant`), and CSS selector strings through `FromCSSSelector`
 - **Selection**: `XMLCases`, `XMLFirstCase`, `XMLPosition`, `XMLExtract`, `XMLMatchQ` and `XMLFreeQ`, with results in document order
 - **Rewriting**: `XMLDeleteCases` and `XMLReplace`
 - **Text**: `HTMLTextContent` and `HTMLInnerText`, the analogues of the DOM's `textContent` and `innerText`
@@ -26,7 +26,7 @@ XMLCases[html, "li.active a"]
 XMLCases[html, XMLPattern["a", {"href" -> h_}] :> h]
 (* {"/a", "/b"} *)
 
-XMLCases[html, XMLPattern["li", "classList" -> "active", {___, x : XMLPattern["a"], ___}] :> x]
+XMLCases[html, XMLPattern["li", "classList" -> "active"][{___, x : XMLPattern["a"], ___}] :> x]
 (* {XMLElement["a", {"shape" -> "rect", "href" -> "/b"}, {"Docs"}]} *)
 
 HTMLInnerText[XMLFirstCase[html, "ul.menu"]]

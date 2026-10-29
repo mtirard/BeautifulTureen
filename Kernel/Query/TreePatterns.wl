@@ -458,8 +458,8 @@ refuseListEntry[x_, reason_] := With[{h = $owner}, refuse[MessageName[h, "listen
 
 $listEntryReasons = <|
   "document" -> "An entry is one element child or a sequence of them, and XMLDocument[...] is the document above every element. It can only be the pattern root, as in XMLDocument[{___, x : p, ___}].",
-  "descendant" -> "An entry is one element child or a sequence of them, and Descendant[...] says what is somewhere below an element. A child containing x is XMLPattern[_, _, Descendant[x]].",
-  "list" -> "An entry is one element child or a sequence of them, not a list. Several constraints on one element are separate arguments of XMLPattern."|>;
+  "descendant" -> "An entry is one element child or a sequence of them, and Descendant[...] says what is somewhere below an element. A child containing x is XMLPattern[_][Descendant[x]].",
+  "list" -> "An entry is one element child or a sequence of them, not a list. Several constraints on one element are separate arguments of its bracket, as in XMLPattern[tag][c1, c2]."|>;
 
 conditionNode[kind_, sub_, test_, need_] :=
   With[{tested = mentioned[test, Keys[$seen]]},
@@ -755,7 +755,7 @@ matchKind["Alt", nd_, i_] :=
 (* The solutions of several parts joined and projected on keep. Each part's
    solutions are distinct, and their names among keep, so the projection is
    needed only where two parts have solutions; as a CSS translation is
-   XMLPattern[_, _, L] | XMLDocument[L], at most one part has, and projecting
+   XMLPattern[_][L] | XMLDocument[L], at most one part has, and projecting
    every solution again costs a few microseconds each. *)
 distinctJoin[parts_, keep_] := If[Count[parts, Except[{}]] <= 1, Join @@ parts, project[Join @@ parts, keep]];
 
