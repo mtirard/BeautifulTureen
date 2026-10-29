@@ -44,6 +44,17 @@ TestCreate[
   TestID -> "replace-inside-out"
 ];
 
+(* Within one element, the edits go in reverse position order: the gap, the
+   child, the token, the attribute, then the tag. So the child reads the
+   original id, and the gap the original tag, while the tag reads the new id. *)
+TestCreate[
+  XMLReplace[doc[XMLElement["div", {"id" -> "d", "class" -> "x y"}, {el["p", "1"], el["p", "2"]}]],
+    XMLPattern[t_, {"id" -> a_, "classList" -> {___, k : "y", ___}}, {p : XMLPattern["p"], g : PatternSequence[], ___}] :>
+      {t -> "section-" <> a, a -> "e", k -> "Y", p -> XMLElement["p", {"title" -> a}, p[[3]]], g -> el["hr", t]}],
+  doc[XMLElement["section-e", {"id" -> "e", "class" -> "x Y"}, {XMLElement["p", {"title" -> "d"}, {"1"}], el["hr", "div"], el["p", "2"]}]],
+  TestID -> "replace-order-within-element"
+];
+
 (* Insertion is replacement at a gap. *)
 TestCreate[
   XMLReplace[doc[el["ul"]], XMLPattern["ul", _, {___, g : PatternSequence[]}] :> {g -> el["li", "new"]}],
