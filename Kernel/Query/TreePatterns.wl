@@ -812,13 +812,16 @@ contentsKind["Plain", c_, i_] := plainSolutions[c, elemOf[i][[3]], Append[posOf[
 contentsKind["ContentsList", c_, i_] /; Length[elemOf[i][[3]]] < c["Min"] := {};
 contentsKind["ContentsList", c_, i_] :=
   With[{items = elemOf[i][[3]]},
-    Block[{$n = Length[items], $walkId = {"Contents", i}, $contentOf = i, $contentIds = contentIds[i, items],
+    Block[{$n = Length[items], $walkId = {"Contents", i}, $contentOf = i, $contentIds = contentIds[i, items], $elementsBefore = elementsBefore[items],
         $oneVector = itemVectorOf, $oneSolutions = itemSolutions, $runMatch = itemRun},
       project[pending[c, Last /@ enumerate[c["Items"], 0, delta[$n]]], c["Keep"]]]];
 
 (* The node of each item that is an element, None for text. *)
 contentIds[i_, items_] :=
   ReplacePart[ConstantArray[None, Length[items]], Thread[Flatten[Position[items, _XMLElement, {1}, Heads -> False]] -> childrenOf[i]]];
+
+(* At s + 1, the number of element children among the first s items. *)
+elementsBefore[items_] := Prepend[Accumulate[Boole[MatchQ[#, _XMLElement] & /@ items]], 0];
 
 itemVectorOf[sub_] := Boole[itemSolutions[sub, #] =!= {} & /@ Range[$n]];
 itemSolutions[sub_, k_] := With[{j = $contentIds[[k]]}, If[j === None, textMatch[sub, $contentOf, k], match[sub, j]]];
@@ -827,10 +830,9 @@ itemSolutions[sub_, k_] := With[{j = $contentIds[[k]]}, If[j === None, textMatch
    text, no position. An empty run is the gap before the next element. *)
 itemRun[s_, e_] :=
   With[{items = elemOf[$contentOf][[3]]},
-    With[{m = Count[Take[items, s], _XMLElement] + 1, run = items[[s + 1 ;; e]]},
-      With[{n = Count[run, _XMLElement]},
-        nameMatch[{If[n == Length[run], Append[posOf[$contentOf], m ;; m + n - 1], itemMissing[run]]}, seq[run],
-          Join[elemKey[$contentOf], sequenceKey[4, m ;; m + n - 1]]]]]];
+    With[{m = $elementsBefore[[s + 1]] + 1, n = $elementsBefore[[e + 1]] - $elementsBefore[[s + 1]], run = items[[s + 1 ;; e]]},
+      nameMatch[{If[n == Length[run], Append[posOf[$contentOf], m ;; m + n - 1], itemMissing[run]]}, seq[run],
+        Join[elemKey[$contentOf], sequenceKey[4, m ;; m + n - 1]]]]];
 
 (* What has no position: text, or another item that is not an element. *)
 itemMissing[v_] := Missing[If[!FreeQ[v, _String, {0, 1}], "Text", "Literal"]];
@@ -841,7 +843,7 @@ textMatch[nd_, i_, k_] := memoised[{"Text", nd["Id"], i, k}, textKind[nd["Kind"]
 
 textItemMatch[i_, k_] :=
   With[{items = elemOf[i][[3]]},
-    nameMatch[{itemMissing[items[[k]]]}, items[[k]], Join[elemKey[i], textItemKey[Count[Take[items, k], _XMLElement] + 1, k]]]];
+    nameMatch[{itemMissing[items[[k]]]}, items[[k]], Join[elemKey[i], textItemKey[$elementsBefore[[k]] + 1, k]]]];
 
 textKind["Named", nd_, i_, k_] :=
   With[{sols = textMatch[nd["Sub"], i, k]},
