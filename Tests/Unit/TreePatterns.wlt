@@ -284,6 +284,92 @@ TestCreate[
   TestID -> "names-on-tags-attributes-tokens"
 ];
 
+(* === Constraints in a second bracket ===
+
+   XMLPattern[tag, attrs][c...] takes the constraints in a bracket of their
+   own, so the attribute argument can be left out: XMLPattern[tag][c...].
+   Each test gives what the same constraints after the attributes give. *)
+
+TestCreate[
+  XMLCases[links, XMLPattern["p"][{x : XMLPattern["a"], ___}] :> id[x]],
+  {"1"},
+  TestID -> "bracket-list-constraint"
+];
+
+TestCreate[
+  {XMLCases[nav, XMLPattern["nav"][Descendant[x : XMLPattern["a"], {1}]] :> id[x]],
+    XMLCases[hrefs, XMLPattern["p", _][{___, x : XMLPattern["a", "href" -> "/x"]}] :> First[x]]},
+  {{"a1", "a2", "a3"}, {"a"}},
+  TestID -> "bracket-descendant-and-attributes"
+];
+
+TestCreate[
+  {XMLCases[links, XMLPattern["p"][{_, _, _}, Descendant[XMLPattern["a", "id" -> "2"]]] :> 1],
+    XMLCases[links, XMLPattern["p"][{x_, ___}, {___, y_}] :> {id[x], id[y]}]},
+  {{1}, {{"1", "3"}}},
+  TestID -> "bracket-several-constraints"
+];
+
+(* Alternatives of constraints, and of patterns in the bracket form. *)
+TestCreate[
+  {XMLCases[alt, XMLPattern["li"][{___, (y : XMLPattern["span"]) | (x : XMLPattern["a"]), ___}] :> {x, y}],
+    XMLCases[links, XMLPattern["p"][{_, _} | {_, _, _}] :> 1],
+    XMLCases[nav, (n : XMLPattern["nav"][{___, XMLPattern["nav"], ___}]) | (n : XMLPattern["p"][{}]) :> id[n]]},
+  {{{el["a"]}, {el["span"]}}, {1}, {"o"}},
+  TestID -> "bracket-alternatives"
+];
+
+(* A name in two constraints names one place. *)
+TestCreate[
+  XMLCases[cells, XMLPattern["tr"][{x : XMLPattern[_], ___}, Descendant[x : XMLPattern["th"], {1}]] :> First[x]],
+  {"th"},
+  TestID -> "bracket-name-in-two-constraints"
+];
+
+(* Named, conditioned and tested constraints, and bracket patterns nested in
+   list constraints and in Descendant. *)
+TestCreate[
+  {XMLCases[links, XMLPattern["p"][l : {___}] :> Length[l]],
+    XMLCases[links, XMLPattern["p"][{___} /; True, {___}?(Length[#] == 3 &)] :> 1],
+    XMLCases[holiday, XMLPattern["tr"][{XMLPattern["th"][{XMLPattern["time", "datetime" -> d_]}], ___}] :> d],
+    XMLCases[nav, XMLPattern["nav"][Descendant[n : XMLPattern["nav"][{x : XMLPattern["a"]}]]] :> {id[n], id[x]}]},
+  {{3}, {1}, {"2026-12-25"}, {{"i", "a2"}}},
+  TestID -> "bracket-named-tested-nested"
+];
+
+(* The whole pattern named, conditioned and tested, and an XMLDocument
+   branch beside it. *)
+TestCreate[
+  {XMLCases[links, (p : XMLPattern["p"][{___}]) /; Length[p[[3]]] == 3 :> 1],
+    XMLCases[links, XMLPattern["p"][{___}]?(Length[#[[3]]] == 3 &) :> 1],
+    XMLCases[links, XMLDocument[{XMLPattern["ul"]}] | (x : XMLPattern["p"][{___, XMLPattern["a"]}]) :> First[x]]},
+  {{1}, {1}, {"p"}},
+  TestID -> "bracket-whole-pattern-wrapped"
+];
+
+(* An empty bracket is the pattern without it. *)
+TestCreate[
+  {XMLCases[hrefs, x : XMLPattern["a"][] :> First[x]], XMLCases[hrefs, XMLPattern["a", "href" -> "/y"][] :> 1],
+    XMLMatchQ[links[[2]], XMLPattern["p"][]], XMLMatchQ[XMLPattern["a", "href" -> "/x"][]][hrefs[[2, 3, 1]]]},
+  {{"a", "a"}, {}, True, True},
+  TestID -> "bracket-empty"
+];
+
+TestCreate[
+  {XMLMatchQ[links[[2]], XMLPattern["p"][{_, _, _}]], XMLMatchQ[XMLPattern["p"][{_, _}]][links[[2]]],
+    XMLFreeQ[nav, XMLPattern["nav"][{XMLPattern["a"], ___}]], XMLFreeQ[XMLPattern["nav"][{}]][nav]},
+  {True, False, False, True},
+  TestID -> "bracket-matchq-freeq"
+];
+
+TestCreate[
+  With[{page = doc[el["body", el["nav", el["a", "Home"], el["a", "News"]], el["p", "Text"]]]},
+    {HTMLInnerText[page, "Roles" -> {XMLPattern["nav"][{___}] -> "Skip"}],
+      HTMLInnerText[page, "Roles" -> {(XMLPattern["nav"][Descendant[x : XMLPattern["a"]]] :> x) -> "Block"}]}],
+  {"Text", "Home\nNews\nText"},
+  TestID -> "bracket-roles-keys"
+];
+
 (* === Messages === *)
 
 TestCreate[

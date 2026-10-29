@@ -140,20 +140,35 @@ cXMLPattern[{tag_, attrs_}] := With[{t = cTag[tag]}, XMLElement[t, cAttrs[attrs]
 
 (* ---- The parts of an XMLPattern ----
 
-   The one place that reads an XMLPattern's tag, attributes and constraints.
+   The one place that reads an XMLPattern's tag, attributes and constraints,
+   whichever way it is written: XMLPattern[tag, attrs][c...], with attrs
+   optional and the bracket possibly empty, or XMLPattern[tag, attrs, c...].
    xmlPatternParts[x] gives {{tag}, {c...}} or {{tag, attrs}, {c...}}: the
-   arguments of XMLPattern itself, and the constraints; None for anything
+   arguments of XMLPattern itself, and the constraints. It gives
+   chained[merged] for a pattern with constraints in more than one place,
+   p[a][b], merged the one way to write it, p[a, b]; and None for anything
    else. *)
 
-xmlPatternFormQ[x_] := MatchQ[x, _XMLPattern];
+xmlPatternFormQ[(h_)[___]] := h === XMLPattern || xmlPatternFormQ[h];
+xmlPatternFormQ[_] := False;
 
 xmlPatternParts[XMLPattern[tag_, attrs_, cs__]] := {{tag, attrs}, {cs}};
 xmlPatternParts[XMLPattern[args : Repeated[_, {1, 2}]]] := {{args}, {}};
+xmlPatternParts[(h_)[cs___]] /; xmlPatternFormQ[h] :=
+  Replace[xmlPatternParts[h], {
+    {head_, {}} /; !MatchQ[h, (_)[___][___]] :> {head, {cs}},
+    {head_, prior_} :> chained[(XMLPattern @@ head) @@ Join[prior, {cs}]],
+    chained[XMLPattern[args__][prior___]] :> chained[XMLPattern[args][prior, cs]],
+    _ -> None}];
 xmlPatternParts[_] := None;
 
-(* The parts of x, an XMLPattern; anything else is refused by notOne[x], as
-   the caller's badpat: each package has its own $head. *)
-xmlPatternPartsOrRefuse[x_, notOne_] := Replace[xmlPatternParts[x], None :> notOne[x]];
+(* The parts of x, an XMLPattern in either form; a chain is refused with
+   XMLPattern::chain, anything else by notOne[x], as the caller's badpat:
+   each package has its own $head. *)
+xmlPatternPartsOrRefuse[x_, notOne_] :=
+  Replace[xmlPatternParts[x], {
+    chained[m_] :> refuse[XMLPattern::chain, x, m],
+    None :> notOne[x]}];
 
 cTag[tag_] := (
   noStringPatterns[tag];

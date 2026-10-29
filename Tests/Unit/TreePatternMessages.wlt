@@ -176,6 +176,30 @@ TestCreate[
   TestID -> "tree-message-xmlfreeq-badpat"
 ];
 
+(* Several constraints are the arguments of one bracket: a second bracket is
+   refused, with the one bracket it means, wherever a pattern goes. *)
+TestCreate[
+  {XMLCases[links, XMLPattern["p"][{___}][Descendant[XMLPattern["a"]]]],
+    XMLFreeQ[XMLPattern["p"][][{___}]][links]},
+  {$Failed, $Failed},
+  {XMLPattern::chain, XMLPattern::chain},
+  TestID -> "tree-message-chain"
+];
+
+TestCreate[
+  messageTexts[XMLCases[links, XMLPattern["p"][{___}][Descendant[XMLPattern["a"]]][{_}]]],
+  {"XMLPattern[\"p\"][{___}][Descendant[XMLPattern[\"a\"]]][{_}] gives constraints in more than one bracket. Several constraints are the arguments of one bracket: XMLPattern[\"p\"][{___}, Descendant[XMLPattern[\"a\"]], {_}]."},
+  TestID -> "tree-message-chain-text"
+];
+
+(* XMLPattern needs a tag, in either form. *)
+TestCreate[
+  {XMLCases[links, XMLPattern[]], XMLMatchQ[links[[2]], XMLPattern[][{_, _, _}]]},
+  {$Failed, $Failed},
+  {XMLCases::badpat, XMLMatchQ::badpat},
+  TestID -> "tree-message-badpat-no-tag"
+];
+
 (* === Changed === *)
 
 (* ::badpat fires for a named context selector as a whole query, a context

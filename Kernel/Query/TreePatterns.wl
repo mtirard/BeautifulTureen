@@ -26,7 +26,7 @@ PackageScoped[treeSolutions]
 (* =========================================================== *)
 (* Tree patterns (ADR 0023, 0024, 0025)                         *)
 (*                                                              *)
-(* XMLPattern[tag, attrs, c...] takes constraints on what is    *)
+(* XMLPattern[tag, attrs][c...] takes constraints on what is    *)
 (* below the element (read by xmlPatternParts, Compiler.wl):    *)
 (* list patterns over its element children,                     *)
 (* Descendant[p, levelspec], and alternatives of these; a named  *)
