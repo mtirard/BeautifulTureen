@@ -411,10 +411,65 @@ elemMatch[i_] := nameMatch[{posOf[i]}, elemOf[i], elemKey[i]];
 (* =========================================================== *)
 
 (* A node is an Association: "Kind", "Id", "Names" (every name bound below
-   it, with Alternatives slots), "Keep" (those something above needs), and
-   the kind's own fields. *)
+   it, with Alternatives slots), "Keep" (those something above needs), the
+   kind's own fields, and the facts about it that do not depend on the tree
+   (withFacts). *)
 treeNode[kind_, names_, need_, rest___] :=
-  <|"Kind" -> kind, "Id" -> ++$nodeId, "Names" -> names, "Keep" -> Intersection[names, need], rest|>;
+  withFacts @ <|"Kind" -> kind, "Id" -> ++$nodeId, "Names" -> names, "Keep" -> Intersection[names, need], rest|>;
+
+(* The facts, computed once, as the node is compiled, from those of the
+   nodes below it, so that matching reads them instead of working them out
+   at each element:
+   - "Captures": whether the walk of a list must branch at an entry: it
+     binds a needed name, or tests a span;
+   - "MinItems": the fewest items an entry, or a list of entries, can match;
+   - "MinKids": the fewest element children an element needs to meet a
+     constraint, or all the constraints of a pattern root;
+   - "Exact": whether a pattern root's candidates are exactly its matches:
+     it tests only an element's tag and attributes, which the compiled test
+     decides;
+   - "HeadPattern": the XMLPattern node of a pattern root that is one,
+     perhaps named, or None. A name on the root that is also bound inside it
+     is compared, so the root is then matched as usual.
+   Each is computed with those before it on the node. *)
+withFacts[nd_] :=
+  Fold[Append[#1, #2[[1]] -> #2[[2]][#1]] &, nd,
+    {{"Captures", capturesQ}, {"MinItems", minItems}, {"MinKids", minKids}, {"Exact", exactQ}, {"HeadPattern", headPattern}}];
+
+capturesQ[nd_] := nd["Keep"] =!= {} || nd["Kind"] === "SeqCond" ||
+  MatchQ[nd["Kind"], "Run" | "Repeat"] && AnyTrue[nd["Items"], #["Captures"] &] ||
+  nd["Kind"] === "Branches" && AnyTrue[Flatten[nd["Subs"]], #["Captures"] &];
+
+minItems[nd_] := Switch[nd["Kind"],
+  "One" | "Not", 1,
+  "Any", nd["Min"],
+  "Run" | "Seq" | "List" | "ContentsList" | "TokenList", itemsMin[nd["Items"]],
+  "SeqCond", nd["Sub"]["MinItems"],
+  "Repeat", nd["Min"] itemsMin[nd["Items"]],
+  "Branches", Min[itemsMin /@ nd["Subs"]],
+  _, 0];
+
+itemsMin[items_List] := Total[#["MinItems"] & /@ items];
+
+minKids[nd_] := Switch[nd["Kind"],
+  "List", nd["MinItems"],
+  "ListNamed" | "ListCond" | "ListTest" | "PathNamed" | "PathTest" | "PathCond" | "PathNearest", nd["Sub"]["MinKids"],
+  "Descendant", 1,
+  "ConstraintAlt", Min[#["MinKids"] & /@ nd["Subs"]],
+  "XMLPattern" | "XMLDocument", Max[0, #["MinKids"] & /@ nd["Constraints"]],
+  _, 0];
+
+exactQ[nd_] := Switch[nd["Kind"],
+  "XMLPattern", nd["Constraints"] === {},
+  "Blank", nd["Head"] === {},
+  "Named", nd["Sub"]["Exact"],
+  "Alt", AllTrue[nd["Subs"], #["Exact"] &],
+  _, False];
+
+headPattern[nd_] := Switch[nd["Kind"],
+  "XMLPattern", nd,
+  "Named", If[nd["Sub"]["Kind"] === "XMLPattern" && !MemberQ[nd["Sub"]["Names"], nd["Name"]], nd["Sub"], None],
+  _, None];
 
 compileRoot[Hold[lhs_], need_] := cRoot[lhs, need];
 
@@ -442,8 +497,7 @@ cRoot[alts_Alternatives, need_] :=
 cRoot[XMLDocument[cs___], need_] /; $place === "query" :=
   Block[{$owner = XMLDocument},
     With[{cons = cConstraints[{cs}, need]},
-      treeNode["XMLDocument", Union @@ Prepend[#["Names"] & /@ cons, {}], need,
-        "Constraints" -> cons, "MinKids" -> Max[0, minKids /@ cons]]]];
+      treeNode["XMLDocument", Union @@ Prepend[#["Names"] & /@ cons, {}], need, "Constraints" -> cons]]];
 cRoot[x_XMLDocument, _] := If[$place === "entry", refuseListEntry[x, "document"], refuse[XMLDocument::place, x]];
 
 cRoot[x_ /; xmlPatternFormQ[x], need_] := cTreePattern[xmlPatternPartsOrRefuse[x, refuseHere["badpat", #] &], need];
@@ -558,7 +612,7 @@ cTreePattern[{{tag_, attrs_}, {cs___}}, need_] :=
     treeNode["XMLPattern", Union[headNames, Union @@ Prepend[#["Names"] & /@ cons, {}]], need,
       "Plain" -> c["Plain"], "Readings" -> c["Readings"], "Tag" -> tag, "Attrs" -> attrs,
       "HeadNames" -> Intersection[headNames, need], "Constraints" -> cons,
-      "MinKids" -> Max[0, minKids /@ cons], "PlainRules" -> plainRules, "TokenLists" -> tokenLists]];
+      "PlainRules" -> plainRules, "TokenLists" -> tokenLists]];
 
 (* The rules of an attribute argument that is a rule or a list of them,
    or None. *)
@@ -646,7 +700,7 @@ cContents[Verbatim[PatternTest][p_, f_], need_] :=
   With[{sub = cContents[p, need]}, treeNode["ContentsTest", sub["Names"], need, "Sub" -> sub, "F" -> f]];
 cContents[l_List, need_] /; !FreeQ[l, _XMLPattern] || IntersectingQ[namesIn[outsideExcept[Hold[l]]], need] :=
   With[{items = Block[{$single = cRoot}, cItems[l, need]]},
-    treeNode["ContentsList", Union @@ Prepend[#["Names"] & /@ items, {}], need, "Items" -> items, "Min" -> minLength[items]]];
+    treeNode["ContentsList", Union @@ Prepend[#["Names"] & /@ items, {}], need, "Items" -> items]];
 cContents[p_, need_] := plainNode[p, need];
 
 (* A WL pattern matched whole against one value: an item, or a literal's
@@ -767,7 +821,7 @@ cListConstraint[Verbatim[PatternTest][l_, f_], need_] :=
 cListConstraint[x_, _] /; !ListQ[x] := refuse[XMLPattern::constraint, x];
 cListConstraint[l_List, need_] :=
   With[{items = Block[{$place = "entry", $single = cRoot}, cItems[l, need]]},
-    treeNode["List", Union @@ Prepend[#["Names"] & /@ items, {}], need, "Items" -> items, "Min" -> minLength[items]]];
+    treeNode["List", Union @@ Prepend[#["Names"] & /@ items, {}], need, "Items" -> items]];
 
 (* ---- List entries ---- *)
 
@@ -831,30 +885,6 @@ repeatBounds[Verbatim[Repeated][_, n_]] := {1, n};
 repeatBounds[Verbatim[RepeatedNull][_, n_]] := {0, n};
 repeatBounds[Verbatim[Repeated][_]] := {1, Infinity};
 repeatBounds[Verbatim[RepeatedNull][_]] := {0, Infinity};
-
-(* An entry the walk must branch at: it binds a needed name, or tests a span. *)
-capQ[it_] := it["Keep"] =!= {} || MatchQ[it["Kind"], "SeqCond"] ||
-  MatchQ[it["Kind"], "Run" | "Repeat"] && AnyTrue[it["Items"], capQ] ||
-  it["Kind"] === "Branches" && AnyTrue[Flatten[it["Subs"]], capQ];
-
-(* The fewest items a list of entries can match. *)
-minLength[items_List] := Total[minItems /@ items];
-minItems[it_] := Switch[it["Kind"],
-  "One" | "Not", 1,
-  "Any", it["Min"],
-  "Run", minLength[it["Items"]],
-  "SeqCond", minLength[it["Sub"]["Items"]],
-  "Repeat", it["Min"] minLength[it["Items"]],
-  "Branches", Min[minLength /@ it["Subs"]],
-  _, 0];
-
-(* The fewest element children an element needs to meet a constraint. *)
-minKids[c_] := Switch[c["Kind"],
-  "List", c["Min"],
-  "ListNamed" | "ListCond" | "ListTest" | "PathNamed" | "PathTest" | "PathCond" | "PathNearest", minKids[c["Sub"]],
-  "Descendant", 1,
-  "ConstraintAlt", Min[minKids /@ c["Subs"]],
-  _, 0];
 
 (* =========================================================== *)
 (* Matching                                                     *)
@@ -934,7 +964,7 @@ contentsKind["ContentsCond", c_, i_] := conditionFiltered[c, contentsSolutions[c
 contentsKind["ContentsTest", c_, i_] :=
   With[{sols = contentsSolutions[c["Sub"], i]}, If[sols =!= {} && TrueQ[c["F"][elemOf[i][[3]]]], sols, {}]];
 contentsKind["Plain", c_, i_] := plainSolutions[c, elemOf[i][[3]], Append[posOf[i], All], Join[elemKey[i], contentsKey[]]];
-contentsKind["ContentsList", c_, i_] /; Length[elemOf[i][[3]]] < c["Min"] := {};
+contentsKind["ContentsList", c_, i_] /; Length[elemOf[i][[3]]] < c["MinItems"] := {};
 contentsKind["ContentsList", c_, i_] :=
   With[{items = elemOf[i][[3]]},
     Block[{$n = Length[items], $walkId = {"Contents", i}, $contentOf = i, $contentIds = contentIds[i, items], $elementsBefore = elementsBefore[items],
@@ -1180,18 +1210,18 @@ constraintKind["ListTest", c_, i_] :=
 
 (* A list with no entry to branch at binds nothing, so it holds when its
    entries can reach the last place from the first: one pass, no walk. *)
-constraintKind["List", c_, i_] /; Length[childrenOf[i]] < c["Min"] := {};
+constraintKind["List", c_, i_] /; Length[childrenOf[i]] < c["MinItems"] := {};
 constraintKind["List", c_, i_] :=
   Block[{$n = Length[childrenOf[i]], $walkId = i, $kidIds = childrenOf[i], $oneVector = childVector, $oneSolutions = childSolutions,
       $runMatch = childRun},
     Which[
-      NoneTrue[c["Items"], capQ], If[Last[reach[c["Items"], delta[0], 1]] == 1, {<||>}, {}],
+      NoneTrue[c["Items"], #["Captures"] &], If[Last[reach[c["Items"], delta[0], 1]] == 1, {<||>}, {}],
       oneCaptureQ[c] && boundChildQ[c], oneCapture[c],
       True, project[If[oneCaptureQ[c], oneCapture[c], walked[c["Items"]]], c["Keep"]]]];
 
 (* Whether the one entry that binds a needed name binds the child itself, so
    that the solutions at two children differ, and need no projection. *)
-boundChildQ[c_] := With[{sub = SelectFirst[c["Items"], capQ]["Sub"]}, sub["Kind"] === "Named" && MemberQ[sub["Keep"], sub["Name"]]];
+boundChildQ[c_] := With[{sub = SelectFirst[c["Items"], #["Captures"] &]["Sub"]}, sub["Kind"] === "Named" && MemberQ[sub["Keep"], sub["Name"]]];
 
 (* The solutions of a list of entries over the children. An Except that
    refers to a name the list binds later records, at each child, what it
@@ -1218,7 +1248,7 @@ walked[items_] :=
    one entry left that binds a name is one child, it is taken as oneCapture
    takes it, by three vectors, without a walk. *)
 boundWalk[items_] :=
-  With[{caps = Flatten @ Position[capQ[#] && !boundOnlyQ[#] & /@ items, True]},
+  With[{caps = Flatten @ Position[#["Captures"] && !boundOnlyQ[#] & /@ items, True]},
     If[Length[caps] == 1 && items[[First[caps]]]["Kind"] === "One", oneCaptureAt[items, First[caps]],
       Last /@ enumerate[items, 0, delta[$n]]]];
 
@@ -1226,7 +1256,7 @@ boundWalk[items_] :=
    binds nothing else: the walk reads it as a vector (entrySpans). *)
 boundOnlyQ[it_] := Switch[it["Kind"],
   "Not", boundRecordQ[it] && it["Keep"] === {it["Record"]},
-  "Repeat", AllTrue[it["Items"], !capQ[#] || boundOnlyQ[#] &],
+  "Repeat", AllTrue[it["Items"], !#["Captures"] || boundOnlyQ[#] &],
   _, False];
 
 (* The names the Excepts among items refer to that a one-child entry of items
@@ -1284,7 +1314,7 @@ constraintKind["Descendant", c_, i_] :=
     If[{lo, hi} =!= {1, Infinity},
       cands = Pick[cands, UnitStep[$depth[[cands + 1]] - d0 - lo] UnitStep[hi - ($depth[[cands + 1]] - d0)], 1]];
     If[c["Keep"] === {},
-      If[exactCandidatesQ[sub] && cands =!= {} || AnyTrue[cands, match[sub, #] =!= {} &], {<||>}, {}],
+      If[sub["Exact"] && cands =!= {} || AnyTrue[cands, match[sub, #] =!= {} &], {<||>}, {}],
       project[Join @@ (descendantSolutions[sub, #, c["Key"]] & /@ cands), c["Keep"]]]];
 
 (* The candidates of a pattern root strictly below node i, in document
@@ -1391,7 +1421,7 @@ delta[p_] := UnitVector[$n + 1, p + 1];
 
 childVector[sub_] :=
   memoised[{"Vector", sub["Id"], $walkId},
-    Developer`ToPackedArray @ If[exactCandidatesQ[sub],
+    Developer`ToPackedArray @ If[sub["Exact"],
       candidateVector[sub][[$kidIds]],
       Boole[match[sub, #] =!= {} & /@ $kidIds]]];
 
@@ -1414,14 +1444,6 @@ parentsWith[it_] :=
       v[[DeleteCases[$parent[[Flatten[Position[candidateVector[it["Sub"]], 1]] + 1]], 0]]] = 1;
       v]];
 
-(* Whether a pattern root's candidates are exactly its matches: it tests only
-   an element's tag and attributes, which the compiled test decides. *)
-exactCandidatesQ[nd_] := Switch[nd["Kind"],
-  "XMLPattern", nd["Constraints"] === {},
-  "Blank", nd["Head"] === {},
-  "Named", exactCandidatesQ[nd["Sub"]],
-  "Alt", AllTrue[nd["Subs"], exactCandidatesQ],
-  _, False];
 childSolutions[sub_, k_] := match[sub, $kidIds[[k]]];
 childRun[s_, e_] :=
   nameMatch[{Append[posOf[$walkId], s + 1 ;; e]}, seq[elemOf /@ $kidIds[[s + 1 ;; e]]], Join[elemKey[$walkId], sequenceKey[4, s + 1 ;; e]]];
@@ -1519,7 +1541,7 @@ repeatReach[it_, s_, dir_] :=
 enumerate[items_, s0_, endOK_] := enumerate[items, s0, endOK, backReach[items, endOK]];
 enumerate[items_, s0_, endOK_, back_] :=
   Module[{caps, frontier = {{s0, <||>}}, prev = 0, ends},
-    caps = Flatten @ Position[capQ /@ items, True];
+    caps = Flatten @ Position[#["Captures"] & /@ items, True];
     Do[
       ends = segmentEnds[items[[prev + 1 ;; c - 1]], back[[c]]];
       frontier = Join @@ Function[f,
@@ -1566,7 +1588,7 @@ entrySpans[it_, s_, next_] := Switch[it["Kind"],
     projectSpans[Join @@ (Function[b, With[{inner = enumerate[b, s, next]},
       If[it["Slot"] === None, inner, {#[[1]], Append[#[[2]], it["Slot"] -> $runMatch[s, #[[1]]]]} & /@ inner]]] /@ it["Subs"]), it["Keep"]],
   "Repeat",
-    If[capQ[it] && !AllTrue[it["Items"], !capQ[#] || boundRecordQ[#] && #["Keep"] === {#["Record"]} &],
+    If[it["Captures"] && !AllTrue[it["Items"], !#["Captures"] || boundRecordQ[#] && #["Keep"] === {#["Record"]} &],
       repeatSpans[it, s, next],
       {#, <||>} & /@ (Flatten @ Position[repeatReach[it, delta[s], 1] next, 1] - 1)]];
 
@@ -1618,9 +1640,9 @@ projectSpans[sps_, keep_] := DeleteDuplicatesBy[{#[[1]], KeyTake[#[[2]], keep]} 
    branch at: the children it binds are where the entries before it can end,
    it matches, and the entries after it can match the rest. *)
 oneCaptureQ[c_] :=
-  With[{caps = Select[c["Items"], capQ]}, Length[caps] == 1 && caps[[1]]["Kind"] === "One"];
+  With[{caps = Select[c["Items"], #["Captures"] &]}, Length[caps] == 1 && caps[[1]]["Kind"] === "One"];
 
-oneCapture[c_] := oneCaptureAt[c["Items"], First @ FirstPosition[capQ /@ c["Items"], True]];
+oneCapture[c_] := oneCaptureAt[c["Items"], First @ FirstPosition[#["Captures"] & /@ c["Items"], True]];
 
 oneCaptureAt[items_, k_] :=
   With[{f = reach[Take[items, k - 1], delta[0], 1], b = reach[Drop[items, k], delta[$n], -1], sub = items[[k]]["Sub"]},
@@ -1863,18 +1885,11 @@ rootSolutions[root_, oneQ_, nodes_] :=
    attributes is matched once, and its solutions are moved to the other
    elements that have it: matching each element cost about 40 µs for a name
    on an attribute, 95 µs for one on a list key. *)
-headRootQ[root_] := !$records && With[{x = headPatternOf[root]}, x =!= None && x["Constraints"] === {} && x["HeadNames"] =!= {}];
-
-(* The XMLPattern node of such a root, or None. A name on the root that is
-   also bound inside it is compared, so the root is matched as usual. *)
-headPatternOf[nd_] := Switch[nd["Kind"],
-  "XMLPattern", nd,
-  "Named", If[nd["Sub"]["Kind"] === "XMLPattern" && !MemberQ[nd["Sub"]["Names"], nd["Name"]], nd["Sub"], None],
-  _, None];
+headRootQ[root_] := !$records && With[{x = root["HeadPattern"]}, x =!= None && x["Constraints"] === {} && x["HeadNames"] =!= {}];
 
 (* The solutions of match[root, #] & /@ cands, joined. *)
 headRootSolutions[root_, cands_] :=
-  With[{x = headPatternOf[root],
+  With[{x = root["HeadPattern"],
       name = If[root["Kind"] === "Named" && MemberQ[root["Keep"], root["Name"]], root["Name"], None]},
     With[{heads = headReads[x["Attrs"], elemOf /@ cands]},
       With[{templates = headTemplate[x, #, name] & /@ GroupBy[Transpose[{heads, cands}], First -> Last, First]},
@@ -2044,7 +2059,7 @@ listRootQ[q_] := MatchQ[q, _List] ||
 listRoot[q_, need_] :=
   Block[{$owner = XMLMatchQ, $place = "constraint"},
     With[{c = cConstraint[q, need]},
-      treeNode["XMLDocument", c["Names"], need, "Constraints" -> {c}, "MinKids" -> minKids[c]]]];
+      treeNode["XMLDocument", c["Names"], need, "Constraints" -> {c}]]];
 
 (* How many DOM levels below its root node a pattern reads. *)
 reachBelow[nd_] := Switch[nd["Kind"],
