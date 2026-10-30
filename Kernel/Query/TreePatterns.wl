@@ -1939,12 +1939,13 @@ groupResult[mode_, rhs_, all_, testNames_, group_] :=
      the value a list of what the name splices in, as XMLReplace acts on it,
      evaluating its replacements later, on the tree as rewritten. Compiled
      with counted names given, the names the right-hand side mentions beyond
-     them take their first passing match.
+     them take their first passing match. The slot of an Alternatives at the
+     root, which is not a name, is left out.
    A result its Conditions refuse gives none, in every mode. *)
 resultOf["Values", rhs_, all_, sol_] := evaluated[substituted[rhs, all, sol]];
 resultOf["Solutions", rhs_, all_, sol_] :=
   If[guardedBody[rhs] =!= rhs && evaluated[substituted[rhs, all, sol]] === $noResult, $noResult,
-    {{matchPos[#], {valueOf[#]}} & /@ sol}];
+    {{matchPos[#], {valueOf[#]}} & /@ KeySelect[sol, MatchQ[_Hold]]}];
 resultOf["CountedPositions", rhs_, all_, sol_] :=
   If[guardedBody[rhs] =!= rhs && evaluated[substituted[rhs, all, sol]] === $noResult, $noResult,
     {positionOf["CountedPositions", Lookup[sol, Key[#], None]] & /@ First[rhsNames[rhs, all]]}];
