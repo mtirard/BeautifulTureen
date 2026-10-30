@@ -1146,12 +1146,16 @@ constraintKind["ListCond", c_, i_] := conditionFiltered[c, matchConstraint[c["Su
 constraintKind["ListTest", c_, i_] :=
   With[{sols = matchConstraint[c["Sub"], i]}, If[sols =!= {} && TrueQ[c["F"][elemOf /@ childrenOf[i]]], sols, {}]];
 
+(* A list with no entry to branch at binds nothing, so it holds when its
+   entries can reach the last place from the first: one pass, no walk. *)
 constraintKind["List", c_, i_] /; Length[childrenOf[i]] < c["Min"] := {};
 constraintKind["List", c_, i_] :=
   Block[{$n = Length[childrenOf[i]], $walkId = i, $kidIds = childrenOf[i], $oneVector = childVector, $oneSolutions = childSolutions,
       $runMatch = childRun},
-    If[oneCaptureQ[c] && boundChildQ[c], oneCapture[c],
-      project[If[oneCaptureQ[c], oneCapture[c], walked[c["Items"]]], c["Keep"]]]];
+    Which[
+      NoneTrue[c["Items"], capQ], If[Last[reach[c["Items"], delta[0], 1]] == 1, {<||>}, {}],
+      oneCaptureQ[c] && boundChildQ[c], oneCapture[c],
+      True, project[If[oneCaptureQ[c], oneCapture[c], walked[c["Items"]]], c["Keep"]]]];
 
 (* Whether the one entry that binds a needed name binds the child itself, so
    that the solutions at two children differ, and need no projection. *)
