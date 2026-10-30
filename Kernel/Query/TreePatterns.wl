@@ -17,6 +17,32 @@ PackageScoped[runQuery]
 PackageScoped[joinedResults]
 PackageScoped[distinctPositions]
 
+(* The engine switch, which the test comparing the two engines sets *)
+PackageScoped[$engine]
+
+(* Used by Query/Columnar.wl, the columnar engine, which reads the index,
+   the compiled nodes' vectors and the run's globals, and gives its results
+   as the solutions engine's resultOf makes them *)
+PackageScoped[$elem]
+PackageScoped[$parent]
+PackageScoped[$depth]
+PackageScoped[$end]
+PackageScoped[$vectors]
+PackageScoped[$readings]
+PackageScoped[$slotOf]
+PackageScoped[$order]
+PackageScoped[$noResult]
+PackageScoped[elemOf]
+PackageScoped[childrenOf]
+PackageScoped[posOf]
+PackageScoped[nameMatch]
+PackageScoped[candidateCounts]
+PackageScoped[passesQ]
+PackageScoped[resultOf]
+PackageScoped[rhsNames]
+PackageScoped[guardedBody]
+PackageScoped[subNodes]
+
 (* =========================================================== *)
 (* Tree patterns (ADR 0023, 0024, 0025)                         *)
 (*                                                              *)
@@ -111,11 +137,18 @@ compileQuery[head_, q_, counted_ : None, lists_ : None] :=
         $records = $exceptRefs =!= {};
         With[{need = Union[First[names], Last[names], comparedNames[lhs]]},
           root = If[listQ, listRoot[q, need], compileRoot[lhs, need]]];
-        <|"Head" -> head, "Test" -> counted === "Test", "Root" -> root, "Rhs" -> rhs, "Names" -> all, "Counted" -> First[names],
+        withEngine @ <|"Head" -> head, "Test" -> counted === "Test", "Root" -> root, "Rhs" -> rhs, "Names" -> all, "Counted" -> First[names],
           "TestNames" -> Last[names], "Readings" -> $readings, "Order" -> $order, "Slots" -> $slotOf,
           "NamedPaths" -> $namedPaths, "ExceptRefs" -> $exceptRefs, "Records" -> $records, "Lists" -> listQ,
-          "Reach" -> reachBelow[root]|>]],
+          "Reach" -> reachBelow[root], "Query" -> Hold[q]|>]],
     $refusal];
+
+(* While both engines exist, the compiled query records which runs it:
+   "Engine" is "Columnar" when the columnar engine covers the query, or
+   else why it does not (columnarCoverage, Query/Columnar.wl). It is
+   decided from the query alone, for every output mode and every roots.
+   "Query", the query as given, is for the log of engines (engineLog). *)
+withEngine[cq_] := Append[cq, "Engine" -> columnarCoverage[cq]];
 
 (* The results of compiled query cq on tree, the first n of them in result
    order, each the list of what it splices in, or $Failed after a message
@@ -136,8 +169,44 @@ runQuery[cq_Association, tree_, mode_, n_ : Infinity, roots_ : All] :=
             $indexDepth = indexDepth[roots, top, cq["Reach"]], $memo = <||>,
             $elem, $parent, $depth, $kids, $index, $end, $wlPos, $tops, $posMemo = <||>, $keyMemo = <||>,
             $matElems = <||>, $vectors = <||>, $keyLength},
-          onIndex[roots, tree, results[mode, cq, bareQ[roots, tree], n, rootNodes[cq["Root"], roots, top, tree]] &]]]],
+          onIndex[roots, tree, engineResults[mode, cq, bareQ[roots, tree], n, rootNodes[cq["Root"], roots, top, tree]] &]]]],
     $refusal];
+
+(* ---- The engine seam ----
+
+   Two engines answer a query while the columnar one replaces the solutions
+   one: results here, columnarResults in Query/Columnar.wl. Both take the
+   same arguments, inside the run's Block, and read the same index and the
+   same vectors kept with it. The compiled query says whether the columnar
+   engine covers it ("Engine"); if so it runs, unless the switch says
+   otherwise. A covered query that meets, while matching, a case the
+   columnar engine does not handle gives up before any right-hand side is
+   evaluated, and the solutions engine runs it. *)
+
+(* The switch: Automatic or "Columnar", the columnar engine where it covers
+   the query; "Solutions", the solutions engine always. Set from the
+   environment, so that the whole test suite runs under either engine. *)
+$engine = Replace[Environment["HTMLPATTERNS_ENGINE"], Except["Solutions" | "Columnar"] -> Automatic];
+
+engineResults[mode_, cq_, bare_, n_, nodes_] :=
+  Which[
+    $engine === "Solutions", engineLog["Solutions", cq, "the switch"]; results[mode, cq, bare, n, nodes],
+    cq["Engine"] =!= "Columnar", engineLog["Solutions", cq, cq["Engine"]]; results[mode, cq, bare, n, nodes],
+    True,
+      Catch[With[{r = columnarResults[mode, cq, bare, n, nodes]}, engineLog["Columnar", cq, ""]; r],
+        $columnarFallback,
+        Function[{reason, tag}, engineLog["Fallback", cq, reason]; results[mode, cq, bare, n, nodes]]]];
+
+(* The log of which engine ran each query, and why not the columnar one: a
+   line per run, appended to the file the environment names, if it names
+   one. *)
+$engineLog = Replace[Environment["HTMLPATTERNS_ENGINE_LOG"], Except[_String] -> None];
+
+engineLog[_, _, _] /; $engineLog === None := Null;
+engineLog[engine_, cq_, reason_] :=
+  With[{s = OpenAppend[$engineLog, CharacterEncoding -> "UTF-8"]},
+    WriteString[s, StringRiffle[{engine, ToString[cq["Head"]], reason, ToString[cq["Query"], InputForm]}, "\t"], "\n"];
+    Close[s]];
 
 (* The results of a run joined, each spliced in, as in Cases; $Failed
    passes through. *)
