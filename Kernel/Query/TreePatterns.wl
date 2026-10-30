@@ -135,7 +135,7 @@ runQuery[cq_Association, tree_, mode_, n_ : Infinity, roots_ : All] :=
             $namedPaths = cq["NamedPaths"], $exceptRefs = cq["ExceptRefs"], $records = cq["Records"],
             $indexDepth = indexDepth[roots, top, cq["Reach"]], $memo = <||>,
             $elem, $parent, $depth, $kids, $index, $end, $wlPos, $tops, $posMemo = <||>, $keyMemo = <||>,
-            $matElems = <||>, $keyLength},
+            $matElems = <||>, $vectors = <||>, $keyLength},
           onIndex[roots, tree, results[mode, cq, bareQ[roots, tree], n, rootNodes[cq["Root"], roots, top, tree]] &]]]],
     $refusal];
 
@@ -329,23 +329,38 @@ indexTree[input_] :=
     $keyLength = 3 Max[$depth] + 8];
 
 (* The index of the input of the last query, the elements it
-   materialised for each set of readings, and the positions and order keys
-   of the elements it read, are kept for the next: a
+   materialised for each set of readings, the positions and order keys
+   of the elements it read, and the vectors over the elements its compiled
+   nodes computed (keptVector), are kept for the next: a
    document is often queried many times, and indexing it costs about 50 ms
    at 8,000 elements. An input that is the same expression, which SameQ
    tells at once when it is the one given before, reuses them. *)
 $indexCache = {None, None, {}};
 
+(* The vectors kept are dropped together once there are more than this, so
+   that many different queries of one large document do not hold a vector
+   of its size each. *)
+$keptVectors = 200;
+
+(* A vector over the elements that depends only on the index and on what a
+   node is, its static key (keyed): kept with the index, so that the same
+   node in another query, or the same query again, finds it. For a node
+   with no key it is kept for this run only, as other memos are. *)
+SetAttributes[keptVector, HoldRest];
+keptVector[{tag_, id_, None}, v_] := memoised[{tag, id}, v];
+keptVector[{tag_, id_, key_}, v_] := memoised[{tag, id}, Lookup[$vectors, Key[{tag, key}], $vectors[{tag, key}] = v]];
+
 cachedIndexTree[input_] :=
   If[cachedQ[input],
-    {$tops, $wlPos, $elem, $parent, $depth, $kids, $index, $end, $keyLength, $matElems, $posMemo, $keyMemo} = $indexCache[[3]],
+    {$tops, $wlPos, $elem, $parent, $depth, $kids, $index, $end, $keyLength, $matElems, $posMemo, $keyMemo, $vectors} = $indexCache[[3]],
     indexTree[input];
     keepIndex[input]];
 
 cachedQ[input_] := $indexCache[[2]] === $indexDepth && $indexCache[[1]] === input;
 
 keepIndex[input_] :=
-  $indexCache = {input, $indexDepth, {$tops, $wlPos, $elem, $parent, $depth, $kids, $index, $end, $keyLength, $matElems, $posMemo, $keyMemo}};
+  $indexCache = {input, $indexDepth, {$tops, $wlPos, $elem, $parent, $depth, $kids, $index, $end, $keyLength, $matElems, $posMemo, $keyMemo,
+    If[Length[$vectors] > $keptVectors, <||>, $vectors]}};
 
 (* What a query read is kept when it ends, unless a query in its right-hand
    side, on another input, has replaced the cache meanwhile. *)
@@ -430,11 +445,16 @@ treeNode[kind_, names_, need_, rest___] :=
      decides;
    - "HeadPattern": the XMLPattern node of a pattern root that is one,
      perhaps named, or None. A name on the root that is also bound inside it
-     is compared, so the root is then matched as usual.
+     is compared, so the root is then matched as usual;
+   - "CandidateKey" and "FilterKey": what a pattern root's candidates, and a
+     constraint's filter on them, are computed from, under which the
+     vectors over the elements are kept with the index (keptVector); None
+     when a test in it may give another result in another query.
    Each is computed with those before it on the node. *)
 withFacts[nd_] :=
   Fold[Append[#1, #2[[1]] -> #2[[2]][#1]] &, nd,
-    {{"Captures", capturesQ}, {"MinItems", minItems}, {"MinKids", minKids}, {"Exact", exactQ}, {"HeadPattern", headPattern}}];
+    {{"Captures", capturesQ}, {"MinItems", minItems}, {"MinKids", minKids}, {"Exact", exactQ}, {"HeadPattern", headPattern},
+      {"FilterKey", filterKey}, {"CandidateKey", candidateKey}}];
 
 capturesQ[nd_] := nd["Keep"] =!= {} || nd["Kind"] === "SeqCond" ||
   MatchQ[nd["Kind"], "Run" | "Repeat"] && AnyTrue[nd["Items"], #["Captures"] &] ||
@@ -470,6 +490,38 @@ headPattern[nd_] := Switch[nd["Kind"],
   "XMLPattern", nd,
   "Named", If[nd["Sub"]["Kind"] === "XMLPattern" && !MemberQ[nd["Sub"]["Names"], nd["Name"]], nd["Sub"], None],
   _, None];
+
+(* As candidates and constraintFilter compute the vectors. *)
+candidateKey[nd_] := Switch[nd["Kind"],
+  "Named" | "Cond" | "Test", nd["Sub"]["CandidateKey"],
+  "Alt", keyed[{"Alt", #["CandidateKey"] & /@ nd["Subs"]}],
+  "XMLPattern", keyed[{"XMLPattern", nd["HeadKey"], nd["MinKids"], #["FilterKey"] & /@ nd["Constraints"]}],
+  "XMLDocument", {"Document"},
+  _, {"All"}];
+
+filterKey[nd_] := Switch[nd["Kind"],
+  "List", keyed[{"Parents", #["Sub"]["CandidateKey"] & /@ Select[nd["Items"], #["Kind"] === "One" &]}],
+  "ListNamed" | "ListCond" | "ListTest" | "PathNamed" | "PathTest" | "PathCond" | "PathNearest", nd["Sub"]["FilterKey"],
+  "Descendant", keyed[{"Below", nd["Sub"]["CandidateKey"]}],
+  _, {"All"}];
+
+keyed[k_] := If[FreeQ[k, None], k, None];
+
+(* The key of the test of an XMLPattern's tag and attributes: its compiled
+   pattern, with the names numbered in the order they appear, as a selector
+   names its own afresh each time it is compiled, and its readings. None
+   when the pattern holds a symbol of the caller's, as a test or Condition
+   can, whose meaning may change between two queries. *)
+headKey[plain_, readings_] :=
+  With[{names = DeleteDuplicates @ Cases[Hold[plain], Verbatim[Pattern][s_Symbol, _] :> Hold[s], {0, Infinity}, Heads -> True]},
+    With[{key = Hold[plain] /. MapIndexed[Replace[#1, Hold[s_] :> (HoldPattern[s] -> nameNumber[First[#2]])] &, names]},
+      If[AllTrue[Cases[key /. (b : Verbatim[Blank] | Verbatim[BlankSequence] | Verbatim[BlankNullSequence])[_Symbol] :> b[],
+            s_Symbol :> Hold[s], {0, Infinity}, Heads -> True], ownSymbolQ],
+        {key, readings}, None]]];
+
+(* A symbol of the language or of this paclet. A blank's head is only
+   compared, so it is left out above. *)
+ownSymbolQ[Hold[s_]] := StringStartsQ[Context[Unevaluated[s]], {"System`", "MaximilienTirard`HTMLPatterns`"}];
 
 compileRoot[Hold[lhs_], need_] := cRoot[lhs, need];
 
@@ -612,7 +664,7 @@ cTreePattern[{{tag_, attrs_}, {cs___}}, need_] :=
     treeNode["XMLPattern", Union[headNames, Union @@ Prepend[#["Names"] & /@ cons, {}]], need,
       "Plain" -> c["Plain"], "Readings" -> c["Readings"], "Tag" -> tag, "Attrs" -> attrs,
       "HeadNames" -> Intersection[headNames, need], "Constraints" -> cons,
-      "PlainRules" -> plainRules, "TokenLists" -> tokenLists]];
+      "PlainRules" -> plainRules, "TokenLists" -> tokenLists, "HeadKey" -> headKey[c["Plain"], c["Readings"]]]];
 
 (* The rules of an attribute argument that is a rule or a list of them,
    or None. *)
@@ -1056,7 +1108,7 @@ conditionFiltered[nd_, sols_] := project[Select[sols, passesQ[nd["Test"], nd["Se
    distinct pair: a page repeats a few class strings over thousands of
    elements, and a long token list costs a scan per element. *)
 headVector[nd_] :=
-  memoised[{"Head", nd["Id"]},
+  keptVector[{"Head", nd["Id"], nd["HeadKey"]},
     With[{p = nd["Plain"], els = materialElems[nd["Readings"]]},
       Developer`ToPackedArray @ Which[
         MatchQ[p, XMLElement[_, Verbatim[_], Verbatim[_]]], distinctTested[els[[All, 1]], MatchQ[#, First[p]] &],
@@ -1328,13 +1380,13 @@ candidatesBelow[nd_, i_] :=
 (* The number of candidates up to each node, from the document, 0, and the
    candidates. *)
 candidateCounts[nd_] :=
-  memoised[{"Counts", nd["Id"]},
+  keptVector[{"Counts", nd["Id"], nd["CandidateKey"]},
     With[{v = candidateVector[nd]}, {Accumulate[Prepend[v, 0]], Flatten @ Position[v, 1]}]];
 
 (* The elements with some candidate of a pattern root below them, at any
    depth, a vector over the elements. *)
 hasCandidateBelow[nd_] :=
-  memoised[{"Below", nd["Id"]},
+  keptVector[{"Below", nd["Id"], nd["CandidateKey"]},
     With[{counts = First[candidateCounts[nd]]}, Unitize[counts[[Rest[$end] + 1]] - Rest[counts]]]];
 
 descendantSolutions[sub_, j_, key_] :=
@@ -1398,7 +1450,7 @@ conditionPassing[nd_, cands_] :=
 
 (* Whether each element can match a pattern root: a vector over the elements
    that is 1 at every match, for skipping the rest. *)
-candidateVector[nd_] := memoised[{"Candidates", nd["Id"]}, candidates[nd]];
+candidateVector[nd_] := keptVector[{"Candidates", nd["Id"], nd["CandidateKey"]}, candidates[nd]];
 candidates[nd_] := Switch[nd["Kind"],
   "Named" | "Cond" | "Test", candidateVector[nd["Sub"]],
   "Alt", Unitize[Total[candidateVector /@ nd["Subs"]]],
@@ -1439,7 +1491,7 @@ constraintFilter[c_] := Switch[c["Kind"],
   _, 1];
 
 parentsWith[it_] :=
-  memoised[{"Parents", it["Id"]},
+  keptVector[{"Parents", it["Id"], it["Sub"]["CandidateKey"]},
     Module[{v = ConstantArray[0, Length[$elem] - 1]},
       v[[DeleteCases[$parent[[Flatten[Position[candidateVector[it["Sub"]], 1]] + 1]], 0]]] = 1;
       v]];

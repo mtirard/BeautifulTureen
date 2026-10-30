@@ -8,6 +8,10 @@
 - **A counted name that can match text in an `XMLElement` pattern's contents is refused from the pattern alone**, with `::text`, also on a tree with no text there. `XMLCases[t, XMLPattern["tr"][{XMLElement["th", _, {s___}], ___}] :> {s}]` is refused even when every `th` holds only elements; give the name a pattern that matches only elements, as `s___XMLElement`.
 - **A name inside an `XMLElement` pattern's attribute list has no position**, and is identified by its value. `XMLPosition[{XMLElement["p", {"a" -> "v", "b" -> "v"}, {}]}, XMLElement["p", {___, "b" -> h_}, _] :> h]` gives `{Missing["Literal"]}`, where it gave `{{1, Key["a"]}}`, the first attribute with that value. `XMLReplace` and `XMLDeleteCases` leave such a name alone.
 
+### Performance
+
+- A document queried again keeps what queries computed for each of its elements, such as which elements pass a tag and attribute test, beside its index. A query with no match on a 15,000-element page, `XMLCases[page, "zzz"]`, takes about 6 ms where it took 12 ms.
+
 ## 4.0.0
 
 A breaking release. Patterns are nested as the document is, and a query gives one result per distinct combination of the positions of the names its right-hand side uses ([ADR 0023](docs/adr/0023-patterns-are-nested-as-the-document-is.md), [ADR 0024](docs/adr/0024-one-result-per-tuple-of-counted-names.md)). The combinators are gone.
