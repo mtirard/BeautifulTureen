@@ -173,3 +173,13 @@ TestCreate[
   {{{Hold[HTMLInnerText::blank], "_ is a blank"}}, {{Hold[HTMLToNotebook::blank], "_ is a blank"}}},
   TestID -> "test-key-blank-names-the-key"
 ];
+
+(* So is a key that uses Adjacent or Sibling, removed in version 4. *)
+TestCreate[
+  Map[{#[[1]], Last[StringSplit[#[[2]], ". "]]} &, keyMessages /@ Unevaluated[{
+    HTMLInnerText[page, "Roles" -> {Adjacent[XMLPattern["a"], XMLPattern["a"]] -> "Block"}],
+    HTMLToNotebook[page, "Constructs" -> {(XMLPattern["nav"] | Sibling[XMLPattern["a"], XMLPattern["a"]]) :> "Bold"}]}], {2}],
+  {{{Hold[HTMLInnerText::badpat], "Got Adjacent[XMLPattern[\"a\"], XMLPattern[\"a\"]]."}},
+    {{Hold[HTMLToNotebook::badpat], "Got XMLPattern[\"nav\"] | Sibling[XMLPattern[\"a\"], XMLPattern[\"a\"]]."}}},
+  TestID -> "test-key-removed-combinator-names-the-key"
+];

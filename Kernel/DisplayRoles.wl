@@ -127,6 +127,10 @@ queryKeyPositions[key_, value_, head_, tree_] :=
 testKeyPositions[key_, value_, head_, tree_] :=
   Module[{r},
     If[documentKeyQ[key], Message[MessageName[head, "badpat"], key]; refuseRule[]];
+    (* The query alone would not refuse as a test is: counting r, it takes a
+       context selector in the key, as in "a" | "nav a", which badpat refuses
+       here naming the selector; and it names itself, not the key, in the
+       badpat for Adjacent or Sibling. So the key is compiled twice. *)
     If[compileQuery[head, key, {}] === $Failed, refuseRule[]];
     With[{names = Select[namesIn[Hold[key]], !FreeQ[value, Replace[#, Hold[s_] :> HoldPattern[s]]] &],
         sols = Replace[runQuery[compileQuery[head, RuleDelayed @@ Join[Hold @@ {Pattern @@ {r, key}}, value], {Hold[r]}],
