@@ -65,7 +65,7 @@ Cell[BoxData[GridBox[{
 {Cell["      ", "ModInfo"], Cell[TextData[{"a query: a rule such as ", Cell[BoxData[RowBox[{RowBox[{RowBox[{ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"], "[", "\"nav\"", "]"}], "[", RowBox[{ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Descendant"], "[", "x : XMLPattern[\"a\"]", "]"}], "]"}], "\[RuleDelayed]", StyleBox["x", "TR"]}]], "InlineFormula"], ", or a CSS selector string that matches an element by what is above it, such as ", Cell[BoxData["\"nav a\""], "InlineFormula"]}], "TableText"], Cell[TextData[{"the elements that the names on its right-hand side match, found once in the whole of ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], "; its names cannot be used in ", Cell[BoxData[StyleBox["val", "TI"]], "InlineFormula"]}], "TableText"]}
 }]], "2ColumnTableMod"],
 
-Cell["In each option, the first rule that selects an element applies, whichever kind its key is. An element that no rule selects gets its role from the built-in user-agent stylesheet, and its result from the first table above. A query must select elements only.", "Notes"],
+Cell[TextData[{"In each option, the first rule that selects an element applies, whichever kind its key is. An element that no rule selects gets its role from the built-in user-agent stylesheet, and its result from the first table above. A query must select elements only, and an ", Cell[BoxData[ButtonBox["XMLDocument", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLDocument"]], "InlineFormula"], " pattern can only be used in a query."}], "Notes"],
 
 Cell["The value of a \"Constructs\" rule may have the following forms:", "Notes"],
 
@@ -79,7 +79,7 @@ Cell[BoxData[GridBox[{
 
 Cell[TextData[{"The role decides whether an element becomes a cell or text in a cell. For a block-level element, give a cell style or a function that returns a ", Cell[BoxData[ButtonBox["Cell", BaseStyle -> "Link", ButtonData -> "paclet:ref/Cell"]], "InlineFormula"], ". For an inline element, give a formatting string or a function that returns boxes."}], "Notes"],
 
-Cell[TextData[{Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " may use list keys, which stand for an attribute value split into a list of strings. The list key \"classList\" gives the classes of the element, and \"AttributeReadings\" adds list keys for other attributes, such as \"relList\" for ", Cell[BoxData[StyleBox["rel", "TR"]], "InlineFormula"], "."}], "Notes"],
+Cell[TextData[{Cell[BoxData[StyleBox["key", "TI"]], "InlineFormula"], " may use list keys, which stand for an attribute value split into a list of strings. The list key \"classList\" gives the classes of the element, and \"AttributeReadings\" adds list keys for other attributes, such as \"relList\" for ", Cell[BoxData[StyleBox["rel", "TR"]], "InlineFormula"], "."}], "Notes"],
 
 Cell[TextData[{"A name in an element test is bound to the element as it is in ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], ", without list keys. A function ", Cell[BoxData[StyleBox["f", "TI"]], "InlineFormula"], " is applied to the same element."}], "Notes"]
 }, Open  ]],

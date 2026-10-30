@@ -44,11 +44,11 @@ Cell[TextData[{"When ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], 
 
 Cell[TextData[{"A name for the whole element, as in ", Cell[BoxData["e : XMLPattern[\"p\"]"], "InlineFormula"], ", gives the element as it appears in ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], ", without ", StyleBox["list keys", FontWeight->"Bold"], " such as ", Cell[BoxData["\"classList\""], "InlineFormula"], ", which give an attribute split into a list of tokens."}], "Notes"],
 
-Cell[TextData[{"A name used twice in one list, or once above and once below, must have equal values at both places, as in ", Cell[BoxData[ButtonBox["Cases", BaseStyle -> "Link", ButtonData -> "paclet:ref/Cases"]], "InlineFormula"], ". A name for an element used in two constraints of one ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], " must match the same child in both."}], "Notes"],
+Cell[TextData[{"A name used twice in one list, or once above and once below, must have equal values at both places, as in ", Cell[BoxData[ButtonBox["Cases", BaseStyle -> "Link", ButtonData -> "paclet:ref/Cases"]], "InlineFormula"], ". A name for an element used in two constraints of one ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], " must match the same element in both."}], "Notes"],
 
 Cell[TextData[{"A name bound only in an alternative that did not match is ", Cell[BoxData[RowBox[{ButtonBox["Sequence", BaseStyle -> "Link", ButtonData -> "paclet:ref/Sequence"], "[", "]"}]], "InlineFormula"], ", as in ", Cell[BoxData[ButtonBox["Cases", BaseStyle -> "Link", ButtonData -> "paclet:ref/Cases"]], "InlineFormula"], "."}], "Notes"],
 
-Cell["A condition can use the names bound inside the pattern it is on, and the names bound before it in a pattern that contains it.", "Notes"],
+Cell["A condition can use only the names bound inside the pattern it is on.", "Notes"],
 
 Cell[TextData[{Cell[BoxData[RowBox[{ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLCases"], "[", RowBox[{StyleBox["tree", "TI"], ",", RowBox[{StyleBox["pattern", "TI"], "\[Rule]", StyleBox["rhs", "TI"]}]}], "]"}]], "InlineFormula"], " evaluates ", Cell[BoxData[StyleBox["rhs", "TI"]], "InlineFormula"], " once, before any matching, as ", Cell[BoxData[ButtonBox["Cases", BaseStyle -> "Link", ButtonData -> "paclet:ref/Cases"]], "InlineFormula"], " does."}], "Notes"],
 

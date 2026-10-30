@@ -49,7 +49,7 @@ Cell[BoxData[GridBox[{
 
 Cell[TextData[{"The first rule that selects an element sets its role, whichever kind its key is. An element that no rule selects gets its role from the built-in user-agent stylesheet. A query must select elements only, and an ", Cell[BoxData[ButtonBox["XMLDocument", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLDocument"]], "InlineFormula"], " pattern can only be used in a query."}], "Notes"],
 
-Cell[TextData[{Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " may use list keys, which stand for an attribute value split into a list of strings. The list key \"classList\" gives the classes of the element, and \"AttributeReadings\" adds list keys for other attributes, such as \"relList\" for ", Cell[BoxData[StyleBox["rel", "TR"]], "InlineFormula"], "."}], "Notes"],
+Cell[TextData[{Cell[BoxData[StyleBox["key", "TI"]], "InlineFormula"], " may use list keys, which stand for an attribute value split into a list of strings. The list key \"classList\" gives the classes of the element, and \"AttributeReadings\" adds list keys for other attributes, such as \"relList\" for ", Cell[BoxData[StyleBox["rel", "TR"]], "InlineFormula"], "."}], "Notes"],
 
 Cell[TextData[{"A name in an element test, such as ", Cell[BoxData[StyleBox["e", "TI"]], "InlineFormula"], " in ", Cell[BoxData["e$ : XMLPattern[\"li\"] /; test$"], "InlineFormula"], ", is bound to the element as it is in ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], ", without list keys."}], "Notes"],
 

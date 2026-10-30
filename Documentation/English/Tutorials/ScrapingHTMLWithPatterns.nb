@@ -14,22 +14,7 @@ Cell[TextData[{ButtonBox["HTMLPatterns", BaseStyle -> "Link", ButtonData -> "pac
 Cell[TextData[{"In this tutorial you import one small HTML document and find elements in it with ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], ". You match their classes with the ", Cell[BoxData["\"\<\!\(\*StyleBox[\"classList\", \"TI\"]\)\>\""], "InlineFormula"], " key and test single elements with ", Cell[BoxData[ButtonBox["XMLMatchQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLMatchQ"]], "InlineFormula"], ". You then match what is below an element with the constraints ", Cell[BoxData[ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Child"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Descendant"]], "InlineFormula"], " and with list patterns, and remove unwanted elements with ", Cell[BoxData[ButtonBox["XMLDeleteCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLDeleteCases"]], "InlineFormula"], ". Finally you turn the rest into text with ", Cell[BoxData[ButtonBox["HTMLTextContent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLTextContent"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLInnerText"]], "InlineFormula"], ", or into a notebook with ", Cell[BoxData[ButtonBox["HTMLToNotebook", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLToNotebook"]], "InlineFormula"], "."}], "Text"],
 Cell[TextData[{"Import a small HTML document in the ", Cell[BoxData[RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]], "InlineFormula"], " format, and look at the result. The rest of this tutorial uses this tree:"}], "Text"],
 
-Cell["XXXX", "Text"],
-
-Cell[BoxData[GridBox[{
-   {"XXXX", Cell[
-    "XXXX", "TableText"]},
-   {"XXXX", Cell[
-    "XXXX", "TableText"]},
-   {"XXXX", Cell[
-    "XXXX", "TableText"]}
-  }]], "DefinitionBox"],
-
-Cell["XXXX.", "Caption"],
-
 Cell[CellGroupData[{
-
-Cell["XXXX", "MathCaption"],
 
 Cell[CellGroupData[{
 
