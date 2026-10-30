@@ -35,7 +35,7 @@ TestCreate[
 (* A misplaced XMLDocument[] says where it can stand. *)
 TestCreate[
   capturedMessages[XMLCases[$msgTree, XMLPattern["article"][Descendant[XMLDocument[]]]]],
-  {"XMLDocument[...] matches only the document above the top elements, so it can only be a pattern root: the whole query, named, conditioned or tested, or a branch of alternatives at the top, as in XMLPattern[_][L] | XMLDocument[L]. It cannot be inside Descendant, an attribute pattern or an XMLElement pattern. Got XMLDocument[]."},
+  {"XMLDocument[...] matches only the document above the top-level elements, so it can only be the outermost pattern: the whole query, named, conditioned or tested, or a branch of alternatives at the top, as in XMLPattern[_][L] | XMLDocument[L]. It cannot be inside Descendant, an attribute pattern or an XMLElement pattern. Got XMLDocument[]."},
   TestID -> "message-document-placement"
 ];
 
@@ -327,8 +327,8 @@ TestCreate[
 
 TestCreate[
   Join @@ (capturedMessages[FromCSSSelector[#]] & /@ {"body :root", "x :is(a + b)"}),
-  {"\"body :root\" is valid CSS, but \":root\" cannot be translated to an XML pattern. \"It matches the only top element, which has no parent or sibling in the tree, so it can only be in the first compound of a selector, followed by > or a descendant combinator, as in :root > body.\"",
-   "\"x :is(a + b)\" is valid CSS, but \":is(a + b)\" cannot be translated to an XML pattern. \"Its arguments can hold only descendant and > combinators, which look at the element's ancestors; + and ~ look at its siblings.\""},
+  {"\"body :root\" is valid CSS, but \":root\" cannot be translated to an XML pattern. \"It matches the only top-level element, which has no parent or sibling in the tree, so it can only be in the first compound of a selector, followed by > or a descendant combinator, as in :root > body.\"",
+   "\"x :is(a + b)\" is valid CSS, but \":is(a + b)\" cannot be translated to an XML pattern. \"Its arguments can hold only descendant and > combinators, not + or ~.\""},
   TestID -> "message-css-unsupported"
 ];
 
@@ -343,7 +343,7 @@ TestCreate[
    says it looks above the element. *)
 TestCreate[
   capturedMessages[XMLMatchQ[XMLElement["p", {}, {}], "div > p"]],
-  {"The pattern should be an XMLPattern, an XMLElement pattern, an XMLDocument pattern, a list pattern for a list of elements, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f. A rule gives a value, not a test. A CSS selector such as \"nav a\" or \"ul > li\" depends on what is above the element, which a lone element does not have; use XMLCases or XMLPosition to search a tree with it. Got \"div > p\"."},
+  {"The pattern should be an XMLPattern, an XMLElement pattern, an XMLDocument pattern, a list pattern for a list of elements, or a CSS selector string for one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f. A rule gives a value, not a test. A CSS selector such as \"nav a\" or \"ul > li\" depends on what is above the element, which a lone element does not have; use XMLCases or XMLPosition to search a tree with it. Got \"div > p\"."},
   TestID -> "message-css-string-combinator-names-the-string"
 ];
 

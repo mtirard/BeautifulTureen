@@ -521,9 +521,9 @@ refuseBlank[b_] := If[$place === "descendant", refuse[Descendant::blank, b], ref
 refuseListEntry[x_, reason_] := With[{h = $owner}, refuse[MessageName[h, "listentry"], x, $listEntryReasons[reason]]];
 
 $listEntryReasons = <|
-  "document" -> "An entry is one element child or a sequence of them, and XMLDocument[...] is the document above every element. It can only be the pattern root, as in XMLDocument[Child[x : p]].",
-  "descendant" -> "An entry is one element child or a sequence of them, and Descendant[...] says what is somewhere below an element. A child containing x is XMLPattern[_][Descendant[x]].",
-  "child" -> "An entry is one element child or a sequence of them, and Child[...] says that some child of an element matches. A child with a child x is XMLPattern[_][Child[x]].",
+  "document" -> "An entry is one element child or a sequence of them, and XMLDocument[...] is the document above every element. It can only be the outermost pattern, as in XMLDocument[Child[x : p]].",
+  "descendant" -> "An entry is one element child or a sequence of them, and Descendant[...] is a constraint on what is somewhere below an element. A child containing x is XMLPattern[_][Descendant[x]].",
+  "child" -> "An entry is one element child or a sequence of them, and Child[...] requires some child of an element to match. A child with a child x is XMLPattern[_][Child[x]].",
   "list" -> "An entry is one element child or a sequence of them, not a list. Several constraints on one element are separate arguments of its bracket, as in XMLPattern[tag][c1, c2]."|>;
 
 (* What a Condition sees: the names bound inside its sub-pattern, not those

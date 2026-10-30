@@ -133,7 +133,7 @@ TestCreate[
 
 TestCreate[
   cssMessageTexts[XMLCases[lists, "body ul"[{_}]]],
-  {"\"body ul\"[{_}] gives constraints to \"body ul\", which picks its element by what is above or beside it, so its pattern is rooted at another element. Only a selector that describes one element takes constraints. Nest the selectors as the tree is, as in \"nav\"[Descendant[x : \"a\"[c]]] :> x."},
+  {"\"body ul\"[{_}] gives constraints to \"body ul\", which depends on what is above or beside its element. Only a selector for one element takes constraints. Nest the selectors as the tree is, as in \"nav\"[Descendant[x : \"a\"[c]]] :> x."},
   TestID -> "css-constraints-message-context-text"
 ];
 

@@ -14,7 +14,7 @@ Scan[Function[h,
    runs a query. *)
 Scan[Function[h,
     MessageName[h, "exceptname"] = "The name `1` is bound inside Except, which matches only where its pattern does not, so it has no value in the right-hand side. A name inside Except can be used only by tests inside that Except.";
-    MessageName[h, "text"] = "The name `1` binds text inside an XMLElement pattern, and text has no position, so the name cannot be a result. Name the element that holds the text instead, or use the name only in a test."],
+    MessageName[h, "text"] = "The name `1` is bound to text inside an XMLElement pattern, and text has no position, so the name cannot be a result. Name the element that holds the text instead, or use the name only in a test."],
   {XMLCases, XMLFirstCase, XMLPosition, XMLDeleteCases, XMLReplace, HTMLInnerText, HTMLToNotebook, HTMLToTree}];
 
 (* The "Roles" option. *)
@@ -41,8 +41,8 @@ XMLDeleteCases::badpat = StringRiffle[{"The second argument should be a pattern,
   $patternForms, $contextForms, "Got `1`."}, " "];
 XMLReplace::badpat = StringRiffle[{"The second argument should be a rule pattern -> new or pattern :> new, or a list of them.",
   $patternForms, $contextForms, "Got `1`."}, " "];
-XMLMatchQ::badpat = StringRiffle[{"The pattern should be an XMLPattern, an XMLElement pattern, an XMLDocument pattern, a list pattern for a list of elements, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f. A rule gives a value, not a test. A CSS selector such as \"nav a\" or \"ul > li\" depends on what is above the element, which a lone element does not have; use XMLCases or XMLPosition to search a tree with it.", "Got `1`."}, " "];
-XMLFreeQ::badpat = StringRiffle[{"The pattern should be an XMLPattern, an XMLElement pattern, an XMLDocument pattern, which matches only a document at depth 0, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f. A rule gives a value, not a test. A CSS selector such as \"nav a\" or \"ul > li\" depends on what is above the element it describes; use XMLCases or XMLPosition to search a tree with it.",
+XMLMatchQ::badpat = StringRiffle[{"The pattern should be an XMLPattern, an XMLElement pattern, an XMLDocument pattern, a list pattern for a list of elements, or a CSS selector string for one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f. A rule gives a value, not a test. A CSS selector such as \"nav a\" or \"ul > li\" depends on what is above the element, which a lone element does not have; use XMLCases or XMLPosition to search a tree with it.", "Got `1`."}, " "];
+XMLFreeQ::badpat = StringRiffle[{"The pattern should be an XMLPattern, an XMLElement pattern, an XMLDocument pattern, which matches only a document at depth 0, or a CSS selector string for one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f. A rule gives a value, not a test. A CSS selector such as \"nav a\" or \"ul > li\" depends on what is above the element it selects; use XMLCases or XMLPosition to search a tree with it.",
   "Got `1`."}, " "];
 HTMLToTree::badquery = StringRiffle[{"The value of the `1` option should be `2`, Automatic, a pattern, or a rule pattern -> rhs or pattern :> rhs, which applies to the elements bound to the names that rhs uses.",
   $patternForms, "Got `3`."}, " "];
@@ -50,7 +50,7 @@ HTMLToTree::badquery = StringRiffle[{"The value of the `1` option should be `2`,
 (* The keys of "Roles" and "Constructs" rules:
    an element test, or a query whose counted element positions get the value. *)
 Scan[Function[h,
-    MessageName[h, "badpat"] = StringRiffle[{"The key of a rule should be an element test or a query. An element test is an XMLPattern, an XMLElement pattern, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f; each element is tested by itself, and its names can be used in the value. A query is a rule such as XMLPattern[\"nav\"][Descendant[x : XMLPattern[\"a\"]]] :> x, or a CSS selector string such as \"nav a\"; the elements it selects get the value. An XMLDocument pattern tests no element: name the elements it finds and give the rule, as in (XMLDocument[Descendant[x : XMLPattern[\"a\"]]] :> x) -> value.", "Got `1`."}, " "];
+    MessageName[h, "badpat"] = StringRiffle[{"The key of a rule should be an element test or a query. An element test is an XMLPattern, an XMLElement pattern, or a CSS selector string for one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f; each element is tested by itself, and its names can be used in the value. A query is a rule such as XMLPattern[\"nav\"][Descendant[x : XMLPattern[\"a\"]]] :> x, or a CSS selector string such as \"nav a\"; the elements it selects get the value. An XMLDocument pattern matches no element; use it in a query, as in (XMLDocument[Descendant[x : XMLPattern[\"a\"]]] :> x) -> value.", "Got `1`."}, " "];
     MessageName[h, "keytarget"] = "A query key selects the position `1`, which is not an element. A \"Roles\" or \"Constructs\" query should select elements only."],
   {HTMLInnerText, HTMLToNotebook, HTMLToTree}];
 

@@ -280,7 +280,7 @@ messageText[expr_] :=
     With[{f = Close[s]}, (DeleteFile[f]; #) & @ ReadString[f]]];
 
 TestCreate[
-  StringContainsQ[#, "The reading for rel should be an Association"] & /@ {
+  StringContainsQ[#, "The entry for rel should be an Association"] & /@ {
     messageText[XMLCases[$links, XMLPattern["a"], "AttributeReadings" -> <|"rel" -> 5|>]],
     messageText[Block[{$AttributeReadings = <|"rel" -> 5|>}, XMLCases[$links, XMLPattern["a"]]]]},
   {True, True},
@@ -369,10 +369,10 @@ TestCreate[
 TestCreate[
   {StringContainsQ[messageText[XMLCases[$rel, XMLPattern["a", "relList" -> "x"],
      "AttributeReadings" -> <|"ping" -> <||>|>]],
-     "The key relList looks like a list key, but rel has no reading"],
+     "rel has no entry in $AttributeReadings, so the key relList"],
    StringContainsQ[messageText[XMLCases[$rel, XMLPattern["a", "relList" -> "x"],
      "AttributeReadings" -> <|"rel" -> <|"ListKey" -> "rels"|>|>]],
-     "gives its tokens under the list key rels"]},
+     "are under the list key rels"]},
   {True, True},
   {XMLPattern::nolistreading, XMLPattern::otherlistkey},
   TestID -> "list-key-warning-text-under-block"

@@ -77,7 +77,7 @@ TestCreate[
   TestID -> "child-css-string"
 ];
 
-(* Under XMLDocument, the children are the top elements. *)
+(* Under XMLDocument, the children are the top-level elements. *)
 TestCreate[
   {XMLMatchQ[lists, XMLDocument[Child[XMLPattern["body"]]]], XMLMatchQ[lists, XMLDocument[Child[XMLPattern["ul"]]]],
     XMLCases[{el["p"], "t", e["ul", "x"], e["ul", "y"]}, XMLDocument[Child[u : XMLPattern["ul"]]] :> id[u]]},

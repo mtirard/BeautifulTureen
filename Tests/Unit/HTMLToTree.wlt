@@ -446,9 +446,9 @@ TestCreate[
    given; they act on the positions of the names the right-hand side uses
    (ADR 0024). The inputs are built literally. *)
 
-$hidetarget[pos_] := "The \"Hide\" query names the position " <> pos <>
+$hidetarget[pos_] := "The \"Hide\" query selects the position " <> pos <>
   ". Hide removes only elements, runs of element children, and the contents of an element.";
-$focustarget[pos_] := "The \"Focus\" query names the position " <> pos <>
+$focustarget[pos_] := "The \"Focus\" query selects the position " <> pos <>
   ". Focus draws only elements and runs of element children.";
 
 TestCreate[
@@ -1157,8 +1157,8 @@ TestCreate[
 TestCreate[
   {withMessages[HTMLToTree[$p, "AttributeReadings" -> 3]],
     withMessages[HTMLToTree[$p, "Focus" -> "p", "AttributeReadings" -> <|"k" -> 1|>]]},
-  {{{"$AttributeReadings and the \"AttributeReadings\" option should be an Association from attribute names to readings. Got 3."}, $Failed},
-    {{"The reading for \"k\" should be an Association with any of the fields Method, Delimiters, \"TrimWhitespace\" and \"ListKey\". Got 1."}, $Failed}},
+  {{{"$AttributeReadings and the \"AttributeReadings\" option should be an Association from attribute names to Associations. Got 3."}, $Failed},
+    {{"The entry for \"k\" should be an Association with any of the fields Method, Delimiters, \"TrimWhitespace\" and \"ListKey\". Got 1."}, $Failed}},
   TestID -> "htt-message-readings"
 ];
 
@@ -1208,7 +1208,7 @@ TestCreate[
 $badRoles = {{3}, {5 -> "Block"}};
 $badRolesMessages = {
   "Each \"Roles\" entry should be a rule pattern -> value or pattern :> value. Got 3.",
-  "The key of a rule should be an element test or a query. An element test is an XMLPattern, an XMLElement pattern, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f; each element is tested by itself, and its names can be used in the value. A query is a rule such as XMLPattern[\"nav\"][Descendant[x : XMLPattern[\"a\"]]] :> x, or a CSS selector string such as \"nav a\"; the elements it selects get the value. An XMLDocument pattern tests no element: name the elements it finds and give the rule, as in (XMLDocument[Descendant[x : XMLPattern[\"a\"]]] :> x) -> value. Got 5."};
+  "The key of a rule should be an element test or a query. An element test is an XMLPattern, an XMLElement pattern, or a CSS selector string for one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f; each element is tested by itself, and its names can be used in the value. A query is a rule such as XMLPattern[\"nav\"][Descendant[x : XMLPattern[\"a\"]]] :> x, or a CSS selector string such as \"nav a\"; the elements it selects get the value. An XMLDocument pattern matches no element; use it in a query, as in (XMLDocument[Descendant[x : XMLPattern[\"a\"]]] :> x) -> value. Got 5."};
 
 TestCreate[
   Table[withMessages[HTMLToTree[$mergeP, "Roles" -> r, "MergeText" -> m]], {m, {Automatic, HTMLInnerText}}, {r, $badRoles}],
