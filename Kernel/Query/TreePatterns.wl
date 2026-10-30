@@ -1242,13 +1242,34 @@ kidTags[] := memoised[{"Tags", $walkId}, elemOf[#][[1]] & /@ $kidIds];
 
 (* Some element strictly below, at DOM depths in the level spec, matches. *)
 constraintKind["Descendant", c_, i_] :=
-  Module[{lo, hi, d0 = $depth[[i + 1]], below, cands, sub = c["Sub"]},
+  Module[{lo, hi, d0 = $depth[[i + 1]], cands, sub = c["Sub"]},
     {lo, hi} = c["Levels"];
-    below = Range[i + 1, $end[[i + 1]]];
-    cands = Pick[below, candidateVector[sub][[below]] UnitStep[$depth[[below + 1]] - d0 - lo] UnitStep[hi - ($depth[[below + 1]] - d0)], 1];
+    cands = candidatesBelow[sub, i];
+    If[{lo, hi} =!= {1, Infinity},
+      cands = Pick[cands, UnitStep[$depth[[cands + 1]] - d0 - lo] UnitStep[hi - ($depth[[cands + 1]] - d0)], 1]];
     If[c["Keep"] === {},
-      If[AnyTrue[cands, match[sub, #] =!= {} &], {<||>}, {}],
+      If[exactCandidatesQ[sub] && cands =!= {} || AnyTrue[cands, match[sub, #] =!= {} &], {<||>}, {}],
       project[Join @@ (descendantSolutions[sub, #, c["Key"]] & /@ cands), c["Keep"]]]];
+
+(* The candidates of a pattern root strictly below node i, in document
+   order. The candidates up to each node are counted once, so the ones in a
+   subtree are a slice of them, as the subtree is a run of nodes: slicing
+   the candidate vector over the subtree instead cost its size at each
+   element tried, about 0.2 ms a div on a large page. *)
+candidatesBelow[nd_, i_] :=
+  With[{counted = candidateCounts[nd]}, counted[[2, counted[[1, i + 1]] + 1 ;; counted[[1, $end[[i + 1]] + 1]]]]];
+
+(* The number of candidates up to each node, from the document, 0, and the
+   candidates. *)
+candidateCounts[nd_] :=
+  memoised[{"Counts", nd["Id"]},
+    With[{v = candidateVector[nd]}, {Accumulate[Prepend[v, 0]], Flatten @ Position[v, 1]}]];
+
+(* The elements with some candidate of a pattern root below them, at any
+   depth, a vector over the elements. *)
+hasCandidateBelow[nd_] :=
+  memoised[{"Below", nd["Id"]},
+    With[{counts = First[candidateCounts[nd]]}, Unitize[counts[[Rest[$end] + 1]] - Rest[counts]]]];
 
 descendantSolutions[sub_, j_, key_] :=
   With[{sols = If[directQ[sub], {<|sub["Name"] -> elemMatch[j]|>}, match[sub, j]]},
@@ -1341,10 +1362,14 @@ childVector[sub_] :=
 (* A list constraint holds only at an element with a child that can match
    each of its one-child entries, so the elements without are not walked:
    a CSS translation's list is tried at every element with children, and
-   walking each costs about a tenth of a millisecond. *)
+   walking each costs about a tenth of a millisecond. A Descendant, or a
+   path, holds only at an element with a candidate of its pattern somewhere
+   below. *)
 constraintFilter[c_] := Switch[c["Kind"],
   "List", Times @@ Prepend[parentsWith /@ Select[c["Items"], #["Kind"] === "One" &], 1],
   "ListNamed" | "ListCond" | "ListTest", constraintFilter[c["Sub"]],
+  "Descendant", hasCandidateBelow[c["Sub"]],
+  "PathNamed" | "PathTest" | "PathCond" | "PathNearest", constraintFilter[c["Sub"]],
   _, 1];
 
 parentsWith[it_] :=
