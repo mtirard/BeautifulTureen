@@ -15,11 +15,11 @@ Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["HTMLTextC
 
 Cell[TextData[{"No whitespace is added or removed. Indentation, newlines and the content of ", Cell[BoxData[StyleBox["pre", "TR"]], "InlineFormula"], " are kept as written."}], "Notes"],
 
-Cell[TextData[{Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " may be an ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], ", an ", Cell[BoxData[ButtonBox["XMLObject", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLObject"]], "InlineFormula"], " document, a string, or a list of elements and strings."}], "Notes"],
-
 Cell[TextData[{"For readable text, with whitespace collapsed and each block-level element on its own line, use ", Cell[BoxData[ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLInnerText"]], "InlineFormula"], "."}], "Notes"],
 
-Cell[TextData[{"If ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " is not one of these forms, ", Cell[BoxData[ButtonBox["HTMLTextContent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLTextContent"]], "InlineFormula"], " issues a message and returns ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], "."}], "Notes"]
+Cell[TextData[{Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " can be an ", Cell[BoxData[ButtonBox["XMLObject", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLObject"]], "InlineFormula"], ", an ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], ", a string, or a list of elements and strings."}], "Notes"],
+
+Cell[TextData[{Cell[BoxData[ButtonBox["HTMLTextContent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLTextContent"]], "InlineFormula"], " issues a message and returns ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], " when ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " has none of the forms above."}], "Notes"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -116,11 +116,11 @@ Cell[CellGroupData[{Cell[BoxData[
    }],
   $Line = 0; Null]], "PrimaryExamplesSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Extract the text content of an element:", "ExampleText"], Cell[BoxData[RowBox[{"HTMLTextContent", "[", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Hello, world\"", "}"}]}], "]"}], "]"}]], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Get the text of an element:", "ExampleText"], Cell[BoxData[RowBox[{"HTMLTextContent", "[", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Hello, world\"", "}"}]}], "]"}], "]"}]], "Input"],
 
 Cell[BoxData["\"Hello, world\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Text in nested elements is joined in document order:", "ExampleText"], Cell[BoxData[RowBox[{"HTMLTextContent", "[", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"\"Hi \"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"em\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"there\"", "}"}]}], "]"}]}], "}"}]}], "]"}], "]"}]], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Join the text of nested elements in document order:", "ExampleText"], Cell[BoxData[RowBox[{"HTMLTextContent", "[", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"\"Hi \"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"em\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"there\"", "}"}]}], "]"}]}], "}"}]}], "]"}], "]"}]], "Input"],
 
 Cell[BoxData["\"Hi there\""], "Output"]}, Open]]}, Open]],
 
@@ -148,17 +148,22 @@ Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"
 
 Cell[BoxData["\"Hello\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["The text of a list of elements is joined into one string:", "ExampleText"], Cell[BoxData[RowBox[{"HTMLTextContent", "[", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"a\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"b\"", "}"}]}], "]"}]}], "}"}], "]"}]], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Join the text of a list of elements into one string:", "ExampleText"], Cell[BoxData[RowBox[{"HTMLTextContent", "[", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"a\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"b\"", "}"}]}], "]"}]}], "}"}], "]"}]], "Input"],
 
 Cell[BoxData["\"ab\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A bare string is returned unchanged:", "ExampleText"], Cell[BoxData[RowBox[{"HTMLTextContent", "[", "\"  raw  text  \"", "]"}]], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give a string, which is returned unchanged:", "ExampleText"], Cell[BoxData[RowBox[{"HTMLTextContent", "[", "\"  raw  text  \"", "]"}]], "Input"],
 
 Cell[BoxData["\"  raw  text  \""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Indentation and newlines are kept as written:", "ExampleText"], Cell[BoxData[RowBox[{"HTMLTextContent", "[", RowBox[{"XMLElement", "[", RowBox[{"\"pre\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"  for x:\\n    print x\"", "}"}]}], "]"}], "]"}]], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Get the text of a ", Cell[BoxData[StyleBox["pre", "TR"]], "InlineFormula"], " element, with its indentation and newlines as written:"}], "ExampleText"], Cell[BoxData[RowBox[{"HTMLTextContent", "[", RowBox[{"XMLElement", "[", RowBox[{"\"pre\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"  for x:\\n    print x\"", "}"}]}], "]"}], "]"}]], "Input"],
 
-Cell[BoxData["\"  for x:\\n    print x\""], "Output"]}, Open]]}, Open]],
+Cell[BoxData["\"  for x:\\n    print x\""], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Get the text of an element found with ", Cell[BoxData[ButtonBox["XMLFirstCase", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLFirstCase"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["tree = ImportString[\"<article><h1>Title</h1><p>Body</p></article>\", {\"HTML\", \"XMLObject\"}];
+HTMLTextContent[XMLFirstCase[tree, XMLPattern[\"h1\"]]]"], "Input"],
+
+Cell[BoxData["\"Title\""], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
@@ -197,13 +202,9 @@ Cell[CellGroupData[{Cell[BoxData[
   "Properties & Relations", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Whitespace is kept as written, where ", Cell[BoxData[ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLInnerText"]], "InlineFormula"], " collapses it:"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"doc", "=", RowBox[{"ImportString", "[", RowBox[{"\"<p>Hi   <em>there</em>, \\n  world</p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"{", RowBox[{RowBox[{"HTMLTextContent", "[", "doc", "]"}], ",", RowBox[{"HTMLInnerText", "[", "doc", "]"}]}], "}"}]}], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Compare with ", Cell[BoxData[ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLInnerText"]], "InlineFormula"], ", which collapses whitespace:"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"doc", "=", RowBox[{"ImportString", "[", RowBox[{"\"<p>Hi   <em>there</em>, \\n  world</p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"{", RowBox[{RowBox[{"HTMLTextContent", "[", "doc", "]"}], ",", RowBox[{"HTMLInnerText", "[", "doc", "]"}]}], "}"}]}], "Input"],
 
-Cell[BoxData[RowBox[{"{", RowBox[{"\"Hi   there, \\n  world\"", ",", "\"Hi there, world\""}], "}"}]], "Output"]}, Open]],
-
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Get the text of an element found with ", Cell[BoxData[ButtonBox["XMLFirstCase", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLFirstCase"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"tree", "=", RowBox[{"ImportString", "[", RowBox[{"\"<article><h1>Title</h1><p>Body</p></article>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"HTMLTextContent", "[", RowBox[{"XMLFirstCase", "[", RowBox[{"tree", ",", RowBox[{"XMLPattern", "[", "\"h1\"", "]"}]}], "]"}], "]"}]}], "Input"],
-
-Cell[BoxData["\"Title\""], "Output"]}, Open]]}, Open]],
+Cell[BoxData[RowBox[{"{", RowBox[{"\"Hi   there, \\n  world\"", ",", "\"Hi there, world\""}], "}"}]], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[

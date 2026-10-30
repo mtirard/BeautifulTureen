@@ -32,14 +32,14 @@ PackageScoped[bracketedTree]
 (* =========================================================== *)
 
 PackageExported[FromCSSSelector]
-FromCSSSelector::usage = "FromCSSSelector[\"selector\"] gives the XML pattern that a CSS selector describes, when the selector looks only at the element it selects and below it, as \"a.note\" and \"div:has(> table)\" do. FromCSSSelector[n : \"selector\"] gives the pattern with the selected element named n, for any selector; one that picks its element by what is above or beside it, such as \"nav a\" or \"li:first-child\", gives a tree pattern rooted at its first compound, as XMLPattern[\"nav\"][Descendant[n : XMLPattern[\"a\"]]] for \"nav a\". A CSS selector string can also be given directly wherever a pattern goes, and means its translation: given as the whole query, it selects the elements the selector selects, and on the left of a rule, n : \"selector\" names them. A one-element selector string takes constraints as XMLPattern does, as in \"ul.c\"[Child[x : \"li\"]] :> x. The selector is matched as written: letter case matters in tag names, attribute names and values, and attributes that the HTML importer adds, such as rowspan=\"1\", count as present. [foo~=\"x\"] becomes \"fooList\" -> \"x\", which needs a reading for foo in $AttributeReadings or in the \"AttributeReadings\" option of the function that runs the query.";
+FromCSSSelector::usage = "FromCSSSelector[\"selector\"] gives the XML pattern for a CSS selector for one element: one that depends only on its element and what is below it, such as \"a.note\" or \"div:has(> table)\". FromCSSSelector[n : \"selector\"] gives the pattern with the selected element named n, for any selector; for one that depends on what is above or beside its element, such as \"nav a\" or \"li:first-child\", the outermost pattern is for its first compound, as in XMLPattern[\"nav\"][Descendant[n : XMLPattern[\"a\"]]] for \"nav a\". A CSS selector string can also be given directly wherever a pattern goes, and means its translation: given as the whole query, it selects the elements the selector selects, and on the left of a rule, n : \"selector\" binds n to them. A selector string for one element takes constraints as XMLPattern does, as in \"ul.c\"[Child[x : \"li\"]] :> x. The selector is matched as written: letter case matters in tag names, attribute names and values, and attributes that the HTML importer adds, such as rowspan=\"1\", count as present. [foo~=\"x\"] becomes \"fooList\" -> \"x\", which needs an entry for foo in $AttributeReadings or in the \"AttributeReadings\" option of the function that runs the query.";
 FromCSSSelector::invalid = "`1` is not a valid CSS selector: `2`.";
 FromCSSSelector::unsupported = "`1` is valid CSS, but `2` cannot be translated to an XML pattern. `3`";
 FromCSSSelector::impossible = "`2` in `1` depends on a browser, such as user input, layout or the page's URL, and cannot be matched in a static document. `3`";
 
-FromCSSSelector::name = "`1` picks its element by what is above or beside it, so its pattern is rooted higher up and the element it selects needs a name. Use FromCSSSelector[n : `1`], which names it n.";
+FromCSSSelector::name = "`1` depends on what is above or beside its element, so the element it selects needs a name. Use FromCSSSelector[n : `1`], which names it n.";
 
-FromCSSSelector::constraints = "`1` gives constraints to `2`, which picks its element by what is above or beside it, so its pattern is rooted at another element. Only a selector that describes one element takes constraints. Nest the selectors as the tree is, as in \"nav\"[Descendant[x : \"a\"[c]]] :> x.";
+FromCSSSelector::constraints = "`1` gives constraints to `2`, which depends on what is above or beside its element. Only a selector for one element takes constraints. Nest the selectors as the tree is, as in \"nav\"[Descendant[x : \"a\"[c]]] :> x.";
 
 FromCSSSelector[s_String] :=
   Replace[cssTree[s], {{"one", p_} :> p, {"context", _} :> (Message[FromCSSSelector::name, s]; $Failed)}];
@@ -356,7 +356,7 @@ $cssChildIndexedHow = "It needs the element's parent, so it can be in a compound
 $cssFormHow = "Write the test as a condition on an XMLPattern.";
 (* :root and :scope are the only top element (ADR 0018), at the start of a
    selector. *)
-$cssRootHow = "It matches the only top element, which has no parent or sibling in the tree, so it can only be in the first compound of a selector, followed by > or a descendant combinator, as in :root > body.";
+$cssRootHow = "It matches the only top-level element, which has no parent or sibling in the tree, so it can only be in the first compound of a selector, followed by > or a descendant combinator, as in :root > body.";
 $cssRootInsideHow = "It cannot be in an argument of :not(), :is(), :where(), :has() or :nth-child(). Put it in the first compound of the selector, as in :root > body.";
 $cssUnsupported = Join[
   AssociationMap[$cssFormHow &, {"enabled", "disabled", "read-only", "read-write", "placeholder-shown",
@@ -912,7 +912,7 @@ cssSiblingRun[parts_, within_, rel[link_, c_cx], _] :=
     cssNoRoot[first[[2]]];
     cssTreeRun[Join[parts, first[[2]]], Join[within, {link}, first[[3]]]]];
 
-$cssSiblingHasHow = "A relative selector that starts with + or ~ looks beside the element, so it can only be in :has() on the last compound of a run joined by + or ~, once, and not inside :not(), :is(), :where() or :nth-child().";
+$cssSiblingHasHow = "A relative selector that starts with + or ~ depends on what is beside the element, so it can only be in :has() on the last compound of a run joined by + or ~, once, and not inside :not(), :is(), :where() or :nth-child().";
 
 (* ---- Translation to tree patterns: tests on the path ---- *)
 
@@ -984,8 +984,8 @@ cssPathTested[p_, ts_] := cssPatternTest[Descendant[p], Function @@ (cssAnd[ts] 
 cssPathFree[p_] :=
   Replace[FirstCase[p, cssPathed[_, _, t_] :> t, None, {0, Infinity}], {None -> p, t_ :> cssRefuse["unsupported", t, $cssPathPlaceHow]}];
 
-$cssPathLinksHow = "Its arguments can hold only descendant and > combinators, which look at the element's ancestors; + and ~ look at its siblings.";
-$cssPathPlaceHow = "A :not(), :is() or :where() with a combinator inside tests the element's ancestors, so it can be in one compound of the selector only, joined to the others by descendant or > combinators, with no child-indexed pseudo-class, and not inside :has() or another pseudo-class.";
+$cssPathLinksHow = "Its arguments can hold only descendant and > combinators, not + or ~.";
+$cssPathPlaceHow = "A :not(), :is() or :where() with a combinator inside depends on the element's ancestors, so it can be in one compound of the selector only, joined to the others by descendant or > combinators, with no child-indexed pseudo-class, and not inside :has() or another pseudo-class.";
 
 (* ---- Translation: compounds ---- *)
 

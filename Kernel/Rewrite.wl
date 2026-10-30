@@ -207,7 +207,7 @@ setTokens[steps_, k_, items_] := (
 
 XMLDeleteCases::delrhs = "The right-hand side of `1` should be a name of the pattern, or a list of names, optionally with a condition (/;): XMLDeleteCases deletes what those names match, as in x : XMLPattern[\"a\"] :> x. Use :> so that the names are not evaluated.";
 XMLDeleteCases::target = "`1` is the position of the document or of a tag, which cannot be deleted. Name an element, an attribute, a token, a run of children or the contents instead.";
-XMLDeleteCases::pathtarget = "`1` is a named path, the elements between two others, which cannot be deleted. Name the elements to delete instead.";
+XMLDeleteCases::pathtarget = "`1` gives the elements between two others, as for a name on a Descendant constraint, which cannot be deleted. Name the elements to delete instead.";
 
 treeDelete[tree_, q_] :=
   Catch[
@@ -264,10 +264,10 @@ outermostPositions[ps_] := With[{set = AssociationThread[ps -> True]}, Select[ps
 (* =========================================================== *)
 
 PackageExported[XMLReplace]
-XMLReplace::usage = "XMLReplace[tree, pattern :> {x -> new, ...}] replaces what each name x of pattern matches by new, for every result of pattern in tree, and gives the rewritten tree. XMLReplace[tree, pattern :> new] replaces each match of pattern by new. XMLReplace[tree, {rule1, rule2, ...}] gives each place the replacement of the first rule that names it. A name can match an element, its tag, its attribute list, an attribute value, a list key's tokens, its contents, or a run or gap of its element children, and each takes a replacement of its own kind: an element takes an element, a string, Splice[list] or Nothing, and a gap takes the nodes to insert. Replacements are made inside out, contents before their container, and each new reads the names it uses from the tree as rewritten so far. The \"AttributeReadings\" option adds readings to $AttributeReadings, as in XMLCases.";
+XMLReplace::usage = "XMLReplace[tree, pattern :> {x -> new, ...}] replaces what each name x of pattern matches by new, for every result of pattern in tree, and gives the rewritten tree. XMLReplace[tree, pattern :> new] replaces each match of pattern by new. XMLReplace[tree, {rule1, rule2, ...}] gives each part the replacement from the first rule with a name bound to it. A name can match an element, its tag, its attribute list, an attribute value, a list key's tokens, its contents, or a run or gap of its element children, and each takes a replacement of its own kind: an element takes an element, a string, Splice[list] or Nothing, and a gap takes the nodes to insert. Replacements are made inside out, contents before their container, and the names in each new have their values in the tree as rewritten so far. The \"AttributeReadings\" option adds entries to $AttributeReadings, as in XMLCases.";
 XMLReplace::bare = "`1` is a pattern with no replacement, which would replace each match by itself. Name what to replace and give its replacement, as in x : p :> {x -> new}, or replace the match itself, as in p :> new.";
 XMLReplace::target = "`1` is the position of the document, which cannot be replaced. Name an element, a tag, an attribute, a token, a run or gap of children, or the contents instead.";
-XMLReplace::pathtarget = "`1` is a named path, the elements between two others, which cannot be replaced. Name the elements to replace instead.";
+XMLReplace::pathtarget = "`1` gives the elements between two others, as for a name on a Descendant constraint, which cannot be replaced. Name the elements to replace instead.";
 XMLReplace::kind = "The replacement `2` for position `1` is not of a kind that position takes, and the position is left unchanged. An element takes an element, a string, Splice[list] or Nothing; a tag a string; an attribute list a list of rules; an attribute value a string or Nothing; a list key a list of strings; a token a string, and a run of tokens a list of strings; contents a list of nodes; a run of children Splice[list], a list or Nothing; a gap the nodes to insert.";
 XMLReplace::conflict = "Position `1` is given different replacements by different results; the replacement of the first result is used.";
 XMLReplace::stale = "The position `2` of `1` was removed by an earlier replacement, so `1` has its original value.";
