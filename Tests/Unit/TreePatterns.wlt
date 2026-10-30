@@ -260,6 +260,62 @@ TestCreate[
   TestID -> "condition-scope-roles-keys"
 ];
 
+(* "Constructs" keys too: a test on the inner pattern leaves p a plain
+   paragraph, one on the containing pattern makes it a Section. *)
+TestCreate[
+  With[{page = doc[el["body", XMLElement["p", {"class" -> "a"}, {el["b", "Hi"]}]]]},
+    ExportString[HTMLToNotebook[page, "Constructs" -> {#}], "Markdown"] & /@ {
+      XMLPattern["p", "class" -> c_][Child[XMLPattern["b"] /; bound[c]]] -> "Section",
+      (XMLPattern["p", "class" -> c_][Child[XMLPattern["b"]]] /; bound[c]) -> "Section"}],
+  {"**Hi**", "### **Hi**"},
+  TestID -> "condition-scope-constructs-keys"
+];
+
+(* Inside an Except, as in WL: a test there does not see a name bound
+   before the Except, but sees one bound inside it, and a test on the list
+   sees the names of its entries. *)
+TestCreate[
+  {XMLCases[scoped, XMLPattern["ul"][{x : XMLPattern["li"], Except[XMLPattern["li"] /; bound[x]]}] :> id[x]],
+    XMLCases[scoped, XMLPattern["ul"][{x : XMLPattern["li"], Except[y : XMLPattern["li"] /; bound[y]]}] :> id[x]],
+    XMLCases[scoped, XMLPattern["ul"][{x : XMLPattern["li"], Except[XMLPattern["p"]]} /; bound[x]] :> id[x]],
+    MatchQ[{1, 2}, #] & /@ {{x_, Except[_ /; bound[x]]}, {x_, Except[y_ /; bound[y]]}, {x_, Except[_String]} /; bound[x]}},
+  {{"1"}, {}, {"1"}, {True, False, True}},
+  TestID -> "condition-scope-except"
+];
+
+(* The same through the other query functions and HTMLToTree. *)
+TestCreate[
+  {XMLFirstCase[scoped, XMLPattern["ul", "class" -> c_][Child[x : XMLPattern["li"] /; bound[c]]] :> id[x]],
+    XMLFirstCase[scoped, (XMLPattern["ul", "class" -> c_][Child[x : XMLPattern["li"]]] /; bound[c]) :> id[x]],
+    XMLPosition[scoped, XMLPattern["ul", "class" -> c_][Child[XMLPattern["li"] /; bound[c]]]],
+    XMLPosition[scoped, XMLPattern["ul", "class" -> c_][Child[XMLPattern["li"]]] /; bound[c]]},
+  {Missing["NotFound"], "1", {}, {{1}}},
+  TestID -> "condition-scope-first-case-position"
+];
+
+TestCreate[
+  {XMLDeleteCases[scoped, XMLPattern["ul", "class" -> c_][Child[x : XMLPattern["li"] /; bound[c]]] :> x],
+    XMLDeleteCases[scoped, (XMLPattern["ul", "class" -> c_][Child[x : XMLPattern["li"]]] /; bound[c]) :> x],
+    XMLReplace[scoped, XMLPattern["ul", "class" -> c_][Child[x : XMLPattern["li"] /; bound[c]]] :> (x -> el["li"])],
+    XMLReplace[scoped, (XMLPattern["ul", "class" -> c_][Child[x : XMLPattern["li"]]] /; bound[c]) :> (x -> el["li"])]},
+  {scoped, doc[XMLElement["ul", {"class" -> "a"}, {}]],
+    scoped, doc[XMLElement["ul", {"class" -> "a"}, {el["li"], el["li"]}]]},
+  TestID -> "condition-scope-delete-replace"
+];
+
+TestCreate[
+  shape[HTMLToTree[scoped[[2]], #]] & /@ {
+    "Hide" -> (XMLPattern["ul", "class" -> c_][Child[x : XMLPattern["li"] /; bound[c]]] :> x),
+    "Hide" -> ((XMLPattern["ul", "class" -> c_][Child[x : XMLPattern["li"]]] /; bound[c]) :> x),
+    "Focus" -> (XMLPattern["ul", "class" -> c_][Child[x : XMLPattern["li"] /; bound[c]]] :> x),
+    "Focus" -> ((XMLPattern["ul", "class" -> c_][Child[x : XMLPattern["li"]]] /; bound[c]) :> x)},
+  {shell["ul", {"class" -> "a"}] -> {shell["li", {"id" -> "1"}], shell["li", {"id" -> "2"}]},
+    shell["ul", {"class" -> "a"}],
+    shell["ul", {"class" -> "a"}] -> {Missing["Collapsed", 2]},
+    shell["ul", {"class" -> "a"}] -> {shell["li", {"id" -> "1"}], shell["li", {"id" -> "2"}]}},
+  TestID -> "condition-scope-html-to-tree"
+];
+
 (* Laws: an XML pattern's verdict is MatchQ's on the same list pattern, the
    list {1, {2}} standing for ul[li, ol[li]]. *)
 TestCreate[

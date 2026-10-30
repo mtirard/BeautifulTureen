@@ -370,11 +370,9 @@ cRoot[Verbatim[Pattern][s_Symbol, p_], need_] :=
   With[{name = Hold[s]}, If[$place === "literal", refuseText[name, p]];
     With[{sub = cRoot[p, need]}, treeNode["Named", Union[sub["Names"], {name}], need, "Name" -> name, "Sub" -> sub]]];
 
-(* A Condition sees only the names bound inside the pattern it wraps, as in
-   WL (conditionNode). *)
 cRoot[c_Condition, need_] :=
   With[{test = Extract[c, {2}, Hold]},
-    With[{sub = cRoot[c[[1]], conditionNeed[c, need]]}, conditionNode["Cond", sub, test, need]]];
+    With[{sub = cRoot[c[[1]], conditionNeed[c, test, need]]}, conditionNode["Cond", sub, test, need]]];
 
 cRoot[Verbatim[PatternTest][p_, f_], need_] :=
   With[{sub = cRoot[p, need]}, treeNode["Test", sub["Names"], need, "Sub" -> sub, "F" -> f]];
@@ -479,7 +477,7 @@ $listEntryReasons = <|
 conditionNode[kind_, sub_, test_, need_] :=
   treeNode[kind, sub["Names"], need, "Sub" -> sub, "Test" -> test, "Sees" -> mentioned[test, Cases[sub["Names"], _Hold]]];
 
-conditionNeed[c_, need_] := Union[need, mentioned[Extract[c, {2}, Hold], namesIn[Extract[c, {1}, Hold]]]];
+conditionNeed[c_, test_, need_] := Union[need, mentioned[test, namesIn[Extract[c, {1}, Hold]]]];
 
 alternativesNode[kind_, subs_, namesBy_, need_] :=
   With[{names = Union @@ Prepend[namesBy, {}], slot = "Slot" <> ToString[$nodeId + 1]},
@@ -553,7 +551,7 @@ cContents[Verbatim[Pattern][s_Symbol, p_], need_] :=
     With[{sub = cContents[p, need]}, treeNode["ContentsNamed", Union[sub["Names"], {name}], need, "Name" -> name, "Sub" -> sub]]];
 cContents[c_Condition, need_] :=
   With[{test = Extract[c, {2}, Hold]},
-    With[{sub = cContents[c[[1]], conditionNeed[c, need]]}, conditionNode["ContentsCond", sub, test, need]]];
+    With[{sub = cContents[c[[1]], conditionNeed[c, test, need]]}, conditionNode["ContentsCond", sub, test, need]]];
 cContents[Verbatim[PatternTest][p_, f_], need_] :=
   With[{sub = cContents[p, need]}, treeNode["ContentsTest", sub["Names"], need, "Sub" -> sub, "F" -> f]];
 cContents[l_List, need_] /; !FreeQ[l, _XMLPattern] || IntersectingQ[namesIn[outsideExcept[Hold[l]]], need] :=
@@ -639,7 +637,7 @@ cPath[Verbatim[PatternTest][x_, f_], need_, key_] :=
   With[{sub = cPath[x, need, key]}, treeNode["PathTest", sub["Names"], need, "Sub" -> sub, "F" -> f, "Key" -> key]];
 cPath[c_Condition, need_, key_] :=
   With[{test = Extract[c, {2}, Hold]},
-    With[{sub = cPath[c[[1]], conditionNeed[c, need], key]}, Append[conditionNode["PathCond", sub, test, need], "Key" -> key]]];
+    With[{sub = cPath[c[[1]], conditionNeed[c, test, need], key]}, Append[conditionNode["PathCond", sub, test, need], "Key" -> key]]];
 (* Shortest and Longest are filters the pattern root's node runs
    (nearestFiltered); one is enough. *)
 cPath[c : (h : Shortest | Longest)[x_], need_, key_] :=
@@ -665,7 +663,7 @@ cListConstraint[Verbatim[Pattern][s_Symbol, l_], need_] :=
       treeNode["ListNamed", Union[sub["Names"], {name}], need, "Name" -> name, "Sub" -> sub]]];
 cListConstraint[c_Condition, need_] :=
   With[{test = Extract[c, {2}, Hold]},
-    With[{sub = cListConstraint[c[[1]], conditionNeed[c, need]]}, conditionNode["ListCond", sub, test, need]]];
+    With[{sub = cListConstraint[c[[1]], conditionNeed[c, test, need]]}, conditionNode["ListCond", sub, test, need]]];
 cListConstraint[Verbatim[PatternTest][l_, f_], need_] :=
   With[{sub = cListConstraint[l, need]}, treeNode["ListTest", sub["Names"], need, "Sub" -> sub, "F" -> f]];
 cListConstraint[x_, _] /; !ListQ[x] := refuse[XMLPattern::constraint, x];
@@ -711,9 +709,10 @@ cItem[Verbatim[Optional][p_, ___], need_] := cItem[Alternatives[p, PatternSequen
 cItem[(Shortest | Longest)[p_, ___], need_] := cItem[p, need];
 cItem[c_Condition, need_] /; sequenceQ[c[[1]]] :=
   With[{test = Extract[c, {2}, Hold]},
-    With[{inner = cItem[c[[1]], conditionNeed[c, need]]},
-      With[{sub = treeNode["Seq", Union @@ Prepend[#["Names"] & /@ inner, {}], conditionNeed[c, need], "Items" -> inner]},
-        {conditionNode["SeqCond", sub, test, need]}]]];
+    With[{subNeed = conditionNeed[c, test, need]},
+      With[{inner = cItem[c[[1]], subNeed]},
+        With[{sub = treeNode["Seq", Union @@ Prepend[#["Names"] & /@ inner, {}], subNeed, "Items" -> inner]},
+          {conditionNode["SeqCond", sub, test, need]}]]]];
 (* A test on a sequence tests each of its items, as in WL. *)
 cItem[Verbatim[PatternTest][p_, f_], need_] /; sequenceQ[p] := cItem[testedEach[p, f], need];
 cItem[x_, need_] := With[{sub = $single[x, need]}, {treeNode["One", sub["Names"], need, "Sub" -> sub]}];
@@ -1043,7 +1042,7 @@ tokenListMatches[Verbatim[Pattern][s_Symbol, p_], need_] :=
     tokenListMatches[p, need]];
 tokenListMatches[c_Condition, need_] :=
   With[{test = Extract[c, {2}, Hold], inner = namesIn[Hold[c]]},
-    project[Select[tokenListMatches[c[[1]], Union[need, mentioned[test, inner]]], passesQ[test, inner, #] &],
+    project[Select[tokenListMatches[c[[1]], conditionNeed[c, test, need]], passesQ[test, inner, #] &],
       Intersection[inner, need]]];
 tokenListMatches[Verbatim[PatternTest][p_, _], need_] := tokenListMatches[p, need];
 tokenListMatches[l_List, need_] :=
