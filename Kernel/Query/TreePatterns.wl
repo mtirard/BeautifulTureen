@@ -116,7 +116,7 @@ compileQuery[head_, q_, counted_ : None, lists_ : None] :=
         $records = $exceptRefs =!= {};
         With[{need = Union[First[names], Last[names], comparedNames[lhs]]},
           root = If[listQ, listRoot[q, need], compileRoot[lhs, need]]];
-        <|"Head" -> head, "Root" -> root, "Rhs" -> rhs, "Names" -> all, "Counted" -> First[names],
+        <|"Head" -> head, "Test" -> counted === "Test", "Root" -> root, "Rhs" -> rhs, "Names" -> all, "Counted" -> First[names],
           "TestNames" -> Last[names], "Readings" -> $readings, "Order" -> $order, "Slots" -> $slotOf,
           "NamedPaths" -> $namedPaths, "ExceptRefs" -> $exceptRefs, "Records" -> $records, "Lists" -> listQ,
           "Reach" -> reachBelow[root], "LastNodeId" -> $nodeId|>]],
@@ -157,8 +157,7 @@ runQuery[cq_Association, tree_, mode_, n_ : Infinity, roots_ : All] :=
             $elem, $parent, $depth, $kids, $index, $end, $wlPos, $tops, $posMemo = <||>, $keyMemo = <||>,
             $matElems = <||>, $keyLength},
           If[roots === All, cachedIndexTree[tree], indexTree[tree]];
-          With[{r = results[mode, cq["Root"], cq["Rhs"], cq["Names"], cq["Counted"], cq["TestNames"],
-              roots === All && MatchQ[tree, _XMLElement], n, rootNodes[cq["Root"], roots, top, tree]]},
+          With[{r = results[mode, cq, roots === All && MatchQ[tree, _XMLElement], n, rootNodes[cq["Root"], roots, top, tree]]},
             If[roots === All, keptIndex[tree]];
             r]]]],
     $refusal];
@@ -1704,31 +1703,32 @@ $noResult = Unique["noResult"];
    its slot, keyed by the first of them the tuple binds, or by where the
    Alternatives matched when it binds none. The bare input's own position is
    never counted. Each result is what the output mode makes of its tuple
-   (resultOf). *)
-results[mode_, root_, rhs_, all_, counted_, {}, bare_, n_, nodes_] /;
-    root["Kind"] === "Named" && counted === {root["Name"]} && !MemberQ[root["Sub"]["Names"], root["Name"]] && FreeQ[root["Sub"]["Keep"], _exceptKey] :=
-  rootMatches[mode, root, rhs, all, bare, n, nodes];
+   (resultOf), from compiled query cq.
+   An element test (compileQuery) is tried first: nothing counted or tested,
+   and nothing to give, so one solution is the one result, the empty tuple.
+   This is what the general way gives; taken directly, as an element test is
+   run on each of many small inputs. *)
+results["Values", cq_, bare_, n_, nodes_] /; cq["Test"] :=
+  With[{root = cq["Root"]},
+    If[n >= 1 && AnyTrue[rootCandidates[root, nodes], unsettled @ match[root, #] =!= {} &], {{}}, {}]];
+results[mode_, cq_, bare_, n_, nodes_] /; rootMatchesQ[cq["Root"], cq["Counted"], cq["TestNames"]] :=
+  rootMatches[mode, cq["Root"], cq["Rhs"], cq["Names"], bare, n, nodes];
 (* The right-hand side is the one counted name: each result is the value of
    a distinct match, so the solutions are neither grouped nor evaluated,
    only their matches deduplicated and sorted. A name in an Alternatives
    slot is keyed by its own position when it is bound, so a solution without
    the name keeps the general way. *)
-results[mode_, root_, rhs_, all_, {name_}, {}, bare_, n_, nodes_] /; mode === "Values" && rhs === Hold @@ name :=
-  Module[{sols, bs},
-    sols = rootSolutions[root, False, nodes];
+results["Values", cq_, bare_, n_, nodes_] /; MatchQ[cq["Counted"], {name_} /; cq["Rhs"] === Hold @@ name] && cq["TestNames"] === {} :=
+  Module[{name = First[cq["Counted"]], sols, bs},
+    sols = rootSolutions[cq["Root"], False, nodes];
     refuseBoundText[sols, {name}];
     bs = Lookup[#, Key[name], None] & /@ sols;
     If[bare, bs = Select[bs, !MatchQ[#, {{___, {1} | Verbatim[Span][{1}, _], ___}, _, _}] &]];
     bs = DeleteDuplicatesBy[bs, identityOf];
     {valueOf[#]} & /@ Take[bs[[Ordering[padded[matchKey[#]] & /@ bs]]], UpTo[n]] /; FreeQ[bs, None, {1}]];
-(* An element test (compileQuery): nothing counted or tested, and nothing to
-   give, so one solution is the one result, the empty tuple. This is what
-   the general way gives; taken directly, as an element test is run on each
-   of many small inputs. *)
-results["Values", root_, Hold[], all_, {}, {}, bare_, n_, nodes_] :=
-  If[n >= 1 && AnyTrue[rootCandidates[root, nodes], unsettled @ match[root, #] =!= {} &], {{}}, {}];
-results[mode_,root_, rhs_, all_, counted_, testNames_, bare_, n_, nodes_] :=
-  Module[{sols, groups, slots, keys, count = 0, k = 1, r},
+results[mode_, cq_, bare_, n_, nodes_] :=
+  Module[{root, rhs, all, counted, testNames, sols, groups, slots, keys, count = 0, k = 1, r},
+    {root, rhs, all, counted, testNames} = Lookup[cq, {"Root", "Rhs", "Names", "Counted", "TestNames"}];
     sols = rootSolutions[root, counted === {} && testNames === {}, nodes];
     refuseBoundText[sols, counted];
     If[bare, sols = Select[sols, NoneTrue[Lookup[#, counted, None], MatchQ[{{___, {1} | Verbatim[Span][{1}, _], ___}, _, _}]] &]];
@@ -1748,6 +1748,11 @@ results[mode_,root_, rhs_, all_, counted_, testNames_, bare_, n_, nodes_] :=
 refuseBoundText[sols_, counted_] :=
   Replace[FirstCase[counted, n_ /; AnyTrue[sols, MemberQ[matchPos[Lookup[#, Key[n], {{}}]], Missing["Text"]] &]],
     Hold[s_] :> refuseHere["text", HoldForm[s]]];
+
+(* Whether the one counted name is on the pattern root (rootMatches). *)
+rootMatchesQ[root_, counted_, testNames_] :=
+  testNames === {} && root["Kind"] === "Named" && counted === {root["Name"]} && !MemberQ[root["Sub"]["Names"], root["Name"]] &&
+    FreeQ[root["Sub"]["Keep"], _exceptKey];
 
 (* The results a loop sows, in order, each a list (resultOf). *)
 SetAttributes[reapedResults, HoldFirst];
