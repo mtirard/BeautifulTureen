@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changes
+
+- **A mistake in a list key's value is refused on every tree.** `XMLCases[t, XMLPattern["a", "classList" -> {___, PatternTest[x : PatternSequence[_, _], StringQ]}] :> x]` gives `XMLCases::badpat` and `$Failed` also when `t` has no `a` element, where it gave `{}`.
+
 ## 4.0.0
 
 A breaking release. Patterns are nested as the document is, and a query gives one result per distinct combination of the positions of the names its right-hand side uses ([ADR 0023](docs/adr/0023-patterns-are-nested-as-the-document-is.md), [ADR 0024](docs/adr/0024-one-result-per-tuple-of-counted-names.md)). The combinators are gone.
