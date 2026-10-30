@@ -989,10 +989,15 @@ conditionFiltered[nd_, sols_] := project[Select[sols, passesQ[nd["Test"], nd["Se
 headVector[nd_] :=
   memoised[{"Head", nd["Id"]},
     With[{p = nd["Plain"], els = materialElems[nd["Readings"]]},
-      Developer`ToPackedArray @ If[MatchQ[p, XMLElement[_, _, Verbatim[_]]],
-        With[{heads = Take[#, 2] & /@ els},
-          With[{u = DeleteDuplicates[heads]}, Lookup[AssociationThread[u, Boole[MatchQ[Append[#, {}], p] & /@ u]], heads]]],
-        Boole[MatchQ[#, p] & /@ els]]]];
+      Developer`ToPackedArray @ Which[
+        MatchQ[p, XMLElement[_, Verbatim[_], Verbatim[_]]], distinctTested[els[[All, 1]], MatchQ[#, First[p]] &],
+        MatchQ[p, XMLElement[_, _, Verbatim[_]]], distinctTested[els[[All, 1 ;; 2]], MatchQ[Append[#, {}], p] &],
+        True, Boole[MatchQ[#, p] & /@ els]]]];
+
+(* f applied once to each distinct one of xs, as 0 or 1 for each. A pattern
+   on the tag alone reads only the tags, which a page has few of; taking
+   each element's tag and attributes with Take cost about 1 µs an element. *)
+distinctTested[xs_, f_] := With[{u = DeleteDuplicates[xs]}, Lookup[AssociationThread[u, Boole[f /@ u]], xs]];
 
 (* The matches of the needed names in the tag and attribute slots: the tag
    is {p, 0}, a name on the attribute argument {p, Key[All]}, a value
