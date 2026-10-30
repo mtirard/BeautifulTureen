@@ -117,7 +117,8 @@ queryKeyPositions[key_, value_, head_, tree_] :=
       t : Except[_Missing] :> (Message[MessageName[head, "keytarget"], t]; refuseRule[])];
     If[ps === {}, <||>, AssociationThread[ps, ConstantArray[ReleaseHold[value], Length[ps]]]]];
 
-(* An element test is checked as XMLMatchQ checks one, then run as the query
+(* An element test is checked as XMLFreeQ compiles one, with nothing
+   counted, so it is refused as a test is; it is then run as the query
    r : key :> value counting r alone, so that each element it matches is one
    result and the other names take their matches in its first solution
    (its "Solutions"). An XMLDocument root is no test of an element. A bare
@@ -126,7 +127,7 @@ queryKeyPositions[key_, value_, head_, tree_] :=
 testKeyPositions[key_, value_, head_, tree_] :=
   Module[{r},
     If[documentKeyQ[key], Message[MessageName[head, "badpat"], key]; refuseRule[]];
-    If[treeMatcher[head, key, False] === $Failed, refuseRule[]];
+    If[compileQuery[head, key, {}] === $Failed, refuseRule[]];
     With[{names = Select[namesIn[Hold[key]], !FreeQ[value, Replace[#, Hold[s_] :> HoldPattern[s]]] &],
         sols = Replace[runQuery[compileQuery[head, RuleDelayed @@ Join[Hold @@ {Pattern @@ {r, key}}, value], {Hold[r]}],
           Replace[tree, x : (_XMLElement | _String) :> {x}], "Solutions", Infinity], rs_List :> Catenate[rs]]},

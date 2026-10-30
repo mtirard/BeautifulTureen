@@ -128,3 +128,13 @@ TestCreate[
   {XMLFreeQ::argt},
   TestID -> "xmlfreeq-argument-count"
 ];
+
+(* A list pattern at a list key, in a tree pattern, gives no message. *)
+TestCreate[
+  With[{p = XMLPattern["div", "classList" -> {t_, ___}][{___}] /; t == "a"},
+    {XMLFreeQ[XMLElement["div", {"class" -> "a b"}, {XMLElement["p", {}, {}]}], p],
+      XMLFreeQ[p][XMLElement["section", {}, {XMLElement["div", {"class" -> "b a"}, {}]}]]}],
+  {False, True},
+  {},
+  TestID -> "xmlfreeq-token-list-in-tree-pattern"
+];

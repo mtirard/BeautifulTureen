@@ -226,3 +226,24 @@ TestCreate[
   {{nav[[2]], nav[[2, 3, 2]]}, {row[[2, 3]]}},
   TestID -> "xmlmatchq-operator-form-tree-patterns"
 ];
+
+(* A list pattern at a list key, in a tree pattern, gives no message. *)
+TestCreate[
+  With[{p = XMLPattern["div", "classList" -> {t_, ___}][{___}] /; t == "a"},
+    {XMLMatchQ[XMLElement["div", {"class" -> "a b"}, {XMLElement["p", {}, {}]}], p],
+      XMLMatchQ[p][XMLElement["div", {"class" -> "b a"}, {XMLElement["p", {}, {}]}]]}],
+  {True, False},
+  {},
+  TestID -> "xmlmatchq-token-list-in-tree-pattern"
+];
+
+(* A search in a Condition searches all of the element it is given, however
+   little of it the test itself reads. *)
+TestCreate[
+  Module[{found = {}, deep = XMLElement["div", {}, {XMLElement["p", {}, {XMLElement["b", {}, {XMLElement["span", {}, {"x"}]}]}]}]},
+    {XMLMatchQ[deep, x : XMLPattern["div"][{___}] /; (AppendTo[found, Length[XMLCases[x, "span"]]]; True)],
+      XMLMatchQ[x : XMLPattern["div"][{___}] /; (AppendTo[found, Length[XMLCases[x, "span"]]]; True)][deep],
+      found}],
+  {True, True, {1, 1}},
+  TestID -> "xmlmatchq-search-in-condition"
+];

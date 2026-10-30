@@ -6,9 +6,6 @@ PackageScoped[namesIn]
 
 (* Used by XMLFunctions.wl, for XMLMatchQ and XMLFreeQ *)
 PackageScoped[plainRootQ]
-PackageScoped[treeMatcher]
-PackageScoped[treeMatchQ]
-PackageScoped[treeFreeQ]
 
 (* Used by DisplayRoles.wl, Positions.wl, Rewrite.wl, Tree.wl and
    XMLFunctions.wl, which each name the output mode they run in *)
@@ -78,22 +75,33 @@ removedCombinatorQ[held_] :=
    tree. counted is None for the names the right-hand side uses (rhsNames),
    or else the counted names, each Hold[name]; the other names the
    right-hand side mentions are then test names.
+   counted {} compiles an element test, as XMLMatchQ and XMLFreeQ give one:
+   the pattern itself, not erased to r$ : p :> r$, with nothing counted or
+   tested, so a run gives at most one result, the empty tuple, and stops at
+   the first solution. A rule is refused, as a test gives a truth value, not
+   results; a context selector is refused, as it looks above the element
+   tested. listsQ: whether a list pattern, in the contents-list grammar, can
+   be the root (XMLMatchQ's lists).
    The compiled query is an Association of all the run reads: "Head";
    "Root", the compiled pattern; "Rhs", the held right-hand side; "Names",
    the names the pattern binds; "Counted"; "TestNames"; "Readings"; "Order"
    and "Slots", the pattern order and the Alternatives slots, which
-   compiling extends; "NamedPaths"; "ExceptRefs"; "Records"; and
-   "LastNodeId", the last node id compiled. A list pattern at a list key is
-   compiled while matching (tokenListMatches), so the run numbers its nodes
-   on from there: they never share an id, nor so a memo entry, with a
-   compiled node. *)
-compileQuery[head_, q_, counted_ : None] :=
+   compiling extends; "NamedPaths"; "ExceptRefs"; "Records"; "Lists",
+   whether the root is a list pattern; "Reach", how many DOM levels below
+   its root the pattern reads (reachBelow); and "LastNodeId", the last node
+   id compiled. A list pattern at a list key is compiled while matching
+   (tokenListMatches), so the run numbers its nodes on from there: they
+   never share an id, nor so a memo entry, with a compiled node. *)
+compileQuery[head_, q_, counted_ : None, listsQ_ : False] :=
   Catch[
     Block[{$head = head, $nodeId = 0, $order, $slotOf = <||>, $readings, $place = "query", $owner = XMLPattern,
-        $namedPaths = False, $exceptRefs, $records, $countedNames, $contextOK = True},
-      Module[{lhs, rhs, all, names, root},
-        If[namedContextQ[q], refuseHere["badpat", q]];
-        {lhs, rhs} = splitQuery[q];
+        $namedPaths = False, $exceptRefs, $records, $countedNames, $contextOK = counted =!= {}},
+      Module[{lhs, rhs, all, names, root, listQ = listsQ && listRootQ[q]},
+        If[counted === {},
+          If[MatchQ[q, _Rule | _RuleDelayed], refuseHere["badpat", q]];
+          {lhs, rhs} = {Hold[q], Hold[]},
+          If[namedContextQ[q], refuseHere["badpat", q]];
+          {lhs, rhs} = splitQuery[q]];
         If[removedCombinatorQ[lhs], refuseHere["badpat", q]];
         $readings = Replace[readingsInForce[], $Failed :> Throw[$Failed, $refusal]];
         all = namesIn[lhs];
@@ -103,33 +111,84 @@ compileQuery[head_, q_, counted_ : None] :=
         $countedNames = First[names];
         checkExcept[lhs, If[counted === None, First[names], Union @@ names]];
         $records = $exceptRefs =!= {};
-        root = compileRoot[lhs, Union[First[names], Last[names], comparedNames[lhs]]];
+        With[{need = Union[First[names], Last[names], comparedNames[lhs]]},
+          root = If[listQ, listRoot[q, need], compileRoot[lhs, need]]];
         <|"Head" -> head, "Root" -> root, "Rhs" -> rhs, "Names" -> all, "Counted" -> First[names],
           "TestNames" -> Last[names], "Readings" -> $readings, "Order" -> $order, "Slots" -> $slotOf,
-          "NamedPaths" -> $namedPaths, "ExceptRefs" -> $exceptRefs, "Records" -> $records, "LastNodeId" -> $nodeId|>]],
+          "NamedPaths" -> $namedPaths, "ExceptRefs" -> $exceptRefs, "Records" -> $records, "Lists" -> listQ,
+          "Reach" -> reachBelow[root], "LastNodeId" -> $nodeId|>]],
     $refusal];
 
 (* The results of compiled query cq on tree, the first n of them in result
    order, each the list of what it splices in, or $Failed after a message
    under its head; a refused compile, $Failed, passes through. The tree is
-   checked, indexed, the index kept for the next query (cachedIndexTree),
-   and searched with fresh memos. mode is what each result is (resultOf). The
-   compiler's context flag and counted names stay as they were compiling,
-   for an element test that a Condition compiles during the run. *)
+   checked, indexed and searched with fresh memos. mode is what each result
+   is (resultOf).
+   roots is which nodes of the tree may be the pattern root:
+   - All, every node, as the searching consumers ask. The whole tree is
+     indexed, and the index is read from the one-slot cache and written back
+     to it (cachedIndexTree, keptIndex), so a document queried many times is
+     indexed once;
+   - "Input", the input itself, as XMLMatchQ tests it: an element, a
+     document, or, for a list pattern ("Lists"), the virtual document above a
+     list's elements. Any other input is no error: it gives no results,
+     without a message;
+   - {lo, hi}, the nodes at relative DOM depths lo to hi, the input at depth
+     0, as XMLFreeQ tests them. A list is not a node: its elements are at
+     depth 1.
+   For "Input" and {lo, hi}, the input is indexed no deeper than the pattern
+   reaches below those nodes, and the cache is neither read nor written: an
+   element test applied to many small inputs would otherwise replace the
+   index of the document being searched. The input itself is then tried as
+   the pattern root, so the bare element's own position is not dropped as it
+   is for All. The index depth is bound for each run, so that a query in a
+   Condition indexes its own input in full. *)
 runQuery[$Failed, ___] := $Failed;
-runQuery[cq_Association, tree_, mode_, n_] :=
+runQuery[cq_Association, tree_, mode_, n_ : Infinity, roots_ : All] :=
   Catch[
-    Block[{$head = cq["Head"], $readings = cq["Readings"], $order = cq["Order"], $slotOf = cq["Slots"],
-        $namedPaths = cq["NamedPaths"], $exceptRefs = cq["ExceptRefs"], $records = cq["Records"],
-        $nodeId = cq["LastNodeId"], $countedNames = cq["Counted"], $contextOK = True, $memo = <||>,
-        $elem, $parent, $depth, $kids, $index, $end, $wlPos, $tops, $posMemo = <||>, $keyMemo = <||>,
-        $matElems = <||>, $keyLength},
-      If[!validTreeQ[tree], messageTreeRefusal[$head, tree]; Throw[$Failed, $refusal]];
-      cachedIndexTree[tree];
-      With[{r = results[mode, cq["Root"], cq["Rhs"], cq["Names"], cq["Counted"], cq["TestNames"], MatchQ[tree, _XMLElement], n]},
-        keptIndex[tree];
-        r]],
+    With[{top = topNode[cq, tree, roots]},
+      If[top === None, {},
+        Block[{$head = cq["Head"], $readings = cq["Readings"], $order = cq["Order"], $slotOf = cq["Slots"],
+            $namedPaths = cq["NamedPaths"], $exceptRefs = cq["ExceptRefs"], $records = cq["Records"],
+            $nodeId = cq["LastNodeId"], $indexDepth = indexDepth[roots, top, cq["Reach"]], $memo = <||>,
+            $elem, $parent, $depth, $kids, $index, $end, $wlPos, $tops, $posMemo = <||>, $keyMemo = <||>,
+            $matElems = <||>, $keyLength},
+          If[roots === All, cachedIndexTree[tree], indexTree[tree]];
+          With[{r = results[mode, cq["Root"], cq["Rhs"], cq["Names"], cq["Counted"], cq["TestNames"],
+              roots === All && MatchQ[tree, _XMLElement], n, rootNodes[cq["Root"], roots, top, tree]]},
+            If[roots === All, keptIndex[tree]];
+            r]]]],
     $refusal];
+
+(* The node of tree the run is rooted at: the element, 1, or the document or
+   the virtual document above a list's elements, 0; None, for "Input", when
+   the pattern cannot take the input. For All and {lo, hi} a tree that is
+   not one is refused. Only a list pattern takes a list, and it takes
+   nothing else. *)
+topNode[cq_, x_, "Input"] :=
+  Which[
+    cq["Lists"], If[ListQ[x] && validTreeQ[x], 0, None],
+    MatchQ[x, _XMLElement], 1,
+    MatchQ[x, XMLObject["Document"][_, _XMLElement, _]], 0,
+    True, None];
+topNode[cq_, x_, _] :=
+  If[validTreeQ[x], If[MatchQ[x, _XMLElement], 1, 0], messageTreeRefusal[cq["Head"], x]; Throw[$Failed, $refusal]];
+
+(* The DOM depth the input is indexed to: the node it is rooted at, 1 for an
+   element, plus how far below it the pattern root may be, plus how far
+   below that the pattern reads. *)
+indexDepth[All, _, _] := Infinity;
+indexDepth["Input", top_, reach_] := top + reach;
+indexDepth[{_, hi_}, top_, reach_] := top + hi + reach;
+
+(* The nodes tried as the pattern root (rootCandidates), in document order,
+   or All for every candidate. A node of a depth range is tried only if the
+   root can match it (candidateVector). *)
+rootNodes[_, All, _, _] := All;
+rootNodes[_, "Input", top_, _] := {top};
+rootNodes[root_, {lo_, hi_}, top_, x_] :=
+  Select[Range[If[ListQ[x], 1, top], $end[[top + 1]]],
+    lo <= $depth[[# + 1]] - top <= hi && (# == 0 || candidateVector[root][[#]] == 1) &];
 
 (* query -> {Hold[lhs], Hold[rhs]}. A bare pattern is erased to r$ : p :> r$.
    A Rule's right-hand side was evaluated when the query was given, as in
@@ -1643,25 +1702,31 @@ $noResult = Unique["noResult"];
    Alternatives matched when it binds none. The bare input's own position is
    never counted. Each result is what the output mode makes of its tuple
    (resultOf). *)
-results[mode_, root_, rhs_, all_, counted_, {}, bare_, n_] /;
+results[mode_, root_, rhs_, all_, counted_, {}, bare_, n_, nodes_] /;
     root["Kind"] === "Named" && counted === {root["Name"]} && !MemberQ[root["Sub"]["Names"], root["Name"]] && FreeQ[root["Sub"]["Keep"], _exceptKey] :=
-  rootMatches[mode, root, rhs, all, bare, n];
+  rootMatches[mode, root, rhs, all, bare, n, nodes];
 (* The right-hand side is the one counted name: each result is the value of
    a distinct match, so the solutions are neither grouped nor evaluated,
    only their matches deduplicated and sorted. A name in an Alternatives
    slot is keyed by its own position when it is bound, so a solution without
    the name keeps the general way. *)
-results[mode_, root_, rhs_, all_, {name_}, {}, bare_, n_] /; mode === "Values" && rhs === Hold @@ name :=
+results[mode_, root_, rhs_, all_, {name_}, {}, bare_, n_, nodes_] /; mode === "Values" && rhs === Hold @@ name :=
   Module[{sols, bs},
-    sols = rootSolutions[root, False];
+    sols = rootSolutions[root, False, nodes];
     refuseBoundText[sols, {name}];
     bs = Lookup[#, Key[name], None] & /@ sols;
     If[bare, bs = Select[bs, !MatchQ[#, {{___, {1} | Verbatim[Span][{1}, _], ___}, _, _}] &]];
     bs = DeleteDuplicatesBy[bs, identityOf];
     {valueOf[#]} & /@ Take[bs[[Ordering[padded[matchKey[#]] & /@ bs]]], UpTo[n]] /; FreeQ[bs, None, {1}]];
-results[mode_, root_, rhs_, all_, counted_, testNames_, bare_, n_] :=
+(* An element test (compileQuery): nothing counted or tested, and nothing to
+   give, so one solution is the one result, the empty tuple. This is what
+   the general way gives; taken directly, as an element test is run on each
+   of many small inputs. *)
+results["Values", root_, Hold[], all_, {}, {}, bare_, n_, nodes_] :=
+  If[n >= 1 && AnyTrue[rootCandidates[root, nodes], unsettled @ match[root, #] =!= {} &], {{}}, {}];
+results[mode_,root_, rhs_, all_, counted_, testNames_, bare_, n_, nodes_] :=
   Module[{sols, groups, slots, keys, count = 0, k = 1, r},
-    sols = rootSolutions[root, counted === {} && testNames === {}];
+    sols = rootSolutions[root, counted === {} && testNames === {}, nodes];
     refuseBoundText[sols, counted];
     If[bare, sols = Select[sols, NoneTrue[Lookup[#, counted, None], MatchQ[{{___, {1} | Verbatim[Span][{1}, _], ___}, _, _}]] &]];
     groups = Values @ GroupBy[sols, identity[#, counted] &];
@@ -1689,8 +1754,8 @@ reapedResults[loop_] := Replace[Reap[loop, $resultTag][[2]], {{l_} :> l, {} -> {
    results are the root's matches, each once, and the elements are numbered
    in document order, so nothing is grouped or sorted, and the right-hand side
    is evaluated only until there are n. *)
-rootMatches[mode_, root_, rhs_, all_, bare_, n_] :=
-  Module[{cands = rootCandidates[root], sub = root["Sub"], name = root["Name"], count = 0, k = 1, i, r},
+rootMatches[mode_, root_, rhs_, all_, bare_, n_, nodes_] :=
+  Module[{cands = rootCandidates[root, nodes], sub = root["Sub"], name = root["Name"], count = 0, k = 1, i, r},
     With[{exactQ = sub["Kind"] === "XMLPattern" && sub["Constraints"] === {} && sub["Keep"] === {} ||
         n === Infinity && sub["Kind"] === "Cond" && flatConditionQ[sub]},
       If[bare, cands = DeleteCases[cands, 1]];
@@ -1704,8 +1769,8 @@ rootMatches[mode_, root_, rhs_, all_, bare_, n_] :=
 
 (* Every solution of the pattern root, at each element that can match it.
    With nothing counted or tested, one is enough. *)
-rootSolutions[root_, oneQ_] :=
-  With[{cands = rootCandidates[root]},
+rootSolutions[root_, oneQ_, nodes_] :=
+  With[{cands = rootCandidates[root, nodes]},
     If[oneQ,
       Catch[Scan[With[{s = unsettled @ match[root, #]}, If[s =!= {}, Throw[s, $one]]] &, cands]; {}, $one],
       unsettled @
@@ -1787,8 +1852,10 @@ outermostMatches[root_, cands_] :=
   Module[{end = -1}, Select[cands, # > end && match[root, #] =!= {} && (end = $end[[# + 1]]; True) &]];
 
 (* The nodes a pattern root can match, in document order: the document first
-   when the root can be an XMLDocument, then the elements. *)
-rootCandidates[root_] := Join[If[documentRootQ[root], {0}, {}], Flatten @ Position[candidateVector[root], 1]];
+   when the root can be an XMLDocument, then the elements; or the nodes the
+   run tries (rootNodes). *)
+rootCandidates[root_, All] := Join[If[documentRootQ[root], {0}, {}], Flatten @ Position[candidateVector[root], 1]];
+rootCandidates[_, nodes_List] := nodes;
 
 documentRootQ[nd_] := Switch[nd["Kind"],
   "XMLDocument", True,
@@ -1875,9 +1942,10 @@ subNodes[nd_] := DeleteCases[Flatten[{Lookup[nd, "Sub", {}], Lookup[nd, "Subs", 
 (*                                                              *)
 (* XMLMatchQ and XMLFreeQ test a node of their input as the     *)
 (* pattern root; names select nothing, so only the names that   *)
-(* Conditions see are bound. A test is compiled once, which the *)
-(* operator forms keep (ADR 0013), and run on an index of the   *)
-(* input that reaches no deeper than the pattern does.          *)
+(* Conditions see are bound. A test is compiled once, as a      *)
+(* query with nothing counted, which the operator forms keep    *)
+(* (ADR 0013), and run (runQuery) on an index of the input that *)
+(* reaches no deeper than the pattern does.                     *)
 (* =========================================================== *)
 
 (* A pattern root of XMLPatterns without constraints, which XMLMatchQ tests
@@ -1892,24 +1960,6 @@ plainRootQ[s_String] := MatchQ[Quiet[cssTree[s]], {"one", t_} /; plainRootQ[t]];
 plainRootQ[Verbatim[Pattern][_, p_] | Verbatim[Condition][p_, _] | Verbatim[PatternTest][p_, _]] := plainRootQ[p];
 plainRootQ[alts_Alternatives] := AllTrue[List @@ alts, plainRootQ];
 plainRootQ[_] := False;
-
-(* The test of pattern q under head, or $Failed after a message. A rule is
-   refused: it gives a value, not a test. listsQ: whether a list pattern, in
-   the contents-list grammar, can be the root (XMLMatchQ's lists). *)
-treeMatcher[head_, q_, listsQ_] :=
-  Catch[
-    Block[{$head = head, $nodeId = 0, $order, $slotOf = <||>, $readings,
-        $place = "query", $owner = XMLPattern, $namedPaths = False, $exceptRefs = exceptRefs[Hold[q]], $records},
-      Module[{lhs = Hold[q], need, root, listQ = listsQ && listRootQ[q]},
-        If[MatchQ[q, _Rule | _RuleDelayed] || removedCombinatorQ[lhs], refuseHere["badpat", q]];
-        $readings = Replace[readingsInForce[], $Failed :> Throw[$Failed, $refusal]];
-        $order = patternOrder[lhs];
-        need = comparedNames[lhs];
-        $records = $exceptRefs =!= {};
-        root = If[listQ, listRoot[q, need], compileRoot[lhs, need]];
-        <|"Head" -> head, "Root" -> root, "Lists" -> listQ, "Readings" -> $readings,
-          "Reach" -> reachBelow[root], "Records" -> $records|>]],
-    $refusal];
 
 (* A list pattern, named, conditioned or tested, or alternatives of these. *)
 listRootQ[q_] := MatchQ[q, _List] ||
@@ -1928,43 +1978,3 @@ reachBelow[nd_] := Switch[nd["Kind"],
   "List" | "ContentsList", 1 + Max[0, reachBelow /@ subNodes[nd]],
   "Descendant", nd["Levels"][[2]] + reachBelow[nd["Sub"]],
   _, Max[0, reachBelow /@ subNodes[nd]]];
-
-(* The node of x the test is rooted at: the element, the document, or the
-   virtual document above a list's elements; None for any other input. Only
-   a list pattern takes a list, and it takes nothing else. *)
-testNode[m_, x_] :=
-  Which[
-    m["Lists"], If[ListQ[x] && validTreeQ[x], 0, None],
-    MatchQ[x, _XMLElement], 1,
-    MatchQ[x, XMLObject["Document"][_, _XMLElement, _]], 0,
-    True, None];
-
-(* f[] run on the index of x to DOM depth, with the test's compiled state. *)
-withIndex[m_, x_, depth_, f_] :=
-  Block[{$head = m["Head"], $readings = m["Readings"], $memo = <||>, $indexDepth = depth,
-      $elem, $parent, $depth, $kids, $index, $end, $wlPos, $tops, $posMemo = <||>, $keyMemo = <||>, $matElems = <||>,
-      $keyLength, $namedPaths = False, $records = m["Records"]},
-    indexTree[x];
-    f[]];
-
-rootMatchQ[m_, i_] := unsettled @ match[m["Root"], i] =!= {};
-
-(* XMLMatchQ: whether x, as the pattern root, matches. A kind the pattern
-   cannot match is not an error: the document under an element pattern, an
-   element under an XMLDocument pattern, matches nothing. *)
-treeMatchQ[$Failed, _] := $Failed;
-treeMatchQ[m_, x_] :=
-  With[{i = testNode[m, x]},
-    i =!= None && withIndex[m, x, i + m["Reach"], rootMatchQ[m, i] &]];
-
-(* XMLFreeQ: whether no node at relative DOM depths lo to hi matches, x
-   itself at depth 0. A list is not a node: its elements are at depth 1. *)
-treeFreeQ[$Failed, _, _] := $Failed;
-treeFreeQ[m_, x_, {lo_, hi_}] :=
-  With[{b = If[MatchQ[x, _XMLElement], 1, 0]},
-    withIndex[m, x, b + hi + m["Reach"],
-      Function[
-        NoneTrue[
-          Select[Range[If[ListQ[x], 1, b], $end[[b + 1]]],
-            lo <= $depth[[# + 1]] - b <= hi && (# == 0 || candidateVector[m["Root"]][[#]] == 1) &],
-          rootMatchQ[m, #] &]]]];

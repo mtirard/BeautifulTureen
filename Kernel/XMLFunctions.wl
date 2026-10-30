@@ -91,7 +91,12 @@ matchWith[m_, el_] := m[el];
    pattern (Query/TreePatterns.wl). *)
 matcherOf[q_] :=
   If[plainRootQ[q], elementMatcher[q, XMLMatchQ],
-    Replace[treeMatcher[XMLMatchQ, q, True], m : Except[$Failed] :> (treeMatchQ[m, #] &)]];
+    Replace[compileQuery[XMLMatchQ, q, {}, True], cq : Except[$Failed] :> (testResult[runQuery[cq, #, "Values", 1, "Input"], True] &)]];
+
+(* A test's truth value from its run, at most one result: whether it gave
+   one, for XMLMatchQ, or gave none, for XMLFreeQ. *)
+testResult[$Failed, _] := $Failed;
+testResult[r_, matchQ_] := (r =!= {}) === matchQ;
 
 (* The operator form stays unevaluated, as MatchQ[pattern] does, and is applied
    to each element in turn, so its matcher is kept, keyed on everything the
@@ -136,10 +141,11 @@ XMLFreeQ[tree_, q : Except[_?(optionRuleQ[XMLFreeQ])], levels : Except[_?(option
 
 XMLFreeQ[args___] /; (countMessage[XMLFreeQ, {args}, {1, 3}]; False) := Null;
 
-freeMatcher[q_] := treeMatcher[XMLFreeQ, q, False];
+freeMatcher[q_] := compileQuery[XMLFreeQ, q, {}];
 
+(* The run checks the tree, after the compile, so a query mistake comes first. *)
 freeWith[$Failed, _, _] := $Failed;
-freeWith[m_, tree_, l_] := If[validTreeQ[tree], treeFreeQ[m, tree, l], messageTreeRefusal[XMLFreeQ, tree]; $Failed];
+freeWith[cq_, tree_, l_] := testResult[runQuery[cq, tree, "Values", 1, l], False];
 
 (* A level spec in DOM depth, in FreeQ's forms, as {lo, hi}, or $Failed. *)
 domLevels[n : (_Integer?NonNegative | DirectedInfinity[1])] := {1, n};
