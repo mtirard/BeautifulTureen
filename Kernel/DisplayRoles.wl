@@ -110,9 +110,9 @@ heldValue[r_Rule] := Replace[Extract[r, {2}, Hold], Hold[c_Condition] :> Hold[Id
    counted (ADR 0018), so a query cannot select it. A position that is not an
    element is keytarget. *)
 queryKeyPositions[key_, value_, head_, tree_] :=
-  With[{ps = Replace[treeCountedPositions[head, Replace[tree, s_String :> {s}], key], {
+  With[{ps = Replace[runQuery[compileQuery[head, key], Replace[tree, s_String :> {s}], "CountedPositions", Infinity], {
       $Failed :> refuseRule[],
-      rs_ :> DeleteDuplicates[Join @@ rs]}]},
+      rs_ :> DeleteDuplicates[Catenate[Catenate[rs]]]}]},
     Replace[SelectFirst[ps, !MatchQ[#, {__Integer?Positive}] &],
       t : Except[_Missing] :> (Message[MessageName[head, "keytarget"], t]; refuseRule[])];
     If[ps === {}, <||>, AssociationThread[ps, ConstantArray[ReleaseHold[value], Length[ps]]]]];
@@ -120,7 +120,7 @@ queryKeyPositions[key_, value_, head_, tree_] :=
 (* An element test is checked as XMLMatchQ checks one, then run as the query
    r : key :> value counting r alone, so that each element it matches is one
    result and the other names take their matches in its first solution
-   (treeSolutions). An XMLDocument root is no test of an element. A bare
+   (its "Solutions"). An XMLDocument root is no test of an element. A bare
    element is matched in a list around it, at the same positions, so that
    its root is tested too. *)
 testKeyPositions[key_, value_, head_, tree_] :=
@@ -128,8 +128,8 @@ testKeyPositions[key_, value_, head_, tree_] :=
     If[documentKeyQ[key], Message[MessageName[head, "badpat"], key]; refuseRule[]];
     If[treeMatcher[head, key, False] === $Failed, refuseRule[]];
     With[{names = Select[namesIn[Hold[key]], !FreeQ[value, Replace[#, Hold[s_] :> HoldPattern[s]]] &],
-        sols = treeSolutions[head, Replace[tree, x : (_XMLElement | _String) :> {x}],
-          RuleDelayed @@ Join[Hold @@ {Pattern @@ {r, key}}, value], {Hold[r]}]},
+        sols = Replace[runQuery[compileQuery[head, RuleDelayed @@ Join[Hold @@ {Pattern @@ {r, key}}, value], {Hold[r]}],
+          Replace[tree, x : (_XMLElement | _String) :> {x}], "Solutions", Infinity], rs_List :> Catenate[rs]]},
       Which[sols === $Failed, refuseRule[], sols === {}, Return[<||>, Module]];
       With[{constant = If[names === {}, ReleaseHold[value]]},
         Association[(First[First[#[Hold[r]]]] -> If[names === {}, constant, boundValue[value, names, #]]) & /@ sols]]]];

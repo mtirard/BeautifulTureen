@@ -113,7 +113,7 @@ Options[XMLPosition] = {"AttributeReadings" -> <||>};
 
 XMLPosition[tree_, q : Except[_?(optionRuleQ[XMLPosition])], opts : OptionsPattern[]] :=
   withReadings[OptionValue["AttributeReadings"],
-    treePositions[XMLPosition, tree, q]];
+    Replace[runQuery[compileQuery[XMLPosition, q], tree, "Positions", Infinity], rs_List :> Catenate[rs]]];
 
 XMLPosition[args___] /; (countMessage[XMLPosition, {args}, {2, 2}]; False) := Null;
 

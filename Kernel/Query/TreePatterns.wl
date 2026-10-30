@@ -10,18 +10,10 @@ PackageScoped[treeMatcher]
 PackageScoped[treeMatchQ]
 PackageScoped[treeFreeQ]
 
-(* Used by XMLFunctions.wl *)
-PackageScoped[treeCases]
-PackageScoped[treeResults]
-
-(* Used by Positions.wl *)
-PackageScoped[treePositions]
-
-(* Used by DisplayRoles.wl, Rewrite.wl and Tree.wl *)
-PackageScoped[treeCountedPositions]
-
-(* Used by DisplayRoles.wl and Rewrite.wl *)
-PackageScoped[treeSolutions]
+(* Used by DisplayRoles.wl, Positions.wl, Rewrite.wl, Tree.wl and
+   XMLFunctions.wl, which each name the output mode they run in *)
+PackageScoped[compileQuery]
+PackageScoped[runQuery]
 
 (* =========================================================== *)
 (* Tree patterns (ADR 0023, 0024, 0025)                         *)
@@ -81,35 +73,6 @@ removedCombinatorQ[held_] :=
 (* in the tree.                                                 *)
 (* =========================================================== *)
 
-(* The results of q on tree, the first n of them in result order, or $Failed
-   after a message under head. A result that is a sequence is spliced in, as
-   in Cases. *)
-treeCases[head_, tree_, q_, n_] := joined[treeResults[head, tree, q, n]];
-
-(* The same, each result as the list of what it splices in. *)
-treeResults[head_, tree_, q_, n_] := runQuery[compileQuery[head, q], tree, "Values", n];
-
-(* What XMLPosition gives: the results of q with each counted name replaced
-   by its position (resultOf). *)
-treePositions[head_, tree_, q_] := joined[runQuery[compileQuery[head, q], tree, "Positions", Infinity]];
-
-(* What Hide and Focus act on: for each result of q, the positions of its
-   counted names, whatever the right-hand side does with them. A result its
-   Conditions refuse gives none. A no-match is {}, never read as {} the
-   document. A repeated name compared by value gives every position it is
-   bound at, since each is in the tuple. *)
-treeCountedPositions[head_, tree_, q_] := joined[runQuery[compileQuery[head, q], tree, "CountedPositions", Infinity]];
-
-(* What XMLReplace acts on: for each result of q, its solution, an
-   Association name -> {positions, {value}}, the value a list of what the
-   name splices in. The counted names are those given, not those the
-   right-hand side uses; every other name it mentions is uncounted, and takes
-   its first passing match. A result its Conditions refuse
-   gives none. *)
-treeSolutions[head_, tree_, q_, counted_] := joined[runQuery[compileQuery[head, q, counted], tree, "Solutions", Infinity]];
-
-joined[r_] := Replace[r, l_List :> Join @@ l];
-
 (* The compiled query of q under head, or $Failed after a message under
    head. It reads the query, counted and the readings in force, never a
    tree. counted is None for the names the right-hand side uses (rhsNames),
@@ -150,9 +113,7 @@ compileQuery[head_, q_, counted_ : None] :=
    order, each the list of what it splices in, or $Failed after a message
    under its head; a refused compile, $Failed, passes through. The tree is
    checked, indexed, the index kept for the next query (cachedIndexTree),
-   and searched with fresh memos. mode is what each result is: "Values", the
-   right-hand side's value; "Positions", "CountedPositions" or "Solutions",
-   as treePositions, treeCountedPositions and treeSolutions describe. The
+   and searched with fresh memos. mode is what each result is (resultOf). The
    compiler's context flag and counted names stay as they were compiling,
    for an element test that a Condition compiles during the run. *)
 runQuery[$Failed, ___] := $Failed;
@@ -1850,6 +1811,21 @@ groupResult[mode_, rhs_, all_, testNames_, group_] :=
       With[{names = SortBy[testNames, $order]},
         SortBy[group, Function[sol, Join @@ (padded[matchKeyOrPad[Lookup[sol, Key[#], None]]] & /@ names)]]]]},
     FirstCase[ordered, sol_ :> With[{v = resultOf[mode, rhs, all, sol]}, v /; v =!= $noResult], $noResult]];
+
+(* What each result is, in each output mode:
+   - "Values": the right-hand side's value, as XMLCases gives it;
+   - "Positions": the same, with each name replaced by its position, as
+     XMLPosition gives it;
+   - "CountedPositions": the positions of the counted names, whatever the
+     right-hand side does with them, as XMLDeleteCases, Hide and Focus act
+     on them. A no-match is {}, never read as {} the document. A repeated
+     name compared by value gives every position it is bound at, since each
+     is in the tuple;
+   - "Solutions": the solution, an Association name -> {positions, {value}},
+     the value a list of what the name splices in, as XMLReplace acts on it.
+     Compiled with counted names given, the names the right-hand side
+     mentions beyond them take their first passing match.
+   A result its Conditions refuse gives none, in every mode. *)
 
 (* The right-hand side evaluated for one solution, in an output mode. For
    XMLPosition, its Conditions are run as for XMLCases, on the values, and

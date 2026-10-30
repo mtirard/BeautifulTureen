@@ -212,8 +212,8 @@ XMLDeleteCases::pathtarget = "`1` is a named path, the elements between two othe
 treeDelete[tree_, q_] :=
   Catch[
     checkDeletion[q];
-    With[{counted = treeCountedPositions[XMLDeleteCases, tree, q]},
-      If[counted === $Failed, $Failed, deleted[tree, DeleteDuplicates[Join @@ counted]]]],
+    With[{counted = runQuery[compileQuery[XMLDeleteCases, q], tree, "CountedPositions", Infinity]},
+      If[counted === $Failed, $Failed, deleted[tree, DeleteDuplicates[Catenate[Catenate[counted]]]]]],
     $refusal];
 
 (* A rule's right-hand side names what is deleted: a name of the pattern or a
@@ -299,7 +299,7 @@ checkReplacement[p_] := refuse[XMLReplace::bare, p];
    first result, in result order, that targets it. A later result whose
    replacement differs, by its code or by the positions of the names it
    uses, is XMLReplace::conflict. A repeated name targets every position it
-   is bound at, as treeCountedPositions gives them. *)
+   is bound at, as its "CountedPositions" give them. *)
 replacementEdits[tree_, q : (Rule | RuleDelayed)[lhs_, _]] :=
   Module[{r, names = namesIn[Hold[lhs]], rhs = heldRHS[q], targets, query = q, sols, edits = <||>, ids = <||>},
     targets = targetRules[unguarded[rhs], names];
@@ -309,7 +309,8 @@ replacementEdits[tree_, q : (Rule | RuleDelayed)[lhs_, _]] :=
          right-hand side stays held. *)
       query = RuleDelayed @@ Join[Hold @@ {Pattern @@ {r, lhs}}, rhs];
       names = Prepend[names, Hold[r]]];
-    sols = treeSolutions[XMLReplace, tree, query, DeleteDuplicates[targets[[All, 1]]]];
+    sols = Replace[runQuery[compileQuery[XMLReplace, query, DeleteDuplicates[targets[[All, 1]]]], tree, "Solutions", Infinity],
+      rs_List :> Catenate[rs]];
     If[sols === $Failed, Throw[$Failed, $refusal]];
     Do[
       With[{b = Lookup[sol, Key[First[t]], None], id = replacementId[Last[t], sol]},
