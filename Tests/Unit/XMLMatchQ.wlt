@@ -237,6 +237,17 @@ TestCreate[
   TestID -> "xmlmatchq-token-list-in-tree-pattern"
 ];
 
+(* Such a list pattern is compiled while the test runs; a mistake in it is
+   still refused under XMLMatchQ, in both forms. *)
+TestCreate[
+  With[{p = XMLPattern["div", "classList" -> {___, (x_ | y_ ..)?StringQ, ___}][{___}]},
+    {XMLMatchQ[XMLElement["div", {"class" -> "a b"}, {XMLElement["p", {}, {}]}], p],
+      XMLMatchQ[p][XMLElement["div", {"class" -> "a b"}, {XMLElement["p", {}, {}]}]]}],
+  {$Failed, $Failed},
+  {XMLMatchQ::badpat, XMLMatchQ::badpat},
+  TestID -> "xmlmatchq-token-list-refused-while-running"
+];
+
 (* A search in a Condition searches all of the element it is given, however
    little of it the test itself reads. *)
 TestCreate[
