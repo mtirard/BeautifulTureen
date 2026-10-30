@@ -17,7 +17,7 @@ Options[XMLCases] = {"AttributeReadings" -> <||>};
    that is not an option is a count, and one that is not valid gives innf.
    Every query is a tree pattern (Query/TreePatterns.wl). *)
 XMLCases[tree_, q_, n : Except[_?(optionQ[XMLCases])] : Infinity, opts : OptionsPattern[]] /; countQ[n] :=
-  withReadings[OptionValue["AttributeReadings"], Replace[runQuery[compileQuery[XMLCases, q], tree, "Values", n], rs_List :> Catenate[rs]]];
+  withReadings[OptionValue["AttributeReadings"], joinedResults[runQuery[compileQuery[XMLCases, q], tree, "Values", n]]];
 
 XMLCases[tree_, q_, n : Except[_?(optionQ[XMLCases])], opts : OptionsPattern[]] /;
     (Message[XMLCases::innf, Unevaluated[XMLCases[tree, q, n, opts]], 3]; False) := Null;

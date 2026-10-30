@@ -101,10 +101,9 @@ queryItemPositions[name_, tree_, q_] := countedItemPositions[name, tree, q];
    that its root can be selected, and kept with root. *)
 countedItemPositions[name_, tree_, q_] :=
   With[{counted = Replace[
-      runQuery[Block[{$queryOption = name}, compileQuery[HTMLToTree, q]],
-        If[name === "Hide" && MatchQ[tree, _XMLElement], {tree}, tree], "CountedPositions", Infinity], {
-        $Failed :> Throw[$Failed, treeSites],
-        rs_ :> DeleteDuplicates[Catenate[Catenate[rs]]]}]},
+      distinctPositions[runQuery[Block[{$queryOption = name}, compileQuery[HTMLToTree, q]],
+        If[name === "Hide" && MatchQ[tree, _XMLElement], {tree}, tree], "CountedPositions", Infinity]],
+      $Failed :> Throw[$Failed, treeSites]]},
     Replace[SelectFirst[counted, !actsOnQ[name, #] &], t : Except[_Missing] :>
       (refusedPosition[name, t]; Throw[$Failed, treeSites])];
     keptRoot[name, tree, DeleteDuplicates[Join @@ (itemPositions[tree, #] & /@ counted)]]];

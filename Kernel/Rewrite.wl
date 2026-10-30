@@ -212,8 +212,8 @@ XMLDeleteCases::pathtarget = "`1` is a named path, the elements between two othe
 treeDelete[tree_, q_] :=
   Catch[
     checkDeletion[q];
-    With[{counted = runQuery[compileQuery[XMLDeleteCases, q], tree, "CountedPositions", Infinity]},
-      If[counted === $Failed, $Failed, deleted[tree, DeleteDuplicates[Catenate[Catenate[counted]]]]]],
+    With[{ps = distinctPositions[runQuery[compileQuery[XMLDeleteCases, q], tree, "CountedPositions", Infinity]]},
+      If[ps === $Failed, $Failed, deleted[tree, ps]]],
     $refusal];
 
 (* A rule's right-hand side names what is deleted: a name of the pattern or a
@@ -309,8 +309,7 @@ replacementEdits[tree_, q : (Rule | RuleDelayed)[lhs_, _]] :=
          right-hand side stays held. *)
       query = RuleDelayed @@ Join[Hold @@ {Pattern @@ {r, lhs}}, rhs];
       names = Prepend[names, Hold[r]]];
-    sols = Replace[runQuery[compileQuery[XMLReplace, query, DeleteDuplicates[targets[[All, 1]]]], tree, "Solutions", Infinity],
-      rs_List :> Catenate[rs]];
+    sols = joinedResults[runQuery[compileQuery[XMLReplace, query, DeleteDuplicates[targets[[All, 1]]]], tree, "Solutions", Infinity]];
     If[sols === $Failed, Throw[$Failed, $refusal]];
     Do[
       With[{b = Lookup[sol, Key[First[t]], None], id = replacementId[Last[t], sol]},

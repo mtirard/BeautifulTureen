@@ -12,6 +12,11 @@ PackageScoped[plainRootQ]
 PackageScoped[compileQuery]
 PackageScoped[runQuery]
 
+(* Used by DisplayRoles.wl, Positions.wl, Rewrite.wl, Tree.wl and
+   XMLFunctions.wl, to join the results of runQuery *)
+PackageScoped[joinedResults]
+PackageScoped[distinctPositions]
+
 (* =========================================================== *)
 (* Tree patterns (ADR 0023, 0024, 0025)                         *)
 (*                                                              *)
@@ -158,6 +163,16 @@ runQuery[cq_Association, tree_, mode_, n_ : Infinity, roots_ : All] :=
             $matElems = <||>, $keyLength},
           onIndex[roots, tree, results[mode, cq, bareQ[roots, tree], n, rootNodes[cq["Root"], roots, top, tree]] &]]]],
     $refusal];
+
+(* The results of a run joined, each spliced in, as in Cases; $Failed
+   passes through. *)
+joinedResults[rs_List] := Catenate[rs];
+joinedResults[$Failed] := $Failed;
+
+(* The distinct positions of a run in "CountedPositions", over all its
+   results; $Failed passes through. *)
+distinctPositions[rs_List] := DeleteDuplicates[Catenate[Catenate[rs]]];
+distinctPositions[$Failed] := $Failed;
 
 (* f[] run on the index of tree: for All, read from the one-slot cache and
    written back to it; otherwise indexed afresh, the cache untouched. *)

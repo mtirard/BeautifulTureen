@@ -110,9 +110,8 @@ heldValue[r_Rule] := Replace[Extract[r, {2}, Hold], Hold[c_Condition] :> Hold[Id
    counted (ADR 0018), so a query cannot select it. A position that is not an
    element is keytarget. *)
 queryKeyPositions[key_, value_, head_, tree_] :=
-  With[{ps = Replace[runQuery[compileQuery[head, key], Replace[tree, s_String :> {s}], "CountedPositions", Infinity], {
-      $Failed :> refuseRule[],
-      rs_ :> DeleteDuplicates[Catenate[Catenate[rs]]]}]},
+  With[{ps = Replace[distinctPositions[runQuery[compileQuery[head, key], Replace[tree, s_String :> {s}], "CountedPositions", Infinity]],
+      $Failed :> refuseRule[]]},
     Replace[SelectFirst[ps, !MatchQ[#, {__Integer?Positive}] &],
       t : Except[_Missing] :> (Message[MessageName[head, "keytarget"], t]; refuseRule[])];
     If[ps === {}, <||>, AssociationThread[ps, ConstantArray[ReleaseHold[value], Length[ps]]]]];
@@ -133,8 +132,8 @@ testKeyPositions[key_, value_, head_, tree_] :=
        badpat for Adjacent or Sibling. So the key is compiled twice. *)
     If[compileQuery[head, key, "Test"] === $Failed, refuseRule[]];
     With[{names = Select[namesIn[Hold[key]], !FreeQ[value, Replace[#, Hold[s_] :> HoldPattern[s]]] &],
-        sols = Replace[runQuery[compileQuery[head, RuleDelayed @@ Join[Hold @@ {Pattern @@ {r, key}}, value], {Hold[r]}],
-          Replace[tree, x : (_XMLElement | _String) :> {x}], "Solutions", Infinity], rs_List :> Catenate[rs]]},
+        sols = joinedResults[runQuery[compileQuery[head, RuleDelayed @@ Join[Hold @@ {Pattern @@ {r, key}}, value], {Hold[r]}],
+          Replace[tree, x : (_XMLElement | _String) :> {x}], "Solutions", Infinity]]},
       Which[sols === $Failed, refuseRule[], sols === {}, Return[<||>, Module]];
       With[{constant = If[names === {}, ReleaseHold[value]]},
         Association[(First[First[#[Hold[r]]]] -> If[names === {}, constant, boundValue[value, names, #]]) & /@ sols]]]];
