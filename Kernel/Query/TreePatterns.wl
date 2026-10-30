@@ -908,18 +908,15 @@ slotMatches[nd_, slot_, x_, i_] :=
 (* The match of a name in a literal's tag or attributes. A name on a slot
    of the literal itself is at that slot: 0 the tag, Key[All] the attributes
    (ADR 0025). A name deeper in the tag that binds the whole tag is at
-   0; one deeper in the attributes that binds an attribute's value is at
-   Key[k] of the first attribute with that value. Any other has no position,
-   and is compared by its value. *)
+   0. Any other has no position, and is compared by its value: one deeper in
+   the attributes too, as which attribute WL matched it to is not known, and
+   two attributes can have its value. *)
 literalPosition[nd_, slot_, name_, v_, x_, i_] :=
   Replace[{Lookup[nd["Slots"], Key[name], None], slot},
     {
       {k : Except[None], _} :> nameMatch[{Append[posOf[i], k]}, v, Join[elemKey[i], If[k === 0, tagKey[], attributeMapKey[]]]],
       {_, "Tag"} /; v === x[[1]] :> nameMatch[{Append[posOf[i], 0]}, v, Join[elemKey[i], tagKey[]]],
-      {_, "Attrs"} :>
-        Replace[FirstPosition[x[[2]], _[_, v], None, {1}, Heads -> False], {
-          {j_} :> nameMatch[{Append[posOf[i], Key[x[[2, j, 1]]]]}, v, Join[elemKey[i], attributeKey[j]]],
-          None :> nameMatch[{Missing["Literal"]}, v, Join[elemKey[i], attributeMapKey[]]]}],
+      {_, "Attrs"} :> nameMatch[{Missing["Literal"]}, v, Join[elemKey[i], attributeMapKey[]]],
       _ :> nameMatch[{Missing["Literal"]}, v, Join[elemKey[i], tagKey[]]]}];
 
 literalSlots[XMLElement[t_, a_, c_]] :=

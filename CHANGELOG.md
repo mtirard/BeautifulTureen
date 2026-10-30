@@ -6,6 +6,7 @@
 
 - **A mistake in a list key's value is refused on every tree.** `XMLCases[t, XMLPattern["a", "classList" -> {___, PatternTest[x : PatternSequence[_, _], StringQ]}] :> x]` gives `XMLCases::badpat` and `$Failed` also when `t` has no `a` element, where it gave `{}`.
 - **A counted name that can match text in an `XMLElement` pattern's contents is refused from the pattern alone**, with `::text`, also on a tree with no text there. `XMLCases[t, XMLPattern["tr"][{XMLElement["th", _, {s___}], ___}] :> {s}]` is refused even when every `th` holds only elements; give the name a pattern that matches only elements, as `s___XMLElement`.
+- **A name inside an `XMLElement` pattern's attribute list has no position**, and is identified by its value. `XMLPosition[{XMLElement["p", {"a" -> "v", "b" -> "v"}, {}]}, XMLElement["p", {___, "b" -> h_}, _] :> h]` gives `{Missing["Literal"]}`, where it gave `{{1, Key["a"]}}`, the first attribute with that value. `XMLReplace` and `XMLDeleteCases` leave such a name alone.
 
 ## 4.0.0
 

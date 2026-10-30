@@ -139,8 +139,18 @@ TestCreate[
 
 TestCreate[
   XMLPosition[listing, XMLElement["ul", _, {_, _, XMLElement["li", _, {XMLElement["a", {"href" -> h_}, _]}]}] :> h],
-  {{1, 2, 1, Key["href"]}},
+  {Missing["Literal"]},
   TestID -> "literal-deep-attribute-value-position"
+];
+
+(* A name inside a literal's attribute list has no position: which attribute
+   WL matched it to is not known. It is identified by its value, so the two
+   elements give one result. *)
+TestCreate[
+  With[{shared = {XMLElement["p", {"a" -> "v", "b" -> "v"}, {}], XMLElement["p", {"a" -> "v", "b" -> "v"}, {}]}},
+    {XMLPosition[shared, XMLElement["p", {___, "b" -> h_}, _] :> h], XMLCases[shared, XMLElement["p", {___, "b" -> h_}, _] :> h]}],
+  {{Missing["Literal"]}, {"v"}},
+  TestID -> "literal-attribute-name-shared-value-no-position"
 ];
 
 TestCreate[
