@@ -225,7 +225,8 @@ childMarks[ps_] := With[{m = idMarks[ps]}, Prepend[m[[Rest[$parent] + 1]], 0]];
 (* ---- Place codes ---- *)
 
 (* K, kept with the index: a page's elements do not change between
-   queries. *)
+   queries. A run computes it only when it makes a code (columnarResults):
+   an element test of a pattern with no names makes none. *)
 placeBase[] := Lookup[$vectors, Key[{"PlaceBase"}], $vectors[{"PlaceBase"}] = Max[0, Length /@ $elem[[2 ;;, 2]]] + 3];
 
 codePosition[c_] :=
@@ -258,7 +259,8 @@ tab[nd_, allowed_, rootQ_] := tabKind[nd["Kind"], nd, allowed, rootQ];
    kept with the index. *)
 candidateIds[nd_] := Last[candidateCounts[nd]];
 
-tabKind["XMLPattern", nd_, allowed_, rootQ_] := treeTable[nd, restricted[candidateIds[nd], allowed], rootQ];
+tabKind["XMLPattern", nd_, All, rootQ_] := treeTable[nd, candidateIds[nd], rootQ];
+tabKind["XMLPattern", nd_, allowed_, rootQ_] := treeTable[nd, packed @ Flatten @ Position[Rest[allowed] candidateVector[nd], 1], rootQ];
 
 tabKind["XMLDocument", nd_, allowed_, rootQ_] :=
   treeTable[nd, If[Length[childrenOf[0]] >= nd["MinKids"], restricted[{0}, allowed], {}], rootQ];
@@ -405,7 +407,8 @@ fallBack[reason_] := Throw[reason, $columnarFallback];
    them for the same mode, input and nodes. An element test gives the empty
    tuple if the pattern root matches anywhere. *)
 columnarResults[mode_, cq_, bare_, n_, nodes_] :=
-  Block[{$K = placeBase[], $t},
+  Block[{$K, $t},
+    $K := ($K = placeBase[]);
     $t = tab[cq["Root"], If[nodes === All, All, idMarks[nodes]], False];
     If[cq["Test"], If[n >= 1 && rowCount[$t] > 0, {{}}, {}], orderedResults[mode, cq, bare, n]]];
 

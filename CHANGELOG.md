@@ -11,6 +11,7 @@
 
 ### Performance
 
+- Queries whose patterns are made of element patterns, names, `Descendant`, `Child`, `Alternatives`, `Condition`, `PatternTest` and `XMLDocument` run on a new engine that matches each part of the pattern against all elements at once. On a 15,000-element page, `XMLCases[page, a : XMLPattern["a", "href" -> h_] :> {a, h}]` takes about 19 ms where it took 455 ms, `XMLCases[page, "div a"]` 8 ms where it took 107 ms, and `XMLPosition[page, "div"[Descendant[p : "p"[Descendant[a : "a"]]]] :> {p, a}]` 15 ms where it took 107 ms.
 - A document queried again keeps what queries computed for each of its elements, such as which elements pass a tag and attribute test, beside its index. A query with no match on a 15,000-element page, `XMLCases[page, "zzz"]`, takes about 6 ms where it took 12 ms.
 
 ## 4.0.0
