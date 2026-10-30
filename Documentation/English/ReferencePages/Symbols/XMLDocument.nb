@@ -122,13 +122,11 @@ Cell[CellGroupData[{Cell[BoxData[
    }],
   $Line = 0; Null]], "PrimaryExamplesSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give the p elements at the top of a list, and not those nested in other elements:", "ExampleText"], Cell[BoxData["fragment={XMLElement[\"p\",{},{\"One\"}],\"text\",XMLElement[\"div\",{},{XMLElement[\"p\",{},{\"Nested\"}]}],XMLElement[\"p\",{},{\"Two\"}]};
-XMLCases[fragment,XMLDocument[Child[x:XMLPattern[\"p\"]]]:>x]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give the p elements at the top of a list, and not those nested in other elements:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"fragment", "=", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"One\"", "}"}]}], "]"}], ",", "\"text\"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Nested\"", "}"}]}], "]"}], "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Two\"", "}"}]}], "]"}]}], "}"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"fragment", ",", RowBox[{RowBox[{"XMLDocument", "[", RowBox[{"Child", "[", RowBox[{"x", ":", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "]"}], "]"}], ":>", "x"}]}], "]"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"One\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Two\"", "}"}]}], "]"}]}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give the links that are not inside a nav, by testing every ancestor of each link:", "ExampleText"], Cell[BoxData["page=ImportString[\"<body><nav><a href=\\\"/\\\">Home</a></nav><p>See <a href=\\\"/about\\\">About</a>.</p></body>\",{\"HTML\",\"XMLObject\"}];
-XMLCases[page,XMLDocument[Descendant[x:XMLPattern[\"a\"]]?(NoneTrue[XMLMatchQ[\"nav\"]])]:>HTMLTextContent[x]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give the links that are not inside a nav, by testing every ancestor of each link:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"page", "=", RowBox[{"ImportString", "[", RowBox[{"\"<body><nav><a href=\\\"/\\\">Home</a></nav><p>See <a href=\\\"/about\\\">About</a>.</p></body>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"page", ",", RowBox[{RowBox[{"XMLDocument", "[", RowBox[{RowBox[{"Descendant", "[", RowBox[{"x", ":", RowBox[{"XMLPattern", "[", "\"a\"", "]"}]}], "]"}], "?", RowBox[{"(", RowBox[{"NoneTrue", "[", RowBox[{"XMLMatchQ", "[", "\"nav\"", "]"}], "]"}], ")"}]}], "]"}], ":>", RowBox[{"HTMLTextContent", "[", "x", "]"}]}]}], "]"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", "\"About\"", "}"}]], "Output"]}, Open]]}, Open]],
 
@@ -152,38 +150,31 @@ Cell[CellGroupData[{Cell[BoxData[
   "Scope", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["The top element of a document is its root element:", "ExampleText"], Cell[BoxData["page=ImportString[\"<html><body><p>Text</p></body></html>\",{\"HTML\",\"XMLObject\"}];
-XMLCases[page,XMLDocument[{x_}]:>First[x]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["The top element of a document is its root element:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"page", "=", RowBox[{"ImportString", "[", RowBox[{"\"<html><body><p>Text</p></body></html>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"page", ",", RowBox[{RowBox[{"XMLDocument", "[", RowBox[{"{", "x_", "}"}], "]"}], ":>", RowBox[{"First", "[", "x", "]"}]}]}], "]"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", "\"html\"", "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Test whether a document has an html root element:", "ExampleText"], Cell[BoxData["page=ImportString[\"<html><body><p>Text</p></body></html>\",{\"HTML\",\"XMLObject\"}];
-XMLMatchQ[page,XMLDocument[{XMLPattern[\"html\"]}]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Test whether a document has an html root element:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"page", "=", RowBox[{"ImportString", "[", RowBox[{"\"<html><body><p>Text</p></body></html>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLMatchQ", "[", RowBox[{"page", ",", RowBox[{"XMLDocument", "[", RowBox[{"{", RowBox[{"XMLPattern", "[", "\"html\"", "]"}], "}"}], "]"}]}], "]"}]}], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Share one list pattern between any element and the document to get first children:", "ExampleText"], Cell[BoxData["fragment={XMLElement[\"li\",{},{\"Top\"}],XMLElement[\"ul\",{},{XMLElement[\"li\",{},{\"In a list\"}],XMLElement[\"li\",{},{\"Second\"}]}]};
-XMLCases[fragment,Alternatives[XMLPattern[_][{x:XMLPattern[\"li\"],___}],XMLDocument[{x:XMLPattern[\"li\"],___}]]:>HTMLTextContent[x]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Share one list pattern between any element and the document to get first children:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"fragment", "=", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Top\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"ul\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"In a list\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Second\"", "}"}]}], "]"}]}], "}"}]}], "]"}]}], "}"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"fragment", ",", RowBox[{RowBox[{"Alternatives", "[", RowBox[{RowBox[{RowBox[{"XMLPattern", "[", "_", "]"}], "[", RowBox[{"{", RowBox[{RowBox[{"x", ":", RowBox[{"XMLPattern", "[", "\"li\"", "]"}]}], ",", "___"}], "}"}], "]"}], ",", RowBox[{"XMLDocument", "[", RowBox[{"{", RowBox[{RowBox[{"x", ":", RowBox[{"XMLPattern", "[", "\"li\"", "]"}]}], ",", "___"}], "}"}], "]"}]}], "]"}], ":>", RowBox[{"HTMLTextContent", "[", "x", "]"}]}]}], "]"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"\"Top\"", ",", "\"In a list\""}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Name a Descendant constraint to get every ancestor of the match:", "ExampleText"], Cell[BoxData["page=ImportString[\"<html><body><nav><a href=\\\"/\\\">Home</a></nav></body></html>\",{\"HTML\",\"XMLObject\"}];
-XMLCases[page,XMLDocument[path:Descendant[XMLPattern[\"a\"]]]:>Map[First,path]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Name a Descendant constraint to get every ancestor of the match:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"page", "=", RowBox[{"ImportString", "[", RowBox[{"\"<html><body><nav><a href=\\\"/\\\">Home</a></nav></body></html>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"page", ",", RowBox[{RowBox[{"XMLDocument", "[", RowBox[{"path", ":", RowBox[{"Descendant", "[", RowBox[{"XMLPattern", "[", "\"a\"", "]"}], "]"}]}], "]"}], ":>", RowBox[{"Map", "[", RowBox[{"First", ",", "path"}], "]"}]}]}], "]"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"{", RowBox[{"\"html\"", ",", "\"body\"", ",", "\"nav\""}], "}"}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Find the direct children of an element, as BeautifulSoup's ", Cell[BoxData["recursive=False"], "InlineFormula"], " does:"}], "ExampleText"], Cell[BoxData["section=XMLElement[\"section\",{},{XMLElement[\"p\",{},{\"Direct\"}],XMLElement[\"div\",{},{XMLElement[\"p\",{},{\"Nested\"}]}]}];
-XMLCases[section,XMLDocument[{XMLPattern[_][Child[x:XMLPattern[\"p\"]]]}]:>x]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Find the direct children of an element, as BeautifulSoup's ", Cell[BoxData["recursive=False"], "InlineFormula"], " does:"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"section", "=", RowBox[{"XMLElement", "[", RowBox[{"\"section\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Direct\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Nested\"", "}"}]}], "]"}], "}"}]}], "]"}]}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"section", ",", RowBox[{RowBox[{"XMLDocument", "[", RowBox[{"{", RowBox[{RowBox[{"XMLPattern", "[", "_", "]"}], "[", RowBox[{"Child", "[", RowBox[{"x", ":", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "]"}], "]"}], "}"}], "]"}], ":>", "x"}]}], "]"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Direct\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Delete the top p elements of a list:", "ExampleText"], Cell[BoxData["fragment={XMLElement[\"p\",{},{\"One\"}],XMLElement[\"div\",{},{XMLElement[\"p\",{},{\"Nested\"}]}]};
-XMLDeleteCases[fragment,XMLDocument[Child[x:XMLPattern[\"p\"]]]:>x]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Delete the top p elements of a list:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"fragment", "=", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"One\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Nested\"", "}"}]}], "]"}], "}"}]}], "]"}]}], "}"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLDeleteCases", "[", RowBox[{"fragment", ",", RowBox[{RowBox[{"XMLDocument", "[", RowBox[{"Child", "[", RowBox[{"x", ":", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "]"}], "]"}], ":>", "x"}]}], "]"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Nested\"", "}"}]}], "]"}], "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Name the document to give it as a result, at position ", Cell[BoxData[RowBox[{"{", "}"}]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["fragment={XMLElement[\"p\",{},{\"One\"}],XMLElement[\"p\",{},{\"Two\"}]};
-{XMLCases[fragment,d:XMLDocument[{XMLPattern[\"p\"],___}]:>Length[d]],XMLPosition[fragment,d:XMLDocument[{XMLPattern[\"p\"],___}]:>d]}"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Name the document to give it as a result, at position ", Cell[BoxData[RowBox[{"{", "}"}]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"fragment", "=", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"One\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Two\"", "}"}]}], "]"}]}], "}"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"{", RowBox[{RowBox[{"XMLCases", "[", RowBox[{"fragment", ",", RowBox[{RowBox[{"d", ":", RowBox[{"XMLDocument", "[", RowBox[{"{", RowBox[{RowBox[{"XMLPattern", "[", "\"p\"", "]"}], ",", "___"}], "}"}], "]"}]}], ":>", RowBox[{"Length", "[", "d", "]"}]}]}], "]"}], ",", RowBox[{"XMLPosition", "[", RowBox[{"fragment", ",", RowBox[{RowBox[{"d", ":", RowBox[{"XMLDocument", "[", RowBox[{"{", RowBox[{RowBox[{"XMLPattern", "[", "\"p\"", "]"}], ",", "___"}], "}"}], "]"}]}], ":>", "d"}]}], "]"}]}], "}"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", "2", "}"}], ",", RowBox[{"{", RowBox[{"{", "}"}], "}"}]}], "}"}]], "Output"]}, Open]]}, Open]],
 
@@ -220,12 +211,11 @@ Cell[CellGroupData[{Cell[BoxData[
   "Properties & Relations", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The CSS selectors ", Cell[BoxData[":root"], "InlineFormula"], " and ", Cell[BoxData[":scope"], "InlineFormula"], " translate to patterns rooted at XMLDocument:"}], "ExampleText"], Cell[BoxData["{FromCSSSelector[n:\":root\"],FromCSSSelector[n:\":scope > p\"]}"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The CSS selectors ", Cell[BoxData[":root"], "InlineFormula"], " and ", Cell[BoxData[":scope"], "InlineFormula"], " translate to patterns rooted at XMLDocument:"}], "ExampleText"], Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"FromCSSSelector", "[", RowBox[{"n", ":", "\":root\""}], "]"}], ",", RowBox[{"FromCSSSelector", "[", RowBox[{"n", ":", "\":scope > p\""}], "]"}]}], "}"}]], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLDocument", "[", RowBox[{"{", RowBox[{"n", ":", RowBox[{"XMLPattern", "[", "_", "]"}]}], "}"}], "]"}], ",", RowBox[{"XMLDocument", "[", RowBox[{"{", RowBox[{RowBox[{"XMLPattern", "[", "_", "]"}], "[", RowBox[{"Child", "[", RowBox[{"n", ":", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "]"}], "]"}], "}"}], "]"}]}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A pattern rooted at XMLDocument with a Descendant constraint gives what the pattern alone gives:", "ExampleText"], Cell[BoxData["page=ImportString[\"<html><body><p>One</p><div><p>Two</p></div></body></html>\",{\"HTML\",\"XMLObject\"}];
-XMLCases[page,XMLDocument[Descendant[x:XMLPattern[\"p\"]]]:>x]===XMLCases[page,XMLPattern[\"p\"]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A pattern rooted at XMLDocument with a Descendant constraint gives what the pattern alone gives:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"page", "=", RowBox[{"ImportString", "[", RowBox[{"\"<html><body><p>One</p><div><p>Two</p></div></body></html>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{RowBox[{"XMLCases", "[", RowBox[{"page", ",", RowBox[{RowBox[{"XMLDocument", "[", RowBox[{"Descendant", "[", RowBox[{"x", ":", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "]"}], "]"}], ":>", "x"}]}], "]"}], "===", RowBox[{"XMLCases", "[", RowBox[{"page", ",", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "]"}]}]}], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]]}, Open]],
 
@@ -234,51 +224,47 @@ Cell[CellGroupData[{Cell[BoxData[
   "Possible Issues", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["XMLMatchQ gives False for an element tested against an XMLDocument pattern:", "ExampleText"], Cell[BoxData["XMLMatchQ[XMLElement[\"p\",{},{\"Text\"}],XMLDocument[{XMLPattern[\"p\"]}]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["XMLMatchQ gives False for an element tested against an XMLDocument pattern:", "ExampleText"], Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Text\"", "}"}]}], "]"}], ",", RowBox[{"XMLDocument", "[", RowBox[{"{", RowBox[{"XMLPattern", "[", "\"p\"", "]"}], "}"}], "]"}]}], "]"}]], "Input"],
 
 Cell[BoxData["False"], "Output"],
 
 Cell["Give the element in a list to test it as a top element:", "ExampleText"],
 
-Cell[BoxData["XMLMatchQ[{XMLElement[\"p\",{},{\"Text\"}]},{XMLPattern[\"p\"]}]"], "Input"],
+Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Text\"", "}"}]}], "]"}], "}"}], ",", RowBox[{"{", RowBox[{"XMLPattern", "[", "\"p\"", "]"}], "}"}]}], "]"}]], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A bare element given as the tree is never a result, even as a top element:", "ExampleText"], Cell[BoxData["XMLCases[XMLElement[\"p\",{},{\"Text\"}],XMLDocument[{x:XMLPattern[\"p\"]}]:>x]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A bare element given as the tree is never a result, even as a top element:", "ExampleText"], Cell[BoxData[RowBox[{"XMLCases", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Text\"", "}"}]}], "]"}], ",", RowBox[{RowBox[{"XMLDocument", "[", RowBox[{"{", RowBox[{"x", ":", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "}"}], "]"}], ":>", "x"}]}], "]"}]], "Input"],
 
 Cell[BoxData[RowBox[{"{", "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["XMLDocument can only be the pattern root:", "ExampleText"], Cell[BoxData["navs=ImportString[\"<nav><a>Home</a></nav>\",{\"HTML\",\"XMLObject\"}];
-XMLCases[navs,XMLPattern[\"nav\"][Descendant[XMLDocument[]]]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["XMLDocument can only be the pattern root:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"navs", "=", RowBox[{"ImportString", "[", RowBox[{"\"<nav><a>Home</a></nav>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"navs", ",", RowBox[{RowBox[{"XMLPattern", "[", "\"nav\"", "]"}], "[", RowBox[{"Descendant", "[", RowBox[{"XMLDocument", "[", "]"}], "]"}], "]"}]}], "]"}]}], "Input"],
 
 Cell["XMLDocument::place: XMLDocument[...] matches only the document above the top elements, so it can only be a pattern root: the whole query, named, conditioned or tested, or a branch of alternatives at the top, as in XMLPattern[_][L] | XMLDocument[L]. It cannot be inside Descendant, an attribute pattern or an XMLElement pattern. Got XMLDocument[].", "Message", "MSG"],
 
 Cell[BoxData["$Failed"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A list pattern does not see text, so top-level text does not stop ", Cell[BoxData[":root"], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["XMLCases[{\"Text\",XMLElement[\"p\",{},{\"Para\"}]},\":root\"]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A list pattern does not see text, so top-level text does not stop ", Cell[BoxData[":root"], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[RowBox[{"XMLCases", "[", RowBox[{RowBox[{"{", RowBox[{"\"Text\"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Para\"", "}"}]}], "]"}]}], "}"}], ",", "\":root\""}], "]"}]], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Para\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"On a list of several top elements, ", Cell[BoxData["\":root\""], "InlineFormula"], " and ", Cell[BoxData["\":scope > p\""], "InlineFormula"], " give nothing:"}], "ExampleText"], Cell[BoxData["fragment={XMLElement[\"p\",{},{\"One\"}],XMLElement[\"p\",{},{\"Two\"}]};
-{XMLCases[fragment,\":root\"],XMLCases[fragment,\":scope > p\"]}"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"On a list of several top elements, ", Cell[BoxData["\":root\""], "InlineFormula"], " and ", Cell[BoxData["\":scope > p\""], "InlineFormula"], " give nothing:"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"fragment", "=", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"One\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Two\"", "}"}]}], "]"}]}], "}"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"{", RowBox[{RowBox[{"XMLCases", "[", RowBox[{"fragment", ",", "\":root\""}], "]"}], ",", RowBox[{"XMLCases", "[", RowBox[{"fragment", ",", "\":scope > p\""}], "]"}]}], "}"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "}"}]], "Output"],
 
 Cell["Give a list pattern over the top elements instead:", "ExampleText"],
 
-Cell[BoxData["XMLCases[fragment,XMLDocument[Child[x:XMLPattern[\"p\"]]]:>x]"], "Input"],
+Cell[BoxData[RowBox[{"XMLCases", "[", RowBox[{"fragment", ",", RowBox[{RowBox[{"XMLDocument", "[", RowBox[{"Child", "[", RowBox[{"x", ":", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "]"}], "]"}], ":>", "x"}]}], "]"}]], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"One\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Two\"", "}"}]}], "]"}]}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["XMLDeleteCases keeps the root element of a document, which an XMLObject needs:", "ExampleText"], Cell[BoxData["page=ImportString[\"<html><body><p>Text</p></body></html>\",{\"HTML\",\"XMLObject\"}];
-XMLDeleteCases[page,XMLDocument[{x:XMLPattern[\"html\"]}]:>x]===page"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["XMLDeleteCases keeps the root element of a document, which an XMLObject needs:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"page", "=", RowBox[{"ImportString", "[", RowBox[{"\"<html><body><p>Text</p></body></html>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{RowBox[{"XMLDeleteCases", "[", RowBox[{"page", ",", RowBox[{RowBox[{"XMLDocument", "[", RowBox[{"{", RowBox[{"x", ":", RowBox[{"XMLPattern", "[", "\"html\"", "]"}]}], "}"}], "]"}], ":>", "x"}]}], "]"}], "===", "page"}]}], "Input"],
 
 Cell["XMLDeleteCases::root: The root element of an XMLObject cannot be deleted; it was kept.", "Message", "MSG"],
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A list pattern over the top elements matches them, not the elements nested in them:", "ExampleText"], Cell[BoxData["fragment={XMLElement[\"p\",{},{\"One\"}],XMLElement[\"div\",{},{XMLElement[\"p\",{},{\"Nested\"}]}]};
-XMLCases[fragment,XMLDocument[Child[x:XMLPattern[\"p\"]]]:>x]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A list pattern over the top elements matches them, not the elements nested in them:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"fragment", "=", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"One\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Nested\"", "}"}]}], "]"}], "}"}]}], "]"}]}], "}"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"fragment", ",", RowBox[{RowBox[{"XMLDocument", "[", RowBox[{"Child", "[", RowBox[{"x", ":", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "]"}], "]"}], ":>", "x"}]}], "]"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"One\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]]}, Open]],
 

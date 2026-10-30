@@ -128,7 +128,7 @@ Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"
 
 Cell[BoxData[RowBox[{"{", RowBox[{"\"Home\"", ",", "\"Docs\""}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Test whether a figure has an img child:", "ExampleText"], Cell[BoxData["XMLMatchQ[XMLElement[\"figure\", {}, {XMLElement[\"img\", {\"src\" -> \"a.png\"}, {}], XMLElement[\"figcaption\", {}, {\"A\"}]}], XMLPattern[\"figure\"][Child[XMLPattern[\"img\"]]]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Test whether a figure has an img child:", "ExampleText"], Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"figure\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"img\"", ",", RowBox[{"{", RowBox[{"\"src\"", "->", "\"a.png\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"figcaption\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"A\"", "}"}]}], "]"}]}], "}"}]}], "]"}], ",", RowBox[{RowBox[{"XMLPattern", "[", "\"figure\"", "]"}], "[", RowBox[{"Child", "[", RowBox[{"XMLPattern", "[", "\"img\"", "]"}], "]"}], "]"}]}], "]"}]], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]]}, Open]],
 
@@ -152,38 +152,31 @@ Cell[CellGroupData[{Cell[BoxData[
   "Scope", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give several Child constraints, all of which must hold:", "ExampleText"], Cell[BoxData["page = ImportString[\"<section id=\\\"a\\\"><h2>Rates</h2><table></table></section><section id=\\\"b\\\"><h2>Notes</h2><p>None.</p></section>\", {\"HTML\", \"XMLObject\"}];
-XMLCases[page, XMLPattern[\"section\", \"id\" -> id_][Child[XMLPattern[\"h2\"]], Child[XMLPattern[\"table\"]]] :> id]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give several Child constraints, all of which must hold:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"page", "=", RowBox[{"ImportString", "[", RowBox[{"\"<section id=\\\"a\\\"><h2>Rates</h2><table></table></section><section id=\\\"b\\\"><h2>Notes</h2><p>None.</p></section>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"page", ",", RowBox[{RowBox[{RowBox[{"XMLPattern", "[", RowBox[{"\"section\"", ",", RowBox[{"\"id\"", "->", "id_"}]}], "]"}], "[", RowBox[{RowBox[{"Child", "[", RowBox[{"XMLPattern", "[", "\"h2\"", "]"}], "]"}], ",", RowBox[{"Child", "[", RowBox[{"XMLPattern", "[", "\"table\"", "]"}], "]"}]}], "]"}], ":>", "id"}]}], "]"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", "\"a\"", "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Name the match of each constraint to get them together:", "ExampleText"], Cell[BoxData["page = ImportString[\"<dl><dt>Term</dt><dd>Definition</dd></dl>\", {\"HTML\", \"XMLObject\"}];
-XMLCases[page, XMLPattern[\"dl\"][Child[t : XMLPattern[\"dt\"]], Child[d : XMLPattern[\"dd\"]]] :> HTMLTextContent[t] -> HTMLTextContent[d]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Name the match of each constraint to get them together:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"page", "=", RowBox[{"ImportString", "[", RowBox[{"\"<dl><dt>Term</dt><dd>Definition</dd></dl>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"page", ",", RowBox[{RowBox[{RowBox[{"XMLPattern", "[", "\"dl\"", "]"}], "[", RowBox[{RowBox[{"Child", "[", RowBox[{"t", ":", RowBox[{"XMLPattern", "[", "\"dt\"", "]"}]}], "]"}], ",", RowBox[{"Child", "[", RowBox[{"d", ":", RowBox[{"XMLPattern", "[", "\"dd\"", "]"}]}], "]"}]}], "]"}], ":>", RowBox[{RowBox[{"HTMLTextContent", "[", "t", "]"}], "->", RowBox[{"HTMLTextContent", "[", "d", "]"}]}]}]}], "]"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"\"Term\"", "\[Rule]", "\"Definition\""}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Nest a pattern with a Child constraint of its own, as the selector ", Cell[BoxData["table > tr > td"], "InlineFormula"], " does:"}], "ExampleText"], Cell[BoxData["table = ImportString[\"<table><tr><th>Day</th><td>Friday</td></tr></table>\", {\"HTML\", \"XMLObject\"}];
-XMLCases[table, XMLPattern[\"table\"][Child[XMLPattern[\"tr\"][Child[x : XMLPattern[\"td\"]]]]] :> HTMLTextContent[x]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Nest a pattern with a Child constraint of its own, as the selector ", Cell[BoxData["table > tr > td"], "InlineFormula"], " does:"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"table", "=", RowBox[{"ImportString", "[", RowBox[{"\"<table><tr><th>Day</th><td>Friday</td></tr></table>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"table", ",", RowBox[{RowBox[{RowBox[{"XMLPattern", "[", "\"table\"", "]"}], "[", RowBox[{"Child", "[", RowBox[{RowBox[{"XMLPattern", "[", "\"tr\"", "]"}], "[", RowBox[{"Child", "[", RowBox[{"x", ":", RowBox[{"XMLPattern", "[", "\"td\"", "]"}]}], "]"}], "]"}], "]"}], "]"}], ":>", RowBox[{"HTMLTextContent", "[", "x", "]"}]}]}], "]"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", "\"Friday\"", "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Combine Child with Descendant, here for a nav with a ul child and a link anywhere below:", "ExampleText"], Cell[BoxData["navs = ImportString[\"<nav id=\\\"main\\\"><ul><li><a href=\\\"/\\\">Home</a></li></ul></nav><nav id=\\\"crumbs\\\"><a href=\\\"/\\\">Home</a></nav>\", {\"HTML\", \"XMLObject\"}];
-XMLCases[navs, XMLPattern[\"nav\", \"id\" -> id_][Child[XMLPattern[\"ul\"]], Descendant[XMLPattern[\"a\"]]] :> id]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Combine Child with Descendant, here for a nav with a ul child and a link anywhere below:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"navs", "=", RowBox[{"ImportString", "[", RowBox[{"\"<nav id=\\\"main\\\"><ul><li><a href=\\\"/\\\">Home</a></li></ul></nav><nav id=\\\"crumbs\\\"><a href=\\\"/\\\">Home</a></nav>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"navs", ",", RowBox[{RowBox[{RowBox[{"XMLPattern", "[", RowBox[{"\"nav\"", ",", RowBox[{"\"id\"", "->", "id_"}]}], "]"}], "[", RowBox[{RowBox[{"Child", "[", RowBox[{"XMLPattern", "[", "\"ul\"", "]"}], "]"}], ",", RowBox[{"Descendant", "[", RowBox[{"XMLPattern", "[", "\"a\"", "]"}], "]"}]}], "]"}], ":>", "id"}]}], "]"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", "\"main\"", "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give a CSS selector string for one element as the pattern:", "ExampleText"], Cell[BoxData["lists = ImportString[\"<ul><li class=\\\"done\\\">Draft</li><li>Review</li></ul>\", {\"HTML\", \"XMLObject\"}];
-XMLCases[lists, XMLPattern[\"ul\"][Child[x : \"li:not(.done)\"]] :> HTMLTextContent[x]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give a CSS selector string for one element as the pattern:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"lists", "=", RowBox[{"ImportString", "[", RowBox[{"\"<ul><li class=\\\"done\\\">Draft</li><li>Review</li></ul>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"lists", ",", RowBox[{RowBox[{RowBox[{"XMLPattern", "[", "\"ul\"", "]"}], "[", RowBox[{"Child", "[", RowBox[{"x", ":", "\"li:not(.done)\""}], "]"}], "]"}], ":>", RowBox[{"HTMLTextContent", "[", "x", "]"}]}]}], "]"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", "\"Review\"", "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give alternatives of constraints, here for a div that has an img child or no element children:", "ExampleText"], Cell[BoxData["divs = XMLElement[\"body\", {}, {XMLElement[\"div\", {\"id\" -> \"a\"}, {XMLElement[\"img\", {}, {}]}], XMLElement[\"div\", {\"id\" -> \"b\"}, {\"text\"}], XMLElement[\"div\", {\"id\" -> \"c\"}, {XMLElement[\"p\", {}, {}]}]}];
-XMLCases[divs, XMLPattern[\"div\", \"id\" -> id_][Child[XMLPattern[\"img\"]] | {}] :> id]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give alternatives of constraints, here for a div that has an img child or no element children:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"divs", "=", RowBox[{"XMLElement", "[", RowBox[{"\"body\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", RowBox[{"\"id\"", "->", "\"a\""}], "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"img\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", RowBox[{"\"id\"", "->", "\"b\""}], "}"}], ",", RowBox[{"{", "\"text\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", RowBox[{"\"id\"", "->", "\"c\""}], "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "}"}]}], "]"}]}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"divs", ",", RowBox[{RowBox[{RowBox[{"XMLPattern", "[", RowBox[{"\"div\"", ",", RowBox[{"\"id\"", "->", "id_"}]}], "]"}], "[", RowBox[{RowBox[{"Child", "[", RowBox[{"XMLPattern", "[", "\"img\"", "]"}], "]"}], "|", RowBox[{"{", "}"}]}], "]"}], ":>", "id"}]}], "]"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"\"a\"", ",", "\"b\""}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Under XMLDocument, Child constrains the top elements of the input:", "ExampleText"], Cell[BoxData["fragments = {XMLElement[\"p\", {}, {\"Intro\"}], XMLElement[\"table\", {\"id\" -> \"rates\"}, {}]};
-XMLCases[fragments, XMLDocument[Child[x : XMLPattern[\"table\"]]] :> x]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Under XMLDocument, Child constrains the top elements of the input:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"fragments", "=", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Intro\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"table\"", ",", RowBox[{"{", RowBox[{"\"id\"", "->", "\"rates\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}]}], "}"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"fragments", ",", RowBox[{RowBox[{"XMLDocument", "[", RowBox[{"Child", "[", RowBox[{"x", ":", RowBox[{"XMLPattern", "[", "\"table\"", "]"}]}], "]"}], "]"}], ":>", "x"}]}], "]"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"table\"", ",", RowBox[{"{", RowBox[{"\"id\"", "\[Rule]", "\"rates\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "}"}]], "Output"]}, Open]]}, Open]],
 
@@ -220,18 +213,15 @@ Cell[CellGroupData[{Cell[BoxData[
   "Properties & Relations", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[RowBox[{ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Child"], "[", StyleBox["p", "TI"], "]"}]], "InlineFormula"], " gives what the list constraint ", Cell[BoxData[RowBox[{"{", RowBox[{StyleBox["___", "TR"], ",", StyleBox["p", "TI"], ",", StyleBox["___", "TR"]}], "}"}]], "InlineFormula"], " gives:"}], "ExampleText"], Cell[BoxData["tree = ImportString[\"<ul><li>A<ul><li>B</li></ul></li></ul><ol><li>C</li></ol>\", {\"HTML\", \"XMLObject\"}];
-XMLCases[tree, XMLPattern[_][Child[x : XMLPattern[\"li\"]]] :> x] === XMLCases[tree, XMLPattern[_][{___, x : XMLPattern[\"li\"], ___}] :> x]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[RowBox[{ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Child"], "[", StyleBox["p", "TI"], "]"}]], "InlineFormula"], " gives what the list constraint ", Cell[BoxData[RowBox[{"{", RowBox[{StyleBox["___", "TR"], ",", StyleBox["p", "TI"], ",", StyleBox["___", "TR"]}], "}"}]], "InlineFormula"], " gives:"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"tree", "=", RowBox[{"ImportString", "[", RowBox[{"\"<ul><li>A<ul><li>B</li></ul></li></ul><ol><li>C</li></ol>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{RowBox[{"XMLCases", "[", RowBox[{"tree", ",", RowBox[{RowBox[{RowBox[{"XMLPattern", "[", "_", "]"}], "[", RowBox[{"Child", "[", RowBox[{"x", ":", RowBox[{"XMLPattern", "[", "\"li\"", "]"}]}], "]"}], "]"}], ":>", "x"}]}], "]"}], "===", RowBox[{"XMLCases", "[", RowBox[{"tree", ",", RowBox[{RowBox[{RowBox[{"XMLPattern", "[", "_", "]"}], "[", RowBox[{"{", RowBox[{"___", ",", RowBox[{"x", ":", RowBox[{"XMLPattern", "[", "\"li\"", "]"}]}], ",", "___"}], "}"}], "]"}], ":>", "x"}]}], "]"}]}]}], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"It is met by the same elements as ", Cell[BoxData[RowBox[{ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Descendant"], "[", RowBox[{StyleBox["p", "TI"], ",", RowBox[{"{", StyleBox["1", "TR"], "}"}]}], "]"}]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["tree = ImportString[\"<ul><li>A<ul><li>B</li></ul></li></ul><ol><li>C</li></ol>\", {\"HTML\", \"XMLObject\"}];
-XMLCases[tree, XMLPattern[_][Child[XMLPattern[\"li\"]]]] === XMLCases[tree, XMLPattern[_][Descendant[XMLPattern[\"li\"], {1}]]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"It is met by the same elements as ", Cell[BoxData[RowBox[{ButtonBox["Descendant", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Descendant"], "[", RowBox[{StyleBox["p", "TI"], ",", RowBox[{"{", StyleBox["1", "TR"], "}"}]}], "]"}]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"tree", "=", RowBox[{"ImportString", "[", RowBox[{"\"<ul><li>A<ul><li>B</li></ul></li></ul><ol><li>C</li></ol>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{RowBox[{"XMLCases", "[", RowBox[{"tree", ",", RowBox[{RowBox[{"XMLPattern", "[", "_", "]"}], "[", RowBox[{"Child", "[", RowBox[{"XMLPattern", "[", "\"li\"", "]"}], "]"}], "]"}]}], "]"}], "===", RowBox[{"XMLCases", "[", RowBox[{"tree", ",", RowBox[{RowBox[{"XMLPattern", "[", "_", "]"}], "[", RowBox[{"Descendant", "[", RowBox[{RowBox[{"XMLPattern", "[", "\"li\"", "]"}], ",", RowBox[{"{", "1", "}"}]}], "]"}], "]"}]}], "]"}]}]}], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The CSS selector ", Cell[BoxData["\"ul > li\""], "InlineFormula"], " gives the li children of each ul:"}], "ExampleText"], Cell[BoxData["lists = ImportString[\"<ul><li>Home</li><li>Docs</li></ul><ol><li>Step one</li></ol>\", {\"HTML\", \"XMLObject\"}];
-XMLCases[lists, \"ul > li\"] === XMLCases[lists, XMLPattern[\"ul\"][Child[x : XMLPattern[\"li\"]]] :> x]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The CSS selector ", Cell[BoxData["\"ul > li\""], "InlineFormula"], " gives the li children of each ul:"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"lists", "=", RowBox[{"ImportString", "[", RowBox[{"\"<ul><li>Home</li><li>Docs</li></ul><ol><li>Step one</li></ol>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{RowBox[{"XMLCases", "[", RowBox[{"lists", ",", "\"ul > li\""}], "]"}], "===", RowBox[{"XMLCases", "[", RowBox[{"lists", ",", RowBox[{RowBox[{RowBox[{"XMLPattern", "[", "\"ul\"", "]"}], "[", RowBox[{"Child", "[", RowBox[{"x", ":", RowBox[{"XMLPattern", "[", "\"li\"", "]"}]}], "]"}], "]"}], ":>", "x"}]}], "]"}]}]}], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]]}, Open]],
 
@@ -240,8 +230,7 @@ Cell[CellGroupData[{Cell[BoxData[
   "Possible Issues", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A name on the constraint itself issues a message:", "ExampleText"], Cell[BoxData["lists = ImportString[\"<ul><li>Home</li></ul>\", {\"HTML\", \"XMLObject\"}];
-XMLCases[lists, XMLPattern[\"ul\"][x : Child[XMLPattern[\"li\"]]] :> x]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A name on the constraint itself issues a message:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"lists", "=", RowBox[{"ImportString", "[", RowBox[{"\"<ul><li>Home</li></ul>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"lists", ",", RowBox[{RowBox[{RowBox[{"XMLPattern", "[", "\"ul\"", "]"}], "[", RowBox[{"x", ":", RowBox[{"Child", "[", RowBox[{"XMLPattern", "[", "\"li\"", "]"}], "]"}]}], "]"}], ":>", "x"}]}], "]"}]}], "Input"],
 
 Cell["Child::name: x:Child[XMLPattern[\"li\"]] names a Child constraint, which has nothing to bind: between an element and its child there is no element. Name the child instead, as in Child[n : p].", "Message", "MSG"],
 
@@ -249,12 +238,11 @@ Cell[BoxData["$Failed"], "Output"],
 
 Cell["Name the child instead:", "ExampleText"],
 
-Cell[BoxData["XMLCases[lists, XMLPattern[\"ul\"][Child[x : XMLPattern[\"li\"]]] :> x]"], "Input"],
+Cell[BoxData[RowBox[{"XMLCases", "[", RowBox[{"lists", ",", RowBox[{RowBox[{RowBox[{"XMLPattern", "[", "\"ul\"", "]"}], "[", RowBox[{"Child", "[", RowBox[{"x", ":", RowBox[{"XMLPattern", "[", "\"li\"", "]"}]}], "]"}], "]"}], ":>", "x"}]}], "]"}]], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Home\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Child takes one pattern:", "ExampleText"], Cell[BoxData["page = ImportString[\"<dl><dt>Term</dt><dd>Definition</dd></dl>\", {\"HTML\", \"XMLObject\"}];
-XMLCases[page, XMLPattern[\"dl\"][Child[XMLPattern[\"dt\"], XMLPattern[\"dd\"]]]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Child takes one pattern:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"page", "=", RowBox[{"ImportString", "[", RowBox[{"\"<dl><dt>Term</dt><dd>Definition</dd></dl>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"page", ",", RowBox[{RowBox[{"XMLPattern", "[", "\"dl\"", "]"}], "[", RowBox[{"Child", "[", RowBox[{RowBox[{"XMLPattern", "[", "\"dt\"", "]"}], ",", RowBox[{"XMLPattern", "[", "\"dd\"", "]"}]}], "]"}], "]"}]}], "]"}]}], "Input"],
 
 Cell["Child::args: Child[XMLPattern[\"dt\"], XMLPattern[\"dd\"]] is not a constraint: Child takes one pattern. For children that match several patterns, give several constraints, as in XMLPattern[tag][Child[a], Child[b]], or, for children in an order, a list, as in XMLPattern[tag][{___, a, ___, b, ___}].", "Message", "MSG"],
 
@@ -262,18 +250,17 @@ Cell[BoxData["$Failed"], "Output"],
 
 Cell["Give two constraints for children in any order:", "ExampleText"],
 
-Cell[BoxData["XMLCases[page, XMLPattern[\"dl\"][Child[XMLPattern[\"dd\"]], Child[XMLPattern[\"dt\"]]]]"], "Input"],
+Cell[BoxData[RowBox[{"XMLCases", "[", RowBox[{"page", ",", RowBox[{RowBox[{"XMLPattern", "[", "\"dl\"", "]"}], "[", RowBox[{RowBox[{"Child", "[", RowBox[{"XMLPattern", "[", "\"dd\"", "]"}], "]"}], ",", RowBox[{"Child", "[", RowBox[{"XMLPattern", "[", "\"dt\"", "]"}], "]"}]}], "]"}]}], "]"}]], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"dl\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"dt\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Term\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"dd\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Definition\"", "}"}]}], "]"}]}], "}"}]}], "]"}], "}"}]], "Output"],
 
 Cell["Give a list for children in an order, here next to each other:", "ExampleText"],
 
-Cell[BoxData["XMLCases[page, XMLPattern[\"dl\"][{___, XMLPattern[\"dt\"], XMLPattern[\"dd\"], ___}]]"], "Input"],
+Cell[BoxData[RowBox[{"XMLCases", "[", RowBox[{"page", ",", RowBox[{RowBox[{"XMLPattern", "[", "\"dl\"", "]"}], "[", RowBox[{"{", RowBox[{"___", ",", RowBox[{"XMLPattern", "[", "\"dt\"", "]"}], ",", RowBox[{"XMLPattern", "[", "\"dd\"", "]"}], ",", "___"}], "}"}], "]"}]}], "]"}]], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"dl\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"dt\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Term\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"dd\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Definition\"", "}"}]}], "]"}]}], "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Child is a constraint, so the version 3 form as a query issues a message:", "ExampleText"], Cell[BoxData["lists = ImportString[\"<ul><li>Home</li><li>Docs</li></ul>\", {\"HTML\", \"XMLObject\"}];
-XMLCases[lists, Child[XMLPattern[\"ul\"], XMLPattern[\"li\"]]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Child is a constraint, so the version 3 form as a query issues a message:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"lists", "=", RowBox[{"ImportString", "[", RowBox[{"\"<ul><li>Home</li><li>Docs</li></ul>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"lists", ",", RowBox[{"Child", "[", RowBox[{RowBox[{"XMLPattern", "[", "\"ul\"", "]"}], ",", RowBox[{"XMLPattern", "[", "\"li\"", "]"}]}], "]"}]}], "]"}]}], "Input"],
 
 Cell["Child::place: Child[XMLPattern[\"ul\"], XMLPattern[\"li\"]] is not a pattern. Child is a constraint, which can only be an argument of the bracket after XMLPattern[tag, attrs] or of XMLDocument: XMLPattern[\"ul\"][Child[x : XMLPattern[\"li\"]]] :> x gives the li children of each ul. In version 3, Child[a, b] gave the children that match b of the elements that match a; in version 4 that is the rule above. Child takes one pattern: for children that match several patterns, give several constraints, Child[a], Child[b], or a list, {___, a, ___, b, ___}.", "Message", "MSG"],
 
@@ -281,12 +268,11 @@ Cell[BoxData["$Failed"], "Output"],
 
 Cell["Nest the patterns as the document is, and name what to give:", "ExampleText"],
 
-Cell[BoxData["XMLCases[lists, XMLPattern[\"ul\"][Child[x : XMLPattern[\"li\"]]] :> x]"], "Input"],
+Cell[BoxData[RowBox[{"XMLCases", "[", RowBox[{"lists", ",", RowBox[{RowBox[{RowBox[{"XMLPattern", "[", "\"ul\"", "]"}], "[", RowBox[{"Child", "[", RowBox[{"x", ":", RowBox[{"XMLPattern", "[", "\"li\"", "]"}]}], "]"}], "]"}], ":>", "x"}]}], "]"}]], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Home\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Docs\"", "}"}]}], "]"}]}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["An element pattern alone is not a constraint:", "ExampleText"], Cell[BoxData["lists = ImportString[\"<ul><li>Home</li></ul>\", {\"HTML\", \"XMLObject\"}];
-XMLCases[lists, XMLPattern[\"ul\"][XMLPattern[\"li\"]]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["An element pattern alone is not a constraint:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"lists", "=", RowBox[{"ImportString", "[", RowBox[{"\"<ul><li>Home</li></ul>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"lists", ",", RowBox[{RowBox[{"XMLPattern", "[", "\"ul\"", "]"}], "[", RowBox[{"XMLPattern", "[", "\"li\"", "]"}], "]"}]}], "]"}]}], "Input"],
 
 Cell["XMLPattern::constraint: XMLPattern[\"li\"] is not a constraint. The constraints on what is below an element are the arguments of the bracket after XMLPattern[tag, attrs], as in XMLPattern[tag, attrs][c1, c2, ...]: Child[p] for some element child that matches p, a list pattern over its element children, as in {p} for an only child, or Descendant[p] for an element anywhere below. Attribute constraints go in the first bracket, several in one list: XMLPattern[tag, {a1, a2, ...}].", "Message", "MSG"],
 
@@ -294,7 +280,7 @@ Cell[BoxData["$Failed"], "Output"],
 
 Cell[TextData[{"Give ", Cell[BoxData[RowBox[{ButtonBox["Child", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/Child"], "[", StyleBox["p", "TI"], "]"}]], "InlineFormula"], " for some child that matches ", Cell[BoxData[StyleBox["p", "TI"]], "InlineFormula"], ", or ", Cell[BoxData[RowBox[{"{", StyleBox["p", "TI"], "}"}]], "InlineFormula"], " for an only child:"}], "ExampleText"],
 
-Cell[BoxData["{XMLCases[lists, XMLPattern[\"ul\"][Child[XMLPattern[\"li\"]]]], XMLCases[lists, XMLPattern[\"ul\"][{XMLPattern[\"li\"]}]]}"], "Input"],
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLCases", "[", RowBox[{"lists", ",", RowBox[{RowBox[{"XMLPattern", "[", "\"ul\"", "]"}], "[", RowBox[{"Child", "[", RowBox[{"XMLPattern", "[", "\"li\"", "]"}], "]"}], "]"}]}], "]"}], ",", RowBox[{"XMLCases", "[", RowBox[{"lists", ",", RowBox[{RowBox[{"XMLPattern", "[", "\"ul\"", "]"}], "[", RowBox[{"{", RowBox[{"XMLPattern", "[", "\"li\"", "]"}], "}"}], "]"}]}], "]"}]}], "}"}]], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"ul\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Home\"", "}"}]}], "]"}], "}"}]}], "]"}], "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"ul\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Home\"", "}"}]}], "]"}], "}"}]}], "]"}], "}"}]}], "}"}]], "Output"]}, Open]]}, Open]],
 

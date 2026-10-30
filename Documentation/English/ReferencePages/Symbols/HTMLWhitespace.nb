@@ -13,21 +13,21 @@ Cell["HTMLWhitespace", "ObjectName"],
 
 Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLWhitespace"]], "InlineFormula"], " \[LineSeparator]is a string pattern that matches a run of one or more HTML whitespace characters."}], "Usage"],
 
-Cell[TextData[{Cell[BoxData[ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLWhitespace"]], "InlineFormula"], " matches a run of one or more of the five characters that HTML counts as whitespace:
+Cell[TextData[{Cell[BoxData[ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLWhitespace"]], "InlineFormula"], " matches a run of one or more of the five characters that HTML counts as whitespace:"}], "Notes"],
 
-| character | code |
-| --- | --- |
-| space | 32 |
-| tab ", Cell[BoxData[StyleBox["\"\\t\"", "TR"]], "InlineFormula"], " | 9 |
-| line feed ", Cell[BoxData[StyleBox["\"\\n\"", "TR"]], "InlineFormula"], " | 10 |
-| form feed ", Cell[BoxData[StyleBox["\"\\f\"", "TR"]], "InlineFormula"], " | 12 |
-| carriage return ", Cell[BoxData[StyleBox["\"\\r\"", "TR"]], "InlineFormula"], " | 13 |"}], "Notes"],
+Cell[BoxData[GridBox[{
+{Cell["      ", "ModInfo"], Cell["space", "TableText"], Cell["32", "TableText"]},
+{Cell["      ", "ModInfo"], Cell[TextData[{"tab ", Cell[BoxData["\"\\t\""], "InlineFormula"]}], "TableText"], Cell["9", "TableText"]},
+{Cell["      ", "ModInfo"], Cell[TextData[{"line feed ", Cell[BoxData["\"\\n\""], "InlineFormula"]}], "TableText"], Cell["10", "TableText"]},
+{Cell["      ", "ModInfo"], Cell[TextData[{"form feed ", Cell[BoxData["\"\\f\""], "InlineFormula"]}], "TableText"], Cell["12", "TableText"]},
+{Cell["      ", "ModInfo"], Cell[TextData[{"carriage return ", Cell[BoxData["\"\\r\""], "InlineFormula"]}], "TableText"], Cell["13", "TableText"]}
+}]], "2ColumnTableMod"],
 
-Cell[TextData[{"Use ", Cell[BoxData[RowBox[{ButtonBox["StringSplit", BaseStyle -> "Link", ButtonData -> "paclet:ref/StringSplit"], "[", RowBox[{StyleBox["value", "TI"], ",", " ", ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLWhitespace"]}], "]"}]], "InlineFormula"], " to split the value of an attribute such as ", Cell[BoxData[StyleBox["class", "TR"]], "InlineFormula"], " or ", Cell[BoxData[StyleBox["rel", "TR"]], "InlineFormula"], " as a browser does."}], "Notes"],
+Cell[TextData[{"Use ", Cell[BoxData[RowBox[{ButtonBox["StringSplit", BaseStyle -> "Link", ButtonData -> "paclet:ref/StringSplit"], "[", RowBox[{StyleBox["value", "TI"], ",", ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLWhitespace"]}], "]"}]], "InlineFormula"], " to split the value of an attribute such as ", Cell[BoxData[StyleBox["class", "TR"]], "InlineFormula"], " or ", Cell[BoxData[StyleBox["rel", "TR"]], "InlineFormula"], " as a browser does."}], "Notes"],
 
 Cell[TextData[{Cell[BoxData[ButtonBox["Whitespace", BaseStyle -> "Link", ButtonData -> "paclet:ref/Whitespace"]], "InlineFormula"], ", and ", Cell[BoxData[ButtonBox["StringSplit", BaseStyle -> "Link", ButtonData -> "paclet:ref/StringSplit"]], "InlineFormula"], " by default, also match no-break space, vertical tab and other Unicode whitespace. HTML does not split on these, so a no-break space in a ", Cell[BoxData[StyleBox["class", "TR"]], "InlineFormula"], " value is part of a class name."}], "Notes"],
 
-Cell[TextData[{Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"]], "InlineFormula"], " splits on ", Cell[BoxData[ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLWhitespace"]], "InlineFormula"], ", as does the ", Cell[BoxData[StyleBox["\"SpaceSeparated\"", "TR"]], "InlineFormula"], " method of ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/$AttributeReadings"]], "InlineFormula"], ". The ", Cell[BoxData[StyleBox["\"CommaSeparated\"", "TR"]], "InlineFormula"], " method trims ", Cell[BoxData[ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLWhitespace"]], "InlineFormula"], " from each token."}], "Notes"]
+Cell[TextData[{Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"]], "InlineFormula"], " splits on ", Cell[BoxData[ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLWhitespace"]], "InlineFormula"], ", as does the ", Cell[BoxData["\"SpaceSeparated\""], "InlineFormula"], " method of ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/$AttributeReadings"]], "InlineFormula"], ". The ", Cell[BoxData["\"CommaSeparated\""], "InlineFormula"], " method trims ", Cell[BoxData[ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLWhitespace"]], "InlineFormula"], " from each token."}], "Notes"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -122,12 +122,11 @@ Cell[CellGroupData[{Cell[BoxData[
    }],
   $Line = 0; Null]], "PrimaryExamplesSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Split a class attribute value as a browser does:", "ExampleText"], Cell[BoxData["StringSplit[\"lead  promo\\tcard\",HTMLWhitespace]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Split a class attribute value as a browser does:", "ExampleText"], Cell[BoxData[RowBox[{"StringSplit", "[", RowBox[{"\"lead  promo\\tcard\"", ",", "HTMLWhitespace"}], "]"}]], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"\"lead\"", ",", "\"promo\"", ",", "\"card\""}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Compare which characters ", Cell[BoxData[ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLWhitespace"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["Whitespace", BaseStyle -> "Link", ButtonData -> "paclet:ref/Whitespace"]], "InlineFormula"], " match:"}], "ExampleText"], Cell[BoxData["characters={\" \",\"\\t\",\"\\n\",\"\\f\",\"\\r\",\"\\:000b\",\"\\[NonBreakingSpace]\",\"\\:2003\"};
-Grid[{{\"code\",Sequence@@Map[First@*ToCharacterCode,characters]},{\"HTMLWhitespace\",Sequence@@StringMatchQ[characters,HTMLWhitespace]},{\"Whitespace\",Sequence@@StringMatchQ[characters,Whitespace]}},Frame->All]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Compare which characters ", Cell[BoxData[ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLWhitespace"]], "InlineFormula"], " and ", Cell[BoxData[ButtonBox["Whitespace", BaseStyle -> "Link", ButtonData -> "paclet:ref/Whitespace"]], "InlineFormula"], " match:"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"characters", "=", RowBox[{"{", RowBox[{"\" \"", ",", "\"\\t\"", ",", "\"\\n\"", ",", "\"\\f\"", ",", "\"\\r\"", ",", "\"\"", ",", "\"\[NonBreakingSpace]\"", ",", "\"\:2003\""}], "}"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"Grid", "[", RowBox[{RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"\"code\"", ",", RowBox[{"Sequence", "@@", RowBox[{"Map", "[", RowBox[{RowBox[{"First", "@*", "ToCharacterCode"}], ",", "characters"}], "]"}]}]}], "}"}], ",", RowBox[{"{", RowBox[{"\"HTMLWhitespace\"", ",", RowBox[{"Sequence", "@@", RowBox[{"StringMatchQ", "[", RowBox[{"characters", ",", "HTMLWhitespace"}], "]"}]}]}], "}"}], ",", RowBox[{"{", RowBox[{"\"Whitespace\"", ",", RowBox[{"Sequence", "@@", RowBox[{"StringMatchQ", "[", RowBox[{"characters", ",", "Whitespace"}], "]"}]}]}], "}"}]}], "}"}], ",", RowBox[{"Frame", "->", "All"}]}], "]"}]}], "Input"],
 
 Cell[BoxData[TagBox[GridBox[{{"\"code\"", "32", "9", "10", "12", "13", "11", "160", "8195"}, {"\"HTMLWhitespace\"", "True", "True", "True", "True", "True", "False", "False", "False"}, {"\"Whitespace\"", "True", "True", "True", "True", "True", "True", "True", "True"}}, AutoDelete -> False, GridBoxFrame -> {"Columns" -> {{True}}, "Rows" -> {{True}}}, GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], "Grid"]], "Output"]}, Open]]}, Open]],
 
@@ -151,19 +150,19 @@ Cell[CellGroupData[{Cell[BoxData[
   "Scope", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Trim HTML whitespace from both ends of a string:", "ExampleText"], Cell[BoxData["StringTrim[\" \\n lead promo \\t\",HTMLWhitespace]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Trim HTML whitespace from both ends of a string:", "ExampleText"], Cell[BoxData[RowBox[{"StringTrim", "[", RowBox[{"\" \\n lead promo \\t\"", ",", "HTMLWhitespace"}], "]"}]], "Input"],
 
 Cell[BoxData["\"lead promo\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Collapse each run of HTML whitespace to one space:", "ExampleText"], Cell[BoxData["StringReplace[\"lead \\t\\n promo    card\",HTMLWhitespace->\" \"]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Collapse each run of HTML whitespace to one space:", "ExampleText"], Cell[BoxData[RowBox[{"StringReplace", "[", RowBox[{"\"lead \\t\\n promo    card\"", ",", RowBox[{"HTMLWhitespace", "->", "\" \""}]}], "]"}]], "Input"],
 
 Cell[BoxData["\"lead promo card\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Count the runs of HTML whitespace in a string:", "ExampleText"], Cell[BoxData["StringCount[\"lead  promo\\tcard\",HTMLWhitespace]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Count the runs of HTML whitespace in a string:", "ExampleText"], Cell[BoxData[RowBox[{"StringCount", "[", RowBox[{"\"lead  promo\\tcard\"", ",", "HTMLWhitespace"}], "]"}]], "Input"],
 
 Cell[BoxData["2"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Test whether a string consists of HTML whitespace only:", "ExampleText"], Cell[BoxData["StringMatchQ[{\" \\t\\n\",\"\",\"\\[NonBreakingSpace]\"},HTMLWhitespace]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Test whether a string consists of HTML whitespace only:", "ExampleText"], Cell[BoxData[RowBox[{"StringMatchQ", "[", RowBox[{RowBox[{"{", RowBox[{"\" \\t\\n\"", ",", "\"\"", ",", "\"\[NonBreakingSpace]\""}], "}"}], ",", "HTMLWhitespace"}], "]"}]], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"True", ",", "False", ",", "False"}], "}"}]], "Output"]}, Open]]}, Open]],
 
@@ -195,12 +194,11 @@ Cell[CellGroupData[{Cell[BoxData[
   "Applications", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Get the link types of each link from its ", Cell[BoxData[StyleBox["rel", "TR"]], "InlineFormula"], " attribute:"}], "ExampleText"], Cell[BoxData["page=ImportString[\"<p><a rel=\\\"nofollow noopener\\\" href=\\\"/ad\\\">Ad</a><a rel=\\\"author\\\" href=\\\"/me\\\">Me</a></p>\",{\"HTML\",\"XMLObject\"}];
-XMLCases[page,XMLPattern[\"a\",{\"rel\"->rel_,\"href\"->href_}]:>href->StringSplit[rel,HTMLWhitespace]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Get the link types of each link from its ", Cell[BoxData[StyleBox["rel", "TR"]], "InlineFormula"], " attribute:"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"page", "=", RowBox[{"ImportString", "[", RowBox[{"\"<p><a rel=\\\"nofollow noopener\\\" href=\\\"/ad\\\">Ad</a><a rel=\\\"author\\\" href=\\\"/me\\\">Me</a></p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"page", ",", RowBox[{RowBox[{"XMLPattern", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{RowBox[{"\"rel\"", "->", "rel_"}], ",", RowBox[{"\"href\"", "->", "href_"}]}], "}"}]}], "]"}], ":>", RowBox[{"href", "->", RowBox[{"StringSplit", "[", RowBox[{"rel", ",", "HTMLWhitespace"}], "]"}]}]}]}], "]"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"\"/ad\"", "\[Rule]", RowBox[{"{", RowBox[{"\"nofollow\"", ",", "\"noopener\""}], "}"}]}], ",", RowBox[{"\"/me\"", "\[Rule]", RowBox[{"{", "\"author\"", "}"}]}]}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Split a comma-separated value and trim HTML whitespace from each item:", "ExampleText"], Cell[BoxData["StringTrim[#,HTMLWhitespace]& /@StringSplit[\"image/png , image/jpeg,\\t.pdf\",\",\"]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Split a comma-separated value and trim HTML whitespace from each item:", "ExampleText"], Cell[BoxData[RowBox[{RowBox[{RowBox[{"StringTrim", "[", RowBox[{"#", ",", "HTMLWhitespace"}], "]"}], "&"}], "/@", RowBox[{"StringSplit", "[", RowBox[{"\"image/png , image/jpeg,\\t.pdf\"", ",", "\",\""}], "]"}]}]], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"\"image/png\"", ",", "\"image/jpeg\"", ",", "\".pdf\""}], "}"}]], "Output"]}, Open]]}, Open]],
 
@@ -209,26 +207,25 @@ Cell[CellGroupData[{Cell[BoxData[
   "Properties & Relations", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLWhitespace"]], "InlineFormula"], " is a repeated alternative of five characters:"}], "ExampleText"], Cell[BoxData["FullForm[HTMLWhitespace]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLWhitespace"]], "InlineFormula"], " is a repeated alternative of five characters:"}], "ExampleText"], Cell[BoxData[RowBox[{"FullForm", "[", "HTMLWhitespace", "]"}]], "Input"],
 
 Cell[BoxData[TagBox[StyleBox[RowBox[{"Repeated", "[", RowBox[{"Alternatives", "[", RowBox[{"\" \"", ",", "\"\\t\"", ",", "\"\\n\"", ",", "\"\\f\"", ",", "\"\\r\""}], "]"}], "]"}], ShowSpecialCharacters -> False, ShowStringCharacters -> True, NumberMarks -> True], FullForm]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A run of whitespace counts as one delimiter, as with ", Cell[BoxData[ButtonBox["Whitespace", BaseStyle -> "Link", ButtonData -> "paclet:ref/Whitespace"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["{StringSplit[\"a  b\",HTMLWhitespace],StringSplit[\"a  b\",Whitespace]}"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A run of whitespace counts as one delimiter, as with ", Cell[BoxData[ButtonBox["Whitespace", BaseStyle -> "Link", ButtonData -> "paclet:ref/Whitespace"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"StringSplit", "[", RowBox[{"\"a  b\"", ",", "HTMLWhitespace"}], "]"}], ",", RowBox[{"StringSplit", "[", RowBox[{"\"a  b\"", ",", "Whitespace"}], "]"}]}], "}"}]], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"\"a\"", ",", "\"b\""}], "}"}], ",", RowBox[{"{", RowBox[{"\"a\"", ",", "\"b\""}], "}"}]}], "}"}]], "Output"],
 
 Cell[TextData[{"A single-character pattern gives empty strings, as ", Cell[BoxData[ButtonBox["WhitespaceCharacter", BaseStyle -> "Link", ButtonData -> "paclet:ref/WhitespaceCharacter"]], "InlineFormula"], " does:"}], "ExampleText"],
 
-Cell[BoxData["{StringSplit[\"a  b\",\" \"|\"\\t\"|\"\\n\"|\"\\f\"|\"\\r\"],StringSplit[\"a  b\",WhitespaceCharacter]}"], "Input"],
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"StringSplit", "[", RowBox[{"\"a  b\"", ",", RowBox[{"\" \"", "|", "\"\\t\"", "|", "\"\\n\"", "|", "\"\\f\"", "|", "\"\\r\""}]}], "]"}], ",", RowBox[{"StringSplit", "[", RowBox[{"\"a  b\"", ",", "WhitespaceCharacter"}], "]"}]}], "}"}]], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"\"a\"", ",", "\"\"", ",", "\"b\""}], "}"}], ",", RowBox[{"{", RowBox[{"\"a\"", ",", "\"\"", ",", "\"b\""}], "}"}]}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Repeating ", Cell[BoxData[ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLWhitespace"]], "InlineFormula"], " changes nothing:"}], "ExampleText"], Cell[BoxData["StringSplit[\"a  \\t b\",HTMLWhitespace..]===StringSplit[\"a  \\t b\",HTMLWhitespace]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Repeating ", Cell[BoxData[ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLWhitespace"]], "InlineFormula"], " changes nothing:"}], "ExampleText"], Cell[BoxData[RowBox[{RowBox[{"StringSplit", "[", RowBox[{"\"a  \\t b\"", ",", RowBox[{"HTMLWhitespace", ".."}]}], "]"}], "===", RowBox[{"StringSplit", "[", RowBox[{"\"a  \\t b\"", ",", "HTMLWhitespace"}], "]"}]}]], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"]], "InlineFormula"], " splits the ", Cell[BoxData[StyleBox["class", "TR"]], "InlineFormula"], " value on ", Cell[BoxData[ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLWhitespace"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["element=XMLElement[\"p\",{\"class\"->\" lead\\n promo \"},{}];
-{HTMLClassList[element],StringSplit[\" lead\\n promo \",HTMLWhitespace]}"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"]], "InlineFormula"], " splits the ", Cell[BoxData[StyleBox["class", "TR"]], "InlineFormula"], " value on ", Cell[BoxData[ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLWhitespace"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"element", "=", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\" lead\\n promo \""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"{", RowBox[{RowBox[{"HTMLClassList", "[", "element", "]"}], ",", RowBox[{"StringSplit", "[", RowBox[{"\" lead\\n promo \"", ",", "HTMLWhitespace"}], "]"}]}], "}"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"\"lead\"", ",", "\"promo\""}], "}"}], ",", RowBox[{"{", RowBox[{"\"lead\"", ",", "\"promo\""}], "}"}]}], "}"}]], "Output"]}, Open]]}, Open]],
 
@@ -237,19 +234,17 @@ Cell[CellGroupData[{Cell[BoxData[
   "Possible Issues", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["Whitespace", BaseStyle -> "Link", ButtonData -> "paclet:ref/Whitespace"]], "InlineFormula"], " splits on the no-break space that ", Cell[BoxData["&nbsp;"], "InlineFormula"], " produces, where a browser does not:"}], "ExampleText"], Cell[BoxData["page=ImportString[\"<p class=\\\"btn&nbsp;btn-primary\\\">Buy</p>\",{\"HTML\",\"XMLObject\"}];
-value=Lookup[XMLFirstCase[page,XMLPattern[\"p\"]]〚2〛,\"class\"];
-{StringSplit[value,Whitespace],StringSplit[value,HTMLWhitespace]}"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["Whitespace", BaseStyle -> "Link", ButtonData -> "paclet:ref/Whitespace"]], "InlineFormula"], " splits on the no-break space that ", Cell[BoxData["&nbsp;"], "InlineFormula"], " produces, where a browser does not:"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"page", "=", RowBox[{"ImportString", "[", RowBox[{"\"<p class=\\\"btn&nbsp;btn-primary\\\">Buy</p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{RowBox[{"value", "=", RowBox[{"Lookup", "[", RowBox[{RowBox[{RowBox[{"XMLFirstCase", "[", RowBox[{"page", ",", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "]"}], "[", RowBox[{"[", "2", "]"}], "]"}], ",", "\"class\""}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"{", RowBox[{RowBox[{"StringSplit", "[", RowBox[{"value", ",", "Whitespace"}], "]"}], ",", RowBox[{"StringSplit", "[", RowBox[{"value", ",", "HTMLWhitespace"}], "]"}]}], "}"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"\"btn\"", ",", "\"btn-primary\""}], "}"}], ",", RowBox[{"{", "\"btn\[NonBreakingSpace]btn-primary\"", "}"}]}], "}"}]], "Output"],
 
 Cell[TextData[{"The value has a single class, so the element does not have the class ", Cell[BoxData[StyleBox["btn", "TR"]], "InlineFormula"], ":"}], "ExampleText"],
 
-Cell[BoxData["XMLMatchQ[XMLFirstCase[page,XMLPattern[\"p\"]],XMLPattern[\"p\",\"classList\"->\"btn\"]]"], "Input"],
+Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"XMLFirstCase", "[", RowBox[{"page", ",", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "]"}], ",", RowBox[{"XMLPattern", "[", RowBox[{"\"p\"", ",", RowBox[{"\"classList\"", "->", "\"btn\""}]}], "]"}]}], "]"}]], "Input"],
 
 Cell[BoxData["False"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["The vertical tab is Unicode whitespace but not HTML whitespace:", "ExampleText"], Cell[BoxData["{StringSplit[\"a\\:000bb\"],StringSplit[\"a\\:000bb\",HTMLWhitespace]}"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["The vertical tab is Unicode whitespace but not HTML whitespace:", "ExampleText"], Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"StringSplit", "[", "\"ab\"", "]"}], ",", RowBox[{"StringSplit", "[", RowBox[{"\"ab\"", ",", "HTMLWhitespace"}], "]"}]}], "}"}]], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"\"a\"", ",", "\"b\""}], "}"}], ",", RowBox[{"{", "\"ab\"", "}"}]}], "}"}]], "Output"]}, Open]]}, Open]],
 

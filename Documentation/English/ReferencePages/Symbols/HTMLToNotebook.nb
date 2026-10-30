@@ -11,49 +11,51 @@ Notebook[{
 Cell[CellGroupData[{
 Cell["HTMLToNotebook", "ObjectName"],
 
-Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["HTMLToNotebook", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLToNotebook"], "[", StyleBox["tree", "TI"], "]"}]], "InlineFormula"], " \[LineSeparator]converts ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " to a ", Cell[BoxData[ButtonBox["Notebook", BaseStyle -> "Link", ButtonData -> "paclet:ref/Notebook"]], "InlineFormula"], " expression, which can be displayed or exported to Markdown, PDF, etc. with ", Cell[BoxData[ButtonBox["Export", BaseStyle -> "Link", ButtonData -> "paclet:ref/Export"]], "InlineFormula"], ".", "\n", Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["HTMLToNotebook", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLToNotebook"], "[", RowBox[{StyleBox["tree", "TI"], ",", " ", RowBox[{StyleBox["\"Roles\"", "TR"], "\[Rule]", StyleBox["rules", "TI"]}]}], "]"}]], "InlineFormula"], " \[LineSeparator]uses ", Cell[BoxData[StyleBox["rules", "TI"]], "InlineFormula"], " to set the role of elements, such as \"Block\" or \"Skip\".", "\n", Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["HTMLToNotebook", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLToNotebook"], "[", RowBox[{StyleBox["tree", "TI"], ",", " ", RowBox[{StyleBox["\"Constructs\"", "TR"], "\[Rule]", StyleBox["rules", "TI"]}]}], "]"}]], "InlineFormula"], " \[LineSeparator]uses ", Cell[BoxData[StyleBox["rules", "TI"]], "InlineFormula"], " to set what elements become, such as a cell style or a function that gives a ", Cell[BoxData[ButtonBox["Cell", BaseStyle -> "Link", ButtonData -> "paclet:ref/Cell"]], "InlineFormula"], "."}], "Usage"],
+Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["HTMLToNotebook", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLToNotebook"], "[", StyleBox["tree", "TI"], "]"}]], "InlineFormula"], " \[LineSeparator]converts ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " to a ", Cell[BoxData[ButtonBox["Notebook", BaseStyle -> "Link", ButtonData -> "paclet:ref/Notebook"]], "InlineFormula"], " expression, which can be displayed or exported to Markdown, PDF, etc. with ", Cell[BoxData[ButtonBox["Export", BaseStyle -> "Link", ButtonData -> "paclet:ref/Export"]], "InlineFormula"], ".", "\n", Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["HTMLToNotebook", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLToNotebook"], "[", RowBox[{StyleBox["tree", "TI"], ",", RowBox[{"\"Roles\"", "\[Rule]", StyleBox["rules", "TI"]}]}], "]"}]], "InlineFormula"], " \[LineSeparator]uses ", Cell[BoxData[StyleBox["rules", "TI"]], "InlineFormula"], " to set the role of elements, such as \"Block\" or \"Skip\".", "\n", Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["HTMLToNotebook", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLToNotebook"], "[", RowBox[{StyleBox["tree", "TI"], ",", RowBox[{"\"Constructs\"", "\[Rule]", StyleBox["rules", "TI"]}]}], "]"}]], "InlineFormula"], " \[LineSeparator]uses ", Cell[BoxData[StyleBox["rules", "TI"]], "InlineFormula"], " to set what elements become, such as a cell style or a function that gives a ", Cell[BoxData[ButtonBox["Cell", BaseStyle -> "Link", ButtonData -> "paclet:ref/Cell"]], "InlineFormula"], "."}], "Usage"],
 
-Cell[TextData[{"Block-level elements become cells, and inline elements become formatted text in the surrounding cell. By default:
+Cell["Block-level elements become cells, and inline elements become formatted text in the surrounding cell. By default:", "Notes"],
 
-| tag | result |
-| --- | --- |
-| ", Cell[BoxData[StyleBox["h1", "TR"]], "InlineFormula"], " to ", Cell[BoxData[StyleBox["h6", "TR"]], "InlineFormula"], " | \"Title\", \"Chapter\", \"Section\", \"Subsection\", \"Subsubsection\" and \"Subsubsubsection\" cells |
-| ", Cell[BoxData[StyleBox["p", "TR"]], "InlineFormula"], " | a \"Text\" cell |
-| ", Cell[BoxData[StyleBox["li", "TR"]], "InlineFormula"], " | an \"Item\", \"Subitem\" or \"Subsubitem\" cell, by depth, or \"ItemNumbered\", etc. inside ", Cell[BoxData[StyleBox["ol", "TR"]], "InlineFormula"], " |
-| ", Cell[BoxData[StyleBox["blockquote", "TR"]], "InlineFormula"], " | a framed quote |
-| ", Cell[BoxData[StyleBox["pre", "TR"]], "InlineFormula"], " | a \"Program\" cell |
-| ", Cell[BoxData[StyleBox["table", "TR"]], "InlineFormula"], " | a ", Cell[BoxData[ButtonBox["Dataset", BaseStyle -> "Link", ButtonData -> "paclet:ref/Dataset"]], "InlineFormula"], " if its header row has distinct labels and is followed by other rows, none wider than it, otherwise a ", Cell[BoxData[ButtonBox["Grid", BaseStyle -> "Link", ButtonData -> "paclet:ref/Grid"]], "InlineFormula"], "; the header row is the one row of its ", Cell[BoxData[StyleBox["thead", "TR"]], "InlineFormula"], ", or with no ", Cell[BoxData[StyleBox["thead", "TR"]], "InlineFormula"], " a first row of only ", Cell[BoxData[StyleBox["th", "TR"]], "InlineFormula"], " cells; a cell's text is what ", Cell[BoxData[ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLInnerText"]], "InlineFormula"], " gives for it; its ", Cell[BoxData[StyleBox["caption", "TR"]], "InlineFormula"], " is a \"Text\" cell before it |
-| ", Cell[BoxData[StyleBox["hr", "TR"]], "InlineFormula"], " | a horizontal line |
-| ", Cell[BoxData[StyleBox["b", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["strong", "TR"]], "InlineFormula"], " | bold |
-| ", Cell[BoxData[StyleBox["i", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["em", "TR"]], "InlineFormula"], " | italic |
-| ", Cell[BoxData[StyleBox["u", "TR"]], "InlineFormula"], " | underlined |
-| ", Cell[BoxData[StyleBox["s", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["del", "TR"]], "InlineFormula"], " | struck through |
-| ", Cell[BoxData[StyleBox["code", "TR"]], "InlineFormula"], " | inline code |
-| ", Cell[BoxData[StyleBox["a", "TR"]], "InlineFormula"], " | a hyperlink |
-| ", Cell[BoxData[StyleBox["img", "TR"]], "InlineFormula"], " | its alt text, linked to its ", Cell[BoxData[StyleBox["src", "TR"]], "InlineFormula"], " |
-| ", Cell[BoxData[StyleBox["span", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["mark", "TR"]], "InlineFormula"], ", etc. | plain text |"}], "Notes"],
+Cell[BoxData[GridBox[{
+{Cell["      ", "ModInfo"], Cell[TextData[{Cell[BoxData[StyleBox["h1", "TR"]], "InlineFormula"], " to ", Cell[BoxData[StyleBox["h6", "TR"]], "InlineFormula"]}], "TableText"], Cell["\"Title\", \"Chapter\", \"Section\", \"Subsection\", \"Subsubsection\" and \"Subsubsubsection\" cells", "TableText"]},
+{Cell["      ", "ModInfo"], StyleBox["p", "TR"], Cell["a \"Text\" cell", "TableText"]},
+{Cell["      ", "ModInfo"], StyleBox["li", "TR"], Cell[TextData[{"an \"Item\", \"Subitem\" or \"Subsubitem\" cell, by depth, or \"ItemNumbered\", etc. inside ", Cell[BoxData[StyleBox["ol", "TR"]], "InlineFormula"]}], "TableText"]},
+{Cell["      ", "ModInfo"], StyleBox["blockquote", "TR"], Cell["a framed quote", "TableText"]},
+{Cell["      ", "ModInfo"], StyleBox["pre", "TR"], Cell["a \"Program\" cell", "TableText"]},
+{Cell["      ", "ModInfo"], StyleBox["table", "TR"], Cell[TextData[{"a ", Cell[BoxData[ButtonBox["Dataset", BaseStyle -> "Link", ButtonData -> "paclet:ref/Dataset"]], "InlineFormula"], " if its header row has distinct labels and is followed by other rows, none wider than it, otherwise a ", Cell[BoxData[ButtonBox["Grid", BaseStyle -> "Link", ButtonData -> "paclet:ref/Grid"]], "InlineFormula"], "; the header row is the one row of its ", Cell[BoxData[StyleBox["thead", "TR"]], "InlineFormula"], ", or with no ", Cell[BoxData[StyleBox["thead", "TR"]], "InlineFormula"], " a first row of only ", Cell[BoxData[StyleBox["th", "TR"]], "InlineFormula"], " cells; a cell's text is what ", Cell[BoxData[ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLInnerText"]], "InlineFormula"], " gives for it; its ", Cell[BoxData[StyleBox["caption", "TR"]], "InlineFormula"], " is a \"Text\" cell before it"}], "TableText"]},
+{Cell["      ", "ModInfo"], StyleBox["hr", "TR"], Cell["a horizontal line", "TableText"]},
+{Cell["      ", "ModInfo"], Cell[TextData[{Cell[BoxData[StyleBox["b", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["strong", "TR"]], "InlineFormula"]}], "TableText"], Cell["bold", "TableText"]},
+{Cell["      ", "ModInfo"], Cell[TextData[{Cell[BoxData[StyleBox["i", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["em", "TR"]], "InlineFormula"]}], "TableText"], Cell["italic", "TableText"]},
+{Cell["      ", "ModInfo"], StyleBox["u", "TR"], Cell["underlined", "TableText"]},
+{Cell["      ", "ModInfo"], Cell[TextData[{Cell[BoxData[StyleBox["s", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["del", "TR"]], "InlineFormula"]}], "TableText"], Cell["struck through", "TableText"]},
+{Cell["      ", "ModInfo"], StyleBox["code", "TR"], Cell["inline code", "TableText"]},
+{Cell["      ", "ModInfo"], StyleBox["a", "TR"], Cell["a hyperlink", "TableText"]},
+{Cell["      ", "ModInfo"], StyleBox["img", "TR"], Cell[TextData[{"its alt text, linked to its ", Cell[BoxData[StyleBox["src", "TR"]], "InlineFormula"]}], "TableText"]},
+{Cell["      ", "ModInfo"], Cell[TextData[{Cell[BoxData[StyleBox["span", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["mark", "TR"]], "InlineFormula"], ", etc."}], "TableText"], Cell["plain text", "TableText"]}
+}]], "2ColumnTableMod"],
 
 Cell[TextData[{"Each element has a role that depends only on its tag, as given by the built-in user-agent stylesheet, a copy of the default styles of the HTML standard. CSS is not read, including the ", Cell[BoxData[StyleBox["style", "TR"]], "InlineFormula"], " attribute."}], "Notes"],
 
 Cell[TextData[{Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " may be an ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], ", an ", Cell[BoxData[ButtonBox["XMLObject", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLObject"]], "InlineFormula"], " document, a string, or a list of elements and strings. Text outside any block-level element goes in a \"Text\" cell."}], "Notes"],
 
-Cell[TextData[{"The following options can be given:
+Cell["The following options can be given:", "Notes"],
 
-| option | default | description |
-| --- | --- | --- |
-| \"Roles\" | ", Cell[BoxData[RowBox[{"{", "}"}]], "InlineFormula"], " | rules that set the role of elements |
-| \"Constructs\" | ", Cell[BoxData[RowBox[{"{", "}"}]], "InlineFormula"], " | rules that set what elements become |
-| \"AttributeReadings\" | ", Cell[BoxData[StyleBox["<||>", "TR"]], "InlineFormula"], " | readings to add to ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/$AttributeReadings"]], "InlineFormula"], " for this call |"}], "Notes"],
+Cell[BoxData[GridBox[{
+{Cell["      ", "ModInfo"], StyleBox[Cell["option", "TableText"], FontSlant->"Italic"], StyleBox[Cell["default", "TableText"], FontSlant->"Italic"], StyleBox[Cell["description", "TableText"], FontSlant->"Italic"]},
+{Cell["      ", "ModInfo"], Cell["\"Roles\"", "TableText"], RowBox[{"{", "}"}], Cell["rules that set the role of elements", "TableText"]},
+{Cell["      ", "ModInfo"], Cell["\"Constructs\"", "TableText"], RowBox[{"{", "}"}], Cell["rules that set what elements become", "TableText"]},
+{Cell["      ", "ModInfo"], Cell["\"AttributeReadings\"", "TableText"], StyleBox["<||>", "TR"], Cell[TextData[{"readings to add to ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/$AttributeReadings"]], "InlineFormula"], " for this call"}], "TableText"]}
+}]], "3ColumnTableMod"],
 
-Cell[TextData[{"The role sets what an element becomes:
+Cell["The role sets what an element becomes:", "Notes"],
 
-| role | result | built-in tags |
-| --- | --- | --- |
-| \"Block\" | one or more cells | ", Cell[BoxData[StyleBox["div", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["p", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["h1", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["li", "TR"]], "InlineFormula"], ", etc. |
-| \"Inline\" | formatted text in the surrounding cell | all other tags, such as ", Cell[BoxData[StyleBox["span", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["b", "TR"]], "InlineFormula"], " and ", Cell[BoxData[StyleBox["a", "TR"]], "InlineFormula"], " |
-| \"Preformatted\" | a \"Program\" cell, with whitespace kept as written | ", Cell[BoxData[StyleBox["pre", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["xmp", "TR"]], "InlineFormula"], ", etc. |
-| \"LineBreak\" | a newline in the surrounding cell | ", Cell[BoxData[StyleBox["br", "TR"]], "InlineFormula"], " |
-| \"Skip\" | dropped with its content | ", Cell[BoxData[StyleBox["script", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["style", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["head", "TR"]], "InlineFormula"], ", etc. |"}], "Notes"],
+Cell[BoxData[GridBox[{
+{Cell["      ", "ModInfo"], StyleBox[Cell["role", "TableText"], FontSlant->"Italic"], StyleBox[Cell["result", "TableText"], FontSlant->"Italic"], StyleBox[Cell["built-in tags", "TableText"], FontSlant->"Italic"]},
+{Cell["      ", "ModInfo"], Cell["\"Block\"", "TableText"], Cell["one or more cells", "TableText"], Cell[TextData[{Cell[BoxData[StyleBox["div", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["p", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["h1", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["li", "TR"]], "InlineFormula"], ", etc."}], "TableText"]},
+{Cell["      ", "ModInfo"], Cell["\"Inline\"", "TableText"], Cell["formatted text in the surrounding cell", "TableText"], Cell[TextData[{"all other tags, such as ", Cell[BoxData[StyleBox["span", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["b", "TR"]], "InlineFormula"], " and ", Cell[BoxData[StyleBox["a", "TR"]], "InlineFormula"]}], "TableText"]},
+{Cell["      ", "ModInfo"], Cell["\"Preformatted\"", "TableText"], Cell["a \"Program\" cell, with whitespace kept as written", "TableText"], Cell[TextData[{Cell[BoxData[StyleBox["pre", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["xmp", "TR"]], "InlineFormula"], ", etc."}], "TableText"]},
+{Cell["      ", "ModInfo"], Cell["\"LineBreak\"", "TableText"], Cell["a newline in the surrounding cell", "TableText"], StyleBox["br", "TR"]},
+{Cell["      ", "ModInfo"], Cell["\"Skip\"", "TableText"], Cell["dropped with its content", "TableText"], Cell[TextData[{Cell[BoxData[StyleBox["script", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["style", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["head", "TR"]], "InlineFormula"], ", etc."}], "TableText"]}
+}]], "3ColumnTableMod"],
 
 Cell[TextData[{"Each rule of \"Roles\" or \"Constructs\" has the form ", Cell[BoxData[RowBox[{StyleBox["key", "TI"], "\[Rule]", StyleBox["val", "TI"]}]], "InlineFormula"], " or ", Cell[BoxData[RowBox[{StyleBox["key", "TI"], "\[RuleDelayed]", StyleBox["val", "TI"]}]], "InlineFormula"], ", and the rules may also be given as an ", Cell[BoxData[ButtonBox["Association", BaseStyle -> "Link", ButtonData -> "paclet:ref/Association"]], "InlineFormula"], ". ", Cell[BoxData[StyleBox["key", "TI"]], "InlineFormula"], " is one of two kinds:"}], "Notes"],
 
@@ -65,15 +67,15 @@ Cell[BoxData[GridBox[{
 
 Cell["In each option, the first rule that selects an element applies, whichever kind its key is. An element that no rule selects gets its role from the built-in user-agent stylesheet, and its result from the first table above. A query must select elements only.", "Notes"],
 
-Cell[TextData[{"The value of a \"Constructs\" rule may have the following forms:
+Cell["The value of a \"Constructs\" rule may have the following forms:", "Notes"],
 
-| value | result |
-| --- | --- |
-| \"Bold\", \"Italic\", \"Underline\", \"StrikeThrough\", \"Code\" | formatted text |
-| \"Hyperlink\" | a link to the ", Cell[BoxData[StyleBox["href", "TR"]], "InlineFormula"], " or ", Cell[BoxData[StyleBox["src", "TR"]], "InlineFormula"], " attribute, or plain text if there is none |
-| \"Plain\" | plain text |
-| any other string, such as \"Section\" | a cell with that style |
-| ", Cell[BoxData[StyleBox["f", "TI"]], "InlineFormula"], " | ", Cell[BoxData[RowBox[{StyleBox["f", "TI"], "[", StyleBox["elem", "TI"], "]"}]], "InlineFormula"], ", which should give a ", Cell[BoxData[ButtonBox["Cell", BaseStyle -> "Link", ButtonData -> "paclet:ref/Cell"]], "InlineFormula"], " or boxes |"}], "Notes"],
+Cell[BoxData[GridBox[{
+{Cell["      ", "ModInfo"], Cell["\"Bold\", \"Italic\", \"Underline\", \"StrikeThrough\", \"Code\"", "TableText"], Cell["formatted text", "TableText"]},
+{Cell["      ", "ModInfo"], Cell["\"Hyperlink\"", "TableText"], Cell[TextData[{"a link to the ", Cell[BoxData[StyleBox["href", "TR"]], "InlineFormula"], " or ", Cell[BoxData[StyleBox["src", "TR"]], "InlineFormula"], " attribute, or plain text if there is none"}], "TableText"]},
+{Cell["      ", "ModInfo"], Cell["\"Plain\"", "TableText"], Cell["plain text", "TableText"]},
+{Cell["      ", "ModInfo"], Cell["any other string, such as \"Section\"", "TableText"], Cell["a cell with that style", "TableText"]},
+{Cell["      ", "ModInfo"], StyleBox["f", "TI"], Cell[TextData[{Cell[BoxData[RowBox[{StyleBox["f", "TI"], "[", StyleBox["elem", "TI"], "]"}]], "InlineFormula"], ", which should give a ", Cell[BoxData[ButtonBox["Cell", BaseStyle -> "Link", ButtonData -> "paclet:ref/Cell"]], "InlineFormula"], " or boxes"}], "TableText"]}
+}]], "2ColumnTableMod"],
 
 Cell[TextData[{"The role decides whether an element becomes a cell or text in a cell. For a block-level element, give a cell style or a function that returns a ", Cell[BoxData[ButtonBox["Cell", BaseStyle -> "Link", ButtonData -> "paclet:ref/Cell"]], "InlineFormula"], ". For an inline element, give a formatting string or a function that returns boxes."}], "Notes"],
 
@@ -176,11 +178,11 @@ Cell[CellGroupData[{Cell[BoxData[
    }],
   $Line = 0; Null]], "PrimaryExamplesSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Convert a heading and a paragraph with inline formatting to Markdown:", "ExampleText"], Cell[BoxData["ExportString[HTMLToNotebook[ImportString[\"<h1>Welcome</h1><p>A short <b>intro</b> with a <a href=\\\"https://wolfram.com\\\">link</a>.</p>\",{\"HTML\",\"XMLObject\"}]],\"Markdown\"]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Convert a heading and a paragraph with inline formatting to Markdown:", "ExampleText"], Cell[BoxData[RowBox[{"ExportString", "[", RowBox[{RowBox[{"HTMLToNotebook", "[", RowBox[{"ImportString", "[", RowBox[{"\"<h1>Welcome</h1><p>A short <b>intro</b> with a <a href=\\\"https://wolfram.com\\\">link</a>.</p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}], "]"}], ",", "\"Markdown\""}], "]"}]], "Input"],
 
 Cell[BoxData["\"# Welcome\\n\\nA short **intro** with a [link](https://wolfram.com).\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The result is a ", Cell[BoxData[ButtonBox["Notebook", BaseStyle -> "Link", ButtonData -> "paclet:ref/Notebook"]], "InlineFormula"], " expression:"}], "ExampleText"], Cell[BoxData["HTMLToNotebook[ImportString[\"<p>Hi</p>\",{\"HTML\",\"XMLObject\"}]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The result is a ", Cell[BoxData[ButtonBox["Notebook", BaseStyle -> "Link", ButtonData -> "paclet:ref/Notebook"]], "InlineFormula"], " expression:"}], "ExampleText"], Cell[BoxData[RowBox[{"HTMLToNotebook", "[", RowBox[{"ImportString", "[", RowBox[{"\"<p>Hi</p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}], "]"}]], "Input"],
 
 Cell[BoxData[RowBox[{"Notebook", "[", RowBox[{"{", RowBox[{"Cell", "[", RowBox[{RowBox[{"TextData", "[", RowBox[{"{", "\"Hi\"", "}"}], "]"}], ",", "\"Text\""}], "]"}], "}"}], "]"}]], "Output"]}, Open]]}, Open]],
 
@@ -204,23 +206,23 @@ Cell[CellGroupData[{Cell[BoxData[
   "Scope", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Headings become cells of decreasing level, starting with \"Title\":", "ExampleText"], Cell[BoxData["ExportString[HTMLToNotebook[ImportString[\"<h1>Title</h1><h2>Section</h2><h3>Sub</h3>\",{\"HTML\",\"XMLObject\"}]],\"Markdown\"]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Headings become cells of decreasing level, starting with \"Title\":", "ExampleText"], Cell[BoxData[RowBox[{"ExportString", "[", RowBox[{RowBox[{"HTMLToNotebook", "[", RowBox[{"ImportString", "[", RowBox[{"\"<h1>Title</h1><h2>Section</h2><h3>Sub</h3>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}], "]"}], ",", "\"Markdown\""}], "]"}]], "Input"],
 
 Cell[BoxData["\"# Title\\n\\n## Section\\n\\n### Sub\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Nested list items become \"Item\", \"Subitem\", etc. cells, numbered inside ", Cell[BoxData[StyleBox["ol", "TR"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["ExportString[HTMLToNotebook[ImportString[\"<ol><li>one<ul><li>sub</li></ul></li><li>two</li></ol>\",{\"HTML\",\"XMLObject\"}]],\"Markdown\"]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Nested list items become \"Item\", \"Subitem\", etc. cells, numbered inside ", Cell[BoxData[StyleBox["ol", "TR"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[RowBox[{"ExportString", "[", RowBox[{RowBox[{"HTMLToNotebook", "[", RowBox[{"ImportString", "[", RowBox[{"\"<ol><li>one<ul><li>sub</li></ul></li><li>two</li></ol>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}], "]"}], ",", "\"Markdown\""}], "]"}]], "Input"],
 
 Cell[BoxData["\"1. one\\n\\n    - sub\\n\\n1. two\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Inline tags such as ", Cell[BoxData[StyleBox["b", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["i", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["code", "TR"]], "InlineFormula"], " and ", Cell[BoxData[StyleBox["s", "TR"]], "InlineFormula"], " become formatted text:"}], "ExampleText"], Cell[BoxData["ExportString[HTMLToNotebook[ImportString[\"<p><b>bold</b>, <i>italic</i>, <code>code</code>, <s>gone</s></p>\",{\"HTML\",\"XMLObject\"}]],\"Markdown\"]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Inline tags such as ", Cell[BoxData[StyleBox["b", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["i", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["code", "TR"]], "InlineFormula"], " and ", Cell[BoxData[StyleBox["s", "TR"]], "InlineFormula"], " become formatted text:"}], "ExampleText"], Cell[BoxData[RowBox[{"ExportString", "[", RowBox[{RowBox[{"HTMLToNotebook", "[", RowBox[{"ImportString", "[", RowBox[{"\"<p><b>bold</b>, <i>italic</i>, <code>code</code>, <s>gone</s></p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}], "]"}], ",", "\"Markdown\""}], "]"}]], "Input"],
 
 Cell[BoxData["\"**bold**, *italic*, `code`, ~~gone~~\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A ", Cell[BoxData[StyleBox["blockquote", "TR"]], "InlineFormula"], " becomes one framed quote:"}], "ExampleText"], Cell[BoxData["ExportString[HTMLToNotebook[ImportString[\"<blockquote><p>Quoted.</p></blockquote>\",{\"HTML\",\"XMLObject\"}]],\"Markdown\"]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A ", Cell[BoxData[StyleBox["blockquote", "TR"]], "InlineFormula"], " becomes one framed quote:"}], "ExampleText"], Cell[BoxData[RowBox[{"ExportString", "[", RowBox[{RowBox[{"HTMLToNotebook", "[", RowBox[{"ImportString", "[", RowBox[{"\"<blockquote><p>Quoted.</p></blockquote>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}], "]"}], ",", "\"Markdown\""}], "]"}]], "Input"],
 
 Cell[BoxData["\"> Quoted.\\n>\\n>\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A ", Cell[BoxData[StyleBox["pre", "TR"]], "InlineFormula"], " element becomes a \"Program\" cell, with its whitespace kept:"}], "ExampleText"], Cell[BoxData["ExportString[HTMLToNotebook[ImportString[\"<pre>line 1\\n  line 2</pre>\",{\"HTML\",\"XMLObject\"}]],\"Markdown\"]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A ", Cell[BoxData[StyleBox["pre", "TR"]], "InlineFormula"], " element becomes a \"Program\" cell, with its whitespace kept:"}], "ExampleText"], Cell[BoxData[RowBox[{"ExportString", "[", RowBox[{RowBox[{"HTMLToNotebook", "[", RowBox[{"ImportString", "[", RowBox[{"\"<pre>line 1\\n  line 2</pre>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}], "]"}], ",", "\"Markdown\""}], "]"}]], "Input"],
 
 Cell[BoxData["\"```\\nline 1\\n  line 2\\n```\""], "Output"]}, Open]],
 
@@ -239,32 +241,31 @@ Cell[CellGroupData[{Cell[BoxData[
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["Options", "ExampleSection"], $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["Roles", "ExampleSubsection"], $Line = 0; Null]], "ExampleSubsection"], Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Drop the ", Cell[BoxData[StyleBox["div", "TR"]], "InlineFormula"], " that has the class ", Cell[BoxData[StyleBox["ad", "TR"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["ExportString[HTMLToNotebook[ImportString[\"<div>keep</div><div class=\\\"ad banner\\\">drop</div>\",{\"HTML\",\"XMLObject\"}],\"Roles\"->{XMLPattern[\"div\",\"classList\"->\"ad\"]->\"Skip\"}],\"Markdown\"]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["Roles", "ExampleSubsection"], $Line = 0; Null]], "ExampleSubsection"], Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Drop the ", Cell[BoxData[StyleBox["div", "TR"]], "InlineFormula"], " that has the class ", Cell[BoxData[StyleBox["ad", "TR"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[RowBox[{"ExportString", "[", RowBox[{RowBox[{"HTMLToNotebook", "[", RowBox[{RowBox[{"ImportString", "[", RowBox[{"\"<div>keep</div><div class=\\\"ad banner\\\">drop</div>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}], ",", RowBox[{"\"Roles\"", "->", RowBox[{"{", RowBox[{RowBox[{"XMLPattern", "[", RowBox[{"\"div\"", ",", RowBox[{"\"classList\"", "->", "\"ad\""}]}], "]"}], "->", "\"Skip\""}], "}"}]}]}], "]"}], ",", "\"Markdown\""}], "]"}]], "Input"],
 
 Cell[BoxData["\"keep\""], "Output"]}, Open]]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["Constructs", "ExampleSubsection"], $Line = 0; Null]], "ExampleSubsection"], Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Make each ", Cell[BoxData[StyleBox["p", "TR"]], "InlineFormula"], " a \"Section\" cell:"}], "ExampleText"], Cell[BoxData["ExportString[HTMLToNotebook[ImportString[\"<p>Heading-like</p>\",{\"HTML\",\"XMLObject\"}],\"Constructs\"->{\"p\"->\"Section\"}],\"Markdown\"]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["Constructs", "ExampleSubsection"], $Line = 0; Null]], "ExampleSubsection"], Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Make each ", Cell[BoxData[StyleBox["p", "TR"]], "InlineFormula"], " a \"Section\" cell:"}], "ExampleText"], Cell[BoxData[RowBox[{"ExportString", "[", RowBox[{RowBox[{"HTMLToNotebook", "[", RowBox[{RowBox[{"ImportString", "[", RowBox[{"\"<p>Heading-like</p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}], ",", RowBox[{"\"Constructs\"", "->", RowBox[{"{", RowBox[{"\"p\"", "->", "\"Section\""}], "}"}]}]}], "]"}], ",", "\"Markdown\""}], "]"}]], "Input"],
 
 Cell[BoxData["\"### Heading-like\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Give a function that returns a ", Cell[BoxData[ButtonBox["Cell", BaseStyle -> "Link", ButtonData -> "paclet:ref/Cell"]], "InlineFormula"], " for each element:"}], "ExampleText"], Cell[BoxData["ExportString[HTMLToNotebook[ImportString[\"<p>Intro</p><p>Body</p>\",{\"HTML\",\"XMLObject\"}],\"Constructs\"->{\"p\":>(Cell[TextData[{\"Note: \",HTMLTextContent[#]}],\"Text\"]&)}],\"Markdown\"]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Give a function that returns a ", Cell[BoxData[ButtonBox["Cell", BaseStyle -> "Link", ButtonData -> "paclet:ref/Cell"]], "InlineFormula"], " for each element:"}], "ExampleText"], Cell[BoxData[RowBox[{"ExportString", "[", RowBox[{RowBox[{"HTMLToNotebook", "[", RowBox[{RowBox[{"ImportString", "[", RowBox[{"\"<p>Intro</p><p>Body</p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}], ",", RowBox[{"\"Constructs\"", "->", RowBox[{"{", RowBox[{"\"p\"", ":>", RowBox[{"(", RowBox[{RowBox[{"Cell", "[", RowBox[{RowBox[{"TextData", "[", RowBox[{"{", RowBox[{"\"Note: \"", ",", RowBox[{"HTMLTextContent", "[", "#", "]"}]}], "}"}], "]"}], ",", "\"Text\""}], "]"}], "&"}], ")"}]}], "}"}]}]}], "]"}], ",", "\"Markdown\""}], "]"}]], "Input"],
 
 Cell[BoxData["\"Note: Intro\\n\\nNote: Body\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Select paragraphs by class, and apply ", Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"]], "InlineFormula"], " to each in the function:"}], "ExampleText"], Cell[BoxData["ExportString[HTMLToNotebook[ImportString[\"<p class=\\\"note warn\\\">Mind the step.</p><p>Plain.</p>\",{\"HTML\",\"XMLObject\"}],\"Constructs\"->{XMLPattern[\"p\",\"classList\"->\"note\"]->(Cell[TextData[{StyleBox[StringRiffle[HTMLClassList[#],\", \"]<>\": \",FontWeight->Bold],HTMLTextContent[#]}],\"Text\"]&)}],\"Markdown\"]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Select paragraphs by class, and apply ", Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"]], "InlineFormula"], " to each in the function:"}], "ExampleText"], Cell[BoxData[RowBox[{"ExportString", "[", RowBox[{RowBox[{"HTMLToNotebook", "[", RowBox[{RowBox[{"ImportString", "[", RowBox[{"\"<p class=\\\"note warn\\\">Mind the step.</p><p>Plain.</p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}], ",", RowBox[{"\"Constructs\"", "->", RowBox[{"{", RowBox[{RowBox[{"XMLPattern", "[", RowBox[{"\"p\"", ",", RowBox[{"\"classList\"", "->", "\"note\""}]}], "]"}], "->", RowBox[{"(", RowBox[{RowBox[{"Cell", "[", RowBox[{RowBox[{"TextData", "[", RowBox[{"{", RowBox[{RowBox[{"StyleBox", "[", RowBox[{RowBox[{RowBox[{"StringRiffle", "[", RowBox[{RowBox[{"HTMLClassList", "[", "#", "]"}], ",", "\", \""}], "]"}], "<>", "\": \""}], ",", RowBox[{"FontWeight", "->", "Bold"}]}], "]"}], ",", RowBox[{"HTMLTextContent", "[", "#", "]"}]}], "}"}], "]"}], ",", "\"Text\""}], "]"}], "&"}], ")"}]}], "}"}]}]}], "]"}], ",", "\"Markdown\""}], "]"}]], "Input"],
 
 Cell[BoxData["\"**note, warn:** Mind the step.\\n\\nPlain.\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Use a CSS selector string to make each ", Cell[BoxData[StyleBox["p", "TR"]], "InlineFormula"], " that has the class ", Cell[BoxData[StyleBox["note", "TR"]], "InlineFormula"], " a \"Section\" cell:"}], "ExampleText"], Cell[BoxData["ExportString[HTMLToNotebook[ImportString[\"<p class=\\\"note\\\">Heading-like</p><p>Body.</p>\",{\"HTML\",\"XMLObject\"}],\"Constructs\"->{\"p.note\"->\"Section\"}],\"Markdown\"]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Use a CSS selector string to make each ", Cell[BoxData[StyleBox["p", "TR"]], "InlineFormula"], " that has the class ", Cell[BoxData[StyleBox["note", "TR"]], "InlineFormula"], " a \"Section\" cell:"}], "ExampleText"], Cell[BoxData[RowBox[{"ExportString", "[", RowBox[{RowBox[{"HTMLToNotebook", "[", RowBox[{RowBox[{"ImportString", "[", RowBox[{"\"<p class=\\\"note\\\">Heading-like</p><p>Body.</p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}], ",", RowBox[{"\"Constructs\"", "->", RowBox[{"{", RowBox[{"\"p.note\"", "->", "\"Section\""}], "}"}]}]}], "]"}], ",", "\"Markdown\""}], "]"}]], "Input"],
 
 Cell[BoxData["\"### Heading-like\\n\\nBody.\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give a CSS selector that looks above the element, to make the links inside a nav plain text:", "ExampleText"], Cell[BoxData["page=ImportString[\"<body><nav><a href=\\\"/\\\">Home</a></nav><p>See <a href=\\\"/about\\\">About</a>.</p></body>\",{\"HTML\",\"XMLObject\"}];
-ExportString[HTMLToNotebook[page,\"Constructs\"->{\"nav a\"->\"Plain\"}],\"Markdown\"]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give a CSS selector that looks above the element, to make the links inside a nav plain text:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"page", "=", RowBox[{"ImportString", "[", RowBox[{"\"<body><nav><a href=\\\"/\\\">Home</a></nav><p>See <a href=\\\"/about\\\">About</a>.</p></body>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"ExportString", "[", RowBox[{RowBox[{"HTMLToNotebook", "[", RowBox[{"page", ",", RowBox[{"\"Constructs\"", "->", RowBox[{"{", RowBox[{"\"nav a\"", "->", "\"Plain\""}], "}"}]}]}], "]"}], ",", "\"Markdown\""}], "]"}]}], "Input"],
 
 Cell[BoxData["\"Home\\n\\nSee [About](/about).\""], "Output"]}, Open]]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["AttributeReadings", "ExampleSubsection"], $Line = 0; Null]], "ExampleSubsection"], Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Split ", Cell[BoxData[StyleBox["rel", "TR"]], "InlineFormula"], " into tokens so that a rule can use the list key \"relList\":"}], "ExampleText"], Cell[BoxData["ExportString[HTMLToNotebook[ImportString[\"<p>Read <a rel=\\\"nofollow sponsored\\\" href=\\\"/ad\\\">this ad</a> <a href=\\\"/docs\\\">the docs</a>.</p>\",{\"HTML\",\"XMLObject\"}],\"Constructs\"->{XMLPattern[\"a\",\"relList\"->\"sponsored\"]->\"Plain\"},\"AttributeReadings\"-><|\"rel\"-><||>|>],\"Markdown\"]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["AttributeReadings", "ExampleSubsection"], $Line = 0; Null]], "ExampleSubsection"], Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Split ", Cell[BoxData[StyleBox["rel", "TR"]], "InlineFormula"], " into tokens so that a rule can use the list key \"relList\":"}], "ExampleText"], Cell[BoxData[RowBox[{"ExportString", "[", RowBox[{RowBox[{"HTMLToNotebook", "[", RowBox[{RowBox[{"ImportString", "[", RowBox[{"\"<p>Read <a rel=\\\"nofollow sponsored\\\" href=\\\"/ad\\\">this ad</a> <a href=\\\"/docs\\\">the docs</a>.</p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}], ",", RowBox[{"\"Constructs\"", "->", RowBox[{"{", RowBox[{RowBox[{"XMLPattern", "[", RowBox[{"\"a\"", ",", RowBox[{"\"relList\"", "->", "\"sponsored\""}]}], "]"}], "->", "\"Plain\""}], "}"}]}], ",", RowBox[{"\"AttributeReadings\"", "->", RowBox[{"<|", RowBox[{"\"rel\"", "->", RowBox[{"<|", "|>"}]}], "|>"}]}]}], "]"}], ",", "\"Markdown\""}], "]"}]], "Input"],
 
 Cell[BoxData["\"Read this ad [the docs](/docs).\""], "Output"]}, Open]]}, Open]]}, Open]],
 
@@ -291,14 +292,11 @@ Cell[CellGroupData[{Cell[BoxData[
   "Applications", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Fetch the 1989 web proposal and convert just its first list to Markdown:", "ExampleText"], Cell[BoxData["tree=Import[\"https://www.w3.org/History/1989/proposal.html\",{\"HTML\",\"XMLObject\"}];
-firstList=XMLFirstCase[tree,XMLPattern[\"ul\"]|XMLPattern[\"ol\"]];
-StringTake[ExportString[HTMLToNotebook[firstList],\"Markdown\"],UpTo[160]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Fetch the 1989 web proposal and convert just its first list to Markdown:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"tree", "=", RowBox[{"Import", "[", RowBox[{"\"https://www.w3.org/History/1989/proposal.html\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{RowBox[{"firstList", "=", RowBox[{"XMLFirstCase", "[", RowBox[{"tree", ",", RowBox[{RowBox[{"XMLPattern", "[", "\"ul\"", "]"}], "|", RowBox[{"XMLPattern", "[", "\"ol\"", "]"}]}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"StringTake", "[", RowBox[{RowBox[{"ExportString", "[", RowBox[{RowBox[{"HTMLToNotebook", "[", "firstList", "]"}], ",", "\"Markdown\""}], "]"}], ",", RowBox[{"UpTo", "[", "160", "]"}]}], "]"}]}], "Input"],
 
 Cell[BoxData["\"- [The original document file (I think - I can't test it)](proposal)\\n\\n- [The RTF file generated from the above, with scalable drawings](proposal.rtf)\\n\\n- [A Micr\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Convert the whole page to a single Markdown document:", "ExampleText"], Cell[BoxData["tree=Import[\"https://www.w3.org/History/1989/proposal.html\",{\"HTML\",\"XMLObject\"}];
-StringLength[ExportString[HTMLToNotebook[tree],\"Markdown\"]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Convert the whole page to a single Markdown document:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"tree", "=", RowBox[{"Import", "[", RowBox[{"\"https://www.w3.org/History/1989/proposal.html\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"StringLength", "[", RowBox[{"ExportString", "[", RowBox[{RowBox[{"HTMLToNotebook", "[", "tree", "]"}], ",", "\"Markdown\""}], "]"}], "]"}]}], "Input"],
 
 Cell[BoxData["30580"], "Output"]}, Open]]}, Open]],
 
@@ -307,16 +305,15 @@ Cell[CellGroupData[{Cell[BoxData[
   "Properties & Relations", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The result is a ", Cell[BoxData[ButtonBox["Notebook", BaseStyle -> "Link", ButtonData -> "paclet:ref/Notebook"]], "InlineFormula"], " expression, so ", Cell[BoxData[ButtonBox["Export", BaseStyle -> "Link", ButtonData -> "paclet:ref/Export"]], "InlineFormula"], " can write it as Markdown, PDF, RTF, etc.:"}], "ExampleText"], Cell[BoxData["MatchQ[HTMLToNotebook[ImportString[\"<p>x</p>\",{\"HTML\",\"XMLObject\"}]],_Notebook]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The result is a ", Cell[BoxData[ButtonBox["Notebook", BaseStyle -> "Link", ButtonData -> "paclet:ref/Notebook"]], "InlineFormula"], " expression, so ", Cell[BoxData[ButtonBox["Export", BaseStyle -> "Link", ButtonData -> "paclet:ref/Export"]], "InlineFormula"], " can write it as Markdown, PDF, RTF, etc.:"}], "ExampleText"], Cell[BoxData[RowBox[{"MatchQ", "[", RowBox[{RowBox[{"HTMLToNotebook", "[", RowBox[{"ImportString", "[", RowBox[{"\"<p>x</p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}], "]"}], ",", "_Notebook"}], "]"}]], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLInnerText"]], "InlineFormula"], " gives the same text without formatting:"}], "ExampleText"], Cell[BoxData["fragment=ImportString[\"<p>A <b>bold</b> word.</p>\",{\"HTML\",\"XMLObject\"}];
-{HTMLInnerText[fragment],ExportString[HTMLToNotebook[fragment],\"Markdown\"]}"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLInnerText"]], "InlineFormula"], " gives the same text without formatting:"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"fragment", "=", RowBox[{"ImportString", "[", RowBox[{"\"<p>A <b>bold</b> word.</p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"{", RowBox[{RowBox[{"HTMLInnerText", "[", "fragment", "]"}], ",", RowBox[{"ExportString", "[", RowBox[{RowBox[{"HTMLToNotebook", "[", "fragment", "]"}], ",", "\"Markdown\""}], "]"}]}], "}"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"\"A bold word.\"", ",", "\"A **bold** word.\""}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A table without a header row becomes a ", Cell[BoxData[ButtonBox["Grid", BaseStyle -> "Link", ButtonData -> "paclet:ref/Grid"]], "InlineFormula"], ", which Markdown shows with an empty header:"}], "ExampleText"], Cell[BoxData["ExportString[HTMLToNotebook[ImportString[\"<table><tr><td>1</td><td>2</td></tr><tr><td>3</td><td>4</td></tr></table>\",{\"HTML\",\"XMLObject\"}]],\"Markdown\"]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A table without a header row becomes a ", Cell[BoxData[ButtonBox["Grid", BaseStyle -> "Link", ButtonData -> "paclet:ref/Grid"]], "InlineFormula"], ", which Markdown shows with an empty header:"}], "ExampleText"], Cell[BoxData[RowBox[{"ExportString", "[", RowBox[{RowBox[{"HTMLToNotebook", "[", RowBox[{"ImportString", "[", RowBox[{"\"<table><tr><td>1</td><td>2</td></tr><tr><td>3</td><td>4</td></tr></table>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}], "]"}], ",", "\"Markdown\""}], "]"}]], "Input"],
 
 Cell[BoxData["\"|  |  |\\n| - | - |\\n| 1 | 2 |\\n| 3 | 4 |\""], "Output"]}, Open]]}, Open]],
 
@@ -325,23 +322,23 @@ Cell[CellGroupData[{Cell[BoxData[
   "Possible Issues", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Formatting with no Markdown equivalent, such as underline, is lost:", "ExampleText"], Cell[BoxData["ExportString[HTMLToNotebook[ImportString[\"<p><u>underlined</u> text</p>\",{\"HTML\",\"XMLObject\"}]],\"Markdown\"]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Formatting with no Markdown equivalent, such as underline, is lost:", "ExampleText"], Cell[BoxData[RowBox[{"ExportString", "[", RowBox[{RowBox[{"HTMLToNotebook", "[", RowBox[{"ImportString", "[", RowBox[{"\"<p><u>underlined</u> text</p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}], "]"}], ",", "\"Markdown\""}], "]"}]], "Input"],
 
 Cell[BoxData["\"underlined text\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The ", Cell[BoxData[StyleBox["style", "TR"]], "InlineFormula"], " attribute is not read, so an element styled with ", Cell[BoxData["display:none"], "InlineFormula"], " is still shown:"}], "ExampleText"], Cell[BoxData["ExportString[HTMLToNotebook[ImportString[\"<p style=\\\"display:none\\\">still shown</p>\",{\"HTML\",\"XMLObject\"}]],\"Markdown\"]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The ", Cell[BoxData[StyleBox["style", "TR"]], "InlineFormula"], " attribute is not read, so an element styled with ", Cell[BoxData["display:none"], "InlineFormula"], " is still shown:"}], "ExampleText"], Cell[BoxData[RowBox[{"ExportString", "[", RowBox[{RowBox[{"HTMLToNotebook", "[", RowBox[{"ImportString", "[", RowBox[{"\"<p style=\\\"display:none\\\">still shown</p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}], "]"}], ",", "\"Markdown\""}], "]"}]], "Input"],
 
 Cell[BoxData["\"still shown\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A table with repeated header labels becomes a ", Cell[BoxData[ButtonBox["Grid", BaseStyle -> "Link", ButtonData -> "paclet:ref/Grid"]], "InlineFormula"], " instead of a ", Cell[BoxData[ButtonBox["Dataset", BaseStyle -> "Link", ButtonData -> "paclet:ref/Dataset"]], "InlineFormula"], ", with the labels as bold cells in its first row:"}], "ExampleText"], Cell[BoxData["ExportString[HTMLToNotebook[ImportString[\"<table><thead><tr><th>X</th><th>X</th></tr></thead><tbody><tr><td>1</td><td>2</td></tr></tbody></table>\",{\"HTML\",\"XMLObject\"}]],\"Markdown\"]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A table with repeated header labels becomes a ", Cell[BoxData[ButtonBox["Grid", BaseStyle -> "Link", ButtonData -> "paclet:ref/Grid"]], "InlineFormula"], " instead of a ", Cell[BoxData[ButtonBox["Dataset", BaseStyle -> "Link", ButtonData -> "paclet:ref/Dataset"]], "InlineFormula"], ", with the labels as bold cells in its first row:"}], "ExampleText"], Cell[BoxData[RowBox[{"ExportString", "[", RowBox[{RowBox[{"HTMLToNotebook", "[", RowBox[{"ImportString", "[", RowBox[{"\"<table><thead><tr><th>X</th><th>X</th></tr></thead><tbody><tr><td>1</td><td>2</td></tr></tbody></table>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}], "]"}], ",", "\"Markdown\""}], "]"}]], "Input"],
 
 Cell[BoxData["\"|  |  |\\n| - | - |\\n| **X** | **X** |\\n| 1 | 2 |\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"An ", Cell[BoxData[StyleBox["a", "TR"]], "InlineFormula"], " element without an ", Cell[BoxData[StyleBox["href", "TR"]], "InlineFormula"], " gives plain text:"}], "ExampleText"], Cell[BoxData["ExportString[HTMLToNotebook[ImportString[\"<p><a>bare</a> link</p>\",{\"HTML\",\"XMLObject\"}]],\"Markdown\"]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"An ", Cell[BoxData[StyleBox["a", "TR"]], "InlineFormula"], " element without an ", Cell[BoxData[StyleBox["href", "TR"]], "InlineFormula"], " gives plain text:"}], "ExampleText"], Cell[BoxData[RowBox[{"ExportString", "[", RowBox[{RowBox[{"HTMLToNotebook", "[", RowBox[{"ImportString", "[", RowBox[{"\"<p><a>bare</a> link</p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}], "]"}], ",", "\"Markdown\""}], "]"}]], "Input"],
 
 Cell[BoxData["\"bare link\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A query must select elements, so a rule that names an attribute issues a message:", "ExampleText"], Cell[BoxData["HTMLToNotebook[XMLElement[\"p\",{},{XMLElement[\"a\",{\"href\"->\"/\"},{\"Home\"}]}],\"Constructs\"->{(XMLPattern[\"a\",\"href\"->h_]:>h)->\"Plain\"}]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A query must select elements, so a rule that names an attribute issues a message:", "ExampleText"], Cell[BoxData[RowBox[{"HTMLToNotebook", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"href\"", "->", "\"/\""}], "}"}], ",", RowBox[{"{", "\"Home\"", "}"}]}], "]"}], "}"}]}], "]"}], ",", RowBox[{"\"Constructs\"", "->", RowBox[{"{", RowBox[{RowBox[{"(", RowBox[{RowBox[{"XMLPattern", "[", RowBox[{"\"a\"", ",", RowBox[{"\"href\"", "->", "h_"}]}], "]"}], ":>", "h"}], ")"}], "->", "\"Plain\""}], "}"}]}]}], "]"}]], "Input"],
 
 Cell["HTMLToNotebook::keytarget: A query key selects the position {1, 1, Key[\"href\"]}, which is not an element. A \"Roles\" or \"Constructs\" query should select elements only.", "Message", "MSG"],
 

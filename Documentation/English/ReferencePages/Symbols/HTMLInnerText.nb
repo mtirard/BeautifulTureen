@@ -11,31 +11,33 @@ Notebook[{
 Cell[CellGroupData[{
 Cell["HTMLInnerText", "ObjectName"],
 
-Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLInnerText"], "[", StyleBox["tree", "TI"], "]"}]], "InlineFormula"], " \[LineSeparator]gives the readable text of ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], ", with whitespace collapsed and each block-level element on its own line.", "\n", Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLInnerText"], "[", RowBox[{StyleBox["tree", "TI"], ",", " ", RowBox[{StyleBox["\"Roles\"", "TR"], "\[Rule]", StyleBox["rules", "TI"]}]}], "]"}]], "InlineFormula"], " \[LineSeparator]uses ", Cell[BoxData[StyleBox["rules", "TI"]], "InlineFormula"], " to set the role of elements, such as \"Block\" or \"Skip\"."}], "Usage"],
+Cell[TextData[{Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLInnerText"], "[", StyleBox["tree", "TI"], "]"}]], "InlineFormula"], " \[LineSeparator]gives the readable text of ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], ", with whitespace collapsed and each block-level element on its own line.", "\n", Cell["   ", "ModInfo"], Cell[BoxData[RowBox[{ButtonBox["HTMLInnerText", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLInnerText"], "[", RowBox[{StyleBox["tree", "TI"], ",", RowBox[{"\"Roles\"", "\[Rule]", StyleBox["rules", "TI"]}]}], "]"}]], "InlineFormula"], " \[LineSeparator]uses ", Cell[BoxData[StyleBox["rules", "TI"]], "InlineFormula"], " to set the role of elements, such as \"Block\" or \"Skip\"."}], "Usage"],
 
 Cell[TextData[{"Each element has a role that depends only on its tag, as given by the built-in user-agent stylesheet, a copy of the default styles of the HTML standard. CSS is not read, including the ", Cell[BoxData[StyleBox["style", "TR"]], "InlineFormula"], " attribute."}], "Notes"],
 
-Cell[TextData[{"The role sets how the text of an element is placed:
+Cell["The role sets how the text of an element is placed:", "Notes"],
 
-| role | text | built-in tags |
-| --- | --- | --- |
-| \"Block\" | on its own line | ", Cell[BoxData[StyleBox["div", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["p", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["h1", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["li", "TR"]], "InlineFormula"], ", etc. |
-| \"Inline\" | in the surrounding line | all other tags, such as ", Cell[BoxData[StyleBox["span", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["b", "TR"]], "InlineFormula"], " and ", Cell[BoxData[StyleBox["a", "TR"]], "InlineFormula"], " |
-| \"Preformatted\" | on its own lines, with whitespace kept as written | ", Cell[BoxData[StyleBox["pre", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["xmp", "TR"]], "InlineFormula"], ", etc. |
-| \"LineBreak\" | a newline | ", Cell[BoxData[StyleBox["br", "TR"]], "InlineFormula"], " |
-| \"Skip\" | dropped with its content | ", Cell[BoxData[StyleBox["script", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["style", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["head", "TR"]], "InlineFormula"], ", etc. |"}], "Notes"],
+Cell[BoxData[GridBox[{
+{Cell["      ", "ModInfo"], StyleBox[Cell["role", "TableText"], FontSlant->"Italic"], StyleBox[Cell["text", "TableText"], FontSlant->"Italic"], StyleBox[Cell["built-in tags", "TableText"], FontSlant->"Italic"]},
+{Cell["      ", "ModInfo"], Cell["\"Block\"", "TableText"], Cell["on its own line", "TableText"], Cell[TextData[{Cell[BoxData[StyleBox["div", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["p", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["h1", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["li", "TR"]], "InlineFormula"], ", etc."}], "TableText"]},
+{Cell["      ", "ModInfo"], Cell["\"Inline\"", "TableText"], Cell["in the surrounding line", "TableText"], Cell[TextData[{"all other tags, such as ", Cell[BoxData[StyleBox["span", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["b", "TR"]], "InlineFormula"], " and ", Cell[BoxData[StyleBox["a", "TR"]], "InlineFormula"]}], "TableText"]},
+{Cell["      ", "ModInfo"], Cell["\"Preformatted\"", "TableText"], Cell["on its own lines, with whitespace kept as written", "TableText"], Cell[TextData[{Cell[BoxData[StyleBox["pre", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["xmp", "TR"]], "InlineFormula"], ", etc."}], "TableText"]},
+{Cell["      ", "ModInfo"], Cell["\"LineBreak\"", "TableText"], Cell["a newline", "TableText"], StyleBox["br", "TR"]},
+{Cell["      ", "ModInfo"], Cell["\"Skip\"", "TableText"], Cell["dropped with its content", "TableText"], Cell[TextData[{Cell[BoxData[StyleBox["script", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["style", "TR"]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["head", "TR"]], "InlineFormula"], ", etc."}], "TableText"]}
+}]], "3ColumnTableMod"],
 
 Cell[TextData[{"Outside preformatted elements, each run of spaces, tabs and newlines becomes one space. A no-break space, such as one written ", Cell[BoxData["&nbsp;"], "InlineFormula"], ", is kept. The result is trimmed at both ends."}], "Notes"],
 
 Cell[TextData[{Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " may be an ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], ", an ", Cell[BoxData[ButtonBox["XMLObject", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLObject"]], "InlineFormula"], " document, a string, or a list of elements and strings."}], "Notes"],
 
-Cell[TextData[{"The following options can be given:
+Cell["The following options can be given:", "Notes"],
 
-| option | default | description |
-| --- | --- | --- |
-| \"Roles\" | ", Cell[BoxData[RowBox[{"{", "}"}]], "InlineFormula"], " | rules that set the role of elements |
-| \"BlockSeparator\" | ", Cell[BoxData[StyleBox["\"\\n\"", "TR"]], "InlineFormula"], " | string inserted between blocks |
-| \"AttributeReadings\" | ", Cell[BoxData[StyleBox["<||>", "TR"]], "InlineFormula"], " | readings to add to ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/$AttributeReadings"]], "InlineFormula"], " for this call |"}], "Notes"],
+Cell[BoxData[GridBox[{
+{Cell["      ", "ModInfo"], StyleBox[Cell["option", "TableText"], FontSlant->"Italic"], StyleBox[Cell["default", "TableText"], FontSlant->"Italic"], StyleBox[Cell["description", "TableText"], FontSlant->"Italic"]},
+{Cell["      ", "ModInfo"], Cell["\"Roles\"", "TableText"], RowBox[{"{", "}"}], Cell["rules that set the role of elements", "TableText"]},
+{Cell["      ", "ModInfo"], Cell["\"BlockSeparator\"", "TableText"], "\"\\n\"", Cell["string inserted between blocks", "TableText"]},
+{Cell["      ", "ModInfo"], Cell["\"AttributeReadings\"", "TableText"], StyleBox["<||>", "TR"], Cell[TextData[{"readings to add to ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/$AttributeReadings"]], "InlineFormula"], " for this call"}], "TableText"]}
+}]], "3ColumnTableMod"],
 
 Cell[TextData[{"Each rule of \"Roles\" has the form ", Cell[BoxData[RowBox[{StyleBox["key", "TI"], "\[Rule]", StyleBox["val", "TI"]}]], "InlineFormula"], " or ", Cell[BoxData[RowBox[{StyleBox["key", "TI"], "\[RuleDelayed]", StyleBox["val", "TI"]}]], "InlineFormula"], ", and the rules may also be given as an ", Cell[BoxData[ButtonBox["Association", BaseStyle -> "Link", ButtonData -> "paclet:ref/Association"]], "InlineFormula"], ". ", Cell[BoxData[StyleBox["key", "TI"]], "InlineFormula"], " is one of two kinds:"}], "Notes"],
 
@@ -150,14 +152,11 @@ Cell[CellGroupData[{Cell[BoxData[
    }],
   $Line = 0; Null]], "PrimaryExamplesSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Get the text of a paragraph, with whitespace collapsed:", "ExampleText"], Cell[BoxData["HTMLInnerText[ImportString[\"<p>Hi   <em>there</em>, \\n  world</p>\",{\"HTML\",\"XMLObject\"}]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Get the text of a paragraph, with whitespace collapsed:", "ExampleText"], Cell[BoxData[RowBox[{"HTMLInnerText", "[", RowBox[{"ImportString", "[", RowBox[{"\"<p>Hi   <em>there</em>, \\n  world</p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}], "]"}]], "Input"],
 
 Cell[BoxData["\"Hi there, world\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Each block-level element goes on its own line:", "ExampleText"], Cell[BoxData["HTMLInnerText[XMLElement[\"div\",{},{
-XMLElement[\"h2\",{},{\"Title\"}],
-XMLElement[\"p\",{},{\"First para.\"}],
-XMLElement[\"p\",{},{\"Second \",XMLElement[\"b\",{},{\"bold\"}],\" para.\"}]}]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Each block-level element goes on its own line:", "ExampleText"], Cell[BoxData[RowBox[{"HTMLInnerText", "[", RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\[IndentingNewLine]", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"h2\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Title\"", "}"}]}], "]"}], ",", "\[IndentingNewLine]", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"First para.\"", "}"}]}], "]"}], ",", "\[IndentingNewLine]", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"\"Second \"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"b\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"bold\"", "}"}]}], "]"}], ",", "\" para.\""}], "}"}]}], "]"}]}], "}"}]}], "]"}], "]"}]], "Input"],
 
 Cell[BoxData["\"Title\\nFirst para.\\nSecond bold para.\""], "Output"]}, Open]]}, Open]],
 
@@ -181,27 +180,27 @@ Cell[CellGroupData[{Cell[BoxData[
   "Scope", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Get the text of an imported document:", "ExampleText"], Cell[BoxData["HTMLInnerText[ImportString[\"<p>Hi <b>bold</b></p>\",{\"HTML\",\"XMLObject\"}]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Get the text of an imported document:", "ExampleText"], Cell[BoxData[RowBox[{"HTMLInnerText", "[", RowBox[{"ImportString", "[", RowBox[{"\"<p>Hi <b>bold</b></p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}], "]"}]], "Input"],
 
 Cell[BoxData["\"Hi bold\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A list of elements is treated as one tree:", "ExampleText"], Cell[BoxData["HTMLInnerText[{XMLElement[\"p\",{},{\"a\"}],XMLElement[\"p\",{},{\"b\"}]}]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A list of elements is treated as one tree:", "ExampleText"], Cell[BoxData[RowBox[{"HTMLInnerText", "[", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"a\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"b\"", "}"}]}], "]"}]}], "}"}], "]"}]], "Input"],
 
 Cell[BoxData["\"a\\nb\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A string is collapsed and trimmed:", "ExampleText"], Cell[BoxData["HTMLInnerText[\"  raw   text  \"]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A string is collapsed and trimmed:", "ExampleText"], Cell[BoxData[RowBox[{"HTMLInnerText", "[", "\"  raw   text  \"", "]"}]], "Input"],
 
 Cell[BoxData["\"raw text\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A ", Cell[BoxData[StyleBox["br", "TR"]], "InlineFormula"], " element gives a newline:"}], "ExampleText"], Cell[BoxData["HTMLInnerText[XMLElement[\"p\",{},{\"line1\",XMLElement[\"br\",{},{}],\"line2\"}]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A ", Cell[BoxData[StyleBox["br", "TR"]], "InlineFormula"], " element gives a newline:"}], "ExampleText"], Cell[BoxData[RowBox[{"HTMLInnerText", "[", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"\"line1\"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"br\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "]"}], ",", "\"line2\""}], "}"}]}], "]"}], "]"}]], "Input"],
 
 Cell[BoxData["\"line1\\nline2\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The content of ", Cell[BoxData[StyleBox["pre", "TR"]], "InlineFormula"], " is kept as written:"}], "ExampleText"], Cell[BoxData["HTMLInnerText[XMLElement[\"div\",{},{\"code:\",XMLElement[\"pre\",{},{\"  for x:\\n    print x\"}],\"done\"}]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The content of ", Cell[BoxData[StyleBox["pre", "TR"]], "InlineFormula"], " is kept as written:"}], "ExampleText"], Cell[BoxData[RowBox[{"HTMLInnerText", "[", RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"\"code:\"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"pre\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"  for x:\\n    print x\"", "}"}]}], "]"}], ",", "\"done\""}], "}"}]}], "]"}], "]"}]], "Input"],
 
 Cell[BoxData["\"code:\\n  for x:\\n    print x\\ndone\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Elements such as ", Cell[BoxData[StyleBox["script", "TR"]], "InlineFormula"], " are dropped with their content:"}], "ExampleText"], Cell[BoxData["HTMLInnerText[ImportString[\"<section><script>var x=1;</script><p>Visible.</p></section>\",{\"HTML\",\"XMLObject\"}]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Elements such as ", Cell[BoxData[StyleBox["script", "TR"]], "InlineFormula"], " are dropped with their content:"}], "ExampleText"], Cell[BoxData[RowBox[{"HTMLInnerText", "[", RowBox[{"ImportString", "[", RowBox[{"\"<section><script>var x=1;</script><p>Visible.</p></section>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}], "]"}]], "Input"],
 
 Cell[BoxData["\"Visible.\""], "Output"]}, Open]],
 
@@ -220,24 +219,19 @@ Cell[CellGroupData[{Cell[BoxData[
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["Options", "ExampleSection"], $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["Roles", "ExampleSubsection"], $Line = 0; Null]], "ExampleSubsection"], Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Drop the spans that have the class ", Cell[BoxData["sr-only"], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["HTMLInnerText[
-XMLElement[\"div\",{},{\"keep \",XMLElement[\"span\",{\"class\"->\"sr-only visually-hidden\"},{\"screenreader\"}],\" this\"}],
-\"Roles\"->{XMLPattern[\"span\",\"classList\"->\"sr-only\"]->\"Skip\"}]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["Roles", "ExampleSubsection"], $Line = 0; Null]], "ExampleSubsection"], Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Drop the spans that have the class ", Cell[BoxData["sr-only"], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[RowBox[{"HTMLInnerText", "[", "\[IndentingNewLine]", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"\"keep \"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"span\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"sr-only visually-hidden\""}], "}"}], ",", RowBox[{"{", "\"screenreader\"", "}"}]}], "]"}], ",", "\" this\""}], "}"}]}], "]"}], ",", "\[IndentingNewLine]", RowBox[{"\"Roles\"", "->", RowBox[{"{", RowBox[{RowBox[{"XMLPattern", "[", RowBox[{"\"span\"", ",", RowBox[{"\"classList\"", "->", "\"sr-only\""}]}], "]"}], "->", "\"Skip\""}], "}"}]}]}], "]"}]], "Input"],
 
 Cell[BoxData["\"keep this\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Drop the list items whose text contains \"sold out\", using a condition:", "ExampleText"], Cell[BoxData["HTMLInnerText[
-XMLElement[\"ul\",{},{XMLElement[\"li\",{},{\"Miso\"}],XMLElement[\"li\",{},{\"Ramen (sold out)\"}]}],
-\"Roles\"->{(e:XMLPattern[\"li\"]/;StringContainsQ[HTMLTextContent[e],\"sold out\"])->\"Skip\"}]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Drop the list items whose text contains \"sold out\", using a condition:", "ExampleText"], Cell[BoxData[RowBox[{"HTMLInnerText", "[", "\[IndentingNewLine]", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"ul\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Miso\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Ramen (sold out)\"", "}"}]}], "]"}]}], "}"}]}], "]"}], ",", "\[IndentingNewLine]", RowBox[{"\"Roles\"", "->", RowBox[{"{", RowBox[{RowBox[{"(", RowBox[{RowBox[{"e", ":", RowBox[{"XMLPattern", "[", "\"li\"", "]"}]}], "/;", RowBox[{"StringContainsQ", "[", RowBox[{RowBox[{"HTMLTextContent", "[", "e", "]"}], ",", "\"sold out\""}], "]"}]}], ")"}], "->", "\"Skip\""}], "}"}]}]}], "]"}]], "Input"],
 
 Cell[BoxData["\"Miso\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Use a CSS selector string to drop the ", Cell[BoxData[StyleBox["div", "TR"]], "InlineFormula"], " elements that have the class ", Cell[BoxData[StyleBox["ad", "TR"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["HTMLInnerText[ImportString[\"<div class=\\\"ad\\\">Buy now!</div><p>News.</p>\",{\"HTML\",\"XMLObject\"}],\"Roles\"->{\"div.ad\"->\"Skip\"}]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Use a CSS selector string to drop the ", Cell[BoxData[StyleBox["div", "TR"]], "InlineFormula"], " elements that have the class ", Cell[BoxData[StyleBox["ad", "TR"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[RowBox[{"HTMLInnerText", "[", RowBox[{RowBox[{"ImportString", "[", RowBox[{"\"<div class=\\\"ad\\\">Buy now!</div><p>News.</p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}], ",", RowBox[{"\"Roles\"", "->", RowBox[{"{", RowBox[{"\"div.ad\"", "->", "\"Skip\""}], "}"}]}]}], "]"}]], "Input"],
 
 Cell[BoxData["\"News.\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give a CSS selector that looks above the element, to put the links inside a nav on their own lines:", "ExampleText"], Cell[BoxData["page=XMLElement[\"body\",{},{XMLElement[\"nav\",{},{XMLElement[\"a\",{},{\"Home\"}],XMLElement[\"a\",{},{\"News\"}]}],XMLElement[\"p\",{},{\"Text with \",XMLElement[\"a\",{},{\"a link\"}],\".\"}]}];
-HTMLInnerText[page,\"Roles\"->{\"nav a\"->\"Block\"}]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give a CSS selector that looks above the element, to put the links inside a nav on their own lines:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"page", "=", RowBox[{"XMLElement", "[", RowBox[{"\"body\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"nav\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Home\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"News\"", "}"}]}], "]"}]}], "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"\"Text with \"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"a link\"", "}"}]}], "]"}], ",", "\".\""}], "}"}]}], "]"}]}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"HTMLInnerText", "[", RowBox[{"page", ",", RowBox[{"\"Roles\"", "->", RowBox[{"{", RowBox[{"\"nav a\"", "->", "\"Block\""}], "}"}]}]}], "]"}]}], "Input"],
 
 Cell[BoxData["\"Home\\nNews\\nText with a link.\""], "Output"]}, Open]],
 
@@ -245,16 +239,11 @@ Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"
 
 Cell[BoxData["\"Home\\nNews\\nText with a link.\""], "Output"]}, Open]]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["BlockSeparator", "ExampleSubsection"], $Line = 0; Null]], "ExampleSubsection"], Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Widen the gap between blocks to a blank line:", "ExampleText"], Cell[BoxData["HTMLInnerText[XMLElement[\"div\",{},{
-XMLElement[\"p\",{},{\"First.\"}],XMLElement[\"p\",{},{\"Second.\"}]}],
-\"BlockSeparator\"->\"\\n\\n\"]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["BlockSeparator", "ExampleSubsection"], $Line = 0; Null]], "ExampleSubsection"], Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Widen the gap between blocks to a blank line:", "ExampleText"], Cell[BoxData[RowBox[{"HTMLInnerText", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\[IndentingNewLine]", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"First.\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Second.\"", "}"}]}], "]"}]}], "}"}]}], "]"}], ",", "\[IndentingNewLine]", RowBox[{"\"BlockSeparator\"", "->", "\"\\n\\n\""}]}], "]"}]], "Input"],
 
 Cell[BoxData["\"First.\\n\\nSecond.\""], "Output"]}, Open]]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["AttributeReadings", "ExampleSubsection"], $Line = 0; Null]], "ExampleSubsection"], Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Split ", Cell[BoxData[StyleBox["rel", "TR"]], "InlineFormula"], " into tokens so that a rule can use the list key \"relList\":"}], "ExampleText"], Cell[BoxData["HTMLInnerText[
-XMLElement[\"p\",{},{\"Read \",XMLElement[\"a\",{\"rel\"->\"nofollow sponsored\"},{\"this ad\"}],\" the docs.\"}],
-\"Roles\"->{XMLPattern[\"a\",\"relList\"->\"sponsored\"]->\"Skip\"},
-\"AttributeReadings\"-><|\"rel\"-><||>|>]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["AttributeReadings", "ExampleSubsection"], $Line = 0; Null]], "ExampleSubsection"], Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Split ", Cell[BoxData[StyleBox["rel", "TR"]], "InlineFormula"], " into tokens so that a rule can use the list key \"relList\":"}], "ExampleText"], Cell[BoxData[RowBox[{"HTMLInnerText", "[", "\[IndentingNewLine]", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"\"Read \"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"rel\"", "->", "\"nofollow sponsored\""}], "}"}], ",", RowBox[{"{", "\"this ad\"", "}"}]}], "]"}], ",", "\" the docs.\""}], "}"}]}], "]"}], ",", "\[IndentingNewLine]", RowBox[{"\"Roles\"", "->", RowBox[{"{", RowBox[{RowBox[{"XMLPattern", "[", RowBox[{"\"a\"", ",", RowBox[{"\"relList\"", "->", "\"sponsored\""}]}], "]"}], "->", "\"Skip\""}], "}"}]}], ",", "\[IndentingNewLine]", RowBox[{"\"AttributeReadings\"", "->", RowBox[{"<|", RowBox[{"\"rel\"", "->", RowBox[{"<|", "|>"}]}], "|>"}]}]}], "]"}]], "Input"],
 
 Cell[BoxData["\"Read the docs.\""], "Output"]}, Open]]}, Open]]}, Open]],
 
@@ -281,8 +270,7 @@ Cell[CellGroupData[{Cell[BoxData[
   "Applications", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Read the byline of the 1989 proposal that founded the web as readable text:", "ExampleText"], Cell[BoxData["tree=Import[\"https://www.w3.org/History/1989/proposal.html\",{\"HTML\",\"XMLObject\"}];
-HTMLInnerText[XMLFirstCase[tree,XMLPattern[\"address\"]]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Read the byline of the 1989 proposal that founded the web as readable text:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"tree", "=", RowBox[{"Import", "[", RowBox[{"\"https://www.w3.org/History/1989/proposal.html\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"HTMLInnerText", "[", RowBox[{"XMLFirstCase", "[", RowBox[{"tree", ",", RowBox[{"XMLPattern", "[", "\"address\"", "]"}]}], "]"}], "]"}]}], "Input"],
 
 Cell[BoxData["\"Tim Berners-Lee, CERN\\nMarch 1989, May 1990\""], "Output"]}, Open]]}, Open]],
 
@@ -291,14 +279,11 @@ Cell[CellGroupData[{Cell[BoxData[
   "Properties & Relations", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Compare with ", Cell[BoxData[ButtonBox["HTMLTextContent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLTextContent"]], "InlineFormula"], ", which keeps the whitespace as written:"}], "ExampleText"], Cell[BoxData["doc=ImportString[\"<p>Hi   <em>there</em>, \\n  world</p>\",{\"HTML\",\"XMLObject\"}];
-{HTMLInnerText[doc],HTMLTextContent[doc]}"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Compare with ", Cell[BoxData[ButtonBox["HTMLTextContent", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLTextContent"]], "InlineFormula"], ", which keeps the whitespace as written:"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"doc", "=", RowBox[{"ImportString", "[", RowBox[{"\"<p>Hi   <em>there</em>, \\n  world</p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"{", RowBox[{RowBox[{"HTMLInnerText", "[", "doc", "]"}], ",", RowBox[{"HTMLTextContent", "[", "doc", "]"}]}], "}"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"\"Hi there, world\"", ",", "\"Hi   there, \\n  world\""}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["As in a web browser, block-level elements go on separate lines and inline ones do not:", "ExampleText"], Cell[BoxData["HTMLInnerText[XMLElement[\"div\",{},{
-XMLElement[\"p\",{},{\"one \",XMLElement[\"b\",{},{\"two\"}]}],
-XMLElement[\"p\",{},{\"three\"}]}]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["As in a web browser, block-level elements go on separate lines and inline ones do not:", "ExampleText"], Cell[BoxData[RowBox[{"HTMLInnerText", "[", RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\[IndentingNewLine]", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"\"one \"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"b\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"two\"", "}"}]}], "]"}]}], "}"}]}], "]"}], ",", "\[IndentingNewLine]", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"three\"", "}"}]}], "]"}]}], "}"}]}], "]"}], "]"}]], "Input"],
 
 Cell[BoxData["\"one two\\nthree\""], "Output"]}, Open]]}, Open]],
 
@@ -307,27 +292,25 @@ Cell[CellGroupData[{Cell[BoxData[
   "Possible Issues", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The ", Cell[BoxData[StyleBox["style", "TR"]], "InlineFormula"], " attribute is not read, so an element styled with ", Cell[BoxData["display:none"], "InlineFormula"], " still gives text:"}], "ExampleText"], Cell[BoxData["HTMLInnerText[XMLElement[\"p\",{},{\"keep \",XMLElement[\"span\",{\"style\"->\"display:none\"},{\"hidden\"}],\" this\"}]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The ", Cell[BoxData[StyleBox["style", "TR"]], "InlineFormula"], " attribute is not read, so an element styled with ", Cell[BoxData["display:none"], "InlineFormula"], " still gives text:"}], "ExampleText"], Cell[BoxData[RowBox[{"HTMLInnerText", "[", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"\"keep \"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"span\"", ",", RowBox[{"{", RowBox[{"\"style\"", "->", "\"display:none\""}], "}"}], ",", RowBox[{"{", "\"hidden\"", "}"}]}], "]"}], ",", "\" this\""}], "}"}]}], "]"}], "]"}]], "Input"],
 
 Cell[BoxData["\"keep hidden this\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["An unknown tag has the role \"Inline\", so it adds no line break:", "ExampleText"], Cell[BoxData["HTMLInnerText[XMLElement[\"p\",{},{\"a\",XMLElement[\"widget\",{},{\"b\"}],\"c\"}]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["An unknown tag has the role \"Inline\", so it adds no line break:", "ExampleText"], Cell[BoxData[RowBox[{"HTMLInnerText", "[", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"\"a\"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"widget\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"b\"", "}"}]}], "]"}], ",", "\"c\""}], "}"}]}], "]"}], "]"}]], "Input"],
 
 Cell[BoxData["\"abc\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A \"Roles\" rule that gives an invalid role issues a message and is ignored:", "ExampleText"], Cell[BoxData["HTMLInnerText[XMLElement[\"p\",{},{\"hi\"}],\"Roles\"->{\"p\"->\"Purple\"}]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A \"Roles\" rule that gives an invalid role issues a message and is ignored:", "ExampleText"], Cell[BoxData[RowBox[{"HTMLInnerText", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"hi\"", "}"}]}], "]"}], ",", RowBox[{"\"Roles\"", "->", RowBox[{"{", RowBox[{"\"p\"", "->", "\"Purple\""}], "}"}]}]}], "]"}]], "Input"],
 
 Cell["HTMLInnerText::badrole: A \"Roles\" rule gave \"Purple\", which is not \"Block\", \"Inline\", \"Preformatted\", \"LineBreak\" or \"Skip\". The element gets its role from the built-in user-agent stylesheet instead.", "Message", "MSG"],
 
 Cell[BoxData["\"hi\""], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A rule on \"class\" misses a span with two classes, where a rule on \"classList\" matches it:", "ExampleText"], Cell[BoxData["fragment=XMLElement[\"div\",{},{\"keep \",XMLElement[\"span\",{\"class\"->\"sr-only visually-hidden\"},{\"screenreader\"}],\" this\"}];
-{HTMLInnerText[fragment,\"Roles\"->{XMLPattern[\"span\",\"class\"->\"sr-only\"]->\"Skip\"}],
-HTMLInnerText[fragment,\"Roles\"->{XMLPattern[\"span\",\"classList\"->\"sr-only\"]->\"Skip\"}]}"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A rule on \"class\" misses a span with two classes, where a rule on \"classList\" matches it:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"fragment", "=", RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"\"keep \"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"span\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"sr-only visually-hidden\""}], "}"}], ",", RowBox[{"{", "\"screenreader\"", "}"}]}], "]"}], ",", "\" this\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"{", RowBox[{RowBox[{"HTMLInnerText", "[", RowBox[{"fragment", ",", RowBox[{"\"Roles\"", "->", RowBox[{"{", RowBox[{RowBox[{"XMLPattern", "[", RowBox[{"\"span\"", ",", RowBox[{"\"class\"", "->", "\"sr-only\""}]}], "]"}], "->", "\"Skip\""}], "}"}]}]}], "]"}], ",", "\[IndentingNewLine]", RowBox[{"HTMLInnerText", "[", RowBox[{"fragment", ",", RowBox[{"\"Roles\"", "->", RowBox[{"{", RowBox[{RowBox[{"XMLPattern", "[", RowBox[{"\"span\"", ",", RowBox[{"\"classList\"", "->", "\"sr-only\""}]}], "]"}], "->", "\"Skip\""}], "}"}]}]}], "]"}]}], "}"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"\"keep screenreader this\"", ",", "\"keep this\""}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A query must select elements, so a rule that names an attribute issues a message:", "ExampleText"], Cell[BoxData["HTMLInnerText[XMLElement[\"p\",{},{XMLElement[\"a\",{\"href\"->\"/\"},{\"Home\"}]}],\"Roles\"->{(XMLPattern[\"a\",\"href\"->h_]:>h)->\"Skip\"}]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A query must select elements, so a rule that names an attribute issues a message:", "ExampleText"], Cell[BoxData[RowBox[{"HTMLInnerText", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"href\"", "->", "\"/\""}], "}"}], ",", RowBox[{"{", "\"Home\"", "}"}]}], "]"}], "}"}]}], "]"}], ",", RowBox[{"\"Roles\"", "->", RowBox[{"{", RowBox[{RowBox[{"(", RowBox[{RowBox[{"XMLPattern", "[", RowBox[{"\"a\"", ",", RowBox[{"\"href\"", "->", "h_"}]}], "]"}], ":>", "h"}], ")"}], "->", "\"Skip\""}], "}"}]}]}], "]"}]], "Input"],
 
 Cell["HTMLInnerText::keytarget: A query key selects the position {1, 1, Key[\"href\"]}, which is not an element. A \"Roles\" or \"Constructs\" query should select elements only.", "Message", "MSG"],
 
@@ -335,7 +318,7 @@ Cell[BoxData["$Failed"], "Output"],
 
 Cell["Name the element instead:", "ExampleText"],
 
-Cell[BoxData["HTMLInnerText[XMLElement[\"p\",{},{XMLElement[\"a\",{\"href\"->\"/\"},{\"Home\"}],\" text\"}],\"Roles\"->{(x:XMLPattern[\"a\",\"href\"->_]:>x)->\"Skip\"}]"], "Input"],
+Cell[BoxData[RowBox[{"HTMLInnerText", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"href\"", "->", "\"/\""}], "}"}], ",", RowBox[{"{", "\"Home\"", "}"}]}], "]"}], ",", "\" text\""}], "}"}]}], "]"}], ",", RowBox[{"\"Roles\"", "->", RowBox[{"{", RowBox[{RowBox[{"(", RowBox[{RowBox[{"x", ":", RowBox[{"XMLPattern", "[", RowBox[{"\"a\"", ",", RowBox[{"\"href\"", "->", "_"}]}], "]"}]}], ":>", "x"}], ")"}], "->", "\"Skip\""}], "}"}]}]}], "]"}]], "Input"],
 
 Cell[BoxData["\"text\""], "Output"]}, Open]]}, Open]],
 

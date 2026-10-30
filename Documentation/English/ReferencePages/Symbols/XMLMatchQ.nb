@@ -137,20 +137,19 @@ Cell[CellGroupData[{Cell[BoxData[
    }],
   $Line = 0; Null]], "PrimaryExamplesSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Test whether an element has a given tag:", "ExampleText"], Cell[BoxData["XMLMatchQ[XMLElement[\"p\",{\"class\"->\"lead\"},{\"Intro.\"}],XMLPattern[\"p\"]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Test whether an element has a given tag:", "ExampleText"], Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"lead\""}], "}"}], ",", RowBox[{"{", "\"Intro.\"", "}"}]}], "]"}], ",", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "]"}]], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Test whether an element has the class ", Cell[BoxData[StyleBox["lead", "TR"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["XMLMatchQ[XMLElement[\"p\",{\"class\"->\"lead disclaimer\"},{\"Intro.\"}],XMLPattern[\"p\",\"classList\"->\"lead\"]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Test whether an element has the class ", Cell[BoxData[StyleBox["lead", "TR"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"lead disclaimer\""}], "}"}], ",", RowBox[{"{", "\"Intro.\"", "}"}]}], "]"}], ",", RowBox[{"XMLPattern", "[", RowBox[{"\"p\"", ",", RowBox[{"\"classList\"", "->", "\"lead\""}]}], "]"}]}], "]"}]], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Test whether a list has an item, with a constraint on its children:", "ExampleText"], Cell[BoxData["XMLMatchQ[XMLElement[\"ul\", {}, {XMLElement[\"li\", {}, {\"Miso\"}]}], XMLPattern[\"ul\"][Child[XMLPattern[\"li\"]]]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Test whether a list has an item, with a constraint on its children:", "ExampleText"], Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"ul\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Miso\"", "}"}]}], "]"}], "}"}]}], "]"}], ",", RowBox[{RowBox[{"XMLPattern", "[", "\"ul\"", "]"}], "[", RowBox[{"Child", "[", RowBox[{"XMLPattern", "[", "\"li\"", "]"}], "]"}], "]"}]}], "]"}]], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Use the operator form to select the links that have a target:", "ExampleText"], Cell[BoxData["links={XMLElement[\"a\",{\"href\"->\"/home\"},{\"Home\"}],XMLElement[\"a\",{\"name\"->\"top\"},{\"Top\"}]};
-Select[links,XMLMatchQ[XMLPattern[\"a\",\"href\"]]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Use the operator form to select the links that have a target:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"links", "=", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"href\"", "->", "\"/home\""}], "}"}], ",", RowBox[{"{", "\"Home\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"name\"", "->", "\"top\""}], "}"}], ",", RowBox[{"{", "\"Top\"", "}"}]}], "]"}]}], "}"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"Select", "[", RowBox[{"links", ",", RowBox[{"XMLMatchQ", "[", RowBox[{"XMLPattern", "[", RowBox[{"\"a\"", ",", "\"href\""}], "]"}], "]"}]}], "]"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"href\"", "\[Rule]", "\"/home\""}], "}"}], ",", RowBox[{"{", "\"Home\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]]}, Open]],
 
@@ -174,19 +173,19 @@ Cell[CellGroupData[{Cell[BoxData[
   "Scope", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Match any of several XML patterns with an ", Cell[BoxData[ButtonBox["Alternatives", BaseStyle -> "Link", ButtonData -> "paclet:ref/Alternatives"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["XMLMatchQ[XMLElement[\"h2\",{},{\"Sub\"}],XMLPattern[\"h1\"]|XMLPattern[\"h2\"]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Match any of several XML patterns with an ", Cell[BoxData[ButtonBox["Alternatives", BaseStyle -> "Link", ButtonData -> "paclet:ref/Alternatives"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"h2\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Sub\"", "}"}]}], "]"}], ",", RowBox[{RowBox[{"XMLPattern", "[", "\"h1\"", "]"}], "|", RowBox[{"XMLPattern", "[", "\"h2\"", "]"}]}]}], "]"}]], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Test a value bound in the pattern with a ", Cell[BoxData[ButtonBox["Condition", BaseStyle -> "Link", ButtonData -> "paclet:ref/Condition"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["XMLMatchQ[XMLElement[\"a\",{\"href\"->\"https://example.com\"},{\"Example\"}],XMLPattern[\"a\",\"href\"->href_]/;StringStartsQ[href,\"https:\"]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Test a value bound in the pattern with a ", Cell[BoxData[ButtonBox["Condition", BaseStyle -> "Link", ButtonData -> "paclet:ref/Condition"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"href\"", "->", "\"https://example.com\""}], "}"}], ",", RowBox[{"{", "\"Example\"", "}"}]}], "]"}], ",", RowBox[{RowBox[{"XMLPattern", "[", RowBox[{"\"a\"", ",", RowBox[{"\"href\"", "->", "href_"}]}], "]"}], "/;", RowBox[{"StringStartsQ", "[", RowBox[{"href", ",", "\"https:\""}], "]"}]}]}], "]"}]], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Name the whole element and test it with a ", Cell[BoxData[ButtonBox["Condition", BaseStyle -> "Link", ButtonData -> "paclet:ref/Condition"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["XMLMatchQ[XMLElement[\"p\",{},{\"Hello\"}],element:XMLPattern[\"p\"]/;HTMLTextContent[element]=!=\"\"]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Name the whole element and test it with a ", Cell[BoxData[ButtonBox["Condition", BaseStyle -> "Link", ButtonData -> "paclet:ref/Condition"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Hello\"", "}"}]}], "]"}], ",", RowBox[{RowBox[{"element", ":", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "/;", RowBox[{RowBox[{"HTMLTextContent", "[", "element", "]"}], "=!=", "\"\""}]}]}], "]"}]], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Check for several classes in any order with ", Cell[BoxData[ButtonBox["ContainsAll", BaseStyle -> "Link", ButtonData -> "paclet:ref/ContainsAll"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["XMLMatchQ[XMLElement[\"li\",{\"class\"->\"item active\"},{\"A\"}],XMLPattern[\"li\",\"classList\"->_?(ContainsAll[{\"active\",\"item\"}])]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Check for several classes in any order with ", Cell[BoxData[ButtonBox["ContainsAll", BaseStyle -> "Link", ButtonData -> "paclet:ref/ContainsAll"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"item active\""}], "}"}], ",", RowBox[{"{", "\"A\"", "}"}]}], "]"}], ",", RowBox[{"XMLPattern", "[", RowBox[{"\"li\"", ",", RowBox[{"\"classList\"", "->", RowBox[{"_", "?", RowBox[{"(", RowBox[{"ContainsAll", "[", RowBox[{"{", RowBox[{"\"active\"", ",", "\"item\""}], "}"}], "]"}], ")"}]}]}]}], "]"}]}], "]"}]], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
@@ -194,35 +193,33 @@ Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"
 
 Cell[BoxData[RowBox[{"{", RowBox[{"True", ",", "False"}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give an XMLElement pattern to match the contents exactly, text included:", "ExampleText"], Cell[BoxData["element=XMLElement[\"p\",{},{\"Hello\"}];
-{XMLMatchQ[element,XMLElement[\"p\",_,{\"Hello\"}]],XMLMatchQ[element,XMLElement[\"p\",_,{}]]}"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give an XMLElement pattern to match the contents exactly, text included:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"element", "=", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Hello\"", "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"{", RowBox[{RowBox[{"XMLMatchQ", "[", RowBox[{"element", ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", "_", ",", RowBox[{"{", "\"Hello\"", "}"}]}], "]"}]}], "]"}], ",", RowBox[{"XMLMatchQ", "[", RowBox[{"element", ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", "_", ",", RowBox[{"{", "}"}]}], "]"}]}], "]"}]}], "}"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"True", ",", "False"}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Test a document with an XMLDocument pattern:", "ExampleText"], Cell[BoxData["page=ImportString[\"<html><body><p>Text</p></body></html>\",{\"HTML\",\"XMLObject\"}];
-XMLMatchQ[page,XMLDocument[{XMLPattern[\"html\"]}]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Test a document with an XMLDocument pattern:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"page", "=", RowBox[{"ImportString", "[", RowBox[{"\"<html><body><p>Text</p></body></html>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLMatchQ", "[", RowBox[{"page", ",", RowBox[{"XMLDocument", "[", RowBox[{"{", RowBox[{"XMLPattern", "[", "\"html\"", "]"}], "}"}], "]"}]}], "]"}]}], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Test a list of elements with a list pattern, which leaves strings out:", "ExampleText"], Cell[BoxData["XMLMatchQ[{XMLElement[\"th\",{},{\"Day\"}],\"\\n\",XMLElement[\"td\",{},{\"Friday\"}]},{XMLPattern[\"th\"],___}]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Test a list of elements with a list pattern, which leaves strings out:", "ExampleText"], Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"th\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Day\"", "}"}]}], "]"}], ",", "\"\\n\"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"td\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Friday\"", "}"}]}], "]"}]}], "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLPattern", "[", "\"th\"", "]"}], ",", "___"}], "}"}]}], "]"}]], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give a CSS selector string that describes one element:", "ExampleText"], Cell[BoxData["XMLMatchQ[XMLElement[\"a\",{\"class\"->\"external\",\"href\"->\"https://example.org\"},{\"Example\"}],\"a.external[href]\"]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give a CSS selector string that describes one element:", "ExampleText"], Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{RowBox[{"\"class\"", "->", "\"external\""}], ",", RowBox[{"\"href\"", "->", "\"https://example.org\""}]}], "}"}], ",", RowBox[{"{", "\"Example\"", "}"}]}], "]"}], ",", "\"a.external[href]\""}], "]"}]], "Input"],
 
 Cell[BoxData["True"], "Output"],
 
 Cell["A selector that looks below the element can be tested:", "ExampleText"],
 
-Cell[BoxData["XMLMatchQ[XMLElement[\"div\",{},{XMLElement[\"table\",{},{}]}],\"div:has(> table)\"]"], "Input"],
+Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"table\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "}"}]}], "]"}], ",", "\"div:has(> table)\""}], "]"}]], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Only the element itself is tested as the root:", "ExampleText"], Cell[BoxData["XMLMatchQ[XMLElement[\"div\",{},{XMLElement[\"p\",{},{\"text\"}]}],XMLPattern[\"p\"]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Only the element itself is tested as the root:", "ExampleText"], Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"text\"", "}"}]}], "]"}], "}"}]}], "]"}], ",", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "]"}]], "Input"],
 
 Cell[BoxData["False"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"An expression that is not an element gives ", Cell[BoxData[ButtonBox["False", BaseStyle -> "Link", ButtonData -> "paclet:ref/False"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["XMLMatchQ[\"text\",XMLPattern[\"p\"]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"An expression that is not an element gives ", Cell[BoxData[ButtonBox["False", BaseStyle -> "Link", ButtonData -> "paclet:ref/False"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{"\"text\"", ",", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "]"}]], "Input"],
 
 Cell[BoxData["False"], "Output"]}, Open]]}, Open]],
 
@@ -238,20 +235,19 @@ Cell[BoxData[
   "Options", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["AttributeReadings", "ExampleSubsection"], $Line = 0; Null]], "ExampleSubsection"], Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Split ", Cell[BoxData[StyleBox["rel", "TR"]], "InlineFormula"], " into tokens and match them at the list key ", Cell[BoxData["\"relList\""], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["XMLMatchQ[XMLElement[\"a\",{\"rel\"->\"nofollow noopener\",\"href\"->\"/ad\"},{\"Ad\"}],XMLPattern[\"a\",\"relList\"->\"nofollow\"],\"AttributeReadings\"-> <|\"rel\"-> <||>|>]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["AttributeReadings", "ExampleSubsection"], $Line = 0; Null]], "ExampleSubsection"], Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Split ", Cell[BoxData[StyleBox["rel", "TR"]], "InlineFormula"], " into tokens and match them at the list key ", Cell[BoxData["\"relList\""], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{RowBox[{"\"rel\"", "->", "\"nofollow noopener\""}], ",", RowBox[{"\"href\"", "->", "\"/ad\""}]}], "}"}], ",", RowBox[{"{", "\"Ad\"", "}"}]}], "]"}], ",", RowBox[{"XMLPattern", "[", RowBox[{"\"a\"", ",", RowBox[{"\"relList\"", "->", "\"nofollow\""}]}], "]"}], ",", RowBox[{"\"AttributeReadings\"", "->", RowBox[{"<|", RowBox[{"\"rel\"", "->", RowBox[{"<|", "|>"}]}], "|>"}]}]}], "]"}]], "Input"],
 
 Cell[BoxData["True"], "Output"],
 
 Cell[TextData[{"Without the option, ", Cell[BoxData["\"relList\""], "InlineFormula"], " is an ordinary key, and the element has no such attribute:"}], "ExampleText"],
 
-Cell[BoxData["XMLMatchQ[XMLElement[\"a\",{\"rel\"->\"nofollow noopener\",\"href\"->\"/ad\"},{\"Ad\"}],XMLPattern[\"a\",\"relList\"->\"nofollow\"]]"], "Input"],
+Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{RowBox[{"\"rel\"", "->", "\"nofollow noopener\""}], ",", RowBox[{"\"href\"", "->", "\"/ad\""}]}], "}"}], ",", RowBox[{"{", "\"Ad\"", "}"}]}], "]"}], ",", RowBox[{"XMLPattern", "[", RowBox[{"\"a\"", ",", RowBox[{"\"relList\"", "->", "\"nofollow\""}]}], "]"}]}], "]"}]], "Input"],
 
 Cell["XMLPattern::nolistreading: The key \"relList\" looks like a list key, but \"rel\" has no reading, so \"relList\" is matched as an attribute of that name. To match the tokens of \"rel\", add a reading: $AttributeReadings[\"rel\"] = <||> for the session, or \"AttributeReadings\" -> <|\"rel\" -> <||>|> in the call.", "Message", "MSG"],
 
 Cell[BoxData["False"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["In the operator form, give the option with the pattern:", "ExampleText"], Cell[BoxData["links={XMLElement[\"a\",{\"rel\"->\"nofollow\"},{\"Ad\"}],XMLElement[\"a\",{\"href\"->\"/home\"},{\"Home\"}]};
-Select[links,XMLMatchQ[XMLPattern[\"a\",\"relList\"->_?(FreeQ[\"nofollow\"])],\"AttributeReadings\"-> <|\"rel\"-> <||>|>]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["In the operator form, give the option with the pattern:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"links", "=", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"rel\"", "->", "\"nofollow\""}], "}"}], ",", RowBox[{"{", "\"Ad\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"href\"", "->", "\"/home\""}], "}"}], ",", RowBox[{"{", "\"Home\"", "}"}]}], "]"}]}], "}"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"Select", "[", RowBox[{"links", ",", RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"XMLPattern", "[", RowBox[{"\"a\"", ",", RowBox[{"\"relList\"", "->", RowBox[{"_", "?", RowBox[{"(", RowBox[{"FreeQ", "[", "\"nofollow\"", "]"}], ")"}]}]}]}], "]"}], ",", RowBox[{"\"AttributeReadings\"", "->", RowBox[{"<|", RowBox[{"\"rel\"", "->", RowBox[{"<|", "|>"}]}], "|>"}]}]}], "]"}]}], "]"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"href\"", "\[Rule]", "\"/home\""}], "}"}], ",", RowBox[{"{", "\"Home\"", "}"}]}], "]"}], "}"}]], "Output"]}, Open]]}, Open]],
 
@@ -271,18 +267,15 @@ Cell[CellGroupData[{Cell[BoxData[
   "Applications", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Split the links of a page into absolute and relative ones:", "ExampleText"], Cell[BoxData["page=ImportString[\"<p><a href=\\\"https://w3.org\\\">W3C</a> <a href=\\\"/about\\\">About</a> <a href=\\\"http://example.com\\\">Example</a> <a name=\\\"top\\\">Top</a></p>\",{\"HTML\",\"XMLObject\"}];
-GroupBy[XMLCases[page,XMLPattern[\"a\",\"href\"]],XMLMatchQ[XMLPattern[\"a\",\"href\"->_?(StringStartsQ[\"http\"])]]->HTMLTextContent]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Split the links of a page into absolute and relative ones:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"page", "=", RowBox[{"ImportString", "[", RowBox[{"\"<p><a href=\\\"https://w3.org\\\">W3C</a> <a href=\\\"/about\\\">About</a> <a href=\\\"http://example.com\\\">Example</a> <a name=\\\"top\\\">Top</a></p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"GroupBy", "[", RowBox[{RowBox[{"XMLCases", "[", RowBox[{"page", ",", RowBox[{"XMLPattern", "[", RowBox[{"\"a\"", ",", "\"href\""}], "]"}]}], "]"}], ",", RowBox[{RowBox[{"XMLMatchQ", "[", RowBox[{"XMLPattern", "[", RowBox[{"\"a\"", ",", RowBox[{"\"href\"", "->", RowBox[{"_", "?", RowBox[{"(", RowBox[{"StringStartsQ", "[", "\"http\"", "]"}], ")"}]}]}]}], "]"}], "]"}], "->", "HTMLTextContent"}]}], "]"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"\[LeftAssociation]", RowBox[{RowBox[{"True", "\[Rule]", RowBox[{"{", RowBox[{"\"W3C\"", ",", "\"Example\""}], "}"}]}], ",", RowBox[{"False", "\[Rule]", RowBox[{"{", "\"About\"", "}"}]}]}], "\[RightAssociation]"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Count the list items that have the class ", Cell[BoxData[StyleBox["active", "TR"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["menu=ImportString[\"<ul><li class=\\\"item active\\\">A</li><li class=\\\"item\\\">B</li><li class=\\\"active\\\">C</li></ul>\",{\"HTML\",\"XMLObject\"}];
-Count[XMLCases[menu,XMLPattern[\"li\"]],_?(XMLMatchQ[XMLPattern[\"li\",\"classList\"->\"active\"]])]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Count the list items that have the class ", Cell[BoxData[StyleBox["active", "TR"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"menu", "=", RowBox[{"ImportString", "[", RowBox[{"\"<ul><li class=\\\"item active\\\">A</li><li class=\\\"item\\\">B</li><li class=\\\"active\\\">C</li></ul>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"Count", "[", RowBox[{RowBox[{"XMLCases", "[", RowBox[{"menu", ",", RowBox[{"XMLPattern", "[", "\"li\"", "]"}]}], "]"}], ",", RowBox[{"_", "?", RowBox[{"(", RowBox[{"XMLMatchQ", "[", RowBox[{"XMLPattern", "[", RowBox[{"\"li\"", ",", RowBox[{"\"classList\"", "->", "\"active\""}]}], "]"}], "]"}], ")"}]}]}], "]"}]}], "Input"],
 
 Cell[BoxData["2"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Test the elements on the path to a link, here for a link outside any nav:", "ExampleText"], Cell[BoxData["page=ImportString[\"<body><nav><a href=\\\"/\\\">Home</a></nav><p>See <a href=\\\"/about\\\">About</a>.</p></body>\",{\"HTML\",\"XMLObject\"}];
-XMLCases[page,XMLDocument[Descendant[x:XMLPattern[\"a\"]]?(NoneTrue[XMLMatchQ[\"nav\"]])]:>HTMLTextContent[x]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Test the elements on the path to a link, here for a link outside any nav:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"page", "=", RowBox[{"ImportString", "[", RowBox[{"\"<body><nav><a href=\\\"/\\\">Home</a></nav><p>See <a href=\\\"/about\\\">About</a>.</p></body>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLCases", "[", RowBox[{"page", ",", RowBox[{RowBox[{"XMLDocument", "[", RowBox[{RowBox[{"Descendant", "[", RowBox[{"x", ":", RowBox[{"XMLPattern", "[", "\"a\"", "]"}]}], "]"}], "?", RowBox[{"(", RowBox[{"NoneTrue", "[", RowBox[{"XMLMatchQ", "[", "\"nav\"", "]"}], "]"}], ")"}]}], "]"}], ":>", RowBox[{"HTMLTextContent", "[", "x", "]"}]}]}], "]"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", "\"About\"", "}"}]], "Output"]}, Open]]}, Open]],
 
@@ -291,28 +284,25 @@ Cell[CellGroupData[{Cell[BoxData[
   "Properties & Relations", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLCases"]], "InlineFormula"], " searches inside an element, and ", Cell[BoxData[ButtonBox["XMLMatchQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLMatchQ"]], "InlineFormula"], " tests only the element itself:"}], "ExampleText"], Cell[BoxData["div=XMLElement[\"div\",{},{XMLElement[\"p\",{},{\"text\"}]}];
-{XMLMatchQ[div,XMLPattern[\"p\"]],XMLCases[div,XMLPattern[\"p\"]]}"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLCases"]], "InlineFormula"], " searches inside an element, and ", Cell[BoxData[ButtonBox["XMLMatchQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLMatchQ"]], "InlineFormula"], " tests only the element itself:"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"div", "=", RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"text\"", "}"}]}], "]"}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"{", RowBox[{RowBox[{"XMLMatchQ", "[", RowBox[{"div", ",", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "]"}], ",", RowBox[{"XMLCases", "[", RowBox[{"div", ",", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "]"}]}], "}"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"False", ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"text\"", "}"}]}], "]"}], "}"}]}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["XMLFreeQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLFreeQ"]], "InlineFormula"], " tests every element of a tree, and ", Cell[BoxData[ButtonBox["XMLMatchQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLMatchQ"]], "InlineFormula"], " only the element given:"}], "ExampleText"], Cell[BoxData["div=XMLElement[\"div\",{},{XMLElement[\"p\",{},{\"text\"}]}];
-{XMLMatchQ[div,XMLPattern[\"p\"]],XMLFreeQ[div,XMLPattern[\"p\"]]}"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["XMLFreeQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLFreeQ"]], "InlineFormula"], " tests every element of a tree, and ", Cell[BoxData[ButtonBox["XMLMatchQ", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLMatchQ"]], "InlineFormula"], " only the element given:"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"div", "=", RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"text\"", "}"}]}], "]"}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"{", RowBox[{RowBox[{"XMLMatchQ", "[", RowBox[{"div", ",", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "]"}], ",", RowBox[{"XMLFreeQ", "[", RowBox[{"div", ",", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "]"}]}], "}"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"False", ",", "False"}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["MatchQ", BaseStyle -> "Link", ButtonData -> "paclet:ref/MatchQ"]], "InlineFormula"], " treats an ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], " as a literal expression, as it treats a string pattern:"}], "ExampleText"], Cell[BoxData["{MatchQ[XMLElement[\"p\",{},{}],XMLPattern[\"p\"]],XMLMatchQ[XMLElement[\"p\",{},{}],XMLPattern[\"p\"]]}"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["MatchQ", BaseStyle -> "Link", ButtonData -> "paclet:ref/MatchQ"]], "InlineFormula"], " treats an ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], " as a literal expression, as it treats a string pattern:"}], "ExampleText"], Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"MatchQ", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "]"}], ",", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "]"}], ",", RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "]"}], ",", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "]"}]}], "}"}]], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"False", ",", "True"}], "}"}]], "Output"],
 
 Cell["Compare with string patterns:", "ExampleText"],
 
-Cell[BoxData["{MatchQ[\"abc\",\"a\"~~__],StringMatchQ[\"abc\",\"a\"~~__]}"], "Input"],
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"MatchQ", "[", RowBox[{"\"abc\"", ",", RowBox[{"\"a\"", "~~", "__"}]}], "]"}], ",", RowBox[{"StringMatchQ", "[", RowBox[{"\"abc\"", ",", RowBox[{"\"a\"", "~~", "__"}]}], "]"}]}], "}"}]], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"False", ",", "True"}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The list key ", Cell[BoxData["\"classList\""], "InlineFormula"], " gives the same classes as ", Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["element=XMLElement[\"p\",{\"class\"->\"lead disclaimer\"},{\"Intro.\"}];
-{XMLMatchQ[element,XMLPattern[\"p\",\"classList\"->\"lead\"]],MemberQ[HTMLClassList[element],\"lead\"]}"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The list key ", Cell[BoxData["\"classList\""], "InlineFormula"], " gives the same classes as ", Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"element", "=", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"lead disclaimer\""}], "}"}], ",", RowBox[{"{", "\"Intro.\"", "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"{", RowBox[{RowBox[{"XMLMatchQ", "[", RowBox[{"element", ",", RowBox[{"XMLPattern", "[", RowBox[{"\"p\"", ",", RowBox[{"\"classList\"", "->", "\"lead\""}]}], "]"}]}], "]"}], ",", RowBox[{"MemberQ", "[", RowBox[{RowBox[{"HTMLClassList", "[", "element", "]"}], ",", "\"lead\""}], "]"}]}], "}"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"True", ",", "True"}], "}"}]], "Output"]}, Open]]}, Open]],
 
@@ -321,7 +311,7 @@ Cell[CellGroupData[{Cell[BoxData[
   "Possible Issues", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A CSS selector that looks above the element gives ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["XMLMatchQ[XMLElement[\"a\",{},{}],\"nav a\"]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A CSS selector that looks above the element gives ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "]"}], ",", "\"nav a\""}], "]"}]], "Input"],
 
 Cell["XMLMatchQ::badpat: The pattern should be an XMLPattern, an XMLElement pattern, an XMLDocument pattern, a list pattern for a list of elements, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f. A rule gives a value, not a test. A CSS selector such as \"nav a\" or \"ul > li\" looks above the element, which a lone element does not have; use XMLCases or XMLPosition to search a tree with it. Adjacent and Sibling were removed in version 4; a test of an element's children constrains them, as in XMLPattern[\"ul\"][Child[XMLPattern[\"li\"]]], and XMLCases searches a tree with a rule, as in XMLPattern[\"ul\"][Child[x : XMLPattern[\"li\"]]] :> x. Got \"nav a\".", "Message", "MSG"],
 
@@ -329,25 +319,25 @@ Cell[BoxData["$Failed"], "Output"],
 
 Cell["Search a tree with the selector instead:", "ExampleText"],
 
-Cell[BoxData["XMLCases[XMLElement[\"nav\",{},{XMLElement[\"a\",{},{}]}],\"nav a\"]"], "Input"],
+Cell[BoxData[RowBox[{"XMLCases", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"nav\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "}"}]}], "]"}], ",", "\"nav a\""}], "]"}]], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A rule gives ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], ", since it gives a value rather than a test:"}], "ExampleText"], Cell[BoxData["XMLMatchQ[XMLElement[\"a\",{},{}],x:XMLPattern[\"a\"]:>x]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A rule gives ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], ", since it gives a value rather than a test:"}], "ExampleText"], Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "]"}], ",", RowBox[{RowBox[{"x", ":", RowBox[{"XMLPattern", "[", "\"a\"", "]"}]}], ":>", "x"}]}], "]"}]], "Input"],
 
 Cell["XMLMatchQ::badpat: The pattern should be an XMLPattern, an XMLElement pattern, an XMLDocument pattern, a list pattern for a list of elements, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f. A rule gives a value, not a test. A CSS selector such as \"nav a\" or \"ul > li\" looks above the element, which a lone element does not have; use XMLCases or XMLPosition to search a tree with it. Adjacent and Sibling were removed in version 4; a test of an element's children constrains them, as in XMLPattern[\"ul\"][Child[XMLPattern[\"li\"]]], and XMLCases searches a tree with a rule, as in XMLPattern[\"ul\"][Child[x : XMLPattern[\"li\"]]] :> x. Got x:XMLPattern[\"a\"] :> x.", "Message", "MSG"],
 
 Cell[BoxData["$Failed"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"An element tested against an XMLDocument pattern gives ", Cell[BoxData[ButtonBox["False", BaseStyle -> "Link", ButtonData -> "paclet:ref/False"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["XMLMatchQ[XMLElement[\"html\",{},{}],XMLDocument[{XMLPattern[\"html\"]}]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"An element tested against an XMLDocument pattern gives ", Cell[BoxData[ButtonBox["False", BaseStyle -> "Link", ButtonData -> "paclet:ref/False"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"html\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "]"}], ",", RowBox[{"XMLDocument", "[", RowBox[{"{", RowBox[{"XMLPattern", "[", "\"html\"", "]"}], "}"}], "]"}]}], "]"}]], "Input"],
 
 Cell[BoxData["False"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A list of elements tested against an element pattern gives ", Cell[BoxData[ButtonBox["False", BaseStyle -> "Link", ButtonData -> "paclet:ref/False"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["XMLMatchQ[{XMLElement[\"a\",{},{}]},XMLPattern[\"a\"]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A list of elements tested against an element pattern gives ", Cell[BoxData[ButtonBox["False", BaseStyle -> "Link", ButtonData -> "paclet:ref/False"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "}"}], ",", RowBox[{"XMLPattern", "[", "\"a\"", "]"}]}], "]"}]], "Input"],
 
 Cell[BoxData["False"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The version 3 combinators are removed, and a pattern that uses one gives ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["XMLMatchQ[XMLElement[\"div\",{},{XMLElement[\"p\",{},{}]}],Child[XMLPattern[\"div\"],XMLPattern[\"p\"]]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"The version 3 combinators are removed, and a pattern that uses one gives ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "}"}]}], "]"}], ",", RowBox[{"Child", "[", RowBox[{RowBox[{"XMLPattern", "[", "\"div\"", "]"}], ",", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "]"}]}], "]"}]], "Input"],
 
 Cell["Child::place: Child[XMLPattern[\"div\"], XMLPattern[\"p\"]] is not a pattern. Child is a constraint, which can only be an argument of the bracket after XMLPattern[tag, attrs] or of XMLDocument: XMLPattern[\"ul\"][Child[x : XMLPattern[\"li\"]]] :> x gives the li children of each ul. In version 3, Child[a, b] gave the children that match b of the elements that match a; in version 4 that is the rule above. Child takes one pattern: for children that match several patterns, give several constraints, Child[a], Child[b], or a list, {___, a, ___, b, ___}.", "Message", "MSG"],
 
@@ -355,11 +345,11 @@ Cell[BoxData["$Failed"], "Output"],
 
 Cell["Test the children with a constraint instead:", "ExampleText"],
 
-Cell[BoxData["XMLMatchQ[XMLElement[\"div\", {}, {XMLElement[\"p\", {}, {}]}], XMLPattern[\"div\"][Child[XMLPattern[\"p\"]]]]"], "Input"],
+Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "}"}]}], "]"}], ",", RowBox[{RowBox[{"XMLPattern", "[", "\"div\"", "]"}], "[", RowBox[{"Child", "[", RowBox[{"XMLPattern", "[", "\"p\"", "]"}], "]"}], "]"}]}], "]"}]], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A malformed pattern gives ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], " rather than ", Cell[BoxData[ButtonBox["False", BaseStyle -> "Link", ButtonData -> "paclet:ref/False"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["XMLMatchQ[XMLElement[\"div\",{\"class\"->\"col-6\"},{}],XMLPattern[\"div\",\"classList\"->\"col-\"~~__]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A malformed pattern gives ", Cell[BoxData[ButtonBox["$Failed", BaseStyle -> "Link", ButtonData -> "paclet:ref/$Failed"]], "InlineFormula"], " rather than ", Cell[BoxData[ButtonBox["False", BaseStyle -> "Link", ButtonData -> "paclet:ref/False"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"col-6\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}], ",", RowBox[{"XMLPattern", "[", RowBox[{"\"div\"", ",", RowBox[{"\"classList\"", "->", RowBox[{"\"col-\"", "~~", "__"}]}]}], "]"}]}], "]"}]], "Input"],
 
 Cell["XMLPattern::strpat: \"col-\"~~__ is a string pattern, and in an XMLPattern it does not match any string. Write _?(StringMatchQ[\"col-\"~~__]) instead.", "Message", "MSG"],
 
@@ -367,7 +357,7 @@ Cell[BoxData["$Failed"], "Output"],
 
 Cell[TextData[{"Test the classes with ", Cell[BoxData[ButtonBox["StringMatchQ", BaseStyle -> "Link", ButtonData -> "paclet:ref/StringMatchQ"]], "InlineFormula"], " instead:"}], "ExampleText"],
 
-Cell[BoxData["XMLMatchQ[XMLElement[\"div\",{\"class\"->\"col-6\"},{}],XMLPattern[\"div\",\"classList\"->_?(AnyTrue[StringMatchQ[\"col-\"~~__]])]]"], "Input"],
+Cell[BoxData[RowBox[{"XMLMatchQ", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"col-6\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}], ",", RowBox[{"XMLPattern", "[", RowBox[{"\"div\"", ",", RowBox[{"\"classList\"", "->", RowBox[{"_", "?", RowBox[{"(", RowBox[{"AnyTrue", "[", RowBox[{"StringMatchQ", "[", RowBox[{"\"col-\"", "~~", "__"}], "]"}], "]"}], ")"}]}]}]}], "]"}]}], "]"}]], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]]}, Open]],
 

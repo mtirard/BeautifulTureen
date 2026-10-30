@@ -136,19 +136,17 @@ Cell[CellGroupData[{Cell[BoxData[
    }],
   $Line = 0; Null]], "PrimaryExamplesSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give the element at a position:", "ExampleText"], Cell[BoxData["listing=XMLElement[\"ul\",{\"class\"->\"a b\"},{XMLElement[\"li\",{},{\"one\"}],\" \",XMLElement[\"li\",{},{XMLElement[\"a\",{\"href\"->\"/x\"},{\"two\"}]}]}];
-XMLExtract[{listing},{1,2}]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give the element at a position:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"listing", "=", RowBox[{"XMLElement", "[", RowBox[{"\"ul\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"a b\""}], "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"one\"", "}"}]}], "]"}], ",", "\" \"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"href\"", "->", "\"/x\""}], "}"}], ",", RowBox[{"{", "\"two\"", "}"}]}], "]"}], "}"}]}], "]"}]}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLExtract", "[", RowBox[{RowBox[{"{", "listing", "}"}], ",", RowBox[{"{", RowBox[{"1", ",", "2"}], "}"}]}], "]"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"href\"", "\[Rule]", "\"/x\""}], "}"}], ",", RowBox[{"{", "\"two\"", "}"}]}], "]"}], "}"}]}], "]"}]], "Output"],
 
 Cell["Give the parts at several positions:", "ExampleText"],
 
-Cell[BoxData["XMLExtract[{listing},{{1,0},{1,Key[\"class\"]},{1,2,1,Key[\"href\"]}}]"], "Input"],
+Cell[BoxData[RowBox[{"XMLExtract", "[", RowBox[{RowBox[{"{", "listing", "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"1", ",", "0"}], "}"}], ",", RowBox[{"{", RowBox[{"1", ",", RowBox[{"Key", "[", "\"class\"", "]"}]}], "}"}], ",", RowBox[{"{", RowBox[{"1", ",", "2", ",", "1", ",", RowBox[{"Key", "[", "\"href\"", "]"}]}], "}"}]}], "}"}]}], "]"}]], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"\"ul\"", ",", "\"a b\"", ",", "\"/x\""}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give the parts that XMLPosition finds:", "ExampleText"], Cell[BoxData["links=ImportString[\"<p><a href=\\\"/a\\\">A</a> and <a href=\\\"/b\\\">B</a></p>\",{\"HTML\",\"XMLObject\"}];
-XMLExtract[links,XMLPosition[links,XMLPattern[\"a\",\"href\"->h_]:>h]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give the parts that XMLPosition finds:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"links", "=", RowBox[{"ImportString", "[", RowBox[{"\"<p><a href=\\\"/a\\\">A</a> and <a href=\\\"/b\\\">B</a></p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLExtract", "[", RowBox[{"links", ",", RowBox[{"XMLPosition", "[", RowBox[{"links", ",", RowBox[{RowBox[{"XMLPattern", "[", RowBox[{"\"a\"", ",", RowBox[{"\"href\"", "->", "h_"}]}], "]"}], ":>", "h"}]}], "]"}]}], "]"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"\"/a\"", ",", "\"/b\""}], "}"}]], "Output"]}, Open]]}, Open]],
 
@@ -172,56 +170,51 @@ Cell[CellGroupData[{Cell[BoxData[
   "Scope", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give the document, the root element and its tag:", "ExampleText"], Cell[BoxData["listing=XMLElement[\"ul\",{\"class\"->\"a b\"},{XMLElement[\"li\",{},{\"one\"}],\" \",XMLElement[\"li\",{},{XMLElement[\"a\",{\"href\"->\"/x\"},{\"two\"}]}]}];
-{XMLExtract[{listing},{}],XMLExtract[{listing},{1,0}]}"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give the document, the root element and its tag:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"listing", "=", RowBox[{"XMLElement", "[", RowBox[{"\"ul\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"a b\""}], "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"one\"", "}"}]}], "]"}], ",", "\" \"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"href\"", "->", "\"/x\""}], "}"}], ",", RowBox[{"{", "\"two\"", "}"}]}], "]"}], "}"}]}], "]"}]}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"{", RowBox[{RowBox[{"XMLExtract", "[", RowBox[{RowBox[{"{", "listing", "}"}], ",", RowBox[{"{", "}"}]}], "]"}], ",", RowBox[{"XMLExtract", "[", RowBox[{RowBox[{"{", "listing", "}"}], ",", RowBox[{"{", RowBox[{"1", ",", "0"}], "}"}]}], "]"}]}], "}"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"ul\"", ",", RowBox[{"{", RowBox[{"\"class\"", "\[Rule]", "\"a b\""}], "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"one\"", "}"}]}], "]"}], ",", "\" \"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"href\"", "\[Rule]", "\"/x\""}], "}"}], ",", RowBox[{"{", "\"two\"", "}"}]}], "]"}], "}"}]}], "]"}]}], "}"}]}], "]"}], "}"}], ",", "\"ul\""}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give the attribute list, an attribute value, the class list and one class:", "ExampleText"], Cell[BoxData["listing=XMLElement[\"ul\",{\"class\"->\"a b\"},{XMLElement[\"li\",{},{\"one\"}],\" \",XMLElement[\"li\",{},{XMLElement[\"a\",{\"href\"->\"/x\"},{\"two\"}]}]}];
-XMLExtract[{listing},{{1,Key[All]},{1,Key[\"class\"]},{1,Key[\"classList\"]},{1,Key[\"classList\"],2}}]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give the attribute list, an attribute value, the class list and one class:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"listing", "=", RowBox[{"XMLElement", "[", RowBox[{"\"ul\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"a b\""}], "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"one\"", "}"}]}], "]"}], ",", "\" \"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"href\"", "->", "\"/x\""}], "}"}], ",", RowBox[{"{", "\"two\"", "}"}]}], "]"}], "}"}]}], "]"}]}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLExtract", "[", RowBox[{RowBox[{"{", "listing", "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"1", ",", RowBox[{"Key", "[", "All", "]"}]}], "}"}], ",", RowBox[{"{", RowBox[{"1", ",", RowBox[{"Key", "[", "\"class\"", "]"}]}], "}"}], ",", RowBox[{"{", RowBox[{"1", ",", RowBox[{"Key", "[", "\"classList\"", "]"}]}], "}"}], ",", RowBox[{"{", RowBox[{"1", ",", RowBox[{"Key", "[", "\"classList\"", "]"}], ",", "2"}], "}"}]}], "}"}]}], "]"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"\"class\"", "\[Rule]", "\"a b\""}], "}"}], ",", "\"a b\"", ",", RowBox[{"{", RowBox[{"\"a\"", ",", "\"b\""}], "}"}], ",", "\"b\""}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give the contents of an element, text included:", "ExampleText"], Cell[BoxData["listing=XMLElement[\"ul\",{\"class\"->\"a b\"},{XMLElement[\"li\",{},{\"one\"}],\" \",XMLElement[\"li\",{},{XMLElement[\"a\",{\"href\"->\"/x\"},{\"two\"}]}]}];
-XMLExtract[{listing},{1,All}]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give the contents of an element, text included:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"listing", "=", RowBox[{"XMLElement", "[", RowBox[{"\"ul\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"a b\""}], "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"one\"", "}"}]}], "]"}], ",", "\" \"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"href\"", "->", "\"/x\""}], "}"}], ",", RowBox[{"{", "\"two\"", "}"}]}], "]"}], "}"}]}], "]"}]}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLExtract", "[", RowBox[{RowBox[{"{", "listing", "}"}], ",", RowBox[{"{", RowBox[{"1", ",", "All"}], "}"}]}], "]"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"one\"", "}"}]}], "]"}], ",", "\" \"", ",", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"href\"", "\[Rule]", "\"/x\""}], "}"}], ",", RowBox[{"{", "\"two\"", "}"}]}], "]"}], "}"}]}], "]"}]}], "}"}]], "Output"],
 
 Cell[TextData[{"The element children ", Cell[BoxData[StyleBox["1", "TR"]], "InlineFormula"], " to ", Cell[BoxData[StyleBox["2", "TR"]], "InlineFormula"], " are a sequence, which the text between them is not part of:"}], "ExampleText"],
 
-Cell[BoxData["{XMLExtract[{listing},{1,1;;2}]}"], "Input"],
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLExtract", "[", RowBox[{RowBox[{"{", "listing", "}"}], ",", RowBox[{"{", RowBox[{"1", ",", RowBox[{"1", ";;", "2"}]}], "}"}]}], "]"}], "}"}]], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"one\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"href\"", "\[Rule]", "\"/x\""}], "}"}], ",", RowBox[{"{", "\"two\"", "}"}]}], "]"}], "}"}]}], "]"}]}], "}"}]], "Output"],
 
 Cell[TextData[{"The empty place between them is ", Cell[BoxData[RowBox[{ButtonBox["Sequence", BaseStyle -> "Link", ButtonData -> "paclet:ref/Sequence"], "[", "]"}]], "InlineFormula"], ":"}], "ExampleText"],
 
-Cell[BoxData["{XMLExtract[{listing},{1,2;;1}]}"], "Input"],
+Cell[BoxData[RowBox[{"{", RowBox[{"XMLExtract", "[", RowBox[{RowBox[{"{", "listing", "}"}], ",", RowBox[{"{", RowBox[{"1", ",", RowBox[{"2", ";;", "1"}]}], "}"}]}], "]"}], "}"}]], "Input"],
 
 Cell[BoxData[RowBox[{"{", "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give the elements between two others, the value of a named path:", "ExampleText"], Cell[BoxData["navs=ImportString[\"<nav id=\\\"outer\\\"><a>Home</a><nav id=\\\"inner\\\"><a>News</a></nav></nav>\",{\"HTML\",\"XMLObject\"}];
-XMLExtract[navs,{1};;{1,2,1}]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give the elements between two others, the value of a named path:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"navs", "=", RowBox[{"ImportString", "[", RowBox[{"\"<nav id=\\\"outer\\\"><a>Home</a><nav id=\\\"inner\\\"><a>News</a></nav></nav>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLExtract", "[", RowBox[{"navs", ",", RowBox[{RowBox[{"{", "1", "}"}], ";;", RowBox[{"{", RowBox[{"1", ",", "2", ",", "1"}], "}"}]}]}], "]"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"nav\"", ",", RowBox[{"{", RowBox[{"\"id\"", "\[Rule]", "\"inner\""}], "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"shape\"", "\[Rule]", "\"rect\""}], "}"}], ",", RowBox[{"{", "\"News\"", "}"}]}], "]"}], "}"}]}], "]"}], "}"}]], "Output"],
 
 Cell["From the document, the path holds every ancestor of the element:", "ExampleText"],
 
-Cell[BoxData["Map[First,XMLExtract[navs,{};;{1,2,1}]]"], "Input"],
+Cell[BoxData[RowBox[{"Map", "[", RowBox[{"First", ",", RowBox[{"XMLExtract", "[", RowBox[{"navs", ",", RowBox[{RowBox[{"{", "}"}], ";;", RowBox[{"{", RowBox[{"1", ",", "2", ",", "1"}], "}"}]}]}], "]"}]}], "]"}]], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"\"nav\"", ",", "\"nav\""}], "}"}]], "Output"],
 
 Cell["A child has no elements between it and its parent:", "ExampleText"],
 
-Cell[BoxData["XMLExtract[navs,{1};;{1,1}]"], "Input"],
+Cell[BoxData[RowBox[{"XMLExtract", "[", RowBox[{"navs", ",", RowBox[{RowBox[{"{", "1", "}"}], ";;", RowBox[{"{", RowBox[{"1", ",", "1"}], "}"}]}]}], "]"}]], "Input"],
 
 Cell[BoxData[RowBox[{"{", "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A bare XMLElement given as the tree is at ", Cell[BoxData[RowBox[{"{", StyleBox["1", "TR"], "}"}]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData["XMLExtract[XMLElement[\"ul\",{},{XMLElement[\"li\",{},{\"a\"}]}],{1,1}]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A bare XMLElement given as the tree is at ", Cell[BoxData[RowBox[{"{", StyleBox["1", "TR"], "}"}]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[RowBox[{"XMLExtract", "[", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"ul\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"a\"", "}"}]}], "]"}], "}"}]}], "]"}], ",", RowBox[{"{", RowBox[{"1", ",", "1"}], "}"}]}], "]"}]], "Input"],
 
 Cell[BoxData[RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"a\"", "}"}]}], "]"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give the tokens of another attribute with a reading:", "ExampleText"], Cell[BoxData["link=XMLElement[\"a\",{\"rel\"->\"nofollow noopener\"},{}];
-XMLExtract[{link},{1,Key[\"relList\"],2},\"AttributeReadings\"-> <|\"rel\"-> <||>|>]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Give the tokens of another attribute with a reading:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"link", "=", RowBox[{"XMLElement", "[", RowBox[{"\"a\"", ",", RowBox[{"{", RowBox[{"\"rel\"", "->", "\"nofollow noopener\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLExtract", "[", RowBox[{RowBox[{"{", "link", "}"}], ",", RowBox[{"{", RowBox[{"1", ",", RowBox[{"Key", "[", "\"relList\"", "]"}], ",", "2"}], "}"}], ",", RowBox[{"\"AttributeReadings\"", "->", RowBox[{"<|", RowBox[{"\"rel\"", "->", RowBox[{"<|", "|>"}]}], "|>"}]}]}], "]"}]}], "Input"],
 
 Cell[BoxData["\"noopener\""], "Output"]}, Open]]}, Open]],
 
@@ -258,13 +251,11 @@ Cell[CellGroupData[{Cell[BoxData[
   "Properties & Relations", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["For a bare pattern, XMLExtract at the positions from XMLPosition gives what XMLCases gives:", "ExampleText"], Cell[BoxData["navs=ImportString[\"<nav id=\\\"outer\\\"><a>Home</a><nav id=\\\"inner\\\"><a>News</a></nav></nav>\",{\"HTML\",\"XMLObject\"}];
-XMLExtract[navs,XMLPosition[navs,XMLPattern[\"a\"]]]===XMLCases[navs,XMLPattern[\"a\"]]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["For a bare pattern, XMLExtract at the positions from XMLPosition gives what XMLCases gives:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"navs", "=", RowBox[{"ImportString", "[", RowBox[{"\"<nav id=\\\"outer\\\"><a>Home</a><nav id=\\\"inner\\\"><a>News</a></nav></nav>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{RowBox[{"XMLExtract", "[", RowBox[{"navs", ",", RowBox[{"XMLPosition", "[", RowBox[{"navs", ",", RowBox[{"XMLPattern", "[", "\"a\"", "]"}]}], "]"}]}], "]"}], "===", RowBox[{"XMLCases", "[", RowBox[{"navs", ",", RowBox[{"XMLPattern", "[", "\"a\"", "]"}]}], "]"}]}]}], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Extract counts text and XMLObject parts; XMLExtract counts element children only:", "ExampleText"], Cell[BoxData["tree=ImportString[\"<div><p>a</p>\\n<p>b</p></div>\",{\"HTML\",\"XMLObject\"}];
-{Extract[tree,{2,3,1,3,1,3,3}],XMLExtract[tree,{1,1,1,2}]}"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Extract counts text and XMLObject parts; XMLExtract counts element children only:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"tree", "=", RowBox[{"ImportString", "[", RowBox[{"\"<div><p>a</p>\\n<p>b</p></div>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"{", RowBox[{RowBox[{"Extract", "[", RowBox[{"tree", ",", RowBox[{"{", RowBox[{"2", ",", "3", ",", "1", ",", "3", ",", "1", ",", "3", ",", "3"}], "}"}]}], "]"}], ",", RowBox[{"XMLExtract", "[", RowBox[{"tree", ",", RowBox[{"{", RowBox[{"1", ",", "1", ",", "1", ",", "2"}], "}"}]}], "]"}]}], "}"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"b\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"b\"", "}"}]}], "]"}]}], "}"}]], "Output"]}, Open]]}, Open]],
 
@@ -273,27 +264,25 @@ Cell[CellGroupData[{Cell[BoxData[
   "Possible Issues", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A position that is not of the forms that XMLPosition gives issues a message:", "ExampleText"], Cell[BoxData["XMLExtract[{XMLElement[\"p\",{},{}]},{0}]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A position that is not of the forms that XMLPosition gives issues a message:", "ExampleText"], Cell[BoxData[RowBox[{"XMLExtract", "[", RowBox[{RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "}"}], ",", RowBox[{"{", "0", "}"}]}], "]"}]], "Input"],
 
 Cell["XMLExtract::pos: {0} is not a position in an XML tree. A position is {} for the document or a list of element-child indices, optionally followed by 0, Key[All], Key[key] (then, for a list key, a token index, run or gap), All, or a run m ;; n or gap n ;; n-1 of element children; a named path is upper ;; lower, where upper is {} or an element above the element lower.", "Message", "MSG"],
 
 Cell[BoxData["$Failed"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A position that the tree does not have issues a message:", "ExampleText"], Cell[BoxData["XMLExtract[{XMLElement[\"ul\",{},{XMLElement[\"li\",{},{}]}]},{1,2}]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A position that the tree does not have issues a message:", "ExampleText"], Cell[BoxData[RowBox[{"XMLExtract", "[", RowBox[{RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"ul\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "}"}]}], "]"}], "}"}], ",", RowBox[{"{", RowBox[{"1", ",", "2"}], "}"}]}], "]"}]], "Input"],
 
 Cell["XMLExtract::nopos: There is no position {1, 2} in the tree.", "Message", "MSG"],
 
 Cell[BoxData["$Failed"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A path whose upper end is not above its lower end issues a message:", "ExampleText"], Cell[BoxData["navs=ImportString[\"<nav id=\\\"outer\\\"><a>Home</a><nav id=\\\"inner\\\"><a>News</a></nav></nav>\",{\"HTML\",\"XMLObject\"}];
-XMLExtract[navs,{1,1};;{1,2,1}]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A path whose upper end is not above its lower end issues a message:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"navs", "=", RowBox[{"ImportString", "[", RowBox[{"\"<nav id=\\\"outer\\\"><a>Home</a><nav id=\\\"inner\\\"><a>News</a></nav></nav>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLExtract", "[", RowBox[{"navs", ",", RowBox[{RowBox[{"{", RowBox[{"1", ",", "1"}], "}"}], ";;", RowBox[{"{", RowBox[{"1", ",", "2", ",", "1"}], "}"}]}]}], "]"}]}], "Input"],
 
 Cell["XMLExtract::pos: {1, 1} ;; {1, 2, 1} is not a position in an XML tree. A position is {} for the document or a list of element-child indices, optionally followed by 0, Key[All], Key[key] (then, for a list key, a token index, run or gap), All, or a run m ;; n or gap n ;; n-1 of element children; a named path is upper ;; lower, where upper is {} or an element above the element lower.", "Message", "MSG"],
 
 Cell[BoxData["$Failed"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A run of children is a sequence, so in a list of parts its elements are spliced in:", "ExampleText"], Cell[BoxData["paras=XMLElement[\"div\",{},{XMLElement[\"p\",{},{\"1\"}],XMLElement[\"p\",{},{\"2\"}]}];
-XMLExtract[{paras},{{1,1;;2},{1,1}}]"], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A run of children is a sequence, so in a list of parts its elements are spliced in:", "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"paras", "=", RowBox[{"XMLElement", "[", RowBox[{"\"div\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"1\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"2\"", "}"}]}], "]"}]}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"XMLExtract", "[", RowBox[{RowBox[{"{", "paras", "}"}], ",", RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{"1", ",", RowBox[{"1", ";;", "2"}]}], "}"}], ",", RowBox[{"{", RowBox[{"1", ",", "1"}], "}"}]}], "}"}]}], "]"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"1\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"2\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"1\"", "}"}]}], "]"}]}], "}"}]], "Output"]}, Open]],
 
