@@ -106,7 +106,7 @@ treeResults[head_, tree_, q_, n_] :=
         If[!validTreeQ[tree], messageTreeRefusal[head, tree]; Throw[$Failed, $refusal]];
         cachedIndexTree[tree];
         With[{r = results[root, rhs, all, counted, testNames, MatchQ[tree, _XMLElement], n]},
-          $indexCache[[3, -1]] = $matElems;
+          keptIndex[tree];
           r]]],
     $refusal];
 
@@ -280,18 +280,28 @@ indexTree[input_] :=
     $end = Prepend[subtreeEnds[Rest[$depth]], n];
     $keyLength = 3 Max[$depth] + 8];
 
-(* The index of the input of the last query, and the elements it
-   materialised for each set of readings, are kept for the next: a
+(* The index of the input of the last query, the elements it
+   materialised for each set of readings, and the positions and order keys
+   of the elements it read, are kept for the next: a
    document is often queried many times, and indexing it costs about 50 ms
    at 8,000 elements. An input that is the same expression, which SameQ
    tells at once when it is the one given before, reuses them. *)
 $indexCache = {None, None, {}};
 
 cachedIndexTree[input_] :=
-  If[$indexCache[[2]] === $indexDepth && $indexCache[[1]] === input,
-    {$tops, $wlPos, $elem, $parent, $depth, $kids, $index, $end, $keyLength, $matElems} = $indexCache[[3]],
+  If[cachedQ[input],
+    {$tops, $wlPos, $elem, $parent, $depth, $kids, $index, $end, $keyLength, $matElems, $posMemo, $keyMemo} = $indexCache[[3]],
     indexTree[input];
-    $indexCache = {input, $indexDepth, {$tops, $wlPos, $elem, $parent, $depth, $kids, $index, $end, $keyLength, $matElems}}];
+    keepIndex[input]];
+
+cachedQ[input_] := $indexCache[[2]] === $indexDepth && $indexCache[[1]] === input;
+
+keepIndex[input_] :=
+  $indexCache = {input, $indexDepth, {$tops, $wlPos, $elem, $parent, $depth, $kids, $index, $end, $keyLength, $matElems, $posMemo, $keyMemo}};
+
+(* What a query read is kept when it ends, unless a query in its right-hand
+   side, on another input, has replaced the cache meanwhile. *)
+keptIndex[input_] := If[cachedQ[input], keepIndex[input]];
 
 (* A bare element with nothing below it read, as an element test of an
    XMLPattern without constraints is: its index, set directly. *)
@@ -503,15 +513,21 @@ cTreePattern[{{tag_, attrs_}, {cs___}}, need_] :=
       "HeadNames" -> Intersection[headNames, need], "Constraints" -> cons,
       "MinKids" -> Max[0, minKids /@ cons], "PlainRules" -> plainRules]];
 
+(* The rules of an attribute argument that is a rule or a list of them,
+   or None. *)
+ruleList[attrs_] := Replace[attrs, {r_Rule :> {r}, l_List :> l, _ -> None}];
+
 (* {key, name} for each rule of the attribute argument that binds a needed
    name, when headMatches can bind them directly (plainAttributeMatches),
-   or None. *)
+   or None. A name repeated over two rules has a position at each, which
+   the general way merges. *)
 plainHeadRules[tag_, attrs_, need_] :=
-  With[{rules = Replace[attrs, {r_Rule :> {r}, l_List :> l, _ -> None}]},
+  With[{rules = ruleList[attrs]},
     If[ListQ[rules] && FreeQ[rules, Verbatim[Rule][_Alternatives, _]] && !IntersectingQ[namesIn[Hold[tag]], need],
       Replace[Cases[rules, Verbatim[Rule][_, v_] /; IntersectingQ[namesIn[Hold[v]], need]], {
         r_ /; !AllTrue[r, plainRuleQ] -> None,
-        r_ :> Replace[r, Verbatim[Rule][k_, Verbatim[Pattern][s_, _]] :> {k, Hold[s]}, {1}]}],
+        r_ :> Replace[Replace[r, Verbatim[Rule][k_, Verbatim[Pattern][s_, _]] :> {k, Hold[s]}, {1}],
+          pairs_ /; !DuplicateFreeQ[pairs[[All, 2]]] -> None]}],
       None]];
 
 (* ---- XMLElement patterns (ADR 0023) ----
@@ -1716,7 +1732,68 @@ rootSolutions[root_, oneQ_] :=
   With[{cands = rootCandidates[root]},
     If[oneQ,
       Catch[Scan[With[{s = unsettled @ pending[<|"Id" -> "Top"|>, match[root, #]]}, If[s =!= {}, Throw[s, $one]]] &, cands]; {}, $one],
-      unsettled @ pending[<|"Id" -> "Top"|>, Join @@ (match[root, #] & /@ If[nestingRootQ[root], outermostMatches[root, cands], cands])]]];
+      unsettled @ pending[<|"Id" -> "Top"|>,
+        Which[
+          nestingRootQ[root], Join @@ (match[root, #] & /@ outermostMatches[root, cands]),
+          headRootQ[root], headRootSolutions[root, cands],
+          True, Join @@ (match[root, #] & /@ cands)]]]];
+
+(* A pattern root that reads only its element's tag and attributes: an
+   XMLPattern without constraints, perhaps named. What the names in its tag
+   and attributes bind is a function of those, which a page repeats over
+   thousands of elements; only their positions and order keys differ, each
+   the element's own followed by the same steps. So each distinct tag and
+   attributes is matched once, and its solutions are moved to the other
+   elements that have it: matching each element cost about 40 µs for a name
+   on an attribute, 95 µs for one on a list key. *)
+headRootQ[root_] := !$records && With[{x = headPatternOf[root]}, x =!= None && x["Constraints"] === {} && x["HeadNames"] =!= {}];
+
+(* The XMLPattern node of such a root, or None. A name on the root that is
+   also bound inside it is compared, so the root is matched as usual. *)
+headPatternOf[nd_] := Switch[nd["Kind"],
+  "XMLPattern", nd,
+  "Named", If[nd["Sub"]["Kind"] === "XMLPattern" && !MemberQ[nd["Sub"]["Names"], nd["Name"]], nd["Sub"], None],
+  _, None];
+
+(* The solutions of match[root, #] & /@ cands, joined. *)
+headRootSolutions[root_, cands_] :=
+  With[{x = headPatternOf[root],
+      name = If[root["Kind"] === "Named" && MemberQ[root["Keep"], root["Name"]], root["Name"], None]},
+    With[{heads = headReads[x["Attrs"], elemOf /@ cands]},
+      With[{templates = headTemplate[x, #, name] & /@ GroupBy[Transpose[{heads, cands}], First -> Last, First]},
+        Join @@ MapThread[templates[#1][posOf[#2], elemKey[#2], If[name === None, None, elemMatch[#2]]] &, {heads, cands}]]]];
+
+(* What the names in the tag and attributes read of each element: its tag,
+   and the index and value of each attribute the rules name, which an id or
+   href on each element does not change. An attribute index past the last is
+   read for a list key without its attribute, so the count is part of it.
+   Under a name on the attribute argument, or a key that is not literal, the
+   whole attribute list. Read for all the elements at once: one at a time it
+   cost about 5 µs each. *)
+headReads[attrs_, els_] :=
+  With[{rules = ruleList[attrs]},
+    If[ListQ[rules] && AllTrue[rules, MatchQ[Verbatim[Rule][_?literalKeyQ, _]]],
+      With[{keys = Alternatives @@ Union[#, Cases[Lookup[$readings, #], {k_, _} :> k]] &[Union @@ (keyLiterals[First[#]] & /@ rules)],
+          as = els[[All, 2]]},
+        With[{js = Lookup[GroupBy[Position[as[[All, All, 1]], keys, {2}, Heads -> False], First -> Last], Range[Length[els]], {}]},
+          Transpose[{els[[All, 1]], Length /@ as, js, MapThread[Part, {as, js}]}]]],
+      Take[#, 2] & /@ els]];
+
+(* The solutions at element i, as a function of an element's position, its
+   order key and its own match that gives the solutions at that element:
+   each position and order key starts with the element's instead of i's,
+   and the element's match is first, as name, unless name is None, as the
+   Named node joins it. A match with no position keeps its Missing. The body
+   holds Association[...] unevaluated, as the function could not put its
+   arguments into an Association that is already built. *)
+headTemplate[x_, i_, name_] :=
+  Module[{p, k, e, afterP, afterK, association},
+    With[{n = Length[posOf[i]], m = Length[elemKey[i]]},
+      Function @@ (Hold @@ {{p, k, e},
+          Map[association[Join[If[name === None, {}, {name -> e}],
+              Normal @ Map[{If[ListQ[#], afterP[Drop[#, n]], #] & /@ matchPos[#], matchVal[#], afterK[Drop[#, m]] & /@ #[[3]]} &, #]]] &,
+            match[x, i]]} /.
+        {afterP[s_] :> Join[p, s], afterK[s_] :> Join[k, s], association -> Association})]];
 
 (* A pattern root whose every constraint is a Descendant at any depth, and
    that binds nothing itself, has at an element inside another it matches a

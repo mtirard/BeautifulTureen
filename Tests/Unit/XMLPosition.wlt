@@ -71,6 +71,62 @@ TestCreate[
   TestID -> "position-reference-order"
 ];
 
+(* === Names in the tag and attributes === *)
+
+(* Elements that share a tag and attributes, at different depths and one
+   inside another, bind the same values at positions of their own. *)
+shared = doc[XMLElement["div", {"class" -> "a b", "id" -> "x"}, {
+  XMLElement["div", {"class" -> "a b", "id" -> "x"}, {XMLElement["div", {"class" -> "a b", "id" -> "x"}, {}]}],
+  XMLElement["div", {"class" -> "b", "id" -> "b"}, {}]}]];
+
+TestCreate[
+  {XMLCases[shared, XMLPattern["div", "classList" -> {___, c_, ___}] :> c],
+    XMLPosition[shared, XMLPattern["div", "classList" -> {___, c_, ___}] :> c]},
+  {{"a", "b", "a", "b", "a", "b", "b"},
+    {{1, Key["classList"], 1}, {1, Key["classList"], 2}, {1, 1, Key["classList"], 1}, {1, 1, Key["classList"], 2},
+      {1, 1, 1, Key["classList"], 1}, {1, 1, 1, Key["classList"], 2}, {1, 2, Key["classList"], 1}}},
+  TestID -> "position-head-tokens-shared-heads"
+];
+
+TestCreate[
+  {XMLCases[shared, XMLPattern["div", "classList" -> c_] :> c],
+    XMLPosition[shared, XMLPattern[t_, a_] :> {t, a}]},
+  {{{"a", "b"}, {"a", "b"}, {"a", "b"}, {"b"}},
+    {{{1, 0}, {1, Key[All]}}, {{1, 1, 0}, {1, 1, Key[All]}}, {{1, 1, 1, 0}, {1, 1, 1, Key[All]}}, {{1, 2, 0}, {1, 2, Key[All]}}}},
+  TestID -> "position-head-tag-and-attributes-shared-heads"
+];
+
+(* A name on the element beside one in its attributes; a name repeated over
+   two attributes, which has a position in each. *)
+TestCreate[
+  {XMLCases[shared, x : XMLPattern["div", {"id" -> "x", "class" -> c_}] :> {Length[x[[3]]], c}],
+    XMLPosition[shared, x : XMLPattern["div", {"id" -> "x", "class" -> c_}] :> {x, c}],
+    XMLPosition[shared, XMLPattern["div", {"class" -> v_, "id" -> v_}] :> v]},
+  {{{2, "a b"}, {1, "a b"}, {0, "a b"}},
+    {{{1}, {1, Key["class"]}}, {{1, 1}, {1, 1, Key["class"]}}, {{1, 1, 1}, {1, 1, 1, Key["class"]}}},
+    {{{1, 2, Key["class"]}, {1, 2, Key["id"]}}}},
+  TestID -> "position-head-element-and-repeated-names"
+];
+
+(* A Condition on the attribute names, and a count. *)
+TestCreate[
+  {XMLCases[shared, XMLPattern["div", {"classList" -> c_, "id" -> i_}] /; MemberQ[c, "b"] && i =!= "x" :> i],
+    XMLCases[shared, XMLPattern["div", "classList" -> {___, c_, ___}] :> c, 3]},
+  {{"b"}, {"a", "b", "a"}},
+  TestID -> "head-names-condition-and-count"
+];
+
+(* A query in a right-hand side indexes its own input; what the outer query
+   read of its input is not kept for that one. *)
+TestCreate[
+  Module[{p2 = XMLElement["p", {"class" -> "b"}, {el["i"], XMLElement["b", {"class" -> "r"}, {}]}]},
+    XMLCases[doc[el["body", el["div", XMLElement["p", {"class" -> "a"}, {XMLElement["b", {"class" -> "q"}, {}]}], p2]]],
+      e : XMLPattern["p", "class" -> c_] :> XMLPosition[e, XMLPattern["b", "class" -> k_] :> k]];
+    XMLPosition[p2, XMLPattern["b"]]],
+  {{1, 2}},
+  TestID -> "position-after-nested-query"
+];
+
 (* === XMLExtract === *)
 
 TestCreate[
