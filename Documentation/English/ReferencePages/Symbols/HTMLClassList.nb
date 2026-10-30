@@ -17,11 +17,7 @@ Cell[TextData[{Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", Butt
 
 Cell[TextData[{"An element with no ", Cell[BoxData[StyleBox["class", "TR"]], "InlineFormula"], " attribute, or with an empty or whitespace-only one, gives ", Cell[BoxData[RowBox[{"{", "}"}]], "InlineFormula"], "."}], "Notes"],
 
-Cell[TextData[{"Duplicate classes are kept. A browser's ", Cell[BoxData[StyleBox["classList", "TR"]], "InlineFormula"], " removes them, as ", Cell[BoxData[ButtonBox["DeleteDuplicates", BaseStyle -> "Link", ButtonData -> "paclet:ref/DeleteDuplicates"]], "InlineFormula"], " does."}], "Notes"],
-
-Cell[TextData[{Cell[BoxData[RowBox[{ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"], "[", StyleBox["element", "TI"], "]"}]], "InlineFormula"], " is the list that ", Cell[BoxData["\"classList\""], "InlineFormula"], " in ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], " matches for the same element."}], "Notes"],
-
-Cell[TextData[{Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"]], "InlineFormula"], " takes a single ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], ". For many elements, use ", Cell[BoxData["HTMLClassList /@ XMLCases[tree$, pattern$]"], "InlineFormula"], "."}], "Notes"]
+Cell[TextData[{Cell[BoxData[RowBox[{ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"], "[", StyleBox["element", "TI"], "]"}]], "InlineFormula"], " gives the list that the ", Cell[BoxData["\"classList\""], "InlineFormula"], " key of ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], " is matched against."}], "Notes"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -144,23 +140,13 @@ Cell[CellGroupData[{Cell[BoxData[
   "Scope", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"A missing, empty or whitespace-only ", Cell[BoxData[StyleBox["class", "TR"]], "InlineFormula"], " gives the empty list:"}], "ExampleText"], Cell[BoxData[RowBox[{"HTMLClassList", "/@", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\" \\t \""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}]}], "}"}]}]], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Get the empty list for a missing, empty or whitespace-only ", Cell[BoxData[StyleBox["class", "TR"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[RowBox[{"HTMLClassList", "/@", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\" \\t \""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}]}], "}"}]}]], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Runs of spaces, tabs and newlines separate classes, with no empty strings between them:", "ExampleText"], Cell[BoxData[RowBox[{"HTMLClassList", "[", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"  lead\\n\\tpromo  card \""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "]"}]], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Split classes separated by runs of spaces, tabs and newlines:", "ExampleText"], Cell[BoxData[RowBox[{"HTMLClassList", "[", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"  lead\\n\\tpromo  card \""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "]"}]], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"\"lead\"", ",", "\"promo\"", ",", "\"card\""}], "}"}]], "Output"]}, Open]],
-
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["Duplicate classes are kept:", "ExampleText"], Cell[BoxData[RowBox[{"HTMLClassList", "[", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"lead lead promo\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "]"}]], "Input"],
-
-Cell[BoxData[RowBox[{"{", RowBox[{"\"lead\"", ",", "\"lead\"", ",", "\"promo\""}], "}"}]], "Output"],
-
-Cell[TextData[{"Remove them with ", Cell[BoxData[ButtonBox["DeleteDuplicates", BaseStyle -> "Link", ButtonData -> "paclet:ref/DeleteDuplicates"]], "InlineFormula"], " to get the list a browser's ", Cell[BoxData[StyleBox["classList", "TR"]], "InlineFormula"], " gives:"}], "ExampleText"],
-
-Cell[BoxData[RowBox[{"DeleteDuplicates", "[", RowBox[{"HTMLClassList", "[", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"lead lead promo\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "]"}], "]"}]], "Input"],
-
-Cell[BoxData[RowBox[{"{", RowBox[{"\"lead\"", ",", "\"promo\""}], "}"}]], "Output"]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Get the classes of each element that ", Cell[BoxData[ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLCases"]], "InlineFormula"], " finds:"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"menu", "=", RowBox[{"ImportString", "[", RowBox[{"\"<ul><li class=\\\"item active\\\">A</li><li>B</li><li class=\\\"item\\\">C</li></ul>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"HTMLClassList", "/@", RowBox[{"XMLCases", "[", RowBox[{"menu", ",", RowBox[{"XMLPattern", "[", "\"li\"", "]"}]}], "]"}]}]}], "Input"],
 
@@ -207,19 +193,15 @@ Cell[CellGroupData[{Cell[BoxData[
   "Properties & Relations", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"]], "InlineFormula"], " agrees with the ", Cell[BoxData["\"classList\""], "InlineFormula"], " key of ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"menu", "=", RowBox[{"ImportString", "[", RowBox[{"\"<ul><li class=\\\"item  active\\\">A</li><li>B</li></ul>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{RowBox[{"XMLCases", "[", RowBox[{"menu", ",", RowBox[{RowBox[{"XMLPattern", "[", RowBox[{"\"li\"", ",", RowBox[{"\"classList\"", "->", "classes_"}]}], "]"}], ":>", "classes"}]}], "]"}], "===", RowBox[{"(", RowBox[{"HTMLClassList", "/@", RowBox[{"XMLCases", "[", RowBox[{"menu", ",", RowBox[{"XMLPattern", "[", "\"li\"", "]"}]}], "]"}]}], ")"}]}]}], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Compare ", Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"]], "InlineFormula"], " with the list bound by the ", Cell[BoxData["\"classList\""], "InlineFormula"], " key of ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"menu", "=", RowBox[{"ImportString", "[", RowBox[{"\"<ul><li class=\\\"item  active\\\">A</li><li>B</li></ul>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{RowBox[{"XMLCases", "[", RowBox[{"menu", ",", RowBox[{RowBox[{"XMLPattern", "[", RowBox[{"\"li\"", ",", RowBox[{"\"classList\"", "->", "classes_"}]}], "]"}], ":>", "classes"}]}], "]"}], "===", RowBox[{"(", RowBox[{"HTMLClassList", "/@", RowBox[{"XMLCases", "[", RowBox[{"menu", ",", RowBox[{"XMLPattern", "[", "\"li\"", "]"}]}], "]"}]}], ")"}]}]}], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"]], "InlineFormula"], " gives the same list as ", Cell[BoxData[ButtonBox["StringSplit", BaseStyle -> "Link", ButtonData -> "paclet:ref/StringSplit"]], "InlineFormula"], " with ", Cell[BoxData[ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLWhitespace"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"element", "=", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"lead\\tpromo\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{RowBox[{"HTMLClassList", "[", "element", "]"}], "===", RowBox[{"StringSplit", "[", RowBox[{RowBox[{"Lookup", "[", RowBox[{RowBox[{"element", "[", RowBox[{"[", "2", "]"}], "]"}], ",", "\"class\""}], "]"}], ",", "HTMLWhitespace"}], "]"}]}]}], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Compare ", Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"]], "InlineFormula"], " with ", Cell[BoxData[ButtonBox["StringSplit", BaseStyle -> "Link", ButtonData -> "paclet:ref/StringSplit"]], "InlineFormula"], " on ", Cell[BoxData[ButtonBox["HTMLWhitespace", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLWhitespace"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"element", "=", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"lead\\tpromo\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{RowBox[{"HTMLClassList", "[", "element", "]"}], "===", RowBox[{"StringSplit", "[", RowBox[{RowBox[{"Lookup", "[", RowBox[{RowBox[{"element", "[", RowBox[{"[", "2", "]"}], "]"}], ",", "\"class\""}], "]"}], ",", "HTMLWhitespace"}], "]"}]}]}], "Input"],
 
 Cell[BoxData["True"], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"To tell an empty ", Cell[BoxData[StyleBox["class", "TR"]], "InlineFormula"], " from a missing one, test for the attribute with ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"elements", "=", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}]}], "}"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"{", RowBox[{RowBox[{"HTMLClassList", "/@", "elements"}], ",", RowBox[{"Map", "[", RowBox[{RowBox[{"XMLMatchQ", "[", RowBox[{"XMLPattern", "[", RowBox[{"\"p\"", ",", "\"class\""}], "]"}], "]"}], ",", "elements"}], "]"}]}], "}"}]}], "Input"],
-
-Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "}"}], ",", RowBox[{"{", RowBox[{"False", ",", "True"}], "}"}]}], "}"}]], "Output"]}, Open]],
-
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"]], "InlineFormula"], " does not depend on ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/$AttributeReadings"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[RowBox[{"Block", "[", RowBox[{RowBox[{"{", RowBox[{"$AttributeReadings", "=", RowBox[{"<|", "|>"}]}], "}"}], ",", RowBox[{"HTMLClassList", "[", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"lead promo\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "]"}]}], "]"}]], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Get the classes when ", Cell[BoxData[ButtonBox["$AttributeReadings", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/$AttributeReadings"]], "InlineFormula"], " is empty:"}], "ExampleText"], Cell[BoxData[RowBox[{"Block", "[", RowBox[{RowBox[{"{", RowBox[{"$AttributeReadings", "=", RowBox[{"<|", "|>"}]}], "}"}], ",", RowBox[{"HTMLClassList", "[", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"lead promo\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "]"}]}], "]"}]], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"\"lead\"", ",", "\"promo\""}], "}"}]], "Output"]}, Open]]}, Open]],
 
@@ -228,11 +210,11 @@ Cell[CellGroupData[{Cell[BoxData[
   "Possible Issues", "ExampleSection"],
   $Line = 0; Null]], "ExampleSection"],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{Cell[BoxData[ButtonBox["StringSplit", BaseStyle -> "Link", ButtonData -> "paclet:ref/StringSplit"]], "InlineFormula"], " splits on a no-break space by default, where HTML does not:"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"page", "=", RowBox[{"ImportString", "[", RowBox[{"\"<p class=\\\"btn&nbsp;btn-primary\\\">Buy</p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{RowBox[{"value", "=", RowBox[{"Lookup", "[", RowBox[{RowBox[{RowBox[{"XMLFirstCase", "[", RowBox[{"page", ",", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "]"}], "[", RowBox[{"[", "2", "]"}], "]"}], ",", "\"class\""}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"StringSplit", "[", "value", "]"}]}], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Split a value that contains a no-break space with ", Cell[BoxData[ButtonBox["StringSplit", BaseStyle -> "Link", ButtonData -> "paclet:ref/StringSplit"]], "InlineFormula"], ":"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"page", "=", RowBox[{"ImportString", "[", RowBox[{"\"<p class=\\\"btn&nbsp;btn-primary\\\">Buy</p>\"", ",", RowBox[{"{", RowBox[{"\"HTML\"", ",", "\"XMLObject\""}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{RowBox[{"value", "=", RowBox[{"Lookup", "[", RowBox[{RowBox[{RowBox[{"XMLFirstCase", "[", RowBox[{"page", ",", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "]"}], "[", RowBox[{"[", "2", "]"}], "]"}], ",", "\"class\""}], "]"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"StringSplit", "[", "value", "]"}]}], "Input"],
 
 Cell[BoxData[RowBox[{"{", RowBox[{"\"btn\"", ",", "\"btn-primary\""}], "}"}]], "Output"],
 
-Cell[TextData[{Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"]], "InlineFormula"], " gives one class, as a browser does:"}], "ExampleText"],
+Cell[TextData[{"Get a single class with ", Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"]], "InlineFormula"], ", as a browser does:"}], "ExampleText"],
 
 Cell[BoxData[RowBox[{"HTMLClassList", "[", RowBox[{"XMLFirstCase", "[", RowBox[{"page", ",", RowBox[{"XMLPattern", "[", "\"p\"", "]"}]}], "]"}], "]"}]], "Input"],
 
@@ -244,7 +226,7 @@ Cell[BoxData[RowBox[{"StringSplit", "[", RowBox[{"value", ",", "HTMLWhitespace"}
 
 Cell[BoxData[RowBox[{"{", "\"btn\[NonBreakingSpace]btn-primary\"", "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A list of elements is not a valid argument:", "ExampleText"], Cell[BoxData[RowBox[{"HTMLClassList", "[", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"a\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"b\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}]}], "}"}], "]"}]], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Give ", Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"]], "InlineFormula"], " a list of elements to get a message:"}], "ExampleText"], Cell[BoxData[RowBox[{"HTMLClassList", "[", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"a\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"b\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}]}], "}"}], "]"}]], "Input"],
 
 Cell["HTMLClassList::notelement: The argument should be a single XMLElement. Got head List. For a list of elements, use HTMLClassList /@ elements.", "Message", "MSG"],
 
@@ -256,7 +238,7 @@ Cell[BoxData[RowBox[{"HTMLClassList", "/@", RowBox[{"{", RowBox[{RowBox[{"XMLEle
 
 Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", "\"a\"", "}"}], ",", RowBox[{"{", "\"b\"", "}"}]}], "}"}]], "Output"]}, Open]],
 
-Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A string is not a valid argument either:", "ExampleText"], Cell[BoxData[RowBox[{"HTMLClassList", "[", "\"lead promo\"", "]"}]], "Input"],
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Give ", Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"]], "InlineFormula"], " a string to get a message:"}], "ExampleText"], Cell[BoxData[RowBox[{"HTMLClassList", "[", "\"lead promo\"", "]"}]], "Input"],
 
 Cell["HTMLClassList::notelement: The argument should be a single XMLElement. Got head String. For a list of elements, use HTMLClassList /@ elements.", "Message", "MSG"],
 
@@ -266,7 +248,27 @@ Cell[TextData[{"To split an attribute value, use ", Cell[BoxData[ButtonBox["Stri
 
 Cell[BoxData[RowBox[{"StringSplit", "[", RowBox[{"\"lead promo\"", ",", "HTMLWhitespace"}], "]"}]], "Input"],
 
-Cell[BoxData[RowBox[{"{", RowBox[{"\"lead\"", ",", "\"promo\""}], "}"}]], "Output"]}, Open]]}, Open]],
+Cell[BoxData[RowBox[{"{", RowBox[{"\"lead\"", ",", "\"promo\""}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Get duplicate classes, which ", Cell[BoxData[ButtonBox["HTMLClassList", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/HTMLClassList"]], "InlineFormula"], " keeps:"}], "ExampleText"], Cell[BoxData[RowBox[{"HTMLClassList", "[", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"lead lead promo\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "]"}]], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"\"lead\"", ",", "\"lead\"", ",", "\"promo\""}], "}"}]], "Output"],
+
+Cell[TextData[{"Remove them with ", Cell[BoxData[ButtonBox["DeleteDuplicates", BaseStyle -> "Link", ButtonData -> "paclet:ref/DeleteDuplicates"]], "InlineFormula"], " to get the list that a browser's ", Cell[BoxData[StyleBox["classList", "TR"]], "InlineFormula"], " gives:"}], "ExampleText"],
+
+Cell[BoxData[RowBox[{"DeleteDuplicates", "[", RowBox[{"HTMLClassList", "[", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"lead lead promo\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}], "]"}], "]"}]], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"\"lead\"", ",", "\"promo\""}], "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell[TextData[{"Get the same empty list for an empty ", Cell[BoxData[StyleBox["class", "TR"]], "InlineFormula"], " and for a missing one:"}], "ExampleText"], Cell[BoxData[{RowBox[{RowBox[{"elements", "=", RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"p\"", ",", RowBox[{"{", RowBox[{"\"class\"", "->", "\"\""}], "}"}], ",", RowBox[{"{", "}"}]}], "]"}]}], "}"}]}], ";"}], "\[IndentingNewLine]", RowBox[{"HTMLClassList", "/@", "elements"}]}], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", "}"}], ",", RowBox[{"{", "}"}]}], "}"}]], "Output"],
+
+Cell[TextData[{"Test for the attribute with ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], " to tell them apart:"}], "ExampleText"],
+
+Cell[BoxData[RowBox[{RowBox[{"XMLMatchQ", "[", RowBox[{"XMLPattern", "[", RowBox[{"\"p\"", ",", "\"class\""}], "]"}], "]"}], "/@", "elements"}]], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{"False", ",", "True"}], "}"}]], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
