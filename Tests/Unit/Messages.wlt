@@ -343,7 +343,7 @@ TestCreate[
    says it looks above the element. *)
 TestCreate[
   capturedMessages[XMLMatchQ[XMLElement["p", {}, {}], "div > p"]],
-  {"The pattern should be an XMLPattern, an XMLElement pattern, an XMLDocument pattern, a list pattern for a list of elements, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f. A rule gives a value, not a test. A CSS selector such as \"nav a\" or \"ul > li\" looks above the element, which a lone element does not have; use XMLCases or XMLPosition to search a tree with it. Adjacent and Sibling were removed in version 4; a test of an element's children constrains them, as in XMLPattern[\"ul\"][Child[XMLPattern[\"li\"]]], and XMLCases searches a tree with a rule, as in XMLPattern[\"ul\"][Child[x : XMLPattern[\"li\"]]] :> x. Got \"div > p\"."},
+  {"The pattern should be an XMLPattern, an XMLElement pattern, an XMLDocument pattern, a list pattern for a list of elements, or a CSS selector string that describes one element, or alternatives of these, any of them named, with a condition pat /; test or a test pat?f. A rule gives a value, not a test. A CSS selector such as \"nav a\" or \"ul > li\" depends on what is above the element, which a lone element does not have; use XMLCases or XMLPosition to search a tree with it. Got \"div > p\"."},
   TestID -> "message-css-string-combinator-names-the-string"
 ];
 

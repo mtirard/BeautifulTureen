@@ -100,10 +100,10 @@ TestCreate[
   TestID -> "tree-message-child-place-elsewhere"
 ];
 
-(* The text shows the constraint and the 3.0 form it replaces. *)
+(* The text shows the constraint, and does not mention earlier versions. *)
 TestCreate[
   With[{text = First[messageTexts[XMLCases[links, Child[XMLPattern["p"], XMLPattern["a"]]]]]},
-    {StringContainsQ[text, "XMLPattern[\"ul\"][Child[x : XMLPattern[\"li\"]]] :> x"], StringContainsQ[text, "version 3"],
+    {StringContainsQ[text, "XMLPattern[\"ul\"][Child[x : XMLPattern[\"li\"]]] :> x"], !StringContainsQ[text, "version"],
       StringContainsQ[text, "Child[a], Child[b]"]}],
   {True, True, True},
   TestID -> "tree-message-child-place-text"
@@ -380,14 +380,13 @@ TestCreate[
 ];
 
 (* Adjacent and Sibling stay unevaluated in a consumer, which gives
-   ::badpat, whose text names the tree form. *)
+   ::badpat; the paclet is unreleased, so the text does not mention them. *)
 TestCreate[
   With[{texts = Join[messageTexts[XMLCases[links, Adjacent[XMLPattern["p"], XMLPattern["a"]]]],
       messageTexts[XMLFirstCase[links, Sibling[XMLPattern["a"], XMLPattern["a"]]]],
       messageTexts[XMLDeleteCases[links, XMLPattern["p"][{___, Adjacent[XMLPattern["a"], XMLPattern["a"]], ___}]]]]},
-    {Length[texts], AllTrue[texts, StringContainsQ["Adjacent and Sibling were removed"]],
-      AllTrue[texts, StringContainsQ["Child[x : XMLPattern[\"li\"]]"]]}],
-  {3, True, True},
+    {Length[texts], NoneTrue[texts, StringContainsQ["were removed"]]}],
+  {3, True},
   TestID -> "tree-message-combinator-badpat"
 ];
 
