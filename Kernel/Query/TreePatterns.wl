@@ -156,11 +156,18 @@ runQuery[cq_Association, tree_, mode_, n_ : Infinity, roots_ : All] :=
             $nodeId = cq["LastNodeId"], $indexDepth = indexDepth[roots, top, cq["Reach"]], $memo = <||>,
             $elem, $parent, $depth, $kids, $index, $end, $wlPos, $tops, $posMemo = <||>, $keyMemo = <||>,
             $matElems = <||>, $keyLength},
-          If[roots === All, cachedIndexTree[tree], indexTree[tree]];
-          With[{r = results[mode, cq, roots === All && MatchQ[tree, _XMLElement], n, rootNodes[cq["Root"], roots, top, tree]]},
-            If[roots === All, keptIndex[tree]];
-            r]]]],
+          onIndex[roots, tree, results[mode, cq, bareQ[roots, tree], n, rootNodes[cq["Root"], roots, top, tree]] &]]]],
     $refusal];
+
+(* f[] run on the index of tree: for All, read from the one-slot cache and
+   written back to it; otherwise indexed afresh, the cache untouched. *)
+onIndex[All, tree_, f_] := (cachedIndexTree[tree]; With[{r = f[]}, keptIndex[tree]; r]);
+onIndex[_, tree_, f_] := (indexTree[tree]; f[]);
+
+(* Whether the input is a bare element whose own position is never counted
+   (results): only when every node may be the root. *)
+bareQ[All, tree_] := MatchQ[tree, _XMLElement];
+bareQ[_, _] := False;
 
 (* The node of tree the run is rooted at: the element, 1, or the document or
    the virtual document above a list's elements, 0; None, for "Input", when
