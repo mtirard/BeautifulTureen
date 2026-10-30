@@ -269,8 +269,7 @@ reapBinds[expr_] :=
    With[{e$ = uncopied[e$$]}, With[{e = unmaterialised[e$]}, body]]. The two
    inverses commute: unmaterialised removes token lists at any depth, from a
    list of copies of an attribute list as from the list itself, so the order
-   the wrappers stack in does not change what the name sees. Issue #3 proposes
-   one module for both renamings.
+   the wrappers stack in does not change what the name sees.
 
    Only the names written in held are restored, also those inside held code
    within it: unmaterialised is linear in an element's subtree. With replaces a name only where it is
