@@ -91,7 +91,7 @@ matchWith[m_, el_] := m[el];
    pattern (Query/TreePatterns.wl). *)
 matcherOf[q_] :=
   If[plainRootQ[q], elementMatcher[q, XMLMatchQ],
-    Replace[compileQuery[XMLMatchQ, q, {}, True], cq : Except[$Failed] :> (testResult[runQuery[cq, #, "Values", 1, "Input"], True] &)]];
+    Replace[compileQuery[XMLMatchQ, q, "Test", "Lists"], cq : Except[$Failed] :> (testResult[runQuery[cq, #, "Values", 1, "Input"], True] &)]];
 
 (* A test's truth value from its run, at most one result: whether it gave
    one, for XMLMatchQ, or gave none, for XMLFreeQ. *)
@@ -141,7 +141,7 @@ XMLFreeQ[tree_, q : Except[_?(optionRuleQ[XMLFreeQ])], levels : Except[_?(option
 
 XMLFreeQ[args___] /; (countMessage[XMLFreeQ, {args}, {1, 3}]; False) := Null;
 
-freeMatcher[q_] := compileQuery[XMLFreeQ, q, {}];
+freeMatcher[q_] := compileQuery[XMLFreeQ, q, "Test"];
 
 (* The run checks the tree, after the compile, so a query mistake comes first. *)
 freeWith[$Failed, _, _] := $Failed;

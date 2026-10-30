@@ -75,13 +75,13 @@ removedCombinatorQ[held_] :=
    tree. counted is None for the names the right-hand side uses (rhsNames),
    or else the counted names, each Hold[name]; the other names the
    right-hand side mentions are then test names.
-   counted {} compiles an element test, as XMLMatchQ and XMLFreeQ give one:
-   the pattern itself, not erased to r$ : p :> r$, with nothing counted or
-   tested, so a run gives at most one result, the empty tuple, and stops at
-   the first solution. A rule is refused, as a test gives a truth value, not
-   results; a context selector is refused, as it looks above the element
-   tested. listsQ: whether a list pattern, in the contents-list grammar, can
-   be the root (XMLMatchQ's lists).
+   counted "Test" compiles an element test, as XMLMatchQ and XMLFreeQ give
+   one: the pattern itself, not erased to r$ : p :> r$, with nothing counted
+   or tested, so a run gives at most one result, the empty tuple, and stops
+   at the first solution. A rule is refused, as a test gives a truth value,
+   not results; a context selector is refused, as it looks above the
+   element tested. lists "Lists" lets a list pattern, in the contents-list
+   grammar, be the root (XMLMatchQ's lists).
    The compiled query is an Association of all the run reads: "Head";
    "Root", the compiled pattern; "Rhs", the held right-hand side; "Names",
    the names the pattern binds; "Counted"; "TestNames"; "Readings"; "Order"
@@ -92,12 +92,12 @@ removedCombinatorQ[held_] :=
    id compiled. A list pattern at a list key is compiled while matching
    (tokenListMatches), so the run numbers its nodes on from there: they
    never share an id, nor so a memo entry, with a compiled node. *)
-compileQuery[head_, q_, counted_ : None, listsQ_ : False] :=
+compileQuery[head_, q_, counted_ : None, lists_ : None] :=
   Catch[
     Block[{$head = head, $nodeId = 0, $order, $slotOf = <||>, $readings, $place = "query", $owner = XMLPattern,
-        $namedPaths = False, $exceptRefs, $records, $countedNames, $contextOK = counted =!= {}},
-      Module[{lhs, rhs, all, names, root, listQ = listsQ && listRootQ[q]},
-        If[counted === {},
+        $namedPaths = False, $exceptRefs, $records, $countedNames, $contextOK = counted =!= "Test"},
+      Module[{lhs, rhs, all, names, root, listQ = lists === "Lists" && listRootQ[q]},
+        If[counted === "Test",
           If[MatchQ[q, _Rule | _RuleDelayed], refuseHere["badpat", q]];
           {lhs, rhs} = {Hold[q], Hold[]},
           If[namedContextQ[q], refuseHere["badpat", q]];
@@ -106,7 +106,10 @@ compileQuery[head_, q_, counted_ : None, listsQ_ : False] :=
         $readings = Replace[readingsInForce[], $Failed :> Throw[$Failed, $refusal]];
         all = namesIn[lhs];
         $order = patternOrder[lhs];
-        names = If[counted === None, rhsNames[rhs, all], {counted, Complement[mentioned[rhs, all], counted]}];
+        names = Switch[counted,
+          None, rhsNames[rhs, all],
+          "Test", {{}, {}},
+          _, {counted, Complement[mentioned[rhs, all], counted]}];
         $exceptRefs = exceptRefs[lhs];
         $countedNames = First[names];
         checkExcept[lhs, If[counted === None, First[names], Union @@ names]];
