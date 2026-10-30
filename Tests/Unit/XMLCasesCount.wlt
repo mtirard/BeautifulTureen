@@ -43,11 +43,14 @@ TestCreate[
   TestID -> "count-body-evaluated-only-for-returned-matches"
 ];
 
-(* The traversal stops at the nth match: a test is not applied past it. *)
+(* A test in the pattern may be applied past the nth match, at most once to
+   each element; the results are still the first n (ADR 0024, Evaluation). *)
 TestCreate[
-  Reap[XMLCases[$countFlat, XMLPattern["li"]?((Sow[First[Last[#]]]; True) &), 2]][[2]],
-  {{"1", "2"}},
-  TestID -> "count-traversal-stops-at-nth-match"
+  With[{r = Reap[XMLCases[$countFlat, XMLPattern["li"]?((Sow[First[Last[#]]]; True) &), 2]]},
+    {HTMLTextContent /@ First[r], SubsetQ[Flatten[Last[r]], {"1", "2"}], SubsetQ[{"1", "2", "3", "4", "5"}, Flatten[Last[r]]],
+      DuplicateFreeQ[Flatten[Last[r]]]}],
+  {{"1", "2"}, True, True, True},
+  TestID -> "count-test-in-pattern-may-run-past-nth-match"
 ];
 
 (* As in Cases, a rule's right-hand side is evaluated once, before any

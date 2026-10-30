@@ -18,6 +18,8 @@ bs4's `find_all(…, limit=n)` had no counterpart: `XMLFirstCase` was the only w
 
 **Early stop.** With `pattern :> body`, `body` is evaluated only for the returned matches. With `pattern -> rhs`, `rhs` is evaluated once before any matching, as the usage says and as `Cases` does, even for `n = 0`. For a pattern that is not a combinator, the search also stops at the nth match, as `Cases[…, n]` does: `Position[tree, pat, Infinity, n]` stops at the nth match in `Cases` order, which visits an element after the elements nested in it. Any match earlier in document order that it has not visited is an element that a visited match is nested in, so the first `n` in document order are among the matches found and the elements on the way down to them, each tested once. `XMLFirstCase` uses the same search with `n = 1`. A combinator, and a body with a `Condition` that can reject a match, still collect every candidate before the first `n` are taken, as `XMLFirstCase` does for them; a test on a stage can then see elements past the nth result.
 
+> **Note (ADR 0024, Evaluation):** the search no longer stops at the nth match. Only the body is evaluated just for the returned results; a `Condition` or `PatternTest` in the pattern may be evaluated on any candidate, past the nth result, and a `Condition` once per distinct value of the names it tests.
+
 **Scope:** `XMLCases` only. `XMLDeleteCases`, where nested matches removed with an outer one make "the first n" ambiguous, and `XMLFirstCase` are unchanged.
 
 ## Consequences
