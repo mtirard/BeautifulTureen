@@ -1,5 +1,5 @@
 ---
-status: accepted (supersedes ADR-0014 and ADR-0015 with ADR-0023; supersedes ADR-0019 in part)
+status: accepted (supersedes ADR-0014 and ADR-0015 with ADR-0023; supersedes ADR-0019 in part; amended: evaluation of tests in the pattern)
 ---
 
 # A query gives one result per distinct tuple of positions of its counted names
@@ -19,6 +19,17 @@ There is **no implicit result**. A bare pattern `p` is erased to `r$ : p :> r$` 
 ### Order
 
 Results are a nested loop over the counted names in pattern order, the first name slowest (XQuery's `for` order). Each name runs in position order: by where a position starts in the source, a container before what it holds. One `Alternatives` is one slot. Uncounted names take their first passing position. `XMLCases[t, q, n]` counts results in this order (ADR 0019); `XMLFirstCase` gives the first.
+
+### Evaluation (amended)
+
+The right-hand side, with the `Condition`s it tests, is evaluated in result order, once per result tried, and only until there are `n` results. The tests in the pattern carry no such promise:
+
+- a `Condition` or `PatternTest` in the pattern may be evaluated on candidates past the `n`-th result, and before any result is given;
+- a `Condition` in the pattern may be evaluated once per distinct value of the names it tests, in no promised order, and a `PatternTest` once per element it tests.
+
+So `Reap[XMLCases[t, XMLPattern["li"]?((Sow[#]; True) &), 2]]` gives the first two `li` and may sow every `li`. Code whose side effects or cost depend on how often, or in which order, a test in the pattern runs must move that code to the right-hand side.
+
+The reason is the engine: the query engine matches each part of a pattern against all candidates at once, as columns of integers, which is several times faster on pages with many results than visiting candidates one at a time, and a test that stopped at the `n`-th result would need the visit order back.
 
 ### Every consumer reads the same rule
 
