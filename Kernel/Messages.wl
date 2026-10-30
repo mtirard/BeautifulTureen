@@ -14,7 +14,7 @@ Scan[Function[h,
    runs a query. *)
 Scan[Function[h,
     MessageName[h, "exceptname"] = "The name `1` is bound inside Except, which matches only where its pattern does not, so it has no value in the right-hand side. A name inside Except can be used only by tests inside that Except.";
-    MessageName[h, "text"] = "The name `1` is bound to text inside an XMLElement pattern, and text has no position, so the name cannot be a result. Name the element that holds the text instead, or use the name only in a test."],
+    MessageName[h, "text"] = "The name `1` can match text inside an XMLElement pattern, and text has no position, so the name cannot be a result. Give it a pattern that matches only elements, such as `1`_XMLElement, name the element that holds the text instead, or use the name only in a test."],
   {XMLCases, XMLFirstCase, XMLPosition, XMLDeleteCases, XMLReplace, HTMLInnerText, HTMLToNotebook, HTMLToTree}];
 
 (* The "Roles" option. *)

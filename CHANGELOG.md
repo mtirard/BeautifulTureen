@@ -5,6 +5,7 @@
 ### Changes
 
 - **A mistake in a list key's value is refused on every tree.** `XMLCases[t, XMLPattern["a", "classList" -> {___, PatternTest[x : PatternSequence[_, _], StringQ]}] :> x]` gives `XMLCases::badpat` and `$Failed` also when `t` has no `a` element, where it gave `{}`.
+- **A counted name that can match text in an `XMLElement` pattern's contents is refused from the pattern alone**, with `::text`, also on a tree with no text there. `XMLCases[t, XMLPattern["tr"][{XMLElement["th", _, {s___}], ___}] :> {s}]` is refused even when every `th` holds only elements; give the name a pattern that matches only elements, as `s___XMLElement`.
 
 ## 4.0.0
 

@@ -654,16 +654,24 @@ cContents[p_, need_] := plainNode[p, need];
 plainNode[p_, need_] :=
   With[{names = namesIn[outsideExcept[Hold[p]]]}, treeNode["Plain", names, need, "Pattern" -> p]];
 
-(* A counted name that binds text is refused: text has no
-   position. Here, where the pattern shows it; a sequence that binds text
-   while matching is refused by the results (refuseBoundText). *)
+(* A counted name that can bind text is refused: text has no position. It is
+   decided from the pattern, where a name is on an entry of a literal's
+   contents list, so that a query is refused on every tree, also on one with
+   no text there. *)
 refuseText[name_, p_] :=
-  If[MemberQ[$countedNames, name] && textPatternQ[p], refuseHere["text", Replace[name, Hold[s_] :> HoldForm[s]]]];
+  If[MemberQ[$countedNames, name] && admitsTextQ[p], refuseHere["text", Replace[name, Hold[s_] :> HoldForm[s]]]];
 
-textPatternQ[p_] :=
-  MatchQ[p, _String | Verbatim[Blank][String] | Verbatim[BlankSequence][String]] ||
-  MatchQ[p, Verbatim[Pattern][_, q_] | Verbatim[PatternTest][q_, _] | Verbatim[Condition][q_, _] | Verbatim[Repeated][q_, ___] /; textPatternQ[q]] ||
-  MatchQ[p, _Alternatives] && AllTrue[List @@ p, textPatternQ];
+(* Whether an entry of a literal's contents list can match text: a string,
+   a blank or sequence with no head or the head String, or an Except of
+   one item; through names, tests, Conditions, repeats and alternatives. An
+   XMLPattern, an XMLElement pattern, or a blank with another head, matches
+   only elements. *)
+admitsTextQ[p_] :=
+  MatchQ[p, _String | (Verbatim[Blank] | Verbatim[BlankSequence] | Verbatim[BlankNullSequence])[] | (Verbatim[Blank] | Verbatim[BlankSequence] | Verbatim[BlankNullSequence])[String] |
+    Verbatim[Except][_]] ||
+  MatchQ[p, Verbatim[Pattern][_, q_] | Verbatim[PatternTest][q_, _] | Verbatim[Condition][q_, _] | (Verbatim[Repeated] | Verbatim[RepeatedNull] | Verbatim[Optional] | Shortest | Longest)[q_, ___] |
+    Verbatim[Except][_, q_] | Verbatim[HoldPattern][q_] /; admitsTextQ[q]] ||
+  MatchQ[p, _Alternatives | Verbatim[PatternSequence][__]] && AnyTrue[List @@ p, admitsTextQ];
 
 (* The counted names, for refuseText; none for an element test. *)
 $countedNames = {};
@@ -1805,8 +1813,9 @@ results[mode_, cq_, bare_, n_, nodes_] :=
         If[r =!= $noResult, count++; Sow[r, $resultTag]]]]];
 
 (* A counted name bound to text, or to a run holding text, in some solution
-   is refused, as refuseText refuses one whose pattern shows
-   it. *)
+   is refused. refuseText refuses every name on an entry that can match text
+   before the run; this is left for a name inside another WL pattern on an
+   item, as HoldPattern[x_], that binds the whole item. *)
 refuseBoundText[sols_, counted_] :=
   Replace[FirstCase[counted, n_ /; AnyTrue[sols, MemberQ[matchPos[Lookup[#, Key[n], {{}}]], Missing["Text"]] &]],
     Hold[s_] :> refuseHere["text", HoldForm[s]]];
