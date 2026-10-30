@@ -75,28 +75,20 @@ removedCombinatorQ[held_] :=
 (* in the tree.                                                 *)
 (* =========================================================== *)
 
-(* The compiled query of q under head, or $Failed after a message under
-   head. It reads the query, counted and the readings in force, never a
-   tree. counted is None for the names the right-hand side uses (rhsNames),
-   or else the counted names, each Hold[name]; the other names the
-   right-hand side mentions are then test names.
-   counted "Test" compiles an element test, as XMLMatchQ and XMLFreeQ give
-   one: the pattern itself, not erased to r$ : p :> r$, with nothing counted
-   or tested, so a run gives at most one result, the empty tuple, and stops
-   at the first solution. A rule is refused, as a test gives a truth value,
-   not results; a context selector is refused, as it looks above the
-   element tested. lists "Lists" lets a list pattern, in the contents-list
-   grammar, be the root (XMLMatchQ's lists).
-   The compiled query is an Association of all the run reads: "Head";
-   "Root", the compiled pattern; "Rhs", the held right-hand side; "Names",
-   the names the pattern binds; "Counted"; "TestNames"; "Readings"; "Order"
-   and "Slots", the pattern order and the Alternatives slots, which
-   compiling extends; "NamedPaths"; "ExceptRefs"; "Records"; "Lists",
-   whether the root is a list pattern; "Reach", how many DOM levels below
-   its root the pattern reads (reachBelow); and "LastNodeId", the last node
-   id compiled. A list pattern at a list key is compiled while matching
-   (tokenListMatches), so the run numbers its nodes on from there: they
-   never share an id, nor so a memo entry, with a compiled node. *)
+(* The compiled query of q under head, an Association of all the run
+   reads, or $Failed after a message under head. It reads the query, counted
+   and the readings in force, never a tree. counted is None for the names
+   the right-hand side uses (rhsNames), or else the counted names, each
+   Hold[name], and the other names the right-hand side mentions are test
+   names; or "Test", for an element test as XMLMatchQ and XMLFreeQ give one:
+   the pattern itself, with nothing counted, so a run gives at most the
+   empty tuple and stops at the first solution. A test refuses a rule, which
+   gives results, and a context selector, which looks above the element.
+   lists "Lists" lets a list pattern, in the contents-list grammar, be the
+   root (XMLMatchQ's lists). A list pattern at a list key is compiled while
+   matching (tokenListMatches), so the run numbers its nodes on from
+   "LastNodeId": none shares an id, nor so a memo entry, with a compiled
+   node. *)
 compileQuery[head_, q_, counted_ : None, lists_ : None] :=
   Catch[
     Block[{$head = head, $nodeId = 0, $order, $slotOf = <||>, $readings, $place = "query", $owner = XMLPattern,
@@ -129,28 +121,13 @@ compileQuery[head_, q_, counted_ : None, lists_ : None] :=
 
 (* The results of compiled query cq on tree, the first n of them in result
    order, each the list of what it splices in, or $Failed after a message
-   under its head; a refused compile, $Failed, passes through. The tree is
-   checked, indexed and searched with fresh memos. mode is what each result
-   is (resultOf).
-   roots is which nodes of the tree may be the pattern root:
-   - All, every node, as the searching consumers ask. The whole tree is
-     indexed, and the index is read from the one-slot cache and written back
-     to it (cachedIndexTree, keptIndex), so a document queried many times is
-     indexed once;
-   - "Input", the input itself, as XMLMatchQ tests it: an element, a
-     document, or, for a list pattern ("Lists"), the virtual document above a
-     list's elements. Any other input is no error: it gives no results,
-     without a message;
-   - {lo, hi}, the nodes at relative DOM depths lo to hi, the input at depth
-     0, as XMLFreeQ tests them. A list is not a node: its elements are at
-     depth 1.
-   For "Input" and {lo, hi}, the input is indexed no deeper than the pattern
-   reaches below those nodes, and the cache is neither read nor written: an
-   element test applied to many small inputs would otherwise replace the
-   index of the document being searched. The input itself is then tried as
-   the pattern root, so the bare element's own position is not dropped as it
-   is for All. The index depth is bound for each run, so that a query in a
-   Condition indexes its own input in full. *)
+   under its head; a refused compile, $Failed, passes through. mode is what
+   each result is (resultOf). roots is which nodes may be the pattern root:
+   All, every node, as the searching consumers ask; "Input", the input
+   itself, as XMLMatchQ tests it; or {lo, hi}, the nodes at relative DOM
+   depths lo to hi, as XMLFreeQ tests them. Only All reads and writes the
+   one-slot index cache: an element test applied to many small inputs would
+   otherwise replace the index of the document being searched. *)
 runQuery[$Failed, ___] := $Failed;
 runQuery[cq_Association, tree_, mode_, n_ : Infinity, roots_ : All] :=
   Catch[
@@ -200,14 +177,16 @@ topNode[cq_, x_, _] :=
 
 (* The DOM depth the input is indexed to: the node it is rooted at, 1 for an
    element, plus how far below it the pattern root may be, plus how far
-   below that the pattern reads. *)
+   below that the pattern reads. It is bound for each run, so that a query
+   in a Condition indexes its own input in full. *)
 indexDepth[All, _, _] := Infinity;
 indexDepth["Input", top_, reach_] := top + reach;
 indexDepth[{_, hi_}, top_, reach_] := top + hi + reach;
 
 (* The nodes tried as the pattern root (rootCandidates), in document order,
    or All for every candidate. A node of a depth range is tried only if the
-   root can match it (candidateVector). *)
+   root can match it (candidateVector); the input is at depth 0, but a list
+   is not a node: its elements are at depth 1. *)
 rootNodes[_, All, _, _] := All;
 rootNodes[_, "Input", top_, _] := {top};
 rootNodes[root_, {lo_, hi_}, top_, x_] :=
@@ -1909,29 +1888,25 @@ groupResult[mode_, rhs_, all_, testNames_, group_] :=
         SortBy[group, Function[sol, Join @@ (padded[matchKeyOrPad[Lookup[sol, Key[#], None]]] & /@ names)]]]]},
     FirstCase[ordered, sol_ :> With[{v = resultOf[mode, rhs, all, sol]}, v /; v =!= $noResult], $noResult]];
 
-(* What each result is, in each output mode:
+(* The result of one solution, in each output mode:
    - "Values": the right-hand side's value, as XMLCases gives it;
    - "Positions": the same, with each name replaced by its position, as
-     XMLPosition gives it;
+     XMLPosition gives it. Its Conditions are run as for XMLCases, on the
+     values, and then the code they guard is evaluated with the positions,
+     so a right-hand side with a test is evaluated twice. A repeated name
+     with several positions gives the list of them (positionOf); a name that
+     is absent, Sequence[];
    - "CountedPositions": the positions of the counted names, whatever the
      right-hand side does with them, as XMLDeleteCases, Hide and Focus act
      on them. A no-match is {}, never read as {} the document. A repeated
      name compared by value gives every position it is bound at, since each
      is in the tuple;
    - "Solutions": the solution, an Association name -> {positions, {value}},
-     the value a list of what the name splices in, as XMLReplace acts on it.
-     Compiled with counted names given, the names the right-hand side
-     mentions beyond them take their first passing match.
+     the value a list of what the name splices in, as XMLReplace acts on it,
+     evaluating its replacements later, on the tree as rewritten. Compiled
+     with counted names given, the names the right-hand side mentions beyond
+     them take their first passing match.
    A result its Conditions refuse gives none, in every mode. *)
-
-(* The right-hand side evaluated for one solution, in an output mode. For
-   XMLPosition, its Conditions are run as for XMLCases, on the values, and
-   then the code they guard is evaluated with each name replaced by its
-   position instead, so a right-hand side with a test is evaluated twice. A
-   repeated name with several positions gives the list of them (positionOf);
-   a name that is absent, Sequence[]. For XMLReplace, the Conditions are run
-   in the same way and the solution itself is given, for its replacements to
-   be evaluated later, on the tree as rewritten. *)
 resultOf["Values", rhs_, all_, sol_] := evaluated[substituted[rhs, all, sol]];
 resultOf["Solutions", rhs_, all_, sol_] :=
   If[guardedBody[rhs] =!= rhs && evaluated[substituted[rhs, all, sol]] === $noResult, $noResult,
