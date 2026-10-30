@@ -35,6 +35,14 @@ TestCreate[
   TestID -> "replace-targets-form"
 ];
 
+(* Each result of an Alternatives at the root replaces the name of the branch
+   that matched. *)
+TestCreate[
+  XMLReplace[doc[el["p", el["a"], el["b"]]], (x : XMLPattern["a"]) | (y : XMLPattern["b"]) :> {x -> "A", y -> "B"}],
+  doc[el["p", "A", "B"]],
+  TestID -> "replace-targets-form-root-alternatives"
+];
+
 (* Contents are rewritten before their container, and each replacement sees
    the tree as rewritten so far. *)
 TestCreate[
