@@ -180,6 +180,106 @@ TestCreate[
   TestID -> "result-css-no-counted-names-one-result"
 ];
 
+(* === Condition scope ===
+
+   A Condition sees only the names bound inside the pattern it wraps, as in
+   WL, where MatchQ[{1, {2}}, {a_, {b_} /; b > a}] is False. A name it
+   cannot see is an unbound symbol: bound[x] is False for it, with no
+   message. A test relating names bound in different places goes on a
+   pattern that contains them, or in the rule's body. *)
+
+bound[v_] := !MatchQ[v, _Symbol];
+
+scoped = doc[XMLElement["ul", {"class" -> "a"}, {e["li", "1"], e["li", "2"]}]];
+
+(* Not a name bound in an ancestor, its attributes or its name. *)
+TestCreate[
+  {XMLCases[scoped, XMLPattern["ul", "class" -> c_][Child[x : XMLPattern["li"] /; bound[c]]] :> id[x]],
+    XMLCases[scoped, u : XMLPattern["ul"][Child[x : XMLPattern["li"] /; bound[u]]] :> id[x]],
+    XMLCases[scoped, XMLPattern["ul", "class" -> c_][Child[x : XMLPattern["li"]] /; bound[c]] :> id[x]]},
+  {{}, {}, {}},
+  TestID -> "condition-scope-not-ancestor"
+];
+
+TestCreate[
+  {XMLCases[scoped, (XMLPattern["ul", "class" -> c_][Child[x : XMLPattern["li"]]] /; bound[c]) :> id[x]],
+    XMLCases[scoped, (u : XMLPattern["ul"][Child[x : XMLPattern["li"]]]) /; bound[u] && bound[x] :> id[x]],
+    XMLCases[scoped, XMLPattern["ul", "class" -> c_][Child[x : XMLPattern["li"]]] :> id[x] /; bound[c]]},
+  {{"1", "2"}, {"1", "2"}, {"1", "2"}},
+  TestID -> "condition-scope-containing-pattern"
+];
+
+(* Not a name bound in a sibling constraint, on a pattern inside the
+   constraint or on the constraint; a constraint's Condition sees its own. *)
+TestCreate[
+  {XMLCases[scoped, XMLPattern["ul"][Descendant[x : XMLPattern["li"]], Descendant[y : XMLPattern["li"] /; bound[x]]] :> id[y]],
+    XMLCases[scoped, XMLPattern["ul"][Descendant[x : XMLPattern["li"]], Descendant[y : XMLPattern["li"]] /; bound[x]] :> id[y]],
+    XMLCases[scoped, XMLPattern["ul"][{x : XMLPattern["li"], ___}, {___, y : XMLPattern["li"]} /; bound[x]] :> id[y]],
+    XMLCases[scoped, XMLPattern["ul"][Descendant[x : XMLPattern["li"]], Descendant[y : XMLPattern["li"]] /; bound[y]] :> id[y]],
+    XMLCases[scoped, XMLPattern["ul"][Descendant[x : XMLPattern["li"]], (p : Descendant[y : XMLPattern["li"]]) /; bound[p] && bound[y]] :> id[y]]},
+  {{}, {}, {}, {"1", "2"}, {"1", "2"}},
+  TestID -> "condition-scope-not-sibling-constraint"
+];
+
+TestCreate[
+  XMLCases[scoped, (XMLPattern["ul"][Descendant[x : XMLPattern["li"]], Descendant[y : XMLPattern["li"]]] /; bound[x]) :> id[y]],
+  {"1", "2"},
+  TestID -> "condition-scope-sibling-constraint-on-containing"
+];
+
+(* Not a name bound in an earlier entry of the same list, on an entry or on
+   a sequence; a Condition on the list sees both. *)
+TestCreate[
+  {XMLCases[scoped, XMLPattern["ul"][{x : XMLPattern["li"], y : XMLPattern["li"] /; bound[x]}] :> id[y]],
+    XMLCases[scoped, XMLPattern["ul"][{x : XMLPattern["li"], s__ /; bound[x]}] :> 1],
+    XMLCases[scoped, XMLPattern["ul"][{x : XMLPattern["li"], y : XMLPattern["li"]} /; bound[x]] :> id[y]],
+    XMLCases[scoped, XMLPattern["ul"][{x : XMLPattern["li"], y : XMLPattern["li"]}] :> id[y] /; bound[x]]},
+  {{}, {}, {"2"}, {"2"}},
+  TestID -> "condition-scope-not-earlier-entry"
+];
+
+(* The same in an element test, and in a "Roles" key, whose element tests
+   are plain WL patterns. *)
+TestCreate[
+  {XMLMatchQ[scoped[[2]], XMLPattern["ul", "class" -> c_][Child[XMLPattern["li"] /; bound[c]]]],
+    XMLMatchQ[scoped[[2]], XMLPattern["ul", "class" -> c_][Child[XMLPattern["li"]]] /; bound[c]],
+    XMLFreeQ[scoped, XMLPattern["ul"][{x : XMLPattern["li"], XMLPattern["li"] /; bound[x]}]],
+    XMLFreeQ[scoped, XMLPattern["ul"][{x : XMLPattern["li"], XMLPattern["li"]} /; bound[x]]]},
+  {False, True, True, False},
+  TestID -> "condition-scope-element-tests"
+];
+
+TestCreate[
+  With[{page = doc[el["body", XMLElement["nav", {"class" -> "a", "role" -> "menu"}, {el["a", "Home"]}], el["p", "Text"]]]},
+    HTMLInnerText[page, "Roles" -> {#}] & /@ {
+      XMLPattern["nav", "class" -> c_][Child[XMLPattern["a"] /; bound[c]]] -> "Skip",
+      (XMLPattern["nav", "class" -> c_][Child[XMLPattern["a"]]] /; bound[c]) -> "Skip",
+      XMLPattern["nav", {"class" -> c_ /; bound[r], "role" -> r_}] -> "Skip",
+      (XMLPattern["nav", {"class" -> c_, "role" -> r_}] /; bound[r]) -> "Skip"}],
+  {"Home\nText", "Text", "Home\nText", "Text"},
+  TestID -> "condition-scope-roles-keys"
+];
+
+(* Laws: an XML pattern's verdict is MatchQ's on the same list pattern, the
+   list {1, {2}} standing for ul[li, ol[li]]. *)
+TestCreate[
+  With[{tree = XMLElement["ul", {}, {el["li"], el["ol", el["li"]]}]},
+    {XMLMatchQ[tree, #] & /@ {
+        XMLPattern["ul"][{x : XMLPattern["li"], XMLPattern["ol"][{y : XMLPattern["li"]}] /; bound[x]}],
+        XMLPattern["ul"][{x : XMLPattern["li"], XMLPattern["ol"][{y : XMLPattern["li"] /; bound[x]}]}],
+        XMLPattern["ul"][{x : XMLPattern["li"], XMLPattern["ol"][{y : XMLPattern["li"] /; bound[y]}]}],
+        XMLPattern["ul"][{x : XMLPattern["li"], XMLPattern["ol"][{y : XMLPattern["li"]}]}] /; bound[x] && bound[y],
+        XMLPattern["ul"][{x : XMLPattern["li"], y : XMLPattern["ol"] /; bound[x]}]},
+      MatchQ[{1, {2}}, #] & /@ {
+        {x_, {y_} /; bound[x]},
+        {x_, {y_ /; bound[x]}},
+        {x_, {y_ /; bound[y]}},
+        {x_, {y_}} /; bound[x] && bound[y],
+        {x_, y_ /; bound[x]}}}],
+  {{False, False, True, True, False}, {False, False, True, True, False}},
+  TestID -> "condition-scope-laws"
+];
+
 (* === Section 5: order === *)
 
 (* Grouped by the first counted name in pattern order, whatever the order in
