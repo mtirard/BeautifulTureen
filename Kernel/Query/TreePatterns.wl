@@ -74,56 +74,31 @@ removedCombinatorQ[held_] :=
 
 (* =========================================================== *)
 (* Running a query                                              *)
+(*                                                              *)
+(* A query is compiled once, from the query alone               *)
+(* (compileQuery), then run on a tree in an output mode         *)
+(* (runQuery), so a mistake in the query is reported before one *)
+(* in the tree.                                                 *)
 (* =========================================================== *)
 
 (* The results of q on tree, the first n of them in result order, or $Failed
    after a message under head. A result that is a sequence is spliced in, as
    in Cases. *)
-treeCases[head_, tree_, q_, n_] := Replace[treeResults[head, tree, q, n], l_List :> Join @@ l];
+treeCases[head_, tree_, q_, n_] := joined[treeResults[head, tree, q, n]];
 
 (* The same, each result as the list of what it splices in. *)
-treeResults[head_, tree_, q_, n_] :=
-  Catch[
-    Block[{$head = head, $nodeId = 0, $memo = <||>, $order, $slotOf = <||>, $readings,
-        $elem, $parent, $depth, $kids, $index, $end, $wlPos, $tops, $posMemo = <||>, $keyMemo = <||>,
-        $matElems = <||>, $keyLength, $place = "query", $owner = XMLPattern, $namedPaths = False, $exceptRefs,
-        $records, $countedNames, $contextOK = True},
-      Module[{lhs, rhs, all, counted, testNames, need, root},
-        If[namedContextQ[q], refuseHere["badpat", q]];
-        {lhs, rhs} = splitQuery[q];
-        If[removedCombinatorQ[lhs], refuseHere["badpat", q]];
-        $readings = Replace[readingsInForce[], $Failed :> Throw[$Failed, $refusal]];
-        all = namesIn[lhs];
-        $order = patternOrder[lhs];
-        {counted, testNames} =
-          If[$countedGiven === None, rhsNames[rhs, all], {$countedGiven, Complement[mentioned[rhs, all], $countedGiven]}];
-        $exceptRefs = exceptRefs[lhs];
-        $countedNames = counted;
-        checkExcept[lhs, If[$countedGiven === None, counted, Union[counted, testNames]]];
-        need = Union[counted, testNames, comparedNames[lhs]];
-        $records = $exceptRefs =!= {};
-        root = compileRoot[lhs, need];
-        If[!validTreeQ[tree], messageTreeRefusal[head, tree]; Throw[$Failed, $refusal]];
-        cachedIndexTree[tree];
-        With[{r = results[root, rhs, all, counted, testNames, MatchQ[tree, _XMLElement], n]},
-          keptIndex[tree];
-          r]]],
-    $refusal];
+treeResults[head_, tree_, q_, n_] := runQuery[compileQuery[head, q], tree, "Values", n];
 
 (* What XMLPosition gives: the results of q with each counted name replaced
    by its position (resultOf). *)
-treePositions[head_, tree_, q_] := Block[{$positionsOut = True}, treeCases[head, tree, q, Infinity]];
-
-$positionsOut = False;
+treePositions[head_, tree_, q_] := joined[runQuery[compileQuery[head, q], tree, "Positions", Infinity]];
 
 (* What Hide and Focus act on: for each result of q, the positions of its
    counted names, whatever the right-hand side does with them. A result its
    Conditions refuse gives none. A no-match is {}, never read as {} the
    document. A repeated name compared by value gives every position it is
    bound at, since each is in the tuple. *)
-treeCountedPositions[head_, tree_, q_] := Block[{$positionsOut = True, $countedPositionsOut = True}, treeCases[head, tree, q, Infinity]];
-
-$countedPositionsOut = False;
+treeCountedPositions[head_, tree_, q_] := joined[runQuery[compileQuery[head, q], tree, "CountedPositions", Infinity]];
 
 (* What XMLReplace acts on: for each result of q, its solution, an
    Association name -> {positions, {value}}, the value a list of what the
@@ -131,11 +106,69 @@ $countedPositionsOut = False;
    right-hand side uses; every other name it mentions is uncounted, and takes
    its first passing match. A result its Conditions refuse
    gives none. *)
-treeSolutions[head_, tree_, q_, counted_] :=
-  Block[{$positionsOut = True, $solutionsOut = True, $countedGiven = counted}, treeCases[head, tree, q, Infinity]];
+treeSolutions[head_, tree_, q_, counted_] := joined[runQuery[compileQuery[head, q, counted], tree, "Solutions", Infinity]];
 
-$solutionsOut = False;
-$countedGiven = None;
+joined[r_] := Replace[r, l_List :> Join @@ l];
+
+(* The compiled query of q under head, or $Failed after a message under
+   head. It reads the query, counted and the readings in force, never a
+   tree. counted is None for the names the right-hand side uses (rhsNames),
+   or else the counted names, each Hold[name]; the other names the
+   right-hand side mentions are then test names.
+   The compiled query is an Association of all the run reads: "Head";
+   "Root", the compiled pattern; "Rhs", the held right-hand side; "Names",
+   the names the pattern binds; "Counted"; "TestNames"; "Readings"; "Order"
+   and "Slots", the pattern order and the Alternatives slots, which
+   compiling extends; "NamedPaths"; "ExceptRefs"; "Records"; and
+   "LastNodeId", the last node id compiled. A list pattern at a list key is
+   compiled while matching (tokenListMatches), so the run numbers its nodes
+   on from there: they never share an id, nor so a memo entry, with a
+   compiled node. *)
+compileQuery[head_, q_, counted_ : None] :=
+  Catch[
+    Block[{$head = head, $nodeId = 0, $order, $slotOf = <||>, $readings, $place = "query", $owner = XMLPattern,
+        $namedPaths = False, $exceptRefs, $records, $countedNames, $contextOK = True},
+      Module[{lhs, rhs, all, names, root},
+        If[namedContextQ[q], refuseHere["badpat", q]];
+        {lhs, rhs} = splitQuery[q];
+        If[removedCombinatorQ[lhs], refuseHere["badpat", q]];
+        $readings = Replace[readingsInForce[], $Failed :> Throw[$Failed, $refusal]];
+        all = namesIn[lhs];
+        $order = patternOrder[lhs];
+        names = If[counted === None, rhsNames[rhs, all], {counted, Complement[mentioned[rhs, all], counted]}];
+        $exceptRefs = exceptRefs[lhs];
+        $countedNames = First[names];
+        checkExcept[lhs, If[counted === None, First[names], Union @@ names]];
+        $records = $exceptRefs =!= {};
+        root = compileRoot[lhs, Union[First[names], Last[names], comparedNames[lhs]]];
+        <|"Head" -> head, "Root" -> root, "Rhs" -> rhs, "Names" -> all, "Counted" -> First[names],
+          "TestNames" -> Last[names], "Readings" -> $readings, "Order" -> $order, "Slots" -> $slotOf,
+          "NamedPaths" -> $namedPaths, "ExceptRefs" -> $exceptRefs, "Records" -> $records, "LastNodeId" -> $nodeId|>]],
+    $refusal];
+
+(* The results of compiled query cq on tree, the first n of them in result
+   order, each the list of what it splices in, or $Failed after a message
+   under its head; a refused compile, $Failed, passes through. The tree is
+   checked, indexed, the index kept for the next query (cachedIndexTree),
+   and searched with fresh memos. mode is what each result is: "Values", the
+   right-hand side's value; "Positions", "CountedPositions" or "Solutions",
+   as treePositions, treeCountedPositions and treeSolutions describe. The
+   compiler's context flag and counted names stay as they were compiling,
+   for an element test that a Condition compiles during the run. *)
+runQuery[$Failed, ___] := $Failed;
+runQuery[cq_Association, tree_, mode_, n_] :=
+  Catch[
+    Block[{$head = cq["Head"], $readings = cq["Readings"], $order = cq["Order"], $slotOf = cq["Slots"],
+        $namedPaths = cq["NamedPaths"], $exceptRefs = cq["ExceptRefs"], $records = cq["Records"],
+        $nodeId = cq["LastNodeId"], $countedNames = cq["Counted"], $contextOK = True, $memo = <||>,
+        $elem, $parent, $depth, $kids, $index, $end, $wlPos, $tops, $posMemo = <||>, $keyMemo = <||>,
+        $matElems = <||>, $keyLength},
+      If[!validTreeQ[tree], messageTreeRefusal[$head, tree]; Throw[$Failed, $refusal]];
+      cachedIndexTree[tree];
+      With[{r = results[mode, cq["Root"], cq["Rhs"], cq["Names"], cq["Counted"], cq["TestNames"], MatchQ[tree, _XMLElement], n]},
+        keptIndex[tree];
+        r]],
+    $refusal];
 
 (* query -> {Hold[lhs], Hold[rhs]}. A bare pattern is erased to r$ : p :> r$.
    A Rule's right-hand side was evaluated when the query was given, as in
@@ -1647,16 +1680,17 @@ $noResult = Unique["noResult"];
    first slowest, each in position order. The names in one Alternatives share
    its slot, keyed by the first of them the tuple binds, or by where the
    Alternatives matched when it binds none. The bare input's own position is
-   never counted. *)
-results[root_, rhs_, all_, counted_, {}, bare_, n_] /;
+   never counted. Each result is what the output mode makes of its tuple
+   (resultOf). *)
+results[mode_, root_, rhs_, all_, counted_, {}, bare_, n_] /;
     root["Kind"] === "Named" && counted === {root["Name"]} && !MemberQ[root["Sub"]["Names"], root["Name"]] && FreeQ[root["Sub"]["Keep"], _exceptKey] :=
-  rootMatches[root, rhs, all, bare, n];
+  rootMatches[mode, root, rhs, all, bare, n];
 (* The right-hand side is the one counted name: each result is the value of
    a distinct match, so the solutions are neither grouped nor evaluated,
    only their matches deduplicated and sorted. A name in an Alternatives
    slot is keyed by its own position when it is bound, so a solution without
    the name keeps the general way. *)
-results[root_, rhs_, all_, {name_}, {}, bare_, n_] /; !$positionsOut && rhs === Hold @@ name :=
+results[mode_, root_, rhs_, all_, {name_}, {}, bare_, n_] /; mode === "Values" && rhs === Hold @@ name :=
   Module[{sols, bs},
     sols = rootSolutions[root, False];
     refuseBoundText[sols, {name}];
@@ -1664,7 +1698,7 @@ results[root_, rhs_, all_, {name_}, {}, bare_, n_] /; !$positionsOut && rhs === 
     If[bare, bs = Select[bs, !MatchQ[#, {{___, {1} | Verbatim[Span][{1}, _], ___}, _, _}] &]];
     bs = DeleteDuplicatesBy[bs, identityOf];
     {valueOf[#]} & /@ Take[bs[[Ordering[padded[matchKey[#]] & /@ bs]]], UpTo[n]] /; FreeQ[bs, None, {1}]];
-results[root_, rhs_, all_, counted_, testNames_, bare_, n_] :=
+results[mode_, root_, rhs_, all_, counted_, testNames_, bare_, n_] :=
   Module[{sols, groups, slots, keys, count = 0, k = 1, r},
     sols = rootSolutions[root, counted === {} && testNames === {}];
     refuseBoundText[sols, counted];
@@ -1676,7 +1710,7 @@ results[root_, rhs_, all_, counted_, testNames_, bare_, n_] :=
     groups = groups[[Ordering[keys]]];
     reapedResults[
       While[count < n && k <= Length[groups],
-        r = groupResult[rhs, all, testNames, groups[[k++]]];
+        r = groupResult[mode, rhs, all, testNames, groups[[k++]]];
         If[r =!= $noResult, count++; Sow[r, $resultTag]]]]];
 
 (* A counted name bound to text, or to a run holding text, in some solution
@@ -1694,7 +1728,7 @@ reapedResults[loop_] := Replace[Reap[loop, $resultTag][[2]], {{l_} :> l, {} -> {
    results are the root's matches, each once, and the elements are numbered
    in document order, so nothing is grouped or sorted, and the right-hand side
    is evaluated only until there are n. *)
-rootMatches[root_, rhs_, all_, bare_, n_] :=
+rootMatches[mode_, root_, rhs_, all_, bare_, n_] :=
   Module[{cands = rootCandidates[root], sub = root["Sub"], name = root["Name"], count = 0, k = 1, i, r},
     With[{exactQ = sub["Kind"] === "XMLPattern" && sub["Constraints"] === {} && sub["Keep"] === {} ||
         n === Infinity && sub["Kind"] === "Cond" && flatConditionQ[sub]},
@@ -1704,7 +1738,7 @@ rootMatches[root_, rhs_, all_, bare_, n_] :=
         While[count < n && k <= Length[cands],
           i = cands[[k++]];
           If[exactQ || match[sub, i] =!= {},
-            r = If[rhs === Hold @@ name && !$positionsOut, {elemOf[i]}, resultOf[rhs, all, <|name -> elemMatch[i]|>]];
+            r = If[mode === "Values" && rhs === Hold @@ name, {elemOf[i]}, resultOf[mode, rhs, all, <|name -> elemMatch[i]|>]];
             If[r =!= $noResult, count++; Sow[r, $resultTag]]]]]]];
 
 (* Every solution of the pattern root, at each element that can match it.
@@ -1811,36 +1845,37 @@ matchKeyOrPad[b_] := matchKey[b];
 (* The result of one tuple: the right-hand side with the counted names from
    it, and the names only its tests use from the first of its solutions, in
    position order, that passes them. *)
-groupResult[rhs_, all_, testNames_, group_] :=
+groupResult[mode_, rhs_, all_, testNames_, group_] :=
   With[{ordered = If[testNames === {}, group,
       With[{names = SortBy[testNames, $order]},
         SortBy[group, Function[sol, Join @@ (padded[matchKeyOrPad[Lookup[sol, Key[#], None]]] & /@ names)]]]]},
-    FirstCase[ordered, sol_ :> With[{v = resultOf[rhs, all, sol]}, v /; v =!= $noResult], $noResult]];
+    FirstCase[ordered, sol_ :> With[{v = resultOf[mode, rhs, all, sol]}, v /; v =!= $noResult], $noResult]];
 
-(* The right-hand side evaluated for one solution. For XMLPosition, its
-   Conditions are run as for XMLCases, on the values, and then the code they
-   guard is evaluated with each name replaced by its position instead, so a
-   right-hand side with a test is evaluated twice. A repeated name with
-   several positions gives the list of them (positionOf); a name that is
-   absent, Sequence[]. For XMLReplace, the Conditions are run in
-   the same way and the solution itself is given, for its replacements to be
-   evaluated later, on the tree as rewritten. *)
-resultOf[rhs_, all_, sol_] /; $solutionsOut :=
+(* The right-hand side evaluated for one solution, in an output mode. For
+   XMLPosition, its Conditions are run as for XMLCases, on the values, and
+   then the code they guard is evaluated with each name replaced by its
+   position instead, so a right-hand side with a test is evaluated twice. A
+   repeated name with several positions gives the list of them (positionOf);
+   a name that is absent, Sequence[]. For XMLReplace, the Conditions are run
+   in the same way and the solution itself is given, for its replacements to
+   be evaluated later, on the tree as rewritten. *)
+resultOf["Values", rhs_, all_, sol_] := evaluated[substituted[rhs, all, sol]];
+resultOf["Solutions", rhs_, all_, sol_] :=
   If[guardedBody[rhs] =!= rhs && evaluated[substituted[rhs, all, sol]] === $noResult, $noResult,
     {{matchPos[#], {valueOf[#]}} & /@ sol}];
-resultOf[rhs_, all_, sol_] /; !$positionsOut := evaluated[substituted[rhs, all, sol]];
-resultOf[rhs_, all_, sol_] /; $countedPositionsOut :=
+resultOf["CountedPositions", rhs_, all_, sol_] :=
   If[guardedBody[rhs] =!= rhs && evaluated[substituted[rhs, all, sol]] === $noResult, $noResult,
-    {positionOf[Lookup[sol, Key[#], None]] & /@ First[rhsNames[rhs, all]]}];
-resultOf[rhs_, all_, sol_] :=
+    {positionOf["CountedPositions", Lookup[sol, Key[#], None]] & /@ First[rhsNames[rhs, all]]}];
+resultOf["Positions", rhs_, all_, sol_] :=
   With[{body = guardedBody[rhs]},
     If[body =!= rhs && evaluated[substituted[rhs, all, sol]] === $noResult, $noResult,
-      evaluated[body /. (Replace[#, Hold[s_] :> (HoldPattern[s] -> positionOf[Lookup[sol, Key[#], None]])] & /@ all)]]];
+      evaluated[body /. (Replace[#, Hold[s_] :> (HoldPattern[s] -> positionOf["Positions", Lookup[sol, Key[#], None]])] & /@ all)]]];
 
 (* A name with several positions, a repeated name compared by value, is the
-   list of them; for treeCountedPositions, each of them. *)
-positionOf[None] := Sequence[];
-positionOf[b_] := Which[$countedPositionsOut, Sequence @@ matchPos[b], Length[matchPos[b]] == 1, First[matchPos[b]], True, matchPos[b]];
+   list of them; for "CountedPositions", each of them. *)
+positionOf[_, None] := Sequence[];
+positionOf["CountedPositions", b_] := Sequence @@ matchPos[b];
+positionOf["Positions", b_] := If[Length[matchPos[b]] == 1, First[matchPos[b]], matchPos[b]];
 
 (* Held code without the Conditions a rule's right-hand side tests: at the
    top, or at the top of a With, Module or Block (rhsParts). *)
