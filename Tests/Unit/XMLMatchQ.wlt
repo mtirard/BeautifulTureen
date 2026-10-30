@@ -148,6 +148,24 @@ TestCreate[
   TestID -> "xmlmatchq-kind-mismatch"
 ];
 
+(* The same in the operator form, for each kind of pattern root. *)
+TestCreate[
+  {XMLMatchQ[XMLPattern["nav"]] /@ {nav, {nav[[2]]}},
+    XMLMatchQ[XMLDocument[{XMLPattern["nav"]}]] /@ {nav[[2]], {nav[[2]]}},
+    XMLMatchQ[{___}] /@ {nav[[2]], nav}},
+  {{False, False}, {False, False}, {False, False}},
+  TestID -> "xmlmatchq-operator-form-kind-mismatch"
+];
+
+(* An input that is not a tree is not refused: it matches nothing, as in
+   MatchQ. *)
+TestCreate[
+  {XMLMatchQ[42, XMLPattern["nav"]], XMLMatchQ[{el["a"], 5}, XMLPattern["a"]], XMLMatchQ[{el["a"], 5}, {___}],
+    XMLMatchQ[XMLPattern["nav"]][42], XMLMatchQ[{___}][{el["a"], 5}], XMLMatchQ[XMLDocument[]]["x"]},
+  {False, False, False, False, False, False},
+  TestID -> "xmlmatchq-non-tree-is-false"
+];
+
 (* A list of elements against a list pattern, in the contents-list grammar:
    strings are skipped. An element is not a list. *)
 TestCreate[

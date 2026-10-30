@@ -94,6 +94,72 @@ TestCreate[
   TestID -> "tree-message-describes-accepted-input"
 ];
 
+(* ---- A wrong query and a wrong tree ----
+   When both the query and the tree are wrong, the query is refused first and
+   the tree is not looked at, so the one message is about the query. *)
+
+(* The names of the messages an evaluation gives, each held, and its value. *)
+SetAttributes[messagesOf, HoldFirst];
+messagesOf[expr_] := Module[{names = {}, value},
+  value = Internal`HandlerBlock[
+    {"Message", Function[m, Replace[m, Hold[Message[mn : MessageName[_, _], ___], _] :> AppendTo[names, Hold[mn]]]]},
+    Quiet[expr]];
+  {names, value}];
+
+$badQuery = XMLPattern["div"][XMLPattern["p"]];
+$badMember = {XMLElement["p", {}, {}], 5};
+
+TestCreate[
+  messagesOf /@ Unevaluated[{
+    XMLCases[42, $badQuery], XMLCases[$badMember, $badQuery :> 1], XMLFirstCase[42, $badQuery],
+    XMLPosition[$badMember, $badQuery], XMLDeleteCases[42, $badQuery]}],
+  ConstantArray[{{Hold[XMLPattern::constraint]}, $Failed}, 5],
+  TestID -> "query-refused-before-tree-searching"
+];
+
+TestCreate[
+  messagesOf /@ Unevaluated[{
+    XMLReplace[42, $badQuery :> 1], XMLReplace[$badMember, XMLPattern["div"][x : XMLPattern["p"]] :> {x -> 1}]}],
+  ConstantArray[{{Hold[XMLPattern::constraint]}, $Failed}, 2],
+  TestID -> "query-refused-before-tree-xmlreplace"
+];
+
+(* XMLReplace takes a list of rules one at a time: a rule's query is refused
+   before the tree, but a rule before it has already refused the tree. *)
+TestCreate[
+  messagesOf /@ Unevaluated[{
+    XMLReplace[$badMember, {$badQuery :> 1, XMLPattern["p"] :> 1}],
+    XMLReplace[$badMember, {XMLPattern["p"] :> 1, $badQuery :> 1}]}],
+  {{{Hold[XMLPattern::constraint]}, $Failed}, {{Hold[XMLReplace::badmember]}, $Failed}},
+  TestID -> "query-refused-before-tree-xmlreplace-rule-list"
+];
+
+(* XMLMatchQ refuses no input, which only matches nothing; XMLFreeQ refuses
+   one that is not a tree, after the query. *)
+TestCreate[
+  messagesOf /@ Unevaluated[{
+    XMLMatchQ[42, $badQuery], XMLMatchQ[$badQuery][$badMember],
+    XMLFreeQ[42, $badQuery], XMLFreeQ[$badMember, $badQuery, {1, 2}], XMLFreeQ[$badQuery][42]}],
+  ConstantArray[{{Hold[XMLPattern::constraint]}, $Failed}, 5],
+  TestID -> "query-refused-before-tree-tests"
+];
+
+(* An option's queries are refused only once the input is accepted: a
+   function with "Roles", "Constructs", "Focus" or "Hide" refuses a wrong
+   input before it reads its options. *)
+TestCreate[
+  messagesOf /@ Unevaluated[{
+    HTMLInnerText[42, "Roles" -> {$badQuery -> "Block"}],
+    HTMLInnerText[$badMember, "Roles" -> {(XMLPattern["div"][x : XMLPattern["p"]] :> x) -> "Block"}],
+    HTMLToNotebook[42, "Constructs" -> {$badQuery -> "Bold"}],
+    HTMLToNotebook[$badMember, "Constructs" -> {(XMLPattern["div"][x : XMLPattern["p"]] :> x) -> "Bold"}],
+    HTMLToTree[42, "Focus" -> $badQuery], HTMLToTree[$badMember, "Hide" -> $badQuery]}],
+  {{{Hold[HTMLInnerText::badtree]}, $Failed}, {{Hold[HTMLInnerText::badmember]}, $Failed},
+    {{Hold[HTMLToNotebook::badtree]}, $Failed}, {{Hold[HTMLToNotebook::badmember]}, $Failed},
+    {{Hold[HTMLToTree::badtree]}, $Failed}, {{Hold[HTMLToTree::badmember]}, $Failed}},
+  TestID -> "tree-refused-before-option-queries"
+];
+
 (* ---- Argument counts ----
    A call with a number of positional arguments outside a function's range gives
    the standard argument-count message and stays unevaluated, as a built-in

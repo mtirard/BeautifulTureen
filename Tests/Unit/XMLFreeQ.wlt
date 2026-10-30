@@ -66,6 +66,15 @@ TestCreate[
   TestID -> "xmlfreeq-operator-form"
 ];
 
+(* In the operator form too, an element or a list is free of an XMLDocument
+   pattern, and a list itself is not tested. *)
+TestCreate[
+  {XMLFreeQ[XMLDocument[]] /@ {nav[[2]], {nav[[2]]}, nav},
+    XMLFreeQ[XMLPattern["nav", "id" -> "i"]] /@ {nav, {" ", nav[[2]]}, {" "}}},
+  {{True, True, False}, {False, False, True}},
+  TestID -> "xmlfreeq-operator-form-kinds"
+];
+
 (* The use that #32 was opened for: a construct rule that looks inside the
    element it tests. *)
 TestCreate[

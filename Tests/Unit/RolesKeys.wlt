@@ -130,3 +130,46 @@ TestCreate[
   {HTMLInnerText::badpat},
   TestID -> "roles-named-context-key-refused"
 ];
+
+(* An element-test key that is refused is named as given, not as the query
+   built from it. *)
+
+(* The name and text of each message an evaluation gives, its arguments in
+   InputForm. *)
+SetAttributes[keyMessages, HoldFirst];
+keyMessages[expr_] := Module[{texts = {}},
+  Internal`HandlerBlock[
+    {"Message", Function[m,
+      Replace[m, Hold[Message[mn : MessageName[_, _], args___], _] :>
+        AppendTo[texts, {Hold[mn], ToString[
+          StringForm[mn, Sequence @@ (List @@ Map[Function[a, ToString[Unevaluated[a], InputForm], HoldAllComplete], Hold[args]])],
+          OutputForm, PageWidth -> Infinity]}]]]},
+    Quiet[expr]];
+  texts];
+
+(* A badpat text ends with the sentence that names what was refused. *)
+TestCreate[
+  Map[{#[[1]], Last[StringSplit[#[[2]], ". "]]} &, keyMessages /@ Unevaluated[{
+    HTMLInnerText[page, "Roles" -> {1 -> "Block"}],
+    HTMLInnerText[page, "Roles" -> {{XMLPattern["a"]} -> "Block"}],
+    HTMLInnerText[page, "Roles" -> {("a" | "nav a") -> "Block"}],
+    HTMLInnerText[page, "Roles" -> {(n : "nav a") -> "Block"}],
+    HTMLToNotebook[page, "Constructs" -> {XMLDocument[Descendant[XMLPattern["a"]]] -> "Bold"}],
+    HTMLToNotebook[page, "Constructs" -> {{XMLPattern["a"]} :> "Bold"}],
+    HTMLToTree[page, "Roles" -> {1 -> "Block"}]}], {2}],
+  {{{Hold[HTMLInnerText::badpat], "Got 1."}}, {{Hold[HTMLInnerText::badpat], "Got {XMLPattern[\"a\"]}."}},
+    {{Hold[HTMLInnerText::badpat], "Got \"nav a\"."}}, {{Hold[HTMLInnerText::badpat], "Got \"nav a\"."}},
+    {{Hold[HTMLToNotebook::badpat], "Got XMLDocument[Descendant[XMLPattern[\"a\"]]]."}},
+    {{Hold[HTMLToNotebook::badpat], "Got {XMLPattern[\"a\"]}."}},
+    {{Hold[HTMLToTree::badpat], "Got 1."}}},
+  TestID -> "test-key-refusal-names-the-key"
+];
+
+(* A blank text starts with the blank it was given. *)
+TestCreate[
+  Map[{#[[1]], First[StringSplit[#[[2]], ","]]} &, keyMessages /@ Unevaluated[{
+    HTMLInnerText[page, "Roles" -> {_ -> "Block"}],
+    HTMLToNotebook[page, "Constructs" -> {_ :> "Bold"}]}], {2}],
+  {{{Hold[HTMLInnerText::blank], "_ is a blank"}}, {{Hold[HTMLToNotebook::blank], "_ is a blank"}}},
+  TestID -> "test-key-blank-names-the-key"
+];
