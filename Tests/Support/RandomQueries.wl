@@ -20,9 +20,12 @@
 	repeats, a name inside a repeat of one entry or of two, optional
 	entries, alternatives, a Condition on a sequence and Except, local or
 	referring to a tag or an element bound elsewhere, before it or after it
-	in its list, or in another constraint. XMLElement patterns are matched whole or by their
+	in its list, or in another constraint, two in one list referring to
+	different names, an Except inside another's pattern, or one whose
+	pattern binds a name in one branch only. XMLElement patterns are matched whole or by their
 	parts, with a contents list over the items, text included, and an
-	XMLPattern's class may be matched as a token list, a token named. A right-hand side uses some of the names,
+	XMLPattern's class may be matched as a token list, a token named; both
+	may hold an Except that refers to a name bound elsewhere. A right-hand side uses some of the names,
 	and may test another. The generator grows as the columnar engine covers
 	more.
 
@@ -59,7 +62,7 @@ $names = Unique["v"] & /@ Range[10];
 (* Building with Hold throughout keeps the Conditions and tests
    unevaluated. *)
 query[] :=
-  Block[{$used = {}, $pools = <|"element" -> {}, "tag" -> {}, "attribute" -> {}|>},
+  Block[{$used = {}, $pools = <|"element" -> {}, "tag" -> {}, "attribute" -> {}, "token" -> {}|>},
     With[{lhs = RandomChoice[{0.15, 0.8, 0.05} -> {document, pattern[RandomInteger[{1, 3}]] &, ofType}][]},
       With[{bound = $used},
         If[bound === {}, Hold @@ {lhs},
@@ -109,10 +112,10 @@ head[] :=
 
 (* A literal's contents: a list over its items, elements and text. A name
    binds only an element or a run of elements, as a counted name that can
-   bind text is refused. *)
+   bind text is refused. An Except may refer to a name bound elsewhere. *)
 contents[] :=
   Table[
-    Switch[RandomChoice[{3, 2, 1, 1, 2, 1, 1, 1} -> Range[8]],
+    Switch[RandomChoice[{3, 2, 1, 1, 2, 1, 1, 1, 1} -> Range[9]],
       1, ___,
       2, XMLPattern[tag[]],
       3, "t",
@@ -120,19 +123,22 @@ contents[] :=
       5, If[room[], Pattern[Evaluate[named["element"]], XMLPattern[tag[]]], _XMLElement],
       6, __,
       7, If[room[], Pattern[Evaluate[fresh[]], Repeated[_XMLElement]], _XMLElement..],
-      8, Except[_String]],
+      8, Except[_String],
+      9, referringExcept[]],
     RandomInteger[{1, 4}]];
 
-(* A token list at the class list key. *)
+(* A token list at the class list key. An Except may refer to a token
+   bound before it in the list. *)
 tokens[] :=
   With[{l = Table[
-      Switch[RandomChoice[{3, 2, 2, 1, 1, 1} -> Range[6]],
+      Switch[RandomChoice[{3, 2, 2, 1, 1, 1, 1} -> Range[7]],
         1, ___,
-        2, If[room[], Pattern[Evaluate[fresh[]], RandomChoice[{"a", "b", "c"}]], "a"],
+        2, If[room[], Pattern[Evaluate[named["token"]], RandomChoice[{"a", "b", "c"}]], "a"],
         3, RandomChoice[{"a", "b", "c", "a" | "b"}],
         4, Except["c"],
         5, If[room[], Pattern[Evaluate[fresh[]], BlankNullSequence[]], ___],
-        6, _],
+        6, _,
+        7, If[$pools["token"] === {}, Except["c"], repeatedOrNot[Except[Pattern[Evaluate[RandomChoice[$pools["token"]]], Blank[]]]]]],
       RandomInteger[{1, 3}]]},
     If[room[] && RandomReal[] < 0.2, Pattern[Evaluate[fresh[]], l], l]];
 
@@ -228,14 +234,38 @@ ofType[] :=
 
 (* An Except, local or referring to a name bound elsewhere: a tag bound
    before it, or after it in the same list, or an element bound before it,
-   in this list or another constraint. *)
+   in this list or another constraint, with the shapes of referringExcept. *)
 except[] :=
-  Switch[RandomChoice[{2, 1, 1, 1} -> Range[4]],
+  Switch[RandomChoice[{2, 1, 1, 1, 1} -> Range[5]],
     1, Except[tag[]],
     2, If[$pools["tag"] === {}, Except[tag[]], repeatedOrNot[Except[XMLPattern[Pattern[Evaluate[RandomChoice[$pools["tag"]]], Blank[]]]]]],
     3, If[room[], With[{t = named["tag"]}, PatternSequence[Except[XMLPattern[Pattern[t, Blank[]]]] ..., XMLPattern[Pattern[t, Blank[]]]]], Except[tag[]]],
     4, If[$pools["element"] === {}, Except[tag[]],
-      With[{n = RandomChoice[$pools["element"]]}, repeatedOrNot[RandomChoice[{Except[Pattern[n, XMLPattern[_]]], Except[Pattern[n, XMLPattern[_]], tag[]]}]]]]];
+      With[{n = RandomChoice[$pools["element"]]}, repeatedOrNot[RandomChoice[{Except[Pattern[n, XMLPattern[_]]], Except[Pattern[n, XMLPattern[_]], tag[]]}]]]],
+    5, referringExcept[]];
+
+(* An Except that refers to tags or elements bound elsewhere, or, if none
+   is, to a tag bound just before it: its pattern binds one, or two in two
+   branches, or one in one branch and nothing in the other; or an Except
+   that holds one referring to a tag bound just after it. Bound before it,
+   the solutions engine matches the inner Except once for the first value
+   of the tag only, and the engines differ. *)
+referringExcept[] :=
+  With[{refs = Join[XMLPattern[Pattern[#, Blank[]]] & /@ $pools["tag"], Pattern[#, XMLPattern[_]] & /@ $pools["element"]]},
+    Which[
+      refs =!= {} && RandomReal[] < 0.7, referringTo[refs],
+      room[] && RandomReal[] < 0.5,
+        With[{r = XMLPattern[Pattern[Evaluate[named["tag"]], Blank[]]]}, PatternSequence[r, ___, referringTo[{r}]]],
+      room[], With[{r = XMLPattern[Pattern[Evaluate[fresh[]], Blank[]]]}, PatternSequence[holdingExcept[r], ___, r]],
+      True, Except[tag[]]]];
+
+referringTo[refs_] :=
+  repeatedOrNot @ Switch[RandomInteger[{1, 3}],
+    1, Except[RandomChoice[refs]],
+    2, Except[Alternatives @@ RandomSample[refs, Min[2, Length[refs]]]],
+    3, Except[Alternatives[RandomChoice[refs], XMLPattern[tag[]]]]];
+
+holdingExcept[r_] := repeatedOrNot @ Except[XMLPattern[RandomChoice[{tag[], _}]][RandomChoice[{{Except[r] ...}, {___, Except[r]}}]]];
 
 repeatedOrNot[p_] := RandomChoice[{p, RepeatedNull[p], Repeated[p]}];
 

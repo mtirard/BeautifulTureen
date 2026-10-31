@@ -201,6 +201,26 @@ TestCreate[
   TestID -> "literal-except-name-in-rhs"
 ];
 
+(* An Except in the contents may refer to a name bound elsewhere: the last
+   child of each tag, text after it allowed. *)
+TestCreate[
+  XMLCases[row, XMLElement["tr", _, {___, n : XMLPattern[t_], Except[XMLPattern[t_]] ...}] :> n],
+  {el["th", "a"], el["td", "b"]},
+  TestID -> "literal-except-ref-in-contents"
+];
+
+TestCreate[
+  XMLCases[listing, XMLElement["ul", _, {___, n : XMLPattern[t_], Except[XMLPattern[t_]] ...}] :> n],
+  {el["li", XMLElement["a", {"href" -> "/x"}, {}]]},
+  TestID -> "literal-except-ref-in-contents-over-text"
+];
+
+TestCreate[
+  XMLCases[row, XMLElement["tr", _, {n : XMLPattern[_], Except[n : XMLPattern[_]] ...}] :> n],
+  {el["th", "a"]},
+  TestID -> "literal-except-ref-element-in-contents"
+];
+
 TestCreate[
   XMLCases[links, XMLPattern["p"][{Except[x : XMLPattern["a"]] ..., ___}] :> x],
   $Failed,
