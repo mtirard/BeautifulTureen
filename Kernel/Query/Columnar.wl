@@ -1,18 +1,15 @@
 (* ::Package:: *)
 (* HTMLPatterns: the columnar query engine *)
 
-(* Used by Query/TreePatterns.wl: compileQuery records whether this engine
-   covers a query, and runQuery runs it there *)
-PackageScoped[columnarCoverage]
+(* Used by Query/TreePatterns.wl: runQuery runs a compiled query here *)
 PackageScoped[columnarResults]
-PackageScoped[$columnarFallback]
 
 (* =========================================================== *)
-(* The columnar engine (ADR 0023, 0024, 0025)                   *)
+(* The query engine (ADR 0023, 0024, 0025)                      *)
 (*                                                              *)
-(* It reads the compiled query (compileQuery) and the index as  *)
-(* the solutions engine does, but matches each node of the      *)
-(* query at every element at once, by operations on columns of  *)
+(* It reads the compiled query (compileQuery) and the index     *)
+(* (Query/TreePatterns.wl), and matches each node of the query  *)
+(* at every element at once, by operations on columns of        *)
 (* integers, never element by element.                          *)
 (*                                                              *)
 (* The solutions of a node are a solution table: an Association *)
@@ -38,10 +35,10 @@ PackageScoped[$columnarFallback]
 (* rows. Positions and values are made from codes only for the  *)
 (* results.                                                     *)
 (*                                                              *)
-(* Every table is in solution order, the order the solutions    *)
-(* engine finds solutions in: by its "Root", in document order, *)
-(* and at one root as the parts below find them, the branches   *)
-(* of an Alternatives in order. Results sort stably, so where   *)
+(* Every table is in solution order: by its "Root", in document *)
+(* order, and at one root as the parts below find them, the     *)
+(* branches of an Alternatives in order, the entries of a list  *)
+(* from left to right. Results sort stably, so where            *)
 (* two results tie, as two branches binding one place do, they  *)
 (* keep that order.                                             *)
 (*                                                              *)
@@ -51,116 +48,6 @@ PackageScoped[$columnarFallback]
 (* live in Block variables, never in arguments, as a scoping    *)
 (* construct copies an unpacked list into its body at each call.*)
 (* =========================================================== *)
-
-(* ---- Coverage ----
-
-   While both engines exist, a query runs here only if every node of it is
-   one this engine matches: element pattern roots, their tags and
-   attributes, names on elements and on places of one element, bound once
-   or more, Descendant, Child and list constraints, named and tested paths,
-   Shortest and Longest, Alternatives, Condition and PatternTest,
-   XMLDocument, and XMLElement patterns with their contents lists. It is
-   decided from the compiled query alone, when it is compiled. *)
-
-(* "Columnar", or why the engine does not run compiled query cq. *)
-columnarCoverage[cq_Association] :=
-  Replace[DeleteDuplicates[uncovered[cq["Root"]]], {{} -> "Columnar", r_ :> StringRiffle[r, ", "]}];
-
-(* Why a node, or a node below it, is not covered: the empty list when it
-   is. *)
-uncovered[nd_] :=
-  Switch[nd["Kind"],
-    "XMLPattern", Join[headUncovered[nd], Join @@ (uncovered /@ nd["Constraints"])],
-    "XMLDocument", Join @@ (uncovered /@ nd["Constraints"]),
-    "Named" | "Cond" | "Test" | "ListNamed" | "ListCond" | "ListTest" | "ContentsNamed" | "ContentsCond" | "ContentsTest", uncovered[nd["Sub"]],
-    "Alt" | "ConstraintAlt", Join @@ (uncovered /@ nd["Subs"]),
-    "Literal" | "Blank", {},
-    "Plain", {},
-    "Token", {},
-    "Descendant" | "PathTest" | "PathCond" | "PathNearest", uncovered[nd["Sub"]],
-    "PathNamed", uncovered[nd["Sub"]],
-    "List", entriesUncovered[nd["Items"], "Children"],
-    "ContentsList", entriesUncovered[nd["Items"], "Contents"],
-    "LiteralParts", uncovered[nd["Sub"]],
-    _, {nd["Kind"]}];
-
-(* The entries of a list over the items reader reads. *)
-entriesUncovered[items_, reader_] := Join @@ (entryUncovered[#, reader] & /@ items);
-
-entryUncovered[it_, reader_] :=
-  Switch[it["Kind"],
-    "Any", {},
-    "One", uncovered[it["Sub"]],
-    "Not",
-      Join[uncovered[it["Sub"]], If[it["Base"] === None, {}, uncovered[it["Base"]]],
-        If[it["Record"] =!= None && (reader =!= "Children" || recordsIn[it["Sub"]] =!= {}),
-          {"an Except over contents or tokens, or inside another, refers to a name bound outside it"}, {}]],
-    "Run", Join @@ (entryUncovered[#, reader] & /@ it["Items"]),
-    "SeqCond", Join @@ (entryUncovered[#, reader] & /@ it["Sub"]["Items"]),
-    "Branches", Join @@ (Join @@ (entryUncovered[#, reader] & /@ #) & /@ it["Subs"]),
-    "Repeat", Join @@ (entryUncovered[#, reader] & /@ it["Items"])];
-
-(* A repeat of one element child that binds a name to the child and nothing
-   else, as (x : "li").. does: the name binds every child of the repeat, as
-   a name bound twice in WL compares its values. *)
-repeatedNameQ[it_] :=
-  MatchQ[it["Items"], {e_} /; e["Kind"] === "One" && With[{sub = e["Sub"]},
-    sub["Kind"] === "Named" && sub["Keep"] === {sub["Name"]} && sub["Sub"]["Keep"] === {} && uncovered[sub] === {}]];
-
-(* Each name an element's tag and attributes bind must have a place of its
-   own: the whole tag, the whole attribute map, one attribute's whole
-   value, on a literal key that is not a list key, or the token list of a
-   list key or a token or run of tokens in it. *)
-headUncovered[nd_] := {};
-
-(* {{0 | All | key | {"Tokens", listKey, node}, name}, ...} for the
-   needed names of an XMLPattern's tag and attributes, the token list of a
-   list key taking every name its value binds; or None when one has no place
-   of its own. A name at two places compares their values. *)
-headPlaces[nd_] :=
-  With[{need = nd["HeadNames"], tag = tagPlaces[nd["Tag"], nd["HeadNames"]], attrs = attrPlaces[nd["Attrs"], nd["HeadNames"], nd["TokenLists"]]},
-    If[tag === None || attrs === None, None,
-      With[{places = Join[tag, attrs]}, If[Union[places[[All, 2]]] === Union[need], places, None]]]];
-
-tagPlaces[t_, need_] :=
-  Replace[Intersection[namesIn[Hold[t]], need], {
-    {} -> {},
-    {n_} /; wholeName[t] === n :> {{0, n}},
-    _ -> None}];
-
-(* The name a pattern binds to the whole value it matches, through tests
-   and Conditions on it, when it binds no other; else None. *)
-wholeName[(Verbatim[PatternTest] | Verbatim[Condition])[p_, _]] := wholeName[p];
-wholeName[Verbatim[Pattern][s_Symbol, p_]] := If[FreeQ[Hold[p], Verbatim[Pattern]], Hold[s], None];
-wholeName[_] := None;
-
-attrPlaces[Verbatim[Pattern][s_Symbol, a_], need_, lists_] :=
-  With[{inner = attrPlaces[a, need, lists]},
-    If[inner === None, None, If[MemberQ[need, Hold[s]], Prepend[inner, {All, Hold[s]}], inner]]];
-attrPlaces[Verbatim[PatternTest][a_, _], need_, lists_] := attrPlaces[a, need, lists];
-attrPlaces[r_Rule, need_, lists_] := attrPlaces[{r}, need, lists];
-attrPlaces[rules_List, need_, lists_] :=
-  With[{named = Select[rules, IntersectingQ[namesIn[Hold[#]], need] &]},
-    If[FreeQ[rules, Verbatim[Rule][_Alternatives, _]] && AllTrue[named, MatchQ[#, Verbatim[Rule][_String, _]] &],
-      Replace[Join @@ (rulePlaces[#, need, lists] & /@ named), l_ /; MemberQ[l, None] -> None],
-      None]];
-attrPlaces[a_, need_, _] := If[IntersectingQ[namesIn[Hold[a]], need], None, {}];
-
-(* The places of the names one rule binds. *)
-rulePlaces[k_ -> v_, need_, lists_] :=
-  Which[
-    !KeyExistsQ[$readings, k], If[wholeName[v] =!= None, {{k, wholeName[v]}}, {None}],
-    KeyExistsQ[lists, v] && tokensUncovered[lists[v]] === {},
-      {{"Tokens", k, lists[v]}, #} & /@ Intersection[lists[v]["Keep"], need],
-    True, {None}];
-
-(* Why the compiled value of a list key (cTokenList) is not covered. *)
-tokensUncovered[nd_] :=
-  Switch[nd["Kind"],
-    "TokenNamed" | "TokenCond", tokensUncovered[nd["Sub"]],
-    "TokenList", entriesUncovered[nd["Items"], "Tokens"],
-    "TokenPlain", {}];
-
 
 (* ---- Tables ---- *)
 
@@ -265,7 +152,7 @@ codeValues[codes_] :=
       Extract[$elem, MapThread[Switch[#2, 0, {#1}, 1, {#1, 1}, 2, {#1, 2}, _, {#1, 2, #2 - 2, 2}] &, {ids, ss}]]]];
 
 (* A name's match as resultOf reads it: its positions and its value. *)
-codeMatch[c_] := If[c < -1, extraMatch[c], nameMatch[{codePosition[c]}, codeValue[c], {}]];
+codeMatch[c_] := If[c < -1, extraMatch[c], nameMatch[{codePosition[c]}, codeValue[c]]];
 
 (* ---- Names compared by value (ADR 0023) ----
 
@@ -304,9 +191,8 @@ compared[x_, y_, mode_] :=
 elementCodesQ[c_] := With[{p = Pick[c, UnitStep[c], 1]}, Min[c] >= -1 && (p === {} || Max[Mod[p, $K]] == 0)];
 
 (* Two distinct codes: whether they agree, and the code of their match,
-   which across constraints is the first's when it is a place (mergedMatch,
-   Query/TreePatterns.wl). Two assumptions an Except makes (labelCode)
-   agree when both may hold. *)
+   which across constraints is the first's when it is a place. Two
+   assumptions an Except makes (labelCode) agree when both may hold. *)
 pairCompared[{x_, y_}, mode_] :=
   Which[
     labelCodeQ[x], labelsMet[x, y],
@@ -335,9 +221,9 @@ valueIds[codes_] :=
         $codeValueIds = Join[$codeValueIds, AssociationThread[new, Lookup[$valueIds, vs]]]]];
     packed @ Lookup[$codeValueIds, codes, -1]];
 
-(* Whether a code is a place, as placeQ (Query/TreePatterns.wl) reads its
-   positions: an element, the document, a run of children, a run of items
-   that are all elements, or a set of places. *)
+(* Whether a code is a place, read from its positions: an element, the
+   document, a run of children, a run of items that are all elements, or a
+   set of places. *)
 placeCodeQ[c_] :=
   Which[
     c >= 0, Mod[c, $K] == 0,
@@ -405,6 +291,47 @@ treeTable[nd_, cands_, rootQ_] :=
         distinctRows[
           KeyDrop[settledRows @ Fold[If[rowCount[#1] == 0, #1, joinTables[#1, rootConstraintTable[nd, #2, DeleteDuplicates[#1["Root"]]]]] &, t, named], pathKeys[nd]],
           rootQ]]];
+
+(* {{0 | All | key | {"Tokens", listKey, node}, name}, ...} for the
+   needed names of an XMLPattern's tag and attributes, the token list of a
+   list key taking every name its value binds; or None when one has no place
+   of its own. A name at two places compares their values. *)
+headPlaces[nd_] :=
+  With[{need = nd["HeadNames"], tag = tagPlaces[nd["Tag"], nd["HeadNames"]], attrs = attrPlaces[nd["Attrs"], nd["HeadNames"], nd["TokenLists"]]},
+    If[tag === None || attrs === None, None,
+      With[{places = Join[tag, attrs]}, If[Union[places[[All, 2]]] === Union[need], places, None]]]];
+
+tagPlaces[t_, need_] :=
+  Replace[Intersection[namesIn[Hold[t]], need], {
+    {} -> {},
+    {n_} /; wholeName[t] === n :> {{0, n}},
+    _ -> None}];
+
+(* The name a pattern binds to the whole value it matches, through tests
+   and Conditions on it, when it binds no other; else None. *)
+wholeName[(Verbatim[PatternTest] | Verbatim[Condition])[p_, _]] := wholeName[p];
+wholeName[Verbatim[Pattern][s_Symbol, p_]] := If[FreeQ[Hold[p], Verbatim[Pattern]], Hold[s], None];
+wholeName[_] := None;
+
+attrPlaces[Verbatim[Pattern][s_Symbol, a_], need_, lists_] :=
+  With[{inner = attrPlaces[a, need, lists]},
+    If[inner === None, None, If[MemberQ[need, Hold[s]], Prepend[inner, {All, Hold[s]}], inner]]];
+attrPlaces[Verbatim[PatternTest][a_, _], need_, lists_] := attrPlaces[a, need, lists];
+attrPlaces[r_Rule, need_, lists_] := attrPlaces[{r}, need, lists];
+attrPlaces[rules_List, need_, lists_] :=
+  With[{named = Select[rules, IntersectingQ[namesIn[Hold[#]], need] &]},
+    If[FreeQ[rules, Verbatim[Rule][_Alternatives, _]] && AllTrue[named, MatchQ[#, Verbatim[Rule][_String, _]] &],
+      Replace[Join @@ (rulePlaces[#, need, lists] & /@ named), l_ /; MemberQ[l, None] -> None],
+      None]];
+attrPlaces[a_, need_, _] := If[IntersectingQ[namesIn[Hold[a]], need], None, {}];
+
+(* The places of the names one rule binds. *)
+rulePlaces[k_ -> v_, need_, lists_] :=
+  Which[
+    !KeyExistsQ[$readings, k], If[wholeName[v] =!= None, {{k, wholeName[v]}}, {None}],
+    KeyExistsQ[lists, v],
+      {{"Tokens", k, lists[v]}, #} & /@ Intersection[lists[v]["Keep"], need],
+    True, {None}];
 
 (* The table of the names in the tag and attributes, at elements ps: a
    column for each name on the tag, the attribute map or an attribute, and
@@ -506,7 +433,7 @@ headSlots[p_, keys_] :=
    compiler reads it (ADR 0011); lists holds its compiled form
    (tokenListForms). *)
 ruleSolutions[k_ -> v_, r_, slots_, p_, need_, lists_] :=
-  With[{listValue = If[AllTrue[keyLiterals[k], KeyExistsQ[$readings, #] &], Replace[v, s : (_String | Verbatim[Alternatives][__String]) :> {___, s, ___}], v],
+  With[{listValue = If[AllTrue[keyLiterals[k], KeyExistsQ[$readings, #] &], desugared[v], v],
       names = Intersection[namesIn[Hold[v]], need]},
     Join @@ MapIndexed[Function[{slot, j},
         Append[#, {"Taken", r} -> First[j]] & /@
@@ -637,14 +564,13 @@ notBare[col_] :=
 rootConstraintTable[nd_, c_, ps_] :=
   If[nd["Kind"] === "XMLPattern" && nearestOf[c] =!= None, nearestTable[nd, c, ps, nearestOf[c]], constraintTable[c, ps]];
 
-(* Shortest and Longest on a path, as the solutions engine's nearestFiltered
-   and shadowsQ decide them: a row with upper end i and lower end j is
-   dropped when some element k shadows it, strictly between i and j for
-   Shortest, strictly above i, below the document, for Longest. k shadows
-   when it is a candidate of nd (its tag and attributes pass, and it has
-   the children nd needs), every other constraint of nd has a solution at
-   k, and c has one with lower end j; nd's own Conditions, and whatever is around it, are not
-   compared. The elements that shadow some row ending at j are all above
+(* Shortest and Longest on a path (ADR 0023): a row with upper end i and
+   lower end j is dropped when some element k shadows it, strictly between
+   i and j for Shortest, strictly above i, below the document, for Longest.
+   k shadows when it is a candidate of nd (its tag and attributes pass, and
+   it has the children nd needs), every other constraint of nd has a
+   solution at k, and c has one with lower end j; nd's own Conditions, and
+   whatever is around it, are not compared. The elements that shadow some row ending at j are all above
    j, so a row survives Shortest when none of them is deeper than i, and
    Longest when none is shallower. The rows at the elements that are not
    among ps are dropped by the join. *)
@@ -955,7 +881,7 @@ $contentsReader = <|
   "Run" -> Function[{cx, o, m, n}, extraCode["ContentsRun", o, m, n]]|>;
 
 (* The rows of pattern node nd at the text items tx of contents sequence
-   cx, by item: what textKind (Query/TreePatterns.wl) gives there. *)
+   cx, by item: only WL's patterns match text. *)
 textRows[cx_, nd_, tx_] :=
   Switch[nd["Kind"],
     "Plain",
@@ -1213,7 +1139,7 @@ oneSpans[cx_, sub_, vec_, t_, next_] :=
 (* Any other repeat that binds a needed name, one repeat at a time from the
    rows' places, each walk of its entries binding the names again, compared
    by value with what the rows bind already, as WL compares a name bound at
-   each repeat (repeatSpans, Query/TreePatterns.wl). A repeat that matches
+   each repeat. A repeat that matches
    no item adds nothing past the minimum. *)
 capturingRepeatRows[cx_, it_, t_, next_] :=
   Module[{again = repeatsReach[cx, Append[it, "Min" -> 0], next, -1], cur = t, out = {takeRows[t, {}]}, k = 0},
@@ -1225,6 +1151,13 @@ capturingRepeatRows[cx_, it_, t_, next_] :=
       cur = KeyDrop[cur, {{"From", it["Id"]}}];
       If[k >= it["Min"], AppendTo[out, cur]]];
     uniqueRows @ KeyTake[(pickRows[#, next[[#["Place"]]]] &) @ stacked[out, DeleteDuplicates[Join @@ (Keys /@ out)]], spanColumns[t, it]]];
+
+(* A repeat of one element child that binds a name to the child and nothing
+   else, as (x : "li").. does: the name binds every child of the repeat, as
+   a name bound twice in WL compares its values. *)
+repeatedNameQ[it_] :=
+  MatchQ[it["Items"], {e_} /; e["Kind"] === "One" && With[{sub = e["Sub"]},
+    sub["Kind"] === "Named" && sub["Keep"] === {sub["Name"]} && sub["Sub"]["Keep"] === {}]];
 
 (* A repeat of one child that binds a name to it (repeatedNameQ): from place
    q, k children for k from the minimum to the number in a row that pass
@@ -1600,7 +1533,7 @@ listKeysOf[cq_] := Select[Keys[$readings], !FreeQ[cq["Root"], #] &];
 (* The match of an extra code as resultOf reads it: its positions and its
    value. Its order key is apart (extraKey), as building the value of a run
    costs more than its key. *)
-extraMatch[code_] := With[{f = extraFields[code]}, Append[extraPlace[Keys[$extraKinds][[First[f]]], Sequence @@ Rest[f]], {}]];
+extraMatch[code_] := With[{f = extraFields[code]}, extraPlace[Keys[$extraKinds][[First[f]]], Sequence @@ Rest[f]]];
 
 extraKey[code_] := With[{f = extraFields[code]}, extraKeyOf[Keys[$extraKinds][[First[f]]], Sequence @@ Rest[f]]];
 
@@ -1645,8 +1578,7 @@ extraKeyOf["ContentsRun", o_, m_, n_, _] :=
     With[{e = Count[Take[items, m - 1], _XMLElement] + 1}, Join[elementKey[o], sequenceKey[4, e ;; e + Count[items[[m ;; n]], _XMLElement] - 1]]]];
 (* A path sorts by its lower end, then its upper end; its lower end's key
    is padded to the longest an element's can be, so that an element sorts
-   before the paths that end at it, as the solutions engine's keys do once
-   a query names a path (padded, Query/TreePatterns.wl). *)
+   before the paths that end at it. *)
 extraKeyOf["Path", j_, a_, b_, _] := Join[PadRight[elementKey[j], $keyLength, $keyPad], elementKey[a $B + b]];
 extraKeyOf["Token", o_, j_, k_, _] := Join[elementKey[o], tokenListKey[listAttribute[o, Keys[$readings][[j]]]], sequenceKey[2, k]];
 extraKeyOf["TokenRun", o_, j_, m_, n_] := Join[elementKey[o], tokenListKey[listAttribute[o, Keys[$readings][[j]]]], sequenceKey[2, m ;; n]];
@@ -1658,7 +1590,7 @@ missingItem[v_] := Missing[If[!FreeQ[v, _String, {0, 1}], "Text", "Literal"]];
 
 listAttribute[o_, key_] := attributeIndex[$elem[[o + 1, 2]], rawKeyOf[$readings[key]]];
 
-(* The order key of an element's position (elemKey, Query/TreePatterns.wl). *)
+(* The order key of an element's position (Positions.wl). *)
 elementKey[i_] := listMemo[{"Key", i}, Join @@ (sequenceKey[4, #] & /@ posOf[i])];
 
 (* The order key of a code's position. *)
@@ -1686,21 +1618,13 @@ rankedColumn[col_] :=
                 Append[AssociationThread[u[[order]], Accumulate[Prepend[Unitize[Total /@ Abs[Differences[keys[[order]]]]], 1]]], -1 -> 0],
                 col]]]]]];
 
-(* ---- Escape ----
-
-   A covered query that meets, while matching, a case this engine does not
-   handle throws the reason, before any right-hand side is evaluated, and
-   the solutions engine runs it (engineResults, Query/TreePatterns.wl). *)
-
-$columnarFallback = Unique["columnarFallback"];
-
-fallBack[reason_] := Throw[reason, $columnarFallback];
-
 (* ---- Results (ADR 0024) ---- *)
 
-(* The results of compiled query cq, as the solutions engine's results gives
-   them for the same mode, input and nodes. An element test gives the empty
-   tuple if the pattern root matches anywhere. *)
+(* The results of compiled query cq (runQuery, Query/TreePatterns.wl), the
+   first n in result order, each what resultOf makes of it in output mode
+   mode, the pattern root tried at nodes, All or a list of nodes; bare: the
+   input is a bare element, whose own position is never counted. An element
+   test gives the empty tuple if the pattern root matches anywhere. *)
 columnarResults[mode_, cq_, bare_, n_, nodes_] :=
   Block[{$K, $B, $t, $listMemo = <||>, $matches = <||>, $matchList = {}, $valueIds = <||>, $codeValueIds = <||>, $sets = <||>, $setList = {}, $labels = <||>, $labelList = {},
       $exceptModes = If[cq["Records"], exceptModes[cq["Root"]], <||>], $labelKeys},
@@ -1796,8 +1720,7 @@ slotKeys[slots_] :=
         $t[s]]] /@ slots];
 
 (* The result of one group: its rows in position order of the test names,
-   the first that the right-hand side gives a result for (groupResult in
-   Query/TreePatterns.wl). *)
+   the first that the right-hand side gives a result for. *)
 rowGroupResult[mode_, rhs_, all_, testNames_, group_] :=
   Module[{rows = If[testNames === {}, group, group[[Ordering[$testRows[[group]]]]]], v = $noResult, k = 1},
     While[v === $noResult && k <= Length[rows],
