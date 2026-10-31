@@ -49,6 +49,7 @@ PackageScoped[subNodes]
 PackageScoped[seq]
 PackageScoped[pathIds]
 PackageScoped[nearestOf]
+PackageScoped[refuseHere]
 
 (* =========================================================== *)
 (* Tree patterns (ADR 0023, 0024, 0025)                         *)
