@@ -305,12 +305,25 @@ TestCreate[
 ];
 
 (* A name inside another WL pattern on an item of a literal's contents that
-   binds text is refused once it does; a test may use it. *)
+   can bind the whole item, and whose own pattern can match text, is refused
+   from the pattern alone, also on a tree with no text there; a test may use
+   it. *)
 TestCreate[
-  XMLCases[$parts, XMLElement["p", _, {___, HoldPattern[x_String], ___}] :> x],
-  $Failed,
-  {XMLCases::text},
+  With[{noText = XMLElement["div", {}, {XMLElement["p", {}, {XMLElement["b", {}, {}]}]}]},
+    {XMLCases[noText, XMLElement["p", _, {___, HoldPattern[x_String], ___}] :> x],
+     XMLCases[noText, XMLElement["p", _, {___, HoldPattern[x_] | HoldPattern[y_XMLElement], ___}] :> x]}],
+  {$Failed, $Failed},
+  {XMLCases::text, XMLCases::text},
   TestID -> "name-in-wl-pattern-bound-to-text-refused"
+];
+
+(* One that binds only part of an item, or whose pattern matches only
+   elements, is not refused. *)
+TestCreate[
+  {XMLCases[$parts, XMLElement["p", _, {___, HoldPattern[x_XMLElement], ___}] :> x],
+   XMLCases[$parts, XMLElement["p", _, {___, HoldPattern[{x_}], ___}] :> x]},
+  {{XMLElement["b", {}, {"y"}]}, {}},
+  TestID -> "name-in-wl-pattern-bound-to-element-kept"
 ];
 
 TestCreate[

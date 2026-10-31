@@ -1704,7 +1704,6 @@ orderedResults[mode_, cq_, bare_, n_] :=
   Block[{$cols, $data, $counted = cq["Counted"], $testRows},
     Module[{testNames = cq["TestNames"], rhs = cq["Rhs"], all = cq["Names"], slots, keyRows, groups, count = 0, k = 1, r},
       $t = aligned[$t, Union[Rest[Keys[$t]], $counted, testNames]];
-      refuseTextRows[$counted];
       If[bare,$t = pickRows[$t, Times @@ Prepend[notBare /@ Lookup[$t, $counted], ConstantArray[1, rowCount[$t]]]]];
       If[rowCount[$t] == 0 || n < 1, Return[{}, Module]];
       If[directRowsQ[mode, rhs, all, testNames], Return[directResults[mode, rhs, n], Module]];
@@ -1719,19 +1718,6 @@ orderedResults[mode_, cq_, bare_, n_] :=
         While[count < n && k <= Length[groups],
           r = rowGroupResult[mode, rhs, all, testNames, groups[[k++]]];
           If[r =!= $noResult, count++; Sow[r, $rowTag]]]]]];
-
-(* A counted name bound to text, or to a run holding text, in some row is
-   refused: text has no position. The compiler refuses every name on an
-   entry that can match text; this is left for a name inside another WL
-   pattern on an item, as HoldPattern[x_], that binds the whole item. *)
-refuseTextRows[counted_] :=
-  Replace[
-    FirstCase[counted, name_ /; Min[$t[name]] < -1 && AnyTrue[
-        Select[DeleteDuplicates[$t[name]], # < -1 && MemberQ[$textKinds, First[extraFields[#]]] &],
-        MemberQ[First[codeMatch[#]], Missing["Text"]] &]],
-    Hold[s_] :> refuseHere["text", HoldForm[s]]];
-
-$textKinds := $textKinds = Lookup[$extraKinds, {"Text", "ContentsRun", "Set", "Match"}];
 
 (* The results a loop sows, in order. *)
 SetAttributes[reapedRows, HoldFirst];

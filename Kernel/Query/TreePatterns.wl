@@ -621,7 +621,7 @@ cRoot[c_Child, _] := If[$place === "entry", refuseListEntry[c, "child"], refuse[
 cRoot[l_List, _] /; $place === "entry" := refuseListEntry[l, "list"];
 (* Any other pattern in an XMLElement pattern's contents is WL's, over one
    item: an element or text. *)
-cRoot[x_, need_] /; $place === "literal" := plainNode[x, need];
+cRoot[x_, need_] /; $place === "literal" := (Scan[Apply[refuseText], wholeItemNames[x]]; plainNode[x, need]);
 cRoot[x_, _] := refuseHere["badpat", x];
 
 refuseBlank[b_] := If[$place === "descendant", refuse[Descendant::blank, b], refuseHere["blank", b]];
@@ -760,22 +760,39 @@ plainNode[p_, need_] :=
 
 (* A counted name that can bind text is refused: text has no position. It is
    decided from the pattern, where a name is on an entry of a literal's
-   contents list, so that a query is refused on every tree, also on one with
-   no text there. *)
+   contents list or binds the whole item inside another WL pattern on one
+   (wholeItemNames), so that a query is refused on every tree, also on one
+   with no text there. A name deeper in a WL pattern binds part of a
+   compound expression, never a string, so no case is left to the run. *)
 refuseText[name_, p_] :=
   If[MemberQ[$countedNames, name] && admitsTextQ[p], refuseHere["text", Replace[name, Hold[s_] :> HoldForm[s]]]];
 
+(* The forms other than a name that match only what their pattern q
+   matches, and those that match what one of their arguments matches. *)
+transparentForm[q_] :=
+  Verbatim[PatternTest][q, _] | Verbatim[Condition][q, _] |
+    (Verbatim[Repeated] | Verbatim[RepeatedNull] | Verbatim[Optional] | Shortest | Longest)[q, ___] |
+    Verbatim[Except][_, q] | Verbatim[HoldPattern][q] | Verbatim[IgnoringInactive][q];
+$itemAlternatives = _Alternatives | Verbatim[PatternSequence][__] | Verbatim[OrderlessPatternSequence][__];
+
 (* Whether an entry of a literal's contents list can match text: a string,
-   a blank or sequence with no head or the head String, or an Except of
-   one item; through names, tests, Conditions, repeats and alternatives. An
-   XMLPattern, an XMLElement pattern, or a blank with another head, matches
-   only elements. *)
+   a blank or sequence with no head or the head String, an Except of one
+   item, or a Verbatim string; through names, tests, Conditions, repeats
+   and alternatives. An XMLPattern, an XMLElement pattern, a blank with
+   another head, or any other expression with a head, matches no string. *)
 admitsTextQ[p_] :=
   MatchQ[p, _String | (Verbatim[Blank] | Verbatim[BlankSequence] | Verbatim[BlankNullSequence])[] | (Verbatim[Blank] | Verbatim[BlankSequence] | Verbatim[BlankNullSequence])[String] |
-    Verbatim[Except][_]] ||
-  MatchQ[p, Verbatim[Pattern][_, q_] | Verbatim[PatternTest][q_, _] | Verbatim[Condition][q_, _] | (Verbatim[Repeated] | Verbatim[RepeatedNull] | Verbatim[Optional] | Shortest | Longest)[q_, ___] |
-    Verbatim[Except][_, q_] | Verbatim[HoldPattern][q_] /; admitsTextQ[q]] ||
-  MatchQ[p, _Alternatives | Verbatim[PatternSequence][__]] && AnyTrue[List @@ p, admitsTextQ];
+    Verbatim[Except][_] | Verbatim[Verbatim][_String]] ||
+  MatchQ[p, (Verbatim[Pattern][_, q_] | transparentForm[q_]) /; admitsTextQ[q]] ||
+  MatchQ[p, $itemAlternatives] && AnyTrue[List @@ p, admitsTextQ];
+
+(* The names inside a WL pattern on one item that bind the whole item when
+   bound, each {name, its pattern}: through the forms that match what their
+   pattern matches, and alternatives. *)
+wholeItemNames[Verbatim[Pattern][s_Symbol, q_]] := Prepend[wholeItemNames[q], {Hold[s], q}];
+wholeItemNames[p : $itemAlternatives] := Join @@ (wholeItemNames /@ List @@ p);
+wholeItemNames[transparentForm[q_]] := wholeItemNames[q];
+wholeItemNames[_] := {};
 
 (* The counted names, for refuseText; none for an element test. *)
 $countedNames = {};
