@@ -625,7 +625,9 @@ Cell[BoxData[RowBox[{"XMLCases", "[", RowBox[{"page", ",", RowBox[{RowBox[{"n", 
 Cell[BoxData[RowBox[{"{", "\"Home\"", "}"}]], "Output"]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A test in the pattern can be evaluated for elements past the count:", "ExampleText"], Cell[BoxData["list = ImportString[\"<ul><li>Miso</li><li>Pho</li><li>Ramen</li></ul>\", {\"HTML\", \"XMLObject\"}];
-Reap[XMLCases[list, XMLPattern[\"li\"]?((Sow[HTMLTextContent[#]]; True) &), 2]]"], "Input"]}, Open]]}, Open]],
+Reap[XMLCases[list, XMLPattern[\"li\"]?((Sow[HTMLTextContent[#]]; True) &), 2]]"], "Input"],
+
+Cell[BoxData[RowBox[{"{", RowBox[{RowBox[{"{", RowBox[{RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Miso\"", "}"}]}], "]"}], ",", RowBox[{"XMLElement", "[", RowBox[{"\"li\"", ",", RowBox[{"{", "}"}], ",", RowBox[{"{", "\"Pho\"", "}"}]}], "]"}]}], "}"}], ",", RowBox[{"{", RowBox[{"{", RowBox[{"\"Miso\"", ",", "\"Pho\"", ",", "\"Ramen\""}], "}"}], "}"}]}], "}"}]], "Output"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
