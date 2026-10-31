@@ -50,6 +50,10 @@ PacletDirectoryLoad["/path/to/HTMLPatterns"];
 Needs["MaximilienTirard`HTMLPatterns`"]
 ```
 
+## Documentation as Markdown
+
+The reference pages, guide and tutorial are also in [`Documentation.md/`](Documentation.md) as Markdown.
+
 ## Tests
 
 ```sh

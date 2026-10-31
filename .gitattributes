@@ -1,0 +1,4 @@
+# Inverted on purpose: Documentation.md/ is generated from these notebooks, but
+# its Markdown diff is the readable one, so GitHub folds the notebook diffs
+# instead and shows the Markdown.
+Documentation/** linguist-generated

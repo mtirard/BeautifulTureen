@@ -1,0 +1,18 @@
+#!/bin/sh
+# Refuses a commit when Documentation.md/ is not what `make markdown` would write.
+set -eu
+root=$(git rev-parse --show-toplevel)
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+# `wltext mirror --check` would flag every page add-example-init.sh edits, so
+# compare against a fresh copy instead. An unreadable page fails the commit.
+wltext mirror "$root" "$tmp/md" 2>/dev/null || {
+	echo "wltext mirror failed: run \`make markdown\` to see why." >&2
+	exit 1
+}
+"$root/scripts/add-example-init.sh" "$tmp/md"
+if ! out=$(diff -rq "$tmp/md" "$root/Documentation.md"); then
+	printf '%s\n' "$out" | sed "s|$tmp/md|(expected)|g" >&2
+	echo "Documentation.md/ is out of date: run \`make markdown\` and stage the result." >&2
+	exit 1
+fi

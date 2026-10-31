@@ -1,4 +1,4 @@
-.PHONY: test build publish install uninstall clean
+.PHONY: test build publish install uninstall clean markdown install-hooks
 
 PACLET_NAME = MaximilienTirard/HTMLPatterns
 
@@ -33,3 +33,13 @@ test:
 
 clean:
 	@rm -rf build
+
+# Documentation.md/ holds each doc page as `wltext show` prints it, at its doc URI
+# tail: paclet:MaximilienTirard/HTMLPatterns/ref/X is Documentation.md/ref/X.md
+markdown:
+	@wltext mirror . Documentation.md
+	@scripts/add-example-init.sh Documentation.md
+
+install-hooks:
+	git config core.hooksPath scripts/githooks
+	@echo "Installed git hooks (core.hooksPath -> scripts/githooks)."
