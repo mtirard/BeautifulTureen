@@ -56,27 +56,23 @@ PackageScoped[$columnarFallback]
 
    While both engines exist, a query runs here only if every node of it is
    one this engine matches: element pattern roots, their tags and
-   attributes, names on elements and on places of one element, Descendant,
-   Child and list constraints, named and tested paths, Shortest and Longest,
-   Alternatives, Condition and PatternTest, XMLDocument, and XMLElement
-   patterns with their contents lists. It is
+   attributes, names on elements and on places of one element, bound once
+   or more, Descendant, Child and list constraints, named and tested paths,
+   Shortest and Longest, Alternatives, Condition and PatternTest,
+   XMLDocument, and XMLElement patterns with their contents lists. It is
    decided from the compiled query alone, when it is compiled. *)
 
 (* "Columnar", or why the engine does not run compiled query cq. *)
 columnarCoverage[cq_Association] :=
-  Which[
-    cq["Records"], "an Except refers to a name bound outside it",
-    True, Replace[DeleteDuplicates[uncovered[cq["Root"]]], {{} -> "Columnar", r_ :> StringRiffle[r, ", "]}]];
+  Replace[DeleteDuplicates[uncovered[cq["Root"]]], {{} -> "Columnar", r_ :> StringRiffle[r, ", "]}];
 
 (* Why a node, or a node below it, is not covered: the empty list when it
    is. *)
 uncovered[nd_] :=
   Switch[nd["Kind"],
-    "XMLPattern", Join[headUncovered[nd], constraintsUncovered[nd["Constraints"], nd["HeadNames"]]],
-    "XMLDocument", constraintsUncovered[nd["Constraints"], {}],
-    "Named", If[MemberQ[nd["Sub"]["Names"], nd["Name"]], {"a name compared by value"}, uncovered[nd["Sub"]]],
-    "Cond" | "Test" | "ListCond" | "ListTest" | "ContentsCond" | "ContentsTest", uncovered[nd["Sub"]],
-    "ListNamed" | "ContentsNamed", If[MemberQ[nd["Sub"]["Names"], nd["Name"]], {"a name compared by value"}, uncovered[nd["Sub"]]],
+    "XMLPattern", Join[headUncovered[nd], Join @@ (uncovered /@ nd["Constraints"])],
+    "XMLDocument", Join @@ (uncovered /@ nd["Constraints"]),
+    "Named" | "Cond" | "Test" | "ListNamed" | "ListCond" | "ListTest" | "ContentsNamed" | "ContentsCond" | "ContentsTest", uncovered[nd["Sub"]],
     "Alt" | "ConstraintAlt", Join @@ (uncovered /@ nd["Subs"]),
     "Literal" | "Blank", {},
     "Plain", If[nd["Keep"] === {}, {}, {"a name inside a WL pattern on one value"}],
@@ -88,22 +84,21 @@ uncovered[nd_] :=
     "LiteralParts", literalUncovered[nd],
     _, {nd["Kind"]}];
 
-(* The entries of a list over the items reader reads. A name a list binds
-   twice is compared by value. *)
-entriesUncovered[items_, reader_] :=
-  Join[Join @@ (entryUncovered[#, reader] & /@ items),
-    If[DuplicateFreeQ[Join @@ (listBound /@ items)], {}, {"a name compared by value"}]];
+(* The entries of a list over the items reader reads. *)
+entriesUncovered[items_, reader_] := Join @@ (entryUncovered[#, reader] & /@ items);
 
 entryUncovered[it_, reader_] :=
   Switch[it["Kind"],
     "Any", {},
     "One", uncovered[it["Sub"]],
-    "Not", Join[uncovered[it["Sub"]], If[it["Base"] === None, {}, uncovered[it["Base"]]]],
+    "Not",
+      Join[uncovered[it["Sub"]], If[it["Base"] === None, {}, uncovered[it["Base"]]],
+        If[it["Record"] =!= None && (reader =!= "Children" || recordsIn[it["Sub"]] =!= {}),
+          {"an Except over contents or tokens, or inside another, refers to a name bound outside it"}, {}]],
     "Run", Join @@ (entryUncovered[#, reader] & /@ it["Items"]),
     "SeqCond", Join @@ (entryUncovered[#, reader] & /@ it["Sub"]["Items"]),
     "Branches", Join @@ (Join @@ (entryUncovered[#, reader] & /@ #) & /@ it["Subs"]),
-    "Repeat", If[!it["Captures"], Join @@ (entryUncovered[#, reader] & /@ it["Items"]),
-      If[reader === "Children" && repeatedNameQ[it], {}, {"a name inside Repeated"}]]];
+    "Repeat", Join @@ (entryUncovered[#, reader] & /@ it["Items"])];
 
 (* A repeat of one element child that binds a name to the child and nothing
    else, as (x : "li").. does: the name binds every child of the repeat, as
@@ -112,27 +107,12 @@ repeatedNameQ[it_] :=
   MatchQ[it["Items"], {e_} /; e["Kind"] === "One" && With[{sub = e["Sub"]},
     sub["Kind"] === "Named" && sub["Keep"] === {sub["Name"]} && sub["Sub"]["Keep"] === {} && uncovered[sub] === {}]];
 
-(* The names an entry binds in the list, each as often as the walk binds
-   it: a repeat that binds a name binds it once, every child of the repeat
-   at once; each branch of an Alternatives binds its own. *)
-listBound[it_] :=
-  Switch[it["Kind"],
-    "One", it["Keep"],
-    "Not", If[it["Base"] === None, {}, it["Base"]["Keep"]],
-    "Run", Join[If[MemberQ[it["Keep"], it["Name"]], {it["Name"]}, {}], Join @@ (listBound /@ it["Items"])],
-    "SeqCond", Join @@ (listBound /@ it["Sub"]["Items"]),
-    "Branches", Union @@ (Join @@ (listBound /@ #) & /@ it["Subs"]),
-    "Repeat", If[repeatedNameQ[it], it["Keep"], Join @@ (listBound /@ it["Items"])],
-    _, {}];
-
 (* A literal matched by its parts: a name in its tag or attributes is on the
-   tag or the attribute list itself, and no name is in two of its parts,
-   which would compare values. *)
+   tag or the attribute list itself. *)
 literalUncovered[nd_] :=
   With[{slots = nd["Slots"], sub = nd["Sub"]},
     Join[
-      If[SubsetQ[Keys[Select[slots, # === 0 &]], nd["TagNames"]] && SubsetQ[Keys[Select[slots, # === Key[All] &]], nd["AttrsNames"]] &&
-          !IntersectingQ[nd["TagNames"], nd["AttrsNames"]] && !IntersectingQ[Join[nd["TagNames"], nd["AttrsNames"]], sub["Names"]],
+      If[SubsetQ[Keys[Select[slots, # === 0 &]], nd["TagNames"]] && SubsetQ[Keys[Select[slots, # === Key[All] &]], nd["AttrsNames"]],
         {}, {"a name in a literal's tag or attributes without a place of its own"}],
       uncovered[sub]]];
 
@@ -147,11 +127,11 @@ headUncovered[nd_] :=
 (* {{"Tag" | All | key | {"Tokens", listKey, node}, name}, ...} for the
    needed names of an XMLPattern's tag and attributes, the token list of a
    list key taking every name its value binds; or None when one has no place
-   of its own, or two names one place, or one name two. *)
+   of its own. A name at two places compares their values. *)
 headPlaces[nd_] :=
   With[{need = nd["HeadNames"], tag = tagPlaces[nd["Tag"], nd["HeadNames"]], attrs = attrPlaces[nd["Attrs"], nd["HeadNames"], nd["TokenLists"]]},
     If[tag === None || attrs === None, None,
-      With[{places = Join[tag, attrs]}, If[DuplicateFreeQ[places[[All, 2]]] && Sort[places[[All, 2]]] === Sort[need], places, None]]]];
+      With[{places = Join[tag, attrs]}, If[Union[places[[All, 2]]] === Union[need], places, None]]]];
 
 tagPlaces[t_, need_] :=
   Replace[Intersection[namesIn[Hold[t]], need], {
@@ -188,33 +168,10 @@ rulePlaces[k_ -> v_, need_, lists_] :=
 (* Why the compiled value of a list key (cTokenList) is not covered. *)
 tokensUncovered[nd_] :=
   Switch[nd["Kind"],
-    "TokenNamed", If[MemberQ[nd["Sub"]["Names"], nd["Name"]], {"a name compared by value"}, tokensUncovered[nd["Sub"]]],
-    "TokenCond", tokensUncovered[nd["Sub"]],
+    "TokenNamed" | "TokenCond", tokensUncovered[nd["Sub"]],
     "TokenList", entriesUncovered[nd["Items"], "Tokens"],
     "TokenPlain", If[nd["Keep"] === {}, {}, {"a name inside a WL pattern on one value"}]];
 
-(* The constraints of one element are joined on it, and a name two of them
-   bind names one place, compared by position (ADR 0023, joinedAcross),
-   which elements and runs of them have here; a name bound to a tag,
-   attribute, token or contents item in either, or in the element's own tag
-   and attributes, would be compared by value. *)
-constraintsUncovered[cons_, headNames_] :=
-  With[{keeps = #["Keep"] & /@ cons, strings = stringNames /@ cons},
-    Join[
-      Join @@ (uncovered /@ cons),
-      If[IntersectingQ[headNames, Union @@ Prepend[keeps, {}]] ||
-          AnyTrue[Subsets[Range[Length[cons]], {2}],
-            IntersectingQ[Intersection @@ keeps[[#]], Union @@ strings[[#]]] &],
-        {"a name compared by value"}, {}]]];
-
-(* The names bound below a node to what is not an element or a run of
-   elements: a tag, an attribute, a token, a literal's contents or an item
-   of them. *)
-stringNames[nd_] :=
-  Switch[nd["Kind"],
-    "XMLPattern", Union[nd["HeadNames"], Union @@ Prepend[stringNames /@ subNodes[nd], {}]],
-    "LiteralParts", nd["Names"],
-    _, Union @@ Prepend[stringNames /@ subNodes[nd], {}]];
 
 (* ---- Tables ---- *)
 
@@ -264,17 +221,13 @@ rangeJoin[b_, lo_, hi_] :=
       {repeated[Range[Length[lo]], Clip[lasts - firsts + 1, {0, Infinity}]], packed @ Flatten[MapThread[Range, {firsts, lasts}]]}]];
 
 (* The natural join of a and b on the root and the names both bind, each
-   row of a with the rows of b at its root in their order. A name one row
-   leaves unbound takes the other's. *)
-joinTables[a_, b0_] :=
-  Module[{b = sortedByRoot[b0], ia, ib, shared, out, ok},
+   row of a with the rows of b at its root in their order, the names
+   compared as mode says (sideBySide): "Across" the constraints of one
+   element, "Value" within one. *)
+joinTables[a_, b0_, mode_ : "Across"] :=
+  Module[{b = sortedByRoot[b0], ia, ib},
     {ia, ib} = rangeJoin[b, a["Root"], a["Root"]];
-    shared = Intersection[Rest[Keys[a]], Rest[Keys[b]]];
-    out = Join[takeRows[a, ia], takeRows[KeyDrop[b, Prepend[shared, "Root"]], ib]];
-    If[shared === {}, out,
-      ok = Times @@ (With[{x = a[#][[ia]], y = b[#][[ib]]}, 1 - Unitize[x - y] Unitize[x + 1] Unitize[y + 1]] & /@ shared);
-      Scan[(out[#] = With[{x = a[#][[ia]], y = b[#][[ib]]}, x + (y - x) (1 - Unitize[x + 1])]) &, shared];
-      pickRows[out, ok]]];
+    sideBySide[takeRows[a, ia], takeRows[KeyDrop[b, "Root"], ib], mode]];
 
 (* A 0/1 vector over the nodes, 1 at ids. *)
 idMarks[ids_] := Module[{m = ConstantArray[0, Length[$elem]]}, m[[ids + 1]] = 1; m];
@@ -325,6 +278,108 @@ codeValues[codes_] :=
 (* A name's match as resultOf reads it: its positions and its value. *)
 codeMatch[c_] := If[c < -1, extraMatch[c], nameMatch[{codePosition[c]}, codeValue[c], {}]];
 
+(* ---- Names compared by value (ADR 0023) ----
+
+   A name bound twice within one constraint, an entry list, an element and
+   a pattern inside it, or a literal's parts, compares values; across the
+   constraints of one element it compares positions when both are places
+   (an element, the document, a run of children), values otherwise. Two
+   matches of equal value make one with the positions of both, in position
+   order: its code is a set code (extraCode["Set", i]), the i-th set of
+   codes in $sets, interned so that equal sets have one code, which is the
+   identity of the tuple. A value is compared through its id, interned in
+   $valueIds once for each distinct code. *)
+
+(* Two tables of as many rows, side by side: a name both bind is compared,
+   as mode, "Value" or "Across", says, and the rows that differ dropped; a
+   name one row leaves unbound takes the other's. *)
+sideBySide[a_, b_, mode_] :=
+  With[{shared = Intersection[Keys[a], Keys[b]]},
+    If[shared === {}, Join[a, b],
+      Module[{out = Join[a, b], ok = ConstantArray[1, Length[First[a]]]},
+        Scan[Function[k, With[{m = compared[a[k], b[k], mode]}, ok = ok First[m]; out[k] = Last[m]]], shared];
+        pickRows[out, ok]]]];
+
+(* {1 where codes x and y agree, else 0; the code of the match they make}.
+   Equal codes, or one unbound, always agree; elements across constraints
+   agree only when equal. *)
+compared[x_, y_, mode_] :=
+  With[{d = Unitize[x - y] Unitize[x + 1] Unitize[y + 1], merged = x + (y - x) (1 - Unitize[x + 1])},
+    If[Total[d] == 0 || mode === "Across" && elementCodesQ[x] && elementCodesQ[y], {1 - d, merged},
+      With[{idx = Flatten @ Position[d, 1]},
+        With[{pairs = Transpose[{x[[idx]], y[[idx]]}]},
+          With[{r = Lookup[AssociationMap[pairCompared[#, mode] &, DeleteDuplicates[pairs]], pairs]},
+            {ReplacePart[1 - d, Thread[idx -> r[[All, 1]]]], ReplacePart[merged, Thread[idx -> r[[All, 2]]]]}]]]]];
+
+(* Codes of elements only, or unbound. *)
+elementCodesQ[c_] := With[{p = Pick[c, UnitStep[c], 1]}, Min[c] >= -1 && (p === {} || Max[Mod[p, $K]] == 0)];
+
+(* Two distinct codes: whether they agree, and the code of their match,
+   which across constraints is the first's when it is a place (mergedMatch,
+   Query/TreePatterns.wl). Two assumptions an Except makes (labelCode)
+   agree when both may hold. *)
+pairCompared[{x_, y_}, mode_] :=
+  Which[
+    labelCodeQ[x], labelsMet[x, y],
+    !agreeQ[x, y, mode], {0, -1},
+    mode === "Across" && placeCodeQ[x], {1, x},
+    True, {1, unionCode[x, y]}];
+
+(* Whether two bound codes are of one match: the same places across
+   constraints when both are places, the same value otherwise. *)
+agreeQ[x_, y_, mode_] :=
+  x == y || If[mode === "Across" && placeCodeQ[x] && placeCodeQ[y], Sort[atoms[x]] === Sort[atoms[y]], valueId[x] === valueId[y]];
+
+(* The id of the value of a code. *)
+valueId[c_] := Lookup[$codeValueIds, c, $codeValueIds[c] = With[{v = anyValue[c]}, Lookup[$valueIds, Key[v], $valueIds[v] = Length[$valueIds] + 1]]];
+
+anyValue[c_] := Which[c >= 0, codeValue[c], setCodeQ[c], anyValue[First[setMembers[c]]], True, extraMatch[c][[2]]];
+
+(* The value ids of codes, -1 for unbound, the values of codes of places
+   on elements made all at once. *)
+valueIds[codes_] :=
+  With[{new = Complement[codes, {-1}, Keys[$codeValueIds]]},
+    If[new =!= {},
+      With[{vs = If[Min[new] >= 0, codeValues[new], anyValue /@ new]},
+        With[{fresh = Complement[DeleteDuplicates[vs], Keys[$valueIds]]},
+          $valueIds = Join[$valueIds, AssociationThread[fresh, Length[$valueIds] + Range[Length[fresh]]]]];
+        $codeValueIds = Join[$codeValueIds, AssociationThread[new, Lookup[$valueIds, vs]]]]];
+    packed @ Lookup[$codeValueIds, codes, -1]];
+
+(* Whether a code is a place, as placeQ (Query/TreePatterns.wl) reads its
+   positions: an element, the document, a run of children, a run of items
+   that are all elements, or a set of places. *)
+placeCodeQ[c_] :=
+  Which[
+    c >= 0, Mod[c, $K] == 0,
+    setCodeQ[c], AllTrue[setMembers[c], placeCodeQ],
+    True, MatchQ[extraMatch[c][[1]], {(_Span | {___Integer?Positive} | {___Integer?Positive, _Span}) ..}]];
+
+setCodeQ[c_] := c < -1 && First[extraFields[c]] == $extraKinds["Set"];
+setMembers[c_] := $setList[[extraFields[c][[2]]]];
+
+(* The codes of the single places a match is at: a set's, each child a name
+   bound to every child of a repeat binds, or the code itself. *)
+atoms[c_] :=
+  Which[
+    c >= -1, {c},
+    setCodeQ[c], setMembers[c],
+    First[extraFields[c]] == $extraKinds["Repeat"], With[{f = extraFields[c]}, $K $kids[[f[[2]] + 1, f[[3]] ;; f[[4]]]]],
+    True, {c}];
+
+(* The match of the matches of codes x and y, of equal value: the positions
+   of both, each once, in position order. Two places with no position, as
+   two text items, are one, the first, by their identical Missing. *)
+unionCode[x_, y_] :=
+  With[{ms = DeleteDuplicatesBy[Join[atoms[x], atoms[y]], If[# >= -1, #, Replace[First[codeMatch[#]], Except[{_Missing}] -> #]] &]},
+    If[Length[ms] == 1, First[ms],
+      With[{sorted = ms[[Ordering[With[{ks = orderKey /@ ms}, PadRight[ks, {Length[ks], Max[Length /@ ks]}, $keyPad]]]]]},
+        Lookup[$sets, Key[sorted], $sets[sorted] = (AppendTo[$setList, sorted]; extraCode["Set", Length[$setList]])]]]];
+
+(* Table s with name bound to codes on each row, compared by value with
+   what s binds it to already. *)
+withName[s_, name_, codes_] := If[KeyExistsQ[s, name], sideBySide[s, <|name -> packed[codes]|>, "Value"], Append[s, name -> packed[codes]]];
+
 (* ---- Matching a pattern root ----
 
    tab[nd, allowed, rootQ]: the table of a pattern root node at the nodes
@@ -359,7 +414,7 @@ treeTable[nd_, cands_, rootQ_] :=
       !rootQ && Length[named] == 1 && Lookup[nd, "HeadNames", {}] === {} && coverableQ[First[named]], covered[First[named], p],
       True,
         distinctRows[
-          KeyDrop[Fold[If[rowCount[#1] == 0, #1, joinTables[#1, rootConstraintTable[nd, #2, DeleteDuplicates[#1["Root"]]]]] &, t, named], pathKeys[nd]],
+          KeyDrop[settledRows @ Fold[If[rowCount[#1] == 0, #1, joinTables[#1, rootConstraintTable[nd, #2, DeleteDuplicates[#1["Root"]]]]] &, t, named], pathKeys[nd]],
           rootQ]]];
 
 (* The table of the names in the tag and attributes, at elements ps: a
@@ -369,7 +424,7 @@ headTable[nd_, ps_] /; Lookup[nd, "HeadNames", {}] === {} := <|"Root" -> packed[
 headTable[nd_, ps_] :=
   With[{places = headPlaces[nd]},
     Fold[If[rowCount[#1] == 0, #1, joinTables[#1, tokenTable[#2[[2]], #2[[3]], ps]]] &,
-      Join[<|"Root" -> packed[ps]|>, Association[#[[2]] -> headCodes[ps, #[[1]]] & /@ Select[places, !ListQ[#[[1]]] &]]],
+      Fold[withName[#1, #2[[2]], headCodes[ps, #2[[1]]]] &, <|"Root" -> packed[ps]|>, Select[places, !ListQ[#[[1]]] &]],
       DeleteDuplicates[Cases[places[[All, 1]], {"Tokens", _, _}]]]];
 
 headCodes[ps_, "Tag"] := $K ps + 1;
@@ -528,7 +583,7 @@ holdingAt[c_, ps_] := If[c["Keep"] === {}, holding[c, ps, True], Sort @ DeleteDu
 tabKind["Named", nd_, allowed_, rootQ_] :=
   With[{keepQ = MemberQ[nd["Keep"], nd["Name"]]},
     With[{s = tab[nd["Sub"], allowed, rootQ || keepQ]},
-      If[keepQ, Append[s, nd["Name"] -> packed[$K s["Root"]]], s]]];
+      If[keepQ, withName[s, nd["Name"], $K s["Root"]], s]]];
 
 (* A PatternTest runs once for each distinct element. *)
 tabKind["Test", nd_, allowed_, rootQ_] :=
@@ -590,8 +645,8 @@ testedOnce[xs_, f_] := With[{u = DeleteDuplicates[xs]}, packed @ Lookup[Associat
    The tag and the attributes are WL patterns on the element's own, each
    tested once for each distinct one; a name on the tag or the attribute
    list is at that place, and the contents slot is matched over the
-   element's contents (contentsTable). The names of the three parts are
-   apart (coverage), so the parts are joined on the element. *)
+   element's contents (contentsTable). The parts are joined on the element,
+   a name in two of them compared by value, as WL compares it. *)
 tabKind["LiteralParts", nd_, allowed_, _] :=
   Module[{ids = restricted[Range[Length[$elem] - 1], allowed]},
     ids = Pick[ids, testedOnce[$elem[[ids + 1, 1]], MatchQ[#, nd["Tag"]] &], 1];
@@ -599,10 +654,9 @@ tabKind["LiteralParts", nd_, allowed_, _] :=
     If[ids === {}, emptyTable[nd["Keep"]],
       distinctRows[KeyTake[
           joinTables[
-            Join[<|"Root" -> packed[ids]|>,
-              AssociationThread[nd["TagNames"], ConstantArray[packed[$K ids + 1], Length[nd["TagNames"]]]],
-              AssociationThread[nd["AttrsNames"], ConstantArray[packed[$K ids + 2], Length[nd["AttrsNames"]]]]],
-            contentsTable[nd["Sub"], ids]],
+            Fold[withName[#1, #2[[1]], #2[[2]]] &, <|"Root" -> packed[ids]|>,
+              Join[{#, $K ids + 1} & /@ nd["TagNames"], {#, $K ids + 2} & /@ nd["AttrsNames"]]],
+            contentsTable[nd["Sub"], ids], "Value"],
           Prepend[nd["Keep"], "Root"]], True]]];
 
 (* The table of a literal's contents slot at elements ids. *)
@@ -611,7 +665,7 @@ contentsTable[c_, ids_] :=
     "ContentsList",
       listRows[contentsSequence[Pick[ids, UnitStep[(Length /@ $elem[[ids + 1, 3]]) - c["MinItems"]], 1]], c["Items"], c["Keep"]],
     "ContentsNamed",
-      With[{s = contentsTable[c["Sub"], ids]}, If[MemberQ[c["Keep"], c["Name"]], Append[s, c["Name"] -> extraCode["Contents", s["Root"]]], s]],
+      With[{s = contentsTable[c["Sub"], ids]}, If[MemberQ[c["Keep"], c["Name"]], withName[s, c["Name"], extraCode["Contents", s["Root"]]], s]],
     "ContentsCond", KeyTake[passingRows[c, contentsTable[c["Sub"], ids]], Prepend[c["Keep"], "Root"]],
     "ContentsTest",
       With[{s = contentsTable[c["Sub"], ids]},
@@ -708,10 +762,15 @@ itemTable[cx_, sub_] := listMemo[{"Table", cx["Id"], sub["Id"]}, cx["Table"][cx,
 itemMarks[cx_, items_] := Module[{v = ConstantArray[0, Length[cx["ItemPlace"]]]}, If[items =!= {}, v[[items]] = 1]; v];
 
 (* The vector of an entry that is one item: its pattern's, or for Except
-   the items its pattern fails, and its second argument passes. *)
+   the items its pattern fails, or, for one that refers to names bound
+   outside it, the items it excludes as the walk assumes them bound
+   ($excluded, exceptRows), and its second argument passes. *)
 oneVector[cx_, it_] :=
   If[it["Kind"] === "One", passVector[cx, it["Sub"]],
-    (anyItem[cx] - passVector[cx, it["Sub"]]) If[it["Base"] === None, 1, passVector[cx, it["Base"]]]];
+    (anyItem[cx] - If[KeyExistsQ[$excluded, it["Id"]], overPlaces[cx, itemMarks[cx, $excluded[it["Id"]]]], passVector[cx, it["Sub"]]]) *
+      If[it["Base"] === None, 1, passVector[cx, it["Base"]]]];
+
+$excluded = <||>;
 
 (* -- Readers -- *)
 
@@ -757,7 +816,7 @@ textRows[cx_, nd_, tx_] :=
     "Plain", <|"Item" -> packed @ Pick[tx, testedOnce[cx["Values"][[tx]], MatchQ[#, nd["Pattern"]] &], 1]|>,
     "Blank", <|"Item" -> packed @ Pick[tx, testedOnce[cx["Values"][[tx]], MatchQ[#, Blank @@ nd["Head"]] &], 1]|>,
     "Named",
-      With[{s = textRows[cx, nd["Sub"], tx]}, If[MemberQ[nd["Keep"], nd["Name"]], Append[s, nd["Name"] -> textCodes[cx, s["Item"]]], s]],
+      With[{s = textRows[cx, nd["Sub"], tx]}, If[MemberQ[nd["Keep"], nd["Name"]], withName[s, nd["Name"], textCodes[cx, s["Item"]]], s]],
     "Cond", KeyTake[passingRows[nd, textRows[cx, nd["Sub"], tx]], Prepend[nd["Keep"], "Item"]],
     "Test", With[{s = textRows[cx, nd["Sub"], tx]}, pickRows[s, testedOnce[cx["Values"][[s["Item"]]], TrueQ[nd["F"][#]] &]]],
     "Alt",
@@ -794,7 +853,7 @@ tokenTable[key_, nd_, ps_] :=
     "TokenList", If[nd["Keep"] === {}, <|"Root" -> packed[ps]|>, listRows[tokenSequence[ps, key], nd["Items"], nd["Keep"]]],
     "TokenNamed",
       With[{s = tokenTable[key, nd["Sub"], ps]},
-        If[MemberQ[nd["Keep"], nd["Name"]], Append[s, nd["Name"] -> extraCode["TokenList", s["Root"], keyIndex[key]]], s]],
+        If[MemberQ[nd["Keep"], nd["Name"]], withName[s, nd["Name"], extraCode["TokenList", s["Root"], keyIndex[key]]], s]],
     "TokenCond", KeyTake[passingRows[nd, tokenTable[key, nd["Sub"], ps]], Prepend[nd["Keep"], "Root"]],
     "TokenPlain", <|"Root" -> packed[ps]|>];
 
@@ -958,12 +1017,12 @@ perStartRows[cx_, seg_, t_, target_] :=
 spanRows[cx_, it_, t_, next_] :=
   Switch[it["Kind"],
     "One", oneSpans[cx, it["Sub"], passVector[cx, it["Sub"]], t, next],
-    "Not", oneSpans[cx, it["Base"], oneVector[cx, it], t, next],
+    "Not", exceptLabelled[cx, it, oneSpans[cx, it["Base"], oneVector[cx, it], t, next]],
     "Run",
       With[{key = {"Start", it["Id"]}},
         With[{inner = walkedRows[cx, it["Items"], Append[t, key -> t["Place"]], next, False]},
           uniqueRows @ KeyTake[
-            If[MemberQ[it["Keep"], it["Name"]], Append[inner, it["Name"] -> runCodes[cx, inner[key], inner["Place"]]], inner],
+            If[MemberQ[it["Keep"], it["Name"]], withName[inner, it["Name"], runCodes[cx, inner[key], inner["Place"]]], inner],
             spanColumns[t, it]]]],
     "Branches",
       With[{key = {"Start", it["Id"]}, slotQ = MemberQ[it["Keep"], it["Slot"]]},
@@ -972,7 +1031,9 @@ spanRows[cx_, it_, t_, next_] :=
             If[slotQ, Append[inner, it["Slot"] -> runCodes[cx, inner[key], inner["Place"]]], inner]]] /@ it["Subs"],
           spanColumns[t, it]]],
     "SeqCond", uniqueRows @ KeyTake[passingRows[it, walkedRows[cx, it["Sub"]["Items"], t, next, False]], spanColumns[t, it]],
-    "Repeat", namedRepeatRows[cx, it, t, next]];
+    "Repeat",
+      If[repeatedNameQ[it] && KeyExistsQ[cx, "Items"] && !KeyExistsQ[t, it["Items"][[1]]["Sub"]["Name"]], namedRepeatRows[cx, it, t, next],
+        capturingRepeatRows[cx, it, t, next]]];
 
 spanColumns[t_, it_] := DeleteDuplicates[Join[Keys[t], it["Keep"]]];
 
@@ -982,9 +1043,25 @@ oneSpans[cx_, sub_, vec_, t_, next_] :=
   With[{q = t["Place"]},
     With[{u = pickRows[t, vec[[q]] next[[Clip[q + 1, {1, cx["Places"]}]]]]},
       If[sub === None || sub["Keep"] === {}, Append[u, "Place" -> u["Place"] + 1],
-        With[{s = itemTable[cx, sub]},
+        With[{s = assumed[cx, itemTable[cx, sub]]},
           With[{pairs = keyPairs[cx["ItemAt"][[u["Place"]]], s["Item"]]},
-            Join[takeRows[Append[u, "Place" -> u["Place"] + 1], pairs[[1]]], takeRows[KeyDrop[s, "Item"], pairs[[2]]]]]]]]];
+            sideBySide[takeRows[Append[u, "Place" -> u["Place"] + 1], pairs[[1]]], takeRows[KeyDrop[s, "Item"], pairs[[2]]], "Value"]]]]]];
+
+(* Any other repeat that binds a needed name, one repeat at a time from the
+   rows' places, each walk of its entries binding the names again, compared
+   by value with what the rows bind already, as WL compares a name bound at
+   each repeat (repeatSpans, Query/TreePatterns.wl). A repeat that matches
+   no item adds nothing past the minimum. *)
+capturingRepeatRows[cx_, it_, t_, next_] :=
+  Module[{again = repeatsReach[cx, Append[it, "Min" -> 0], next, -1], cur = t, out = {takeRows[t, {}]}, k = 0},
+    If[it["Min"] == 0, AppendTo[out, t]];
+    While[frontierRows[cur] > 0 && k < it["Max"],
+      k++;
+      cur = uniqueRows @ walkedRows[cx, it["Items"], Append[cur, {"From", it["Id"]} -> cur["Place"]], again, False];
+      If[k > it["Min"], cur = pickRows[cur, Unitize[cur["Place"] - cur[{"From", it["Id"]}]]]];
+      cur = KeyDrop[cur, {{"From", it["Id"]}}];
+      If[k >= it["Min"], AppendTo[out, cur]]];
+    uniqueRows @ KeyTake[(pickRows[#, next[[#["Place"]]]] &) @ stacked[out, DeleteDuplicates[Join @@ (Keys /@ out)]], spanColumns[t, it]]];
 
 (* A repeat of one child that binds a name to it (repeatedNameQ): from place
    q, k children for k from the minimum to the number in a row that pass
@@ -1025,6 +1102,7 @@ runCodes[cx_, starts_, ends_] :=
 
 (* The table of a list's items over sequence cx: a row for each solution, at
    its owner, on the names keep. *)
+listRows[cx_, items_, keep_] /; ownExcepts[items] =!= {} := exceptRows[cx, items, keep];
 listRows[cx_, items_, keep_] :=
   If[cx["Places"] == 0, emptyTable[keep],
     Module[{start = ConstantArray[0, cx["Places"]], endOK = ConstantArray[0, cx["Places"]], t},
@@ -1041,23 +1119,265 @@ listConstraintTable[c_, ps_] :=
   Switch[c["Kind"],
     "List", listRows[childSequence[Pick[ps, UnitStep[(Length /@ $kids[[ps + 1]]) - c["MinItems"]], 1]], c["Items"], c["Keep"]],
     "ListNamed",
-      With[{s = listConstraintTable[c["Sub"], ps]}, If[MemberQ[c["Keep"], c["Name"]], Append[s, c["Name"] -> extraCode["List", s["Root"]]], s]],
+      With[{s = listConstraintTable[c["Sub"], ps]}, If[MemberQ[c["Keep"], c["Name"]], withName[s, c["Name"], extraCode["List", s["Root"]]], s]],
     "ListCond", KeyTake[passingRows[c, listConstraintTable[c["Sub"], ps]], Prepend[c["Keep"], "Root"]],
     "ListTest",
       With[{s = listConstraintTable[c["Sub"], ps]},
         pickRows[s, idMarks[Select[DeleteDuplicates[s["Root"]], TrueQ[c["F"][elemOf /@ childrenOf[#]]] &]][[s["Root"] + 1]]]]];
 
+(* ---- Except over a name bound outside it ----
+
+   A name inside an Except's pattern that is also bound outside every
+   Except refers to that match: the Except excludes the items its pattern
+   binds the name to the match there. Where the walk meets the Except, the
+   match may not be known: it may come later in the list, from another
+   constraint or from above. So the list is walked once for each match the
+   Except's pattern binds the names to at some item, by value, or, when
+   they are first bound all at once by the join of an element's
+   constraints, by position for places (exceptModes); once for a match it
+   binds nowhere, excluding nothing; and once for the names left unbound,
+   excluding every item the pattern matches, as a local Except does. Each
+   walk's rows carry what it assumed, a label code in the column of the
+   Except's record key (the Not node's "Record"), and the rows are kept
+   where the names, once bound, are what the label says (settledRows); at
+   the pattern root, a row whose names are still unbound keeps only the
+   last assumption (rootSettled). Two labels on one row, from two lists
+   whose Excepts refer to the same names, are both assumed (labelsMet). *)
+
+(* The Excepts of a list's entries, not inside the patterns they test, that
+   refer to names bound outside them. *)
+ownExcepts[items_] :=
+  Join @@ (Switch[#["Kind"],
+      "Not", If[#["Record"] === None, {}, {#}],
+      "Run" | "Repeat", ownExcepts[#["Items"]],
+      "SeqCond", ownExcepts[#["Sub"]["Items"]],
+      "Branches", Join @@ (ownExcepts /@ #["Subs"]),
+      _, {}] & /@ items);
+
+(* The Excepts at or below a node that refer to names bound outside them. *)
+recordsIn[nd_] := Join[If[nd["Kind"] === "Not" && nd["Record"] =!= None, {nd}, {}], Join @@ (recordsIn /@ subNodes[nd])];
+
+(* The entries with their Excepts' records no longer kept, and so not
+   branched on by the walk, which reads those Excepts as vectors; but for
+   the Excepts kept, which label the rows at the item they match. *)
+unrecorded[items_, kept_ : {}] := unrecordedEntry[#, kept] & /@ items;
+unrecordedEntry[it_, kept_] :=
+  With[{u = Switch[it["Kind"],
+        "Not", Append[it, "Record" -> None],
+        "Run" | "Repeat", Append[it, "Items" -> unrecorded[it["Items"], kept]],
+        "SeqCond", Append[it, "Sub" -> Append[it["Sub"], "Items" -> unrecorded[it["Sub"]["Items"], kept]]],
+        "Branches", Append[it, "Subs" -> (unrecorded[#, kept] & /@ it["Subs"])],
+        _, it]},
+    If[it["Kind"] === "One" || MemberQ[kept, it["Id"]], u,
+      With[{keep = Complement[it["Keep"], Complement[$labelKeys, Union @@ Prepend[#["Keep"] & /@ entriesBelow[u], {}]]]},
+        Append[u, {"Keep" -> keep, "Captures" -> (keep =!= {} || it["Kind"] === "SeqCond" || AnyTrue[entriesBelow[u], #["Captures"] &])}]]]];
+
+(* The entries directly inside an entry, with an Except's second argument. *)
+entriesBelow[it_] :=
+  Switch[it["Kind"],
+    "Not", If[it["Base"] === None, {}, {it["Base"]}],
+    "Run" | "Repeat", it["Items"],
+    "SeqCond", it["Sub"]["Items"],
+    "Branches", Flatten[it["Subs"]],
+    _, {}];
+
+(* The rows of a list whose Excepts refer to names bound outside them, one
+   walk for each assumption about the names. *)
+exceptRows[cx_, items_, keep_] :=
+  Module[{live = Select[ownExcepts[items], $exceptModes[#["Id"]] =!= "Never" &], plain, key, mode, refs, tuples, idents, ds, reps},
+    If[live === {}, Return[listRows[cx, unrecorded[items], keep], Module]];
+    key = DeleteDuplicates[#["Record"] & /@ live];
+    If[Length[key] > 1, fallBack["Excepts of one list that refer to different names"]];
+    key = First[key];
+    refs = First[key];
+    mode = $exceptModes[First[live]["Id"]];
+    tuples = With[{e = itemTable[cx, #["Sub"]]}, {e["Item"], Transpose[Lookup[e, refs, ConstantArray[-1, Length[e["Item"]]]]]}] & /@ live;
+    If[MemberQ[Flatten[tuples[[All, 2]]], -1], fallBack["an Except whose pattern binds only some of the names it refers to"]];
+    idents = If[mode === "Value" && # =!= {}, Transpose[valueIds /@ Transpose[#]], tupleIdentity[#, mode] & /@ #] & /@ tuples[[All, 2]];
+    If[!IntersectingQ[#["Id"] & /@ live, #["Id"] & /@ repeatedExcepts[items]],
+      Return[singleExceptRows[cx, items, keep, key, mode, live, tuples, idents], Module]];
+    idents = PositionIndex /@ idents;
+    plain = unrecorded[items];
+    ds = Union @@ (Keys /@ idents);
+    reps = With[{i = FirstCase[Range[Length[live]], j_ /; KeyExistsQ[idents[[j]], #]]}, tuples[[i, 2, First[idents[[i]][#]]]]] & /@ ds;
+    settledRows @ unionTables[
+      Join[
+        MapThread[Function[{d, rep},
+            Block[{$excluded = AssociationThread[#["Id"] & /@ live, MapThread[#1[[1, Lookup[#2, Key[d], {}]]] &, {tuples, idents}]]},
+              assumedRows[cx, plain, keep, key, {"Is", rep, mode}]]],
+          {ds, reps}],
+        {Block[{$excluded = AssociationThread[#["Id"] & /@ live, ConstantArray[{}, Length[live]]]},
+            assumedRows[cx, plain, keep, key, {"NotIn", reps, mode}]],
+          assumedRows[cx, plain, keep, key, {"Unbound"}]}],
+      keep]];
+
+(* The Excepts of a list's entries inside a repeat. *)
+repeatedExcepts[items_] :=
+  Join @@ (Switch[#["Kind"],
+      "Repeat", ownExcepts[#["Items"]],
+      "Run", repeatedExcepts[#["Items"]],
+      "SeqCond", repeatedExcepts[#["Sub"]["Items"]],
+      "Branches", Join @@ (repeatedExcepts /@ #["Subs"]),
+      _, {}] & /@ items);
+
+(* When no such Except is inside a repeat, each matches one item, and one
+   walk is enough: an Except matches any item its second argument passes,
+   and labels the row with the matches its pattern binds the names to at
+   that item, none of which the names may be ($itemLabels, exceptLabelled),
+   or with nothing if it binds them nowhere there. *)
+singleExceptRows[cx_, items_, keep_, key_, mode_, live_, tuples_, idents_] :=
+  Block[{$excluded = AssociationThread[#["Id"] & /@ live, ConstantArray[{}, Length[live]]],
+      $itemLabels = AssociationThread[#["Id"] & /@ live,
+        MapThread[Function[{tu, id},
+            {key, packed @ ReplacePart[ConstantArray[-1, Length[cx["ItemPlace"]]],
+              Normal @ GroupBy[Range[Length[tu[[1]]]], tu[[1, #]] &, labelCode[{"NotIn", tu[[2, First /@ GatherBy[#, id[[#]] &]]], mode}] &]]}],
+          {tuples, idents}]]},
+    settledRows @ listRows[cx, unrecorded[items, #["Id"] & /@ live], keep]];
+
+$itemLabels = <||>;
+
+(* The rows u of a single Except over sequence cx, at the place after its
+   item, with the label of that item. *)
+exceptLabelled[cx_, it_, u_] :=
+  If[!KeyExistsQ[$itemLabels, it["Id"]], u,
+    With[{kl = $itemLabels[it["Id"]]}, withName[u, kl[[1]], kl[[2]][[cx["ItemAt"][[u["Place"] - 1]]]]]]];
+
+(* The walk under one assumption, its rows labelled with it. An entry of
+   the list that binds the name, when the Except refers to one, binds it
+   only to what the assumption allows ($assumed), as the rows that bind it
+   to anything else would not hold. *)
+assumedRows[cx_, items_, keep_, key_, label_] :=
+  Block[{$assumed = If[Length[First[key]] == 1, {cx["Id"], First[First[key]], label}, None]},
+    labelled[listRows[cx, items, keep], key, label]];
+
+$assumed = None;
+
+(* The rows of an entry's table at the items of sequence cx that bind the
+   name to what the walk's assumption allows. *)
+assumed[cx_, s_] :=
+  If[$assumed === None || $assumed[[1]] =!= cx["Id"] || !KeyExistsQ[s, $assumed[[2]]], s,
+    With[{label = $assumed[[3]], col = s[$assumed[[2]]]},
+      pickRows[s, Switch[label,
+        {"Unbound"}, 1 - Unitize[col + 1],
+        {_, _, "Value"},
+          With[{ids = valueIds[col], allowed = valueIds[Flatten[{label[[2]]}]]},
+            With[{in = 1 - Times @@ Prepend[Unitize[ids - #] & /@ allowed, 1]}, Unitize[If[First[label] === "Is", in, 1 - in] + 1 - Unitize[col + 1]]]],
+        _, testedOnce[col, # == -1 || holdsQ[label, {#}] &]]]]];
+
+(* The identity of a tuple of codes, as they are compared (agreeQ). *)
+tupleIdentity[codes_, mode_] := If[mode === "Across" && placeCodeQ[#], {"Places", Sort[atoms[#]]}, valueId[#]] & /@ codes;
+
+(* A table with every row labelled with an assumption about the names of
+   an Except's record key. *)
+labelled[t_, key_, label_] := Append[t, key -> ConstantArray[labelCode[label], rowCount[t]]];
+
+(* The code of an assumption: {"Is", codes, mode}, the names are bound to
+   the match of codes; {"NotIn", {codes, ...}, mode}, to none of those; or
+   {"Unbound"}, never. *)
+labelCode[label_] := Lookup[$labels, Key[label], $labels[label] = (AppendTo[$labelList, label]; extraCode["Label", Length[$labelList]])];
+
+labelCodeQ[c_] := c < -1 && First[extraFields[c]] == $extraKinds["Label"];
+labelOf[c_] := $labelList[[extraFields[c][[2]]]];
+
+(* Two distinct labels on one row, as pairCompared gives them: whether both
+   may hold, and the label of both. *)
+labelsMet[x_, y_] :=
+  With[{a = labelOf[x], b = labelOf[y]},
+    Which[
+      First[a] === "Unbound" || First[b] === "Unbound", {0, -1},
+      Last[a] =!= Last[b], fallBack["Excepts that compare one name by value and by position"],
+      First[a] === "Is", If[holdsQ[b, a[[2]]], {1, x}, {0, -1}],
+      First[b] === "Is", If[holdsQ[a, b[[2]]], {1, y}, {0, -1}],
+      True, {1, labelCode[{"NotIn", Union[a[[2]], b[[2]]], Last[a]}]}]];
+
+(* Whether a label holds for the names bound to codes. *)
+holdsQ[{"Is", rep_, mode_}, codes_] := And @@ MapThread[agreeQ[#1, #2, mode] &, {rep, codes}];
+holdsQ[{"NotIn", reps_, mode_}, codes_] := NoneTrue[reps, holdsQ[{"Is", #, mode}, codes] &];
+holdsQ[{"Unbound"}, _] := False;
+
+(* The rows of a table whose labels hold, once the names they are about
+   are bound; those rows' labels are then dropped. *)
+settledRows[t_] := Fold[settledOn, t, Select[$labelKeys, KeyExistsQ[t, #] &]];
+
+settledOn[t_, key_] :=
+  With[{refs = First[key]},
+    If[!SubsetQ[Keys[t], refs], t,
+      With[{idx = Flatten @ Position[Unitize[t[key] + 1] Times @@ (Unitize[t[#] + 1] & /@ refs), 1]},
+        If[idx === {}, t,
+          With[{pairs = MapThread[List, {t[key][[idx]], Transpose[t[#][[idx]] & /@ refs]}]},
+            pickRows[
+              Append[t, key -> packed @ ReplacePart[t[key], Thread[idx -> -1]]],
+              ReplacePart[ConstantArray[1, rowCount[t]],
+                Thread[idx -> Lookup[AssociationMap[Boole[holdsQ[labelOf[#[[1]]], #[[2]]]] &, DeleteDuplicates[pairs]], pairs]]]]]]]]];
+
+(* The pattern root's rows: those whose labels hold, or that assumed the
+   names never bound, without the labels. *)
+rootSettled[t_] :=
+  If[$labelKeys === {}, t,
+    With[{s = settledRows[t], keys = Select[$labelKeys, KeyExistsQ[t, #] &]},
+      KeyDrop[pickRows[s, Times @@ Prepend[(1 - Unitize[s[#] + 1] Unitize[s[#] - labelCode[{"Unbound"}]]) & /@ keys, ConstantArray[1, rowCount[s]]]], keys]]];
+
+(* For each Except that refers to names bound outside it, how the names
+   compare where they are first all bound, as the solutions engine settles
+   its record there (settled, Query/TreePatterns.wl): "Across" when that is
+   the join of an element's constraints, which come before its tag and
+   attributes; "Value" when it is a list, an element's tag and attributes,
+   a name on a pattern or a literal's parts; "Never" when no match that
+   holds the Except binds them, and it excludes as a local Except does. *)
+exceptModes[root_] := Association @ Flatten @ Last @ Reap[modesBelow[root, {}]];
+
+modesBelow[nd_, ctx_] :=
+  If[nd["Kind"] === "Not" && nd["Record"] =!= None,
+    Sow[nd["Id"] -> modeOf[First[nd["Record"]], ctx]];
+    If[nd["Base"] =!= None, modesBelow[nd["Base"], Prepend[ctx, {{}, {}}]]],
+    Scan[modesBelow[#[[1]], Prepend[ctx, #[[2]]]] &, beside[nd]]];
+
+(* Each node below nd, with the names bound beside it that it is joined to
+   by value, and those across constraints. *)
+beside[nd_] :=
+  Switch[nd["Kind"],
+    "XMLPattern" | "XMLDocument",
+      With[{cs = nd["Constraints"]},
+        MapIndexed[{#1, {Lookup[nd, "HeadNames", {}], Union @@ Prepend[#["Names"] & /@ Delete[cs, #2], {}]}} &, cs]],
+    "Named" | "ListNamed" | "ContentsNamed", {{nd["Sub"], {{nd["Name"]}, {}}}},
+    "LiteralParts", {{nd["Sub"], {Union[nd["TagNames"], nd["AttrsNames"]], {}}}},
+    "List" | "ContentsList" | "Seq", entriesBeside[nd["Items"], {}],
+    "Run", entriesBeside[nd["Items"], {nd["Name"]}],
+    "Repeat", {#, {Union @@ (#["Names"] & /@ nd["Items"]), {}}} & /@ nd["Items"],
+    "Branches", Join @@ (entriesBeside[#, {}] & /@ nd["Subs"]),
+    _, {#, {{}, {}}} & /@ subNodes[nd]];
+
+entriesBeside[items_, own_] := MapIndexed[{#1, {Union[own, Union @@ Prepend[#["Names"] & /@ Delete[items, #2], {}]], {}}} &, items];
+
+(* Where names refs are first all bound, going up from an Except through
+   the levels ctx, innermost first. *)
+modeOf[refs_, ctx_] :=
+  Module[{acc = {}},
+    Catch[
+      Scan[Function[l,
+          If[SubsetQ[Union[acc, l[[2]]], refs], Throw["Across", $modeTag]];
+          acc = Union[acc, l[[1]], l[[2]]];
+          If[SubsetQ[acc, refs], Throw["Value", $modeTag]]],
+        ctx];
+      "Never",
+      $modeTag]];
+
+$modeTag = Unique["mode"];
+
 (* ---- Places that are not on one element ----
 
    A run or gap of children, a name bound to every child of a repeat, a
    contents item or run of them, a literal's whole contents, a token or run
-   of tokens, a list key's token list, and an element's list of children
-   each have a code too, below -1, from the kind, the owner and up to three
-   indices, each below $B. Code order is not position order for them:
+   of tokens, a list key's token list, an element's list of children, and
+   the match of a name compared by value at several places (a set, whose
+   index takes the owner's field) each have a code too, below -1, from the
+   kind, the owner and up to three indices, each below $B; so has what a
+   walk assumed about the names an Except refers to (a label, likewise),
+   which no result reads. Code order is not position order for them:
    results sort them by their order keys (ranked). *)
 
 $extraKinds = <|"Run" -> 1, "Repeat" -> 2, "Text" -> 3, "ContentsRun" -> 4, "Contents" -> 5, "Token" -> 6, "TokenRun" -> 7, "TokenList" -> 8,
-  "List" -> 9, "Path" -> 10|>;
+  "List" -> 9, "Path" -> 10, "Set" -> 11, "Label" -> 12|>;
 
 (* The owner is the most significant, then the indices in turn, so that the
    codes of one kind, of one list key, are in position order, backwards. *)
@@ -1097,6 +1417,7 @@ extraPlace["Run", o_, m_, n_, _] := {{Append[posOf[o], m ;; n]}, seq[$elem[[$kid
 (* A name compared by value keeps every position (mergedMatch); its order
    key is its first one's. *)
 extraPlace["Repeat", o_, m_, n_, _] := With[{ids = $kids[[o + 1, m ;; n]]}, {posOf /@ ids, elemOf[First[ids]]}];
+extraPlace["Set", i_, __] := With[{ms = $setList[[i]]}, {Join @@ (First[codeMatch[#]] & /@ ms), anyValue[First[ms]]}];
 extraPlace["List", o_, __] := {{Append[posOf[o], 1 ;; Length[$kids[[o + 1]]]]}, $elem[[$kids[[o + 1]] + 1]]};
 extraPlace["Contents", o_, __] := {{Append[posOf[o], All]}, $elem[[o + 1, 3]]};
 extraPlace["Text", o_, k_, _, _] := With[{item = $elem[[o + 1, 3, k]]}, {{missingItem[item]}, item}];
@@ -1113,6 +1434,7 @@ extraPlace["TokenList", o_, j_, __] := With[{key = Keys[$readings][[j]]}, {{Appe
 
 extraKeyOf["Run", o_, m_, n_, _] := Join[elementKey[o], sequenceKey[4, m ;; n]];
 extraKeyOf["Repeat", o_, m_, __] := elementKey[$kids[[o + 1, m]]];
+extraKeyOf["Set", i_, __] := orderKey[First[$setList[[i]]]];
 extraKeyOf["List", o_, __] := Join[elementKey[o], sequenceKey[4, 1 ;; Length[$kids[[o + 1]]]]];
 extraKeyOf["Contents", o_, __] := Join[elementKey[o], contentsKey[]];
 extraKeyOf["Text", o_, k_, _, _] := Join[elementKey[o], textItemKey[Count[Take[$elem[[o + 1, 3]], k - 1], _XMLElement] + 1, k]];
@@ -1177,10 +1499,12 @@ fallBack[reason_] := Throw[reason, $columnarFallback];
    them for the same mode, input and nodes. An element test gives the empty
    tuple if the pattern root matches anywhere. *)
 columnarResults[mode_, cq_, bare_, n_, nodes_] :=
-  Block[{$K, $B, $t, $listMemo = <||>},
+  Block[{$K, $B, $t, $listMemo = <||>, $valueIds = <||>, $codeValueIds = <||>, $sets = <||>, $setList = {}, $labels = <||>, $labelList = {},
+      $exceptModes = If[cq["Records"], exceptModes[cq["Root"]], <||>], $labelKeys},
     $K := ($K = placeBase[]);
     $B := ($B = placeRadix[]);
-    $t = tab[cq["Root"], If[nodes === All, All, idMarks[nodes]], False];
+    $labelKeys = If[cq["Records"], DeleteDuplicates[#["Record"] & /@ recordsIn[cq["Root"]]], {}];
+    $t = rootSettled @ tab[cq["Root"], If[nodes === All, All, idMarks[nodes]], False];
     If[cq["Test"], If[n >= 1 && rowCount[$t] > 0, {{}}, {}], orderedResults[mode, cq, bare, n]]];
 
 (* The results of the table $t. Its rows are visited in order of their slot
