@@ -177,3 +177,33 @@ TestCreate[
   TestID -> "alts-kinds-element-attributes"
 ];
 
+(* Results that tie on a name of the outer Alternatives, here x, keep the
+   order the list's solutions are found in: by where the entries before an
+   entry end, and there the entry's ways in turn. Optional[p] in a list is
+   p or nothing, p first: the span 2nd, nothing, then the span 4th. *)
+TestCreate[
+  XMLPosition[el["div", el["p", el["i"], el["span"], el["i"], el["span"]]],
+    (x : XMLPattern["p"][{__, Optional[v : XMLPattern["span"]], ___}]) | XMLPattern["q"] :> {v, x}],
+  {{{1, 1, 2}, {1, 1}}, {{1, 1}}, {{1, 1, 4}, {1, 1}}},
+  TestID -> "alts-unbound-optional-in-list"
+];
+
+(* A name on Optional binds a run, the shorter first at one start, as
+   ReplaceList[{"i", "span"}, {__, v : ("span" | PatternSequence[]), ___} :> Hold[v]]
+   gives {Hold[], Hold["span"], Hold[]}. *)
+TestCreate[
+  XMLPosition[el["div", el["p", el["i"], el["span"]]],
+    (x : XMLPattern["p"][{__, v : Optional[XMLPattern["span"]], ___}]) | XMLPattern["q"] :> {v, x}],
+  {{{1, 1, 2 ;; 1}, {1, 1}}, {{1, 1, 2 ;; 2}, {1, 1}}, {{1, 1, 3 ;; 2}, {1, 1}}},
+  TestID -> "alts-named-optional-in-list"
+];
+
+(* The first entry's first branch, a, comes before its second, b, whatever
+   the entries after it match. *)
+TestCreate[
+  XMLPosition[el["div", el["p", el["i"], el["i"], el["span"], el["span"]]],
+    (x : XMLPattern["p"][{(a : XMLPattern["i"]) | (b : _), _ | PatternSequence[_, _], c : _, ___}]) | XMLPattern["q"] :> {a, c, x}],
+  {{{1, 1, 1}, {1, 1, 3}, {1, 1}}, {{1, 1, 1}, {1, 1, 4}, {1, 1}}, {{1, 1, 3}, {1, 1}}, {{1, 1, 4}, {1, 1}}},
+  TestID -> "alts-list-branch-order"
+];
+
