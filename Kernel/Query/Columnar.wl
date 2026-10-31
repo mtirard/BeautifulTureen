@@ -339,26 +339,28 @@ rulePlaces[k_ -> v_, need_, lists_] :=
 headTable[nd_, ps_] /; Lookup[nd, "HeadNames", {}] === {} := <|"Root" -> packed[ps]|>;
 headTable[nd_, ps_] := With[{places = headPlaces[nd]}, If[places === None, walkedHeadTable[nd, ps], placedHeadTable[places, ps]]];
 
+(* An element the compiled test passes without an attribute a name is on,
+   as one whose attribute pattern does not ask for it, has no solution
+   there: its rows are dropped. *)
 placedHeadTable[places_, ps0_] :=
-  With[{ps = withAttributes[ps0, Cases[places[[All, 1]], _String]]},
-    Fold[If[rowCount[#1] == 0, #1, joinTables[#1, tokenTable[#2[[2]], #2[[3]], ps]]] &,
-      Fold[withName[#1, #2[[2]], headCodes[ps, #2[[1]]]] &, <|"Root" -> packed[ps]|>, Select[places, !ListQ[#[[1]]] &]],
-      DeleteDuplicates[Cases[places[[All, 1]], {"Tokens", _, _}]]]];
+  With[{js = AssociationMap[attributeIndices[ps0, #] &, Cases[places[[All, 1]], _String]]},
+    With[{ok = Times @@ Prepend[Unitize /@ Values[js], ConstantArray[1, Length[ps0]]]},
+      With[{ps = Pick[ps0, ok, 1], at = Pick[#, ok, 1] & /@ js},
+        Fold[If[rowCount[#1] == 0, #1, joinTables[#1, tokenTable[#2[[2]], #2[[3]], ps]]] &,
+          Fold[withName[#1, #2[[2]], headCodes[ps, #2[[1]], at]] &, <|"Root" -> packed[ps]|>, Select[places, !ListQ[#[[1]]] &]],
+          DeleteDuplicates[Cases[places[[All, 1]], {"Tokens", _, _}]]]]]];
 
-(* Those of elements ps that have an attribute of each of keys: the
-   compiled test passes an element without one only where the attribute
-   pattern does not ask for it, and a name there then binds nothing, so the
-   element has no solution. *)
-withAttributes[ps_, {}] := ps;
-withAttributes[ps_, keys_] := Pick[ps, testedOnce[$elem[[ps + 1, 2]], SubsetQ[#[[All, 1]], keys] &], 1];
-
-headCodes[ps_, 0] := $K ps + 1;
-headCodes[ps_, All] := $K ps + 2;
-headCodes[ps_, key_] :=
+(* The index of the first attribute named key of each of elements ps, 0
+   where there is none. *)
+attributeIndices[ps_, key_] :=
   Module[{js = ConstantArray[0, Length[ps]], hits},
     hits = DeleteDuplicatesBy[Position[$elem[[ps + 1, 2, All, 1]], key, {2}, Heads -> False], First];
     If[hits =!= {}, js[[hits[[All, 1]]]] = hits[[All, 2]]];
-    packed[$K ps + 2 + js]];
+    packed[js]];
+
+headCodes[ps_, 0, _] := $K ps + 1;
+headCodes[ps_, All, _] := $K ps + 2;
+headCodes[ps_, key_, at_] := packed[$K ps + 2 + at[key]];
 
 (* ---- Names in a tag and attributes without a place of their own ----
 
@@ -1664,7 +1666,7 @@ orderedResults[mode_, cq_, bare_, n_] :=
    pattern on an item, as HoldPattern[x_], that binds the whole item. *)
 refuseTextRows[counted_] :=
   Replace[
-    FirstCase[counted, name_ /; AnyTrue[
+    FirstCase[counted, name_ /; Min[$t[name]] < -1 && AnyTrue[
         Select[DeleteDuplicates[$t[name]], # < -1 && MemberQ[$textKinds, First[extraFields[#]]] &],
         MemberQ[First[codeMatch[#]], Missing["Text"]] &]],
     Hold[s_] :> refuseHere["text", HoldForm[s]]];
