@@ -11,7 +11,9 @@
 	Descendant with and without level specs, Child and list constraints,
 	several to an element and nested, and alternatives of them; a name now
 	and then used again by a later constraint of the same element, which
-	pins one place; Conditions and PatternTests. A list's entries are blanks
+	pins one place; Conditions and PatternTests. A Descendant may be a
+	path: named, tested, conditioned, under Shortest or Longest, or several
+	of these. A list's entries are blanks
 	and sequences, element patterns, named or not, named runs and gaps,
 	repeats, a name inside a repeat of one entry, optional entries,
 	alternatives, a Condition on a sequence and Except; a name is bound at
@@ -150,14 +152,34 @@ pinned[cons_] :=
       Append[cons, Descendant[Pattern[Evaluate[RandomChoice[named]], XMLPattern[_]]]], cons]];
 
 constraint[depth_] :=
-  Switch[RandomChoice[{4, 1, 1, 3, 1, 4, 1} -> Range[7]],
+  Switch[RandomChoice[{4, 1, 1, 3, 1, 4, 1, 3, 1} -> Range[9]],
     1, Descendant[pattern[depth]],
     2, Descendant[pattern[depth], RandomChoice[{2, {1}, {2}, {1, 2}, {2, Infinity}}]],
     3, Descendant[pattern[depth], {2, Infinity}],
     4, Child[pattern[depth]],
     5, Alternatives[Descendant[pattern[depth]], Child[pattern[depth]]],
     6, list[depth],
-    7, Alternatives[list[depth], Descendant[pattern[depth]]]];
+    7, Alternatives[list[depth], Descendant[pattern[depth]]],
+    8, path[depth],
+    9, Alternatives[path[depth], Child[pattern[depth]]]];
+
+(* A Descendant with a name, a test on its path, a Condition, Shortest or
+   Longest around it, in a random order. Shortest and Longest are refused
+   inside the pattern of another. *)
+path[depth_] :=
+  With[{ws = RandomSample[If[$nearestOK, {"Name", "Test", "Condition", "Nearest"}, {"Name", "Test", "Condition"}], RandomInteger[{1, 3}]]},
+    Fold[
+      Function[{p, w},
+        Switch[w,
+          "Name", If[room[], Pattern[Evaluate[fresh[]], p], p],
+          "Test", PatternTest[p, Evaluate @ RandomChoice[{EvenQ[Length[#]] &, NoneTrue[#, #[[1]] === "li" &] &}]],
+          "Condition", condition[p],
+          "Nearest", RandomChoice[{Shortest, Longest}][p]]],
+      Block[{$nearestOK = $nearestOK && !MemberQ[ws, "Nearest"]},
+        Descendant @@ Prepend[RandomChoice[{4, 1} -> {{}, {RandomChoice[{2, {2, Infinity}}]}}], pattern[depth]]],
+      ws]];
+
+$nearestOK = True;
 
 (* A list constraint over the element children. *)
 list[depth_] :=
