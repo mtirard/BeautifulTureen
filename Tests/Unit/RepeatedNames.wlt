@@ -47,6 +47,16 @@ TestCreate[
   TestID -> "repeated-inside-repeated"
 ];
 
+(* Bound at one repeat, the name is at that element's position, so a bare
+   input's own position is still never counted. *)
+TestCreate[
+  {XMLPosition[el["ul", el["li"], el["li", "x"]], XMLPattern["ul"][{(x : XMLPattern["li"]) .., ___}] :> x],
+    XMLCases[el["div"], XMLDocument[{(x : XMLPattern["div"]) ..}] :> x],
+    XMLCases[{el["div"]}, XMLDocument[{(x : XMLPattern["div"]) ..}] :> x]},
+  {{{1, 1}}, {}, {el["div"]}},
+  TestID -> "repeated-inside-repeated-one-repeat"
+];
+
 TestCreate[
   XMLPosition[dups, XMLPattern["tbody"][{___, PatternSequence[x : XMLPattern["tr"], _] .., ___}] :> x],
   {{1, 1}, {1, 2}},
