@@ -35,7 +35,7 @@ PackageScoped[elementMatcher]
 (* An element pattern is an XMLPattern[tag] or XMLPattern[tag,  *)
 (* attrs], a CSS selector string that gives one, or             *)
 (* alternatives of these, any of them named, with a Condition   *)
-(* or a test. The tree-pattern engine (Query/TreePatterns.wl)   *)
+(* or a test. The tree-pattern compiler (Query/TreePatterns.wl) *)
 (* compiles the tag and attributes of each XMLPattern here, and *)
 (* XMLMatchQ tests a pattern root of these with one MatchQ      *)
 (* (elementMatcher). Refusals message under XMLPattern (an XML  *)
@@ -112,7 +112,7 @@ badQuery[name_, v_] := Message[HTMLToTree::badquery, name, $treeQueryOff[name], 
 (* ---- Element patterns ---- *)
 
 (* An XMLPattern with constraints is no element pattern: what is below the
-   element is the tree-pattern engine's. *)
+   element is the query engine's. *)
 cElem[x_ /; xmlPatternFormQ[x]] :=
   Replace[xmlPatternPartsOrRefuse[x, badpat], {{args_, {}} :> cXMLPattern[args], _ :> badpat[x]}];
 (* A string is a CSS selector, and means its translation (ADR 0026). *)

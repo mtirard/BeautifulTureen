@@ -34,6 +34,10 @@ PackageScoped[$noResult]
 PackageScoped[elemOf]
 PackageScoped[childrenOf]
 PackageScoped[posOf]
+PackageScoped[memoised]
+PackageScoped[capturesQ]
+PackageScoped[$listWrapperKinds]
+PackageScoped[$pathKinds]
 PackageScoped[nameMatch]
 PackageScoped[candidateCounts]
 PackageScoped[candidateVector]
@@ -160,6 +164,7 @@ runQuery[cq_Association, tree_, mode_, n_ : Infinity, roots_ : All] :=
       If[top === None, {},
         Block[{$head = cq["Head"], $readings = cq["Readings"], $order = cq["Order"], $slotOf = cq["Slots"],
             $indexDepth = indexDepth[roots, top, cq["Reach"]], $memo = <||>,
+            (* the symbols of $indexState *)
             $elem, $parent, $depth, $kids, $index, $end, $wlPos, $tops, $posMemo = <||>,
             $matElems = <||>, $vectors = <||>, $keyLength},
           onIndex[roots, tree, columnarResults[mode, cq, bareQ[roots, tree], n, rootNodes[cq["Root"], roots, top, tree]] &]]]],
@@ -373,20 +378,28 @@ $keptVectors = 200;
    node in another query, or the same query again, finds it. For a node
    with no key it is kept for this run only, as other memos are. *)
 SetAttributes[keptVector, HoldRest];
-keptVector[{tag_, id_, None}, v_] := memoised[{tag, id}, v];
-keptVector[{tag_, id_, key_}, v_] := memoised[{tag, id}, Lookup[$vectors, Key[{tag, key}], $vectors[{tag, key}] = v]];
+keptVector[{tag_, id_, None}, v_] := memoised[$memo, {tag, id}, v];
+keptVector[{tag_, id_, key_}, v_] := memoised[$memo, {tag, id}, memoised[$vectors, {tag, key}, v]];
+
+(* The value of store, an Association held in a symbol, at k; v, computed
+   and kept there, when it has none. *)
+SetAttributes[memoised, HoldAll];
+memoised[store_, k_, v_] := Lookup[store, Key[k], store[k] = v];
+
+(* The symbols of the index state the cache keeps, $vectors last; runQuery
+   localises each of them. *)
+$indexState = Hold[{$tops, $wlPos, $elem, $parent, $depth, $kids, $index, $end, $keyLength, $matElems, $posMemo, $vectors}];
 
 cachedIndexTree[input_] :=
   If[cachedQ[input],
-    {$tops, $wlPos, $elem, $parent, $depth, $kids, $index, $end, $keyLength, $matElems, $posMemo, $vectors} = $indexCache[[3]],
+    Replace[$indexState, Hold[syms_] :> (syms = $indexCache[[3]])],
     indexTree[input];
     keepIndex[input]];
 
 cachedQ[input_] := $indexCache[[2]] === $indexDepth && $indexCache[[1]] === input;
 
 keepIndex[input_] :=
-  $indexCache = {input, $indexDepth, {$tops, $wlPos, $elem, $parent, $depth, $kids, $index, $end, $keyLength, $matElems, $posMemo,
-    If[Length[$vectors] > $keptVectors, <||>, $vectors]}};
+  $indexCache = {input, $indexDepth, MapAt[If[Length[#] > $keptVectors, <||>, #] &, ReleaseHold[$indexState], -1]};
 
 (* What a query read is kept when it ends, unless a query in its right-hand
    side, on another input, has replaced the cache meanwhile. *)
@@ -414,14 +427,16 @@ subtreeEnds[d_] :=
 elemOf[i_] := $elem[[i + 1]];
 childrenOf[i_] := $kids[[i + 1]];
 
-(* The element's position: element-child indices from the document. *)
+(* The element's position: element-child indices from the document. The
+   lookup is written out, not memoised: it runs for each position a result
+   reads, and the extra call cost about 4% of such a query. *)
 posOf[0] := {};
 posOf[i_] := Lookup[$posMemo, i, $posMemo[i] = Append[posOf[$parent[[i + 1]]], $index[[i + 1]]]];
 
 (* The elements as the compiled tests of one set of readings see them:
    materialised once per set, over the indexed input, which moves no element. *)
 materialElems[{}] := Rest[$elem];
-materialElems[r_] := Lookup[$matElems, Key[r], $matElems[r] = Extract[materialise[$tops, r, {1, 2 $indexDepth - 1}], $wlPos]];
+materialElems[r_] := memoised[$matElems, r, Extract[materialise[$tops, r, {1, 2 $indexDepth - 1}], $wlPos]];
 
 (* =========================================================== *)
 (* Matches                                                      *)
@@ -466,6 +481,12 @@ withFacts[nd_] :=
     {{"Captures", capturesQ}, {"MinItems", minItems}, {"MinKids", minKids}, {"Exact", exactQ},
       {"FilterKey", filterKey}, {"CandidateKey", candidateKey}}];
 
+(* The kinds of a constraint node that is a name, test or Condition on a
+   list constraint, its "Sub"; and those of a path: a named, tested or
+   Conditioned Descendant, or Shortest or Longest on one. *)
+$listWrapperKinds = "ListNamed" | "ListCond" | "ListTest";
+$pathKinds = "PathNamed" | "PathTest" | "PathCond" | "PathNearest";
+
 capturesQ[nd_] := nd["Keep"] =!= {} || nd["Kind"] === "SeqCond" ||
   MatchQ[nd["Kind"], "Run" | "Repeat"] && AnyTrue[nd["Items"], #["Captures"] &] ||
   nd["Kind"] === "Branches" && AnyTrue[Flatten[nd["Subs"]], #["Captures"] &];
@@ -483,7 +504,7 @@ itemsMin[items_List] := Total[#["MinItems"] & /@ items];
 
 minKids[nd_] := Switch[nd["Kind"],
   "List", nd["MinItems"],
-  "ListNamed" | "ListCond" | "ListTest" | "PathNamed" | "PathTest" | "PathCond" | "PathNearest", nd["Sub"]["MinKids"],
+  $listWrapperKinds | $pathKinds, nd["Sub"]["MinKids"],
   "Descendant", 1,
   "ConstraintAlt", Min[#["MinKids"] & /@ nd["Subs"]],
   "XMLPattern" | "XMLDocument", Max[0, #["MinKids"] & /@ nd["Constraints"]],
@@ -506,7 +527,7 @@ candidateKey[nd_] := Switch[nd["Kind"],
 
 filterKey[nd_] := Switch[nd["Kind"],
   "List", keyed[{"Parents", #["Sub"]["CandidateKey"] & /@ Select[nd["Items"], #["Kind"] === "One" &]}],
-  "ListNamed" | "ListCond" | "ListTest" | "PathNamed" | "PathTest" | "PathCond" | "PathNearest", nd["Sub"]["FilterKey"],
+  $listWrapperKinds | $pathKinds, nd["Sub"]["FilterKey"],
   "Descendant", keyed[{"Below", nd["Sub"]["CandidateKey"]}],
   _, {"All"}];
 
@@ -621,7 +642,7 @@ cRoot[c_Child, _] := If[$place === "entry", refuseListEntry[c, "child"], refuse[
 cRoot[l_List, _] /; $place === "entry" := refuseListEntry[l, "list"];
 (* Any other pattern in an XMLElement pattern's contents is WL's, over one
    item: an element or text. *)
-cRoot[x_, need_] /; $place === "literal" := plainNode[x, need];
+cRoot[x_, need_] /; $place === "literal" := (Scan[Apply[refuseText], wholeItemNames[x]]; plainNode[x, need]);
 cRoot[x_, _] := refuseHere["badpat", x];
 
 refuseBlank[b_] := If[$place === "descendant", refuse[Descendant::blank, b], refuseHere["blank", b]];
@@ -760,22 +781,39 @@ plainNode[p_, need_] :=
 
 (* A counted name that can bind text is refused: text has no position. It is
    decided from the pattern, where a name is on an entry of a literal's
-   contents list, so that a query is refused on every tree, also on one with
-   no text there. *)
+   contents list or binds the whole item inside another WL pattern on one
+   (wholeItemNames), so that a query is refused on every tree, also on one
+   with no text there. A name deeper in a WL pattern binds part of a
+   compound expression, never a string, so no case is left to the run. *)
 refuseText[name_, p_] :=
   If[MemberQ[$countedNames, name] && admitsTextQ[p], refuseHere["text", Replace[name, Hold[s_] :> HoldForm[s]]]];
 
+(* The forms other than a name that match only what their pattern q
+   matches, and those that match what one of their arguments matches. *)
+transparentForm[q_] :=
+  Verbatim[PatternTest][q, _] | Verbatim[Condition][q, _] |
+    (Verbatim[Repeated] | Verbatim[RepeatedNull] | Verbatim[Optional] | Shortest | Longest)[q, ___] |
+    Verbatim[Except][_, q] | Verbatim[HoldPattern][q] | Verbatim[IgnoringInactive][q];
+$itemAlternatives = _Alternatives | Verbatim[PatternSequence][__] | Verbatim[OrderlessPatternSequence][__];
+
 (* Whether an entry of a literal's contents list can match text: a string,
-   a blank or sequence with no head or the head String, or an Except of
-   one item; through names, tests, Conditions, repeats and alternatives. An
-   XMLPattern, an XMLElement pattern, or a blank with another head, matches
-   only elements. *)
+   a blank or sequence with no head or the head String, an Except of one
+   item, or a Verbatim string; through names, tests, Conditions, repeats
+   and alternatives. An XMLPattern, an XMLElement pattern, a blank with
+   another head, or any other expression with a head, matches no string. *)
 admitsTextQ[p_] :=
   MatchQ[p, _String | (Verbatim[Blank] | Verbatim[BlankSequence] | Verbatim[BlankNullSequence])[] | (Verbatim[Blank] | Verbatim[BlankSequence] | Verbatim[BlankNullSequence])[String] |
-    Verbatim[Except][_]] ||
-  MatchQ[p, Verbatim[Pattern][_, q_] | Verbatim[PatternTest][q_, _] | Verbatim[Condition][q_, _] | (Verbatim[Repeated] | Verbatim[RepeatedNull] | Verbatim[Optional] | Shortest | Longest)[q_, ___] |
-    Verbatim[Except][_, q_] | Verbatim[HoldPattern][q_] /; admitsTextQ[q]] ||
-  MatchQ[p, _Alternatives | Verbatim[PatternSequence][__]] && AnyTrue[List @@ p, admitsTextQ];
+    Verbatim[Except][_] | Verbatim[Verbatim][_String]] ||
+  MatchQ[p, (Verbatim[Pattern][_, q_] | transparentForm[q_]) /; admitsTextQ[q]] ||
+  MatchQ[p, $itemAlternatives] && AnyTrue[List @@ p, admitsTextQ];
+
+(* The names inside a WL pattern on one item that bind the whole item when
+   bound, each {name, its pattern}: through the forms that match what their
+   pattern matches, and alternatives. *)
+wholeItemNames[Verbatim[Pattern][s_Symbol, q_]] := Prepend[wholeItemNames[q], {Hold[s], q}];
+wholeItemNames[p : $itemAlternatives] := Join @@ (wholeItemNames /@ List @@ p);
+wholeItemNames[transparentForm[q_]] := wholeItemNames[q];
+wholeItemNames[_] := {};
 
 (* The counted names, for refuseText; none for an element test. *)
 $countedNames = {};
@@ -893,7 +931,8 @@ cItem[r : (_Repeated | _RepeatedNull), need_] :=
     {treeNode["Repeat", Union @@ Prepend[#["Names"] & /@ inner, {}], need, "Items" -> inner, "Min" -> bounds[[1]], "Max" -> bounds[[2]]]}];
 (* A name inside Except binds nothing outside it; tests inside it run there.
    A name also bound outside it refers to that match: the Except records
-   what its pattern binds the name to, its "Record" key (settled). *)
+   what its pattern binds the name to, its "Record" key, and the query
+   engine keeps the rows where they agree (settledRows, Query/Columnar.wl). *)
 cItem[Verbatim[Except][p_], need_] := {notNode[p, None, need]};
 cItem[Verbatim[Except][p_, q_], need_] := {notNode[p, $single[q, need], need]};
 
@@ -945,9 +984,6 @@ repeatBounds[Verbatim[RepeatedNull][_]] := {0, Infinity};
 (* candidates of its pattern roots (Query/Columnar.wl).         *)
 (* =========================================================== *)
 
-SetAttributes[memoised, HoldRest];
-memoised[k_, v_] := Lookup[$memo, Key[k], $memo[k] = v];
-
 (* Whether each element passes the compiled tag and attribute test, once per
    query for all elements. *)
 (* The test reads only the tag and attributes, so it is run once for each
@@ -964,7 +1000,7 @@ headVector[nd_] :=
 (* f applied once to each distinct one of xs, as 0 or 1 for each. A pattern
    on the tag alone reads only the tags, which a page has few of; taking
    each element's tag and attributes with Take cost about 1 µs an element. *)
-distinctTested[xs_, f_] := With[{u = DeleteDuplicates[xs]}, Lookup[AssociationThread[u, Boole[f /@ u]], xs]];
+distinctTested[xs_, f_] := With[{distinct = DeleteDuplicates[xs]}, Lookup[AssociationThread[distinct, Boole[f /@ distinct]], xs]];
 
 (* Whether each element can match a pattern root: a vector over the elements
    that is 1 at every match, for skipping the rest. *)
@@ -996,9 +1032,8 @@ hasCandidateBelow[nd_] :=
    below. *)
 constraintFilter[c_] := Switch[c["Kind"],
   "List", Times @@ Prepend[parentsWith /@ Select[c["Items"], #["Kind"] === "One" &], 1],
-  "ListNamed" | "ListCond" | "ListTest", constraintFilter[c["Sub"]],
+  $listWrapperKinds | $pathKinds, constraintFilter[c["Sub"]],
   "Descendant", hasCandidateBelow[c["Sub"]],
-  "PathNamed" | "PathTest" | "PathCond" | "PathNearest", constraintFilter[c["Sub"]],
   _, 1];
 
 parentsWith[it_] :=
