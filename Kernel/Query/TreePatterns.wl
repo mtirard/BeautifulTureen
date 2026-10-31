@@ -85,10 +85,8 @@ removedCombinatorQ[held_] :=
    empty tuple and stops at the first solution. A test refuses a rule, which
    gives results, and a context selector, which looks above the element.
    lists "Lists" lets a list pattern, in the contents-list grammar, be the
-   root (XMLMatchQ's lists). A list pattern at a list key is compiled while
-   matching (tokenListMatches), so the run numbers its nodes on from
-   "LastNodeId": none shares an id, nor so a memo entry, with a compiled
-   node. *)
+   root (XMLMatchQ's lists). Every node, a list key's value too
+   (tokenListForms), is compiled here, so its id is fixed. *)
 compileQuery[head_, q_, counted_ : None, lists_ : None] :=
   Catch[
     Block[{$head = head, $nodeId = 0, $order, $slotOf = <||>, $readings, $place = "query", $owner = XMLPattern,
@@ -116,7 +114,7 @@ compileQuery[head_, q_, counted_ : None, lists_ : None] :=
         <|"Head" -> head, "Test" -> counted === "Test", "Root" -> root, "Rhs" -> rhs, "Names" -> all, "Counted" -> First[names],
           "TestNames" -> Last[names], "Readings" -> $readings, "Order" -> $order, "Slots" -> $slotOf,
           "NamedPaths" -> $namedPaths, "ExceptRefs" -> $exceptRefs, "Records" -> $records, "Lists" -> listQ,
-          "Reach" -> reachBelow[root], "LastNodeId" -> $nodeId|>]],
+          "Reach" -> reachBelow[root]|>]],
     $refusal];
 
 (* The results of compiled query cq on tree, the first n of them in result
@@ -135,9 +133,9 @@ runQuery[cq_Association, tree_, mode_, n_ : Infinity, roots_ : All] :=
       If[top === None, {},
         Block[{$head = cq["Head"], $readings = cq["Readings"], $order = cq["Order"], $slotOf = cq["Slots"],
             $namedPaths = cq["NamedPaths"], $exceptRefs = cq["ExceptRefs"], $records = cq["Records"],
-            $nodeId = cq["LastNodeId"], $indexDepth = indexDepth[roots, top, cq["Reach"]], $memo = <||>,
+            $indexDepth = indexDepth[roots, top, cq["Reach"]], $memo = <||>,
             $elem, $parent, $depth, $kids, $index, $end, $wlPos, $tops, $posMemo = <||>, $keyMemo = <||>,
-            $matElems = <||>, $keyLength},
+            $matElems = <||>, $vectors = <||>, $keyLength},
           onIndex[roots, tree, results[mode, cq, bareQ[roots, tree], n, rootNodes[cq["Root"], roots, top, tree]] &]]]],
     $refusal];
 
@@ -331,23 +329,38 @@ indexTree[input_] :=
     $keyLength = 3 Max[$depth] + 8];
 
 (* The index of the input of the last query, the elements it
-   materialised for each set of readings, and the positions and order keys
-   of the elements it read, are kept for the next: a
+   materialised for each set of readings, the positions and order keys
+   of the elements it read, and the vectors over the elements its compiled
+   nodes computed (keptVector), are kept for the next: a
    document is often queried many times, and indexing it costs about 50 ms
    at 8,000 elements. An input that is the same expression, which SameQ
    tells at once when it is the one given before, reuses them. *)
 $indexCache = {None, None, {}};
 
+(* The vectors kept are dropped together once there are more than this, so
+   that many different queries of one large document do not hold a vector
+   of its size each. *)
+$keptVectors = 200;
+
+(* A vector over the elements that depends only on the index and on what a
+   node is, its static key (keyed): kept with the index, so that the same
+   node in another query, or the same query again, finds it. For a node
+   with no key it is kept for this run only, as other memos are. *)
+SetAttributes[keptVector, HoldRest];
+keptVector[{tag_, id_, None}, v_] := memoised[{tag, id}, v];
+keptVector[{tag_, id_, key_}, v_] := memoised[{tag, id}, Lookup[$vectors, Key[{tag, key}], $vectors[{tag, key}] = v]];
+
 cachedIndexTree[input_] :=
   If[cachedQ[input],
-    {$tops, $wlPos, $elem, $parent, $depth, $kids, $index, $end, $keyLength, $matElems, $posMemo, $keyMemo} = $indexCache[[3]],
+    {$tops, $wlPos, $elem, $parent, $depth, $kids, $index, $end, $keyLength, $matElems, $posMemo, $keyMemo, $vectors} = $indexCache[[3]],
     indexTree[input];
     keepIndex[input]];
 
 cachedQ[input_] := $indexCache[[2]] === $indexDepth && $indexCache[[1]] === input;
 
 keepIndex[input_] :=
-  $indexCache = {input, $indexDepth, {$tops, $wlPos, $elem, $parent, $depth, $kids, $index, $end, $keyLength, $matElems, $posMemo, $keyMemo}};
+  $indexCache = {input, $indexDepth, {$tops, $wlPos, $elem, $parent, $depth, $kids, $index, $end, $keyLength, $matElems, $posMemo, $keyMemo,
+    If[Length[$vectors] > $keptVectors, <||>, $vectors]}};
 
 (* What a query read is kept when it ends, unless a query in its right-hand
    side, on another input, has replaced the cache meanwhile. *)
@@ -413,10 +426,102 @@ elemMatch[i_] := nameMatch[{posOf[i]}, elemOf[i], elemKey[i]];
 (* =========================================================== *)
 
 (* A node is an Association: "Kind", "Id", "Names" (every name bound below
-   it, with Alternatives slots), "Keep" (those something above needs), and
-   the kind's own fields. *)
+   it, with Alternatives slots), "Keep" (those something above needs), the
+   kind's own fields, and the facts about it that do not depend on the tree
+   (withFacts). *)
 treeNode[kind_, names_, need_, rest___] :=
-  <|"Kind" -> kind, "Id" -> ++$nodeId, "Names" -> names, "Keep" -> Intersection[names, need], rest|>;
+  withFacts @ <|"Kind" -> kind, "Id" -> ++$nodeId, "Names" -> names, "Keep" -> Intersection[names, need], rest|>;
+
+(* The facts, computed once, as the node is compiled, from those of the
+   nodes below it, so that matching reads them instead of working them out
+   at each element:
+   - "Captures": whether the walk of a list must branch at an entry: it
+     binds a needed name, or tests a span;
+   - "MinItems": the fewest items an entry, or a list of entries, can match;
+   - "MinKids": the fewest element children an element needs to meet a
+     constraint, or all the constraints of a pattern root;
+   - "Exact": whether a pattern root's candidates are exactly its matches:
+     it tests only an element's tag and attributes, which the compiled test
+     decides;
+   - "HeadPattern": the XMLPattern node of a pattern root that is one,
+     perhaps named, or None. A name on the root that is also bound inside it
+     is compared, so the root is then matched as usual;
+   - "CandidateKey" and "FilterKey": what a pattern root's candidates, and a
+     constraint's filter on them, are computed from, under which the
+     vectors over the elements are kept with the index (keptVector); None
+     when a test in it may give another result in another query.
+   Each is computed with those before it on the node. *)
+withFacts[nd_] :=
+  Fold[Append[#1, #2[[1]] -> #2[[2]][#1]] &, nd,
+    {{"Captures", capturesQ}, {"MinItems", minItems}, {"MinKids", minKids}, {"Exact", exactQ}, {"HeadPattern", headPattern},
+      {"FilterKey", filterKey}, {"CandidateKey", candidateKey}}];
+
+capturesQ[nd_] := nd["Keep"] =!= {} || nd["Kind"] === "SeqCond" ||
+  MatchQ[nd["Kind"], "Run" | "Repeat"] && AnyTrue[nd["Items"], #["Captures"] &] ||
+  nd["Kind"] === "Branches" && AnyTrue[Flatten[nd["Subs"]], #["Captures"] &];
+
+minItems[nd_] := Switch[nd["Kind"],
+  "One" | "Not", 1,
+  "Any", nd["Min"],
+  "Run" | "Seq" | "List" | "ContentsList" | "TokenList", itemsMin[nd["Items"]],
+  "SeqCond", nd["Sub"]["MinItems"],
+  "Repeat", nd["Min"] itemsMin[nd["Items"]],
+  "Branches", Min[itemsMin /@ nd["Subs"]],
+  _, 0];
+
+itemsMin[items_List] := Total[#["MinItems"] & /@ items];
+
+minKids[nd_] := Switch[nd["Kind"],
+  "List", nd["MinItems"],
+  "ListNamed" | "ListCond" | "ListTest" | "PathNamed" | "PathTest" | "PathCond" | "PathNearest", nd["Sub"]["MinKids"],
+  "Descendant", 1,
+  "ConstraintAlt", Min[#["MinKids"] & /@ nd["Subs"]],
+  "XMLPattern" | "XMLDocument", Max[0, #["MinKids"] & /@ nd["Constraints"]],
+  _, 0];
+
+exactQ[nd_] := Switch[nd["Kind"],
+  "XMLPattern", nd["Constraints"] === {},
+  "Blank", nd["Head"] === {},
+  "Named", nd["Sub"]["Exact"],
+  "Alt", AllTrue[nd["Subs"], #["Exact"] &],
+  _, False];
+
+headPattern[nd_] := Switch[nd["Kind"],
+  "XMLPattern", nd,
+  "Named", If[nd["Sub"]["Kind"] === "XMLPattern" && !MemberQ[nd["Sub"]["Names"], nd["Name"]], nd["Sub"], None],
+  _, None];
+
+(* As candidates and constraintFilter compute the vectors. *)
+candidateKey[nd_] := Switch[nd["Kind"],
+  "Named" | "Cond" | "Test", nd["Sub"]["CandidateKey"],
+  "Alt", keyed[{"Alt", #["CandidateKey"] & /@ nd["Subs"]}],
+  "XMLPattern", keyed[{"XMLPattern", nd["HeadKey"], nd["MinKids"], #["FilterKey"] & /@ nd["Constraints"]}],
+  "XMLDocument", {"Document"},
+  _, {"All"}];
+
+filterKey[nd_] := Switch[nd["Kind"],
+  "List", keyed[{"Parents", #["Sub"]["CandidateKey"] & /@ Select[nd["Items"], #["Kind"] === "One" &]}],
+  "ListNamed" | "ListCond" | "ListTest" | "PathNamed" | "PathTest" | "PathCond" | "PathNearest", nd["Sub"]["FilterKey"],
+  "Descendant", keyed[{"Below", nd["Sub"]["CandidateKey"]}],
+  _, {"All"}];
+
+keyed[k_] := If[FreeQ[k, None], k, None];
+
+(* The key of the test of an XMLPattern's tag and attributes: its compiled
+   pattern, with the names numbered in the order they appear, as a selector
+   names its own afresh each time it is compiled, and its readings. None
+   when the pattern holds a symbol of the caller's, as a test or Condition
+   can, whose meaning may change between two queries. *)
+headKey[plain_, readings_] :=
+  With[{names = DeleteDuplicates @ Cases[Hold[plain], Verbatim[Pattern][s_Symbol, _] :> Hold[s], {0, Infinity}, Heads -> True]},
+    With[{key = Hold[plain] /. MapIndexed[Replace[#1, Hold[s_] :> (HoldPattern[s] -> nameNumber[First[#2]])] &, names]},
+      If[AllTrue[Cases[key /. (b : Verbatim[Blank] | Verbatim[BlankSequence] | Verbatim[BlankNullSequence])[_Symbol] :> b[],
+            s_Symbol :> Hold[s], {0, Infinity}, Heads -> True], ownSymbolQ],
+        {key, readings}, None]]];
+
+(* A symbol of the language or of this paclet. A blank's head is only
+   compared, so it is left out above. *)
+ownSymbolQ[Hold[s_]] := StringStartsQ[Context[Unevaluated[s]], {"System`", "MaximilienTirard`HTMLPatterns`"}];
 
 compileRoot[Hold[lhs_], need_] := cRoot[lhs, need];
 
@@ -444,8 +549,7 @@ cRoot[alts_Alternatives, need_] :=
 cRoot[XMLDocument[cs___], need_] /; $place === "query" :=
   Block[{$owner = XMLDocument},
     With[{cons = cConstraints[{cs}, need]},
-      treeNode["XMLDocument", Union @@ Prepend[#["Names"] & /@ cons, {}], need,
-        "Constraints" -> cons, "MinKids" -> Max[0, minKids /@ cons]]]];
+      treeNode["XMLDocument", Union @@ Prepend[#["Names"] & /@ cons, {}], need, "Constraints" -> cons]]];
 cRoot[x_XMLDocument, _] := If[$place === "entry", refuseListEntry[x, "document"], refuse[XMLDocument::place, x]];
 
 cRoot[x_ /; xmlPatternFormQ[x], need_] := cTreePattern[xmlPatternPartsOrRefuse[x, refuseHere["badpat", #] &], need];
@@ -549,17 +653,18 @@ alternativesNode[kind_, subs_, namesBy_, need_] :=
    needs are bound here, from the original element. *)
 cTreePattern[{{tag_}, cs_}, need_] := cTreePattern[{{tag, _}, cs}, need];
 cTreePattern[{{tag_, attrs_}, {cs___}}, need_] :=
-  Module[{c, headNames, cons, plainRules},
+  Module[{c, headNames, tokenLists, cons, plainRules},
     If[!FreeQ[attrs, _Descendant], refuse[Descendant::place, FirstCase[attrs, _Descendant, Null, {0, Infinity}]]];
     refuseDocumentIn[{tag, attrs}];
     c = Replace[compileWith[XMLPattern[tag, attrs], $head, $readings], $Failed :> Throw[$Failed, $refusal]];
     headNames = namesIn[Hold[{tag, attrs}]];
+    tokenLists = tokenListForms[attrs, Intersection[headNames, need]];
     cons = Block[{$owner = XMLPattern}, cConstraints[{cs}, need]];
     plainRules = plainHeadRules[tag, attrs, Intersection[headNames, need]];
     treeNode["XMLPattern", Union[headNames, Union @@ Prepend[#["Names"] & /@ cons, {}]], need,
       "Plain" -> c["Plain"], "Readings" -> c["Readings"], "Tag" -> tag, "Attrs" -> attrs,
       "HeadNames" -> Intersection[headNames, need], "Constraints" -> cons,
-      "MinKids" -> Max[0, minKids /@ cons], "PlainRules" -> plainRules]];
+      "PlainRules" -> plainRules, "TokenLists" -> tokenLists, "HeadKey" -> headKey[c["Plain"], c["Readings"]]]];
 
 (* The rules of an attribute argument that is a rule or a list of them,
    or None. *)
@@ -577,6 +682,41 @@ plainHeadRules[tag_, attrs_, need_] :=
         r_ :> Replace[Replace[r, Verbatim[Rule][k_, Verbatim[Pattern][s_, _]] :> {k, Hold[s]}, {1}],
           pairs_ /; !DuplicateFreeQ[pairs[[All, 2]]] -> None]}],
       None]];
+
+(* ---- The token list of a list key ----
+
+   The value of each rule on a list key, read as the matcher reads it at a
+   token list (desugared, ADR 0011), compiled with the rest of the query: an
+   Association from the value to its node. A mistake in it is so refused
+   whatever the tree holds, and whether or not a name in it is needed. *)
+tokenListForms[attrs_, need_] :=
+  Association[# -> cTokenList[#, need] & /@ DeleteDuplicates[listKeyValues[attrs]]];
+
+listKeyValues[Verbatim[Pattern][_, a_] | Verbatim[PatternTest][a_, _]] := listKeyValues[a];
+listKeyValues[r_Rule] := listKeyValues[{r}];
+listKeyValues[rules_List] :=
+  Cases[Replace[rules, k_?literalKeyQ :> (k -> _), {1}],
+    Verbatim[Rule][k_, v_] /; AnyTrue[keyLiterals[k], KeyExistsQ[$readings, #] &] :>
+      If[AllTrue[keyLiterals[k], KeyExistsQ[$readings, #] &], desugared[v], v]];
+listKeyValues[_] := {};
+
+cTokenList[Verbatim[Pattern][s_Symbol, p_], need_] :=
+  With[{name = Hold[s]},
+    With[{sub = cTokenList[p, need]}, treeNode["TokenNamed", Union[sub["Names"], {name}], need, "Name" -> name, "Sub" -> sub]]];
+(* The test sees every name in the Condition. *)
+cTokenList[c_Condition, need_] :=
+  With[{test = Extract[c, {2}, Hold], inner = namesIn[Hold[c]]},
+    With[{sub = cTokenList[c[[1]], conditionNeed[c, test, need]]},
+      treeNode["TokenCond", inner, need, "Sub" -> sub, "Test" -> test, "Sees" -> inner]]];
+(* The compiled XMLPattern has already run the test. *)
+cTokenList[Verbatim[PatternTest][p_, _], need_] := cTokenList[p, need];
+cTokenList[l_List, need_] :=
+  With[{items = Block[{$place = "token", $single = cToken}, cItems[l, need]]},
+    treeNode["TokenList", Union @@ Prepend[#["Names"] & /@ items, {}], need, "Items" -> items]];
+cTokenList[p_, need_] := treeNode["TokenPlain", namesIn[Hold[p]], need, "Pattern" -> p];
+
+(* One token: any WL pattern, each name in it matching the token. *)
+cToken[p_, need_] := With[{names = namesIn[Hold[p]]}, treeNode["Token", names, need, "Pattern" -> p]];
 
 (* ---- XMLElement patterns (ADR 0023) ----
 
@@ -612,7 +752,7 @@ cContents[Verbatim[PatternTest][p_, f_], need_] :=
   With[{sub = cContents[p, need]}, treeNode["ContentsTest", sub["Names"], need, "Sub" -> sub, "F" -> f]];
 cContents[l_List, need_] /; !FreeQ[l, _XMLPattern] || IntersectingQ[namesIn[outsideExcept[Hold[l]]], need] :=
   With[{items = Block[{$single = cRoot}, cItems[l, need]]},
-    treeNode["ContentsList", Union @@ Prepend[#["Names"] & /@ items, {}], need, "Items" -> items, "Min" -> minLength[items]]];
+    treeNode["ContentsList", Union @@ Prepend[#["Names"] & /@ items, {}], need, "Items" -> items]];
 cContents[p_, need_] := plainNode[p, need];
 
 (* A WL pattern matched whole against one value: an item, or a literal's
@@ -620,16 +760,24 @@ cContents[p_, need_] := plainNode[p, need];
 plainNode[p_, need_] :=
   With[{names = namesIn[outsideExcept[Hold[p]]]}, treeNode["Plain", names, need, "Pattern" -> p]];
 
-(* A counted name that binds text is refused: text has no
-   position. Here, where the pattern shows it; a sequence that binds text
-   while matching is refused by the results (refuseBoundText). *)
+(* A counted name that can bind text is refused: text has no position. It is
+   decided from the pattern, where a name is on an entry of a literal's
+   contents list, so that a query is refused on every tree, also on one with
+   no text there. *)
 refuseText[name_, p_] :=
-  If[MemberQ[$countedNames, name] && textPatternQ[p], refuseHere["text", Replace[name, Hold[s_] :> HoldForm[s]]]];
+  If[MemberQ[$countedNames, name] && admitsTextQ[p], refuseHere["text", Replace[name, Hold[s_] :> HoldForm[s]]]];
 
-textPatternQ[p_] :=
-  MatchQ[p, _String | Verbatim[Blank][String] | Verbatim[BlankSequence][String]] ||
-  MatchQ[p, Verbatim[Pattern][_, q_] | Verbatim[PatternTest][q_, _] | Verbatim[Condition][q_, _] | Verbatim[Repeated][q_, ___] /; textPatternQ[q]] ||
-  MatchQ[p, _Alternatives] && AllTrue[List @@ p, textPatternQ];
+(* Whether an entry of a literal's contents list can match text: a string,
+   a blank or sequence with no head or the head String, or an Except of
+   one item; through names, tests, Conditions, repeats and alternatives. An
+   XMLPattern, an XMLElement pattern, or a blank with another head, matches
+   only elements. *)
+admitsTextQ[p_] :=
+  MatchQ[p, _String | (Verbatim[Blank] | Verbatim[BlankSequence] | Verbatim[BlankNullSequence])[] | (Verbatim[Blank] | Verbatim[BlankSequence] | Verbatim[BlankNullSequence])[String] |
+    Verbatim[Except][_]] ||
+  MatchQ[p, Verbatim[Pattern][_, q_] | Verbatim[PatternTest][q_, _] | Verbatim[Condition][q_, _] | (Verbatim[Repeated] | Verbatim[RepeatedNull] | Verbatim[Optional] | Shortest | Longest)[q_, ___] |
+    Verbatim[Except][_, q_] | Verbatim[HoldPattern][q_] /; admitsTextQ[q]] ||
+  MatchQ[p, _Alternatives | Verbatim[PatternSequence][__]] && AnyTrue[List @@ p, admitsTextQ];
 
 (* The counted names, for refuseText; none for an element test. *)
 $countedNames = {};
@@ -725,7 +873,7 @@ cListConstraint[Verbatim[PatternTest][l_, f_], need_] :=
 cListConstraint[x_, _] /; !ListQ[x] := refuse[XMLPattern::constraint, x];
 cListConstraint[l_List, need_] :=
   With[{items = Block[{$place = "entry", $single = cRoot}, cItems[l, need]]},
-    treeNode["List", Union @@ Prepend[#["Names"] & /@ items, {}], need, "Items" -> items, "Min" -> minLength[items]]];
+    treeNode["List", Union @@ Prepend[#["Names"] & /@ items, {}], need, "Items" -> items]];
 
 (* ---- List entries ---- *)
 
@@ -790,30 +938,6 @@ repeatBounds[Verbatim[RepeatedNull][_, n_]] := {0, n};
 repeatBounds[Verbatim[Repeated][_]] := {1, Infinity};
 repeatBounds[Verbatim[RepeatedNull][_]] := {0, Infinity};
 
-(* An entry the walk must branch at: it binds a needed name, or tests a span. *)
-capQ[it_] := it["Keep"] =!= {} || MatchQ[it["Kind"], "SeqCond"] ||
-  MatchQ[it["Kind"], "Run" | "Repeat"] && AnyTrue[it["Items"], capQ] ||
-  it["Kind"] === "Branches" && AnyTrue[Flatten[it["Subs"]], capQ];
-
-(* The fewest items a list of entries can match. *)
-minLength[items_List] := Total[minItems /@ items];
-minItems[it_] := Switch[it["Kind"],
-  "One" | "Not", 1,
-  "Any", it["Min"],
-  "Run", minLength[it["Items"]],
-  "SeqCond", minLength[it["Sub"]["Items"]],
-  "Repeat", it["Min"] minLength[it["Items"]],
-  "Branches", Min[minLength /@ it["Subs"]],
-  _, 0];
-
-(* The fewest element children an element needs to meet a constraint. *)
-minKids[c_] := Switch[c["Kind"],
-  "List", c["Min"],
-  "ListNamed" | "ListCond" | "ListTest" | "PathNamed" | "PathTest" | "PathCond" | "PathNearest", minKids[c["Sub"]],
-  "Descendant", 1,
-  "ConstraintAlt", Min[minKids /@ c["Subs"]],
-  _, 0];
-
 (* =========================================================== *)
 (* Matching                                                     *)
 (* match[node, i]: the solutions of a pattern root at document  *)
@@ -866,18 +990,15 @@ slotMatches[nd_, slot_, x_, i_] :=
 (* The match of a name in a literal's tag or attributes. A name on a slot
    of the literal itself is at that slot: 0 the tag, Key[All] the attributes
    (ADR 0025). A name deeper in the tag that binds the whole tag is at
-   0; one deeper in the attributes that binds an attribute's value is at
-   Key[k] of the first attribute with that value. Any other has no position,
-   and is compared by its value. *)
+   0. Any other has no position, and is compared by its value: one deeper in
+   the attributes too, as which attribute WL matched it to is not known, and
+   two attributes can have its value. *)
 literalPosition[nd_, slot_, name_, v_, x_, i_] :=
   Replace[{Lookup[nd["Slots"], Key[name], None], slot},
     {
       {k : Except[None], _} :> nameMatch[{Append[posOf[i], k]}, v, Join[elemKey[i], If[k === 0, tagKey[], attributeMapKey[]]]],
       {_, "Tag"} /; v === x[[1]] :> nameMatch[{Append[posOf[i], 0]}, v, Join[elemKey[i], tagKey[]]],
-      {_, "Attrs"} :>
-        Replace[FirstPosition[x[[2]], _[_, v], None, {1}, Heads -> False], {
-          {j_} :> nameMatch[{Append[posOf[i], Key[x[[2, j, 1]]]]}, v, Join[elemKey[i], attributeKey[j]]],
-          None :> nameMatch[{Missing["Literal"]}, v, Join[elemKey[i], attributeMapKey[]]]}],
+      {_, "Attrs"} :> nameMatch[{Missing["Literal"]}, v, Join[elemKey[i], attributeMapKey[]]],
       _ :> nameMatch[{Missing["Literal"]}, v, Join[elemKey[i], tagKey[]]]}];
 
 literalSlots[XMLElement[t_, a_, c_]] :=
@@ -895,7 +1016,7 @@ contentsKind["ContentsCond", c_, i_] := conditionFiltered[c, contentsSolutions[c
 contentsKind["ContentsTest", c_, i_] :=
   With[{sols = contentsSolutions[c["Sub"], i]}, If[sols =!= {} && TrueQ[c["F"][elemOf[i][[3]]]], sols, {}]];
 contentsKind["Plain", c_, i_] := plainSolutions[c, elemOf[i][[3]], Append[posOf[i], All], Join[elemKey[i], contentsKey[]]];
-contentsKind["ContentsList", c_, i_] /; Length[elemOf[i][[3]]] < c["Min"] := {};
+contentsKind["ContentsList", c_, i_] /; Length[elemOf[i][[3]]] < c["MinItems"] := {};
 contentsKind["ContentsList", c_, i_] :=
   With[{items = elemOf[i][[3]]},
     Block[{$n = Length[items], $walkId = {"Contents", i}, $contentOf = i, $contentIds = contentIds[i, items], $elementsBefore = elementsBefore[items],
@@ -987,7 +1108,7 @@ conditionFiltered[nd_, sols_] := project[Select[sols, passesQ[nd["Test"], nd["Se
    distinct pair: a page repeats a few class strings over thousands of
    elements, and a long token list costs a scan per element. *)
 headVector[nd_] :=
-  memoised[{"Head", nd["Id"]},
+  keptVector[{"Head", nd["Id"], nd["HeadKey"]},
     With[{p = nd["Plain"], els = materialElems[nd["Readings"]]},
       Developer`ToPackedArray @ Which[
         MatchQ[p, XMLElement[_, Verbatim[_], Verbatim[_]]], distinctTested[els[[All, 1]], MatchQ[#, First[p]] &],
@@ -1007,36 +1128,36 @@ headMatches[nd_, i_] /; nd["HeadNames"] === {} := {<||>};
 headMatches[nd_, i_] /; nd["PlainRules"] =!= None := plainAttributeMatches[nd["PlainRules"], elemOf[i], i];
 headMatches[nd_, i_] :=
   With[{x = elemOf[i], need = nd["HeadNames"]},
-    product[{tagMatches[nd["Tag"], x, i, need], attributeMatches[nd["Attrs"], x, i, need]}]];
+    product[{tagMatches[nd["Tag"], x, i, need], attributeMatches[nd["Attrs"], x, i, need, nd["TokenLists"]]}]];
 
 tagMatches[tag_, x_, i_, need_] :=
   With[{names = Intersection[namesIn[Hold[tag]], need]},
     If[names === {}, {<||>},
       {Map[nameMatch[{Append[posOf[i], 0]}, #, Join[elemKey[i], tagKey[]]] &, firstMatchValues[x[[1]], tag, names]]}]];
 
-attributeMatches[Verbatim[Pattern][s_Symbol, a_], x_, i_, need_] :=
+attributeMatches[Verbatim[Pattern][s_Symbol, a_], x_, i_, need_, lists_] :=
   If[MemberQ[need, Hold[s]],
-    joinAll[attributeMatches[a, x, i, need], <|Hold[s] -> nameMatch[{Append[posOf[i], Key[All]]}, x[[2]], Join[elemKey[i], attributeMapKey[]]]|>],
-    attributeMatches[a, x, i, need]];
-attributeMatches[Verbatim[PatternTest][a_, _], x_, i_, need_] := attributeMatches[a, x, i, need];
-attributeMatches[r_Rule, x_, i_, need_] := attributeMatches[{r}, x, i, need];
+    joinAll[attributeMatches[a, x, i, need, lists], <|Hold[s] -> nameMatch[{Append[posOf[i], Key[All]]}, x[[2]], Join[elemKey[i], attributeMapKey[]]]|>],
+    attributeMatches[a, x, i, need, lists]];
+attributeMatches[Verbatim[PatternTest][a_, _], x_, i_, need_, lists_] := attributeMatches[a, x, i, need, lists];
+attributeMatches[r_Rule, x_, i_, need_, lists_] := attributeMatches[{r}, x, i, need, lists];
 (* With no Alternatives key, the keys are distinct (the compiler refuses a
    duplicate), so each rule has its one attribute, and only the rules that
    bind a needed name are read. *)
-attributeMatches[rules_List, x_, i_, need_] /; FreeQ[rules, Verbatim[Rule][_Alternatives, _]] :=
+attributeMatches[rules_List, x_, i_, need_, lists_] /; FreeQ[rules, Verbatim[Rule][_Alternatives, _]] :=
   With[{named = Cases[rules, r : Verbatim[Rule][_, v_] /; IntersectingQ[namesIn[Hold[v]], need]]},
     With[{slots = attributeSlots[x, i, Union @@ (keyLiterals[First[#]] & /@ named)]},
-      project[product[MapIndexed[ruleMatches[#1, First[#2], slots, need] &, named]], need]]];
+      project[product[MapIndexed[ruleMatches[#1, First[#2], slots, need, lists] &, named]], need]]];
 (* KeyValuePattern gives each rule a different attribute, so with an
    Alternatives key every rule is placed, those that bind nothing too, and a
    placement that gives two rules one attribute is dropped. *)
-attributeMatches[rules_List, x_, i_, need_] :=
+attributeMatches[rules_List, x_, i_, need_, lists_] :=
   With[{slots = attributeSlots[x, i, Union @@ (keyLiterals[First[Replace[#, k_?literalKeyQ :> (k -> _)]]] & /@ rules)]},
     project[
-      Select[product[MapIndexed[ruleMatches[Replace[#1, k_?literalKeyQ :> (k -> _)], First[#2], slots, need] &, rules]],
+      Select[product[MapIndexed[ruleMatches[Replace[#1, k_?literalKeyQ :> (k -> _)], First[#2], slots, need, lists] &, rules]],
         DuplicateFreeQ[Values[KeySelect[#, MatchQ[{"Taken", _}]]]] &],
       need]];
-attributeMatches[_, _, _, _] := {<||>};
+attributeMatches[_, _, _, _, _] := {<||>};
 
 (* The common case: each rule is "key" -> name_ on a key that is not a list
    key, and the element passed the compiled test, so has the attribute. *)
@@ -1065,8 +1186,8 @@ attributeSlots[x_, i_, keys_] :=
 (* The solutions of rule r at each slot it can take, each marked with the
    slot, as {"Taken", r} -> slot. A list key's value is read as the compiler
    reads it: a string, or alternatives of strings, is a token in the list
-   (ADR 0011). *)
-ruleMatches[k_ -> v_, r_, slots_, need_] :=
+   (ADR 0011); lists holds its compiled form (tokenListForms). *)
+ruleMatches[k_ -> v_, r_, slots_, need_, lists_] :=
   With[{listValue = If[AllTrue[keyLiterals[k], KeyExistsQ[$readings, #] &], desugared[v], v],
       names = Intersection[namesIn[Hold[v]], need]},
     Join @@ MapIndexed[Function[{slot, j},
@@ -1075,7 +1196,7 @@ ruleMatches[k_ -> v_, r_, slots_, need_] :=
             !MatchQ[slot["Key"], k] || !slot["List"] && KeyExistsQ[$readings, slot["Key"]], {},
             slot["List"],
               Block[{$tokens = slot["Value"], $tokenPos = slot["Pos"], $tokenKey = slot["OrderKey"]},
-                tokenListMatches[listValue, need]],
+                tokenListMatches[lists[listValue]]],
             !MatchQ[slot["Value"], v], {},
             names === {}, {<||>},
             True, {Map[nameMatch[{slot["Pos"]}, #, slot["OrderKey"]] &, firstMatchValues[slot["Value"], v, names]]}]]],
@@ -1098,25 +1219,18 @@ firstMatchValues[val_, pat_, names_] :=
 
 (* ---- The token list of a list key ---- *)
 
-tokenListMatches[Verbatim[Pattern][s_Symbol, p_], need_] :=
-  If[MemberQ[need, Hold[s]], joinAll[tokenListMatches[p, need], <|Hold[s] -> nameMatch[{$tokenPos}, $tokens, $tokenKey]|>],
-    tokenListMatches[p, need]];
-tokenListMatches[c_Condition, need_] :=
-  With[{test = Extract[c, {2}, Hold], inner = namesIn[Hold[c]]},
-    project[Select[tokenListMatches[c[[1]], conditionNeed[c, test, need]], passesQ[test, inner, #] &],
-      Intersection[inner, need]]];
-tokenListMatches[Verbatim[PatternTest][p_, _], need_] := tokenListMatches[p, need];
-tokenListMatches[l_List, need_] :=
-  Block[{$place = "token", $single = cToken},
-    With[{items = cItems[l, need]},
-      walkTokens[items]]];
-tokenListMatches[p_, need_] :=
-  With[{names = Intersection[namesIn[Hold[p]], need]},
-    Which[!MatchQ[$tokens, p], {}, names === {}, {<||>},
-      True, {Map[nameMatch[{$tokenPos}, #, $tokenKey] &, firstMatchValues[$tokens, p, names]]}]];
+(* The solutions of a compiled list key's value (cTokenList) at the token
+   list $tokens. *)
+tokenListMatches[nd_] := tokenKind[nd["Kind"], nd];
 
-(* One token: any WL pattern, each name in it matching the token. *)
-cToken[p_, need_] := With[{names = namesIn[Hold[p]]}, treeNode["Token", names, need, "Pattern" -> p]];
+tokenKind["TokenNamed", nd_] :=
+  With[{sols = tokenListMatches[nd["Sub"]]},
+    If[MemberQ[nd["Keep"], nd["Name"]], joinAll[sols, <|nd["Name"] -> nameMatch[{$tokenPos}, $tokens, $tokenKey]|>], sols]];
+tokenKind["TokenCond", nd_] := conditionFiltered[nd, tokenListMatches[nd["Sub"]]];
+tokenKind["TokenList", nd_] := walkTokens[nd["Items"]];
+tokenKind["TokenPlain", nd_] :=
+  Which[!MatchQ[$tokens, nd["Pattern"]], {}, nd["Keep"] === {}, {<||>},
+    True, {Map[nameMatch[{$tokenPos}, #, $tokenKey] &, firstMatchValues[$tokens, nd["Pattern"], nd["Keep"]]]}];
 
 walkTokens[items_] :=
   Block[{$n = Length[$tokens], $walkId = {"Tokens", $tokenPos}, $oneVector = tokenVector, $oneSolutions = tokenSolutions,
@@ -1148,18 +1262,18 @@ constraintKind["ListTest", c_, i_] :=
 
 (* A list with no entry to branch at binds nothing, so it holds when its
    entries can reach the last place from the first: one pass, no walk. *)
-constraintKind["List", c_, i_] /; Length[childrenOf[i]] < c["Min"] := {};
+constraintKind["List", c_, i_] /; Length[childrenOf[i]] < c["MinItems"] := {};
 constraintKind["List", c_, i_] :=
   Block[{$n = Length[childrenOf[i]], $walkId = i, $kidIds = childrenOf[i], $oneVector = childVector, $oneSolutions = childSolutions,
       $runMatch = childRun},
     Which[
-      NoneTrue[c["Items"], capQ], If[Last[reach[c["Items"], delta[0], 1]] == 1, {<||>}, {}],
+      NoneTrue[c["Items"], #["Captures"] &], If[Last[reach[c["Items"], delta[0], 1]] == 1, {<||>}, {}],
       oneCaptureQ[c] && boundChildQ[c], oneCapture[c],
       True, project[If[oneCaptureQ[c], oneCapture[c], walked[c["Items"]]], c["Keep"]]]];
 
 (* Whether the one entry that binds a needed name binds the child itself, so
    that the solutions at two children differ, and need no projection. *)
-boundChildQ[c_] := With[{sub = SelectFirst[c["Items"], capQ]["Sub"]}, sub["Kind"] === "Named" && MemberQ[sub["Keep"], sub["Name"]]];
+boundChildQ[c_] := With[{sub = SelectFirst[c["Items"], #["Captures"] &]["Sub"]}, sub["Kind"] === "Named" && MemberQ[sub["Keep"], sub["Name"]]];
 
 (* The solutions of a list of entries over the children. An Except that
    refers to a name the list binds later records, at each child, what it
@@ -1186,7 +1300,7 @@ walked[items_] :=
    one entry left that binds a name is one child, it is taken as oneCapture
    takes it, by three vectors, without a walk. *)
 boundWalk[items_] :=
-  With[{caps = Flatten @ Position[capQ[#] && !boundOnlyQ[#] & /@ items, True]},
+  With[{caps = Flatten @ Position[#["Captures"] && !boundOnlyQ[#] & /@ items, True]},
     If[Length[caps] == 1 && items[[First[caps]]]["Kind"] === "One", oneCaptureAt[items, First[caps]],
       Last /@ enumerate[items, 0, delta[$n]]]];
 
@@ -1194,7 +1308,7 @@ boundWalk[items_] :=
    binds nothing else: the walk reads it as a vector (entrySpans). *)
 boundOnlyQ[it_] := Switch[it["Kind"],
   "Not", boundRecordQ[it] && it["Keep"] === {it["Record"]},
-  "Repeat", AllTrue[it["Items"], !capQ[#] || boundOnlyQ[#] &],
+  "Repeat", AllTrue[it["Items"], !#["Captures"] || boundOnlyQ[#] &],
   _, False];
 
 (* The names the Excepts among items refer to that a one-child entry of items
@@ -1252,7 +1366,7 @@ constraintKind["Descendant", c_, i_] :=
     If[{lo, hi} =!= {1, Infinity},
       cands = Pick[cands, UnitStep[$depth[[cands + 1]] - d0 - lo] UnitStep[hi - ($depth[[cands + 1]] - d0)], 1]];
     If[c["Keep"] === {},
-      If[exactCandidatesQ[sub] && cands =!= {} || AnyTrue[cands, match[sub, #] =!= {} &], {<||>}, {}],
+      If[sub["Exact"] && cands =!= {} || AnyTrue[cands, match[sub, #] =!= {} &], {<||>}, {}],
       project[Join @@ (descendantSolutions[sub, #, c["Key"]] & /@ cands), c["Keep"]]]];
 
 (* The candidates of a pattern root strictly below node i, in document
@@ -1266,13 +1380,13 @@ candidatesBelow[nd_, i_] :=
 (* The number of candidates up to each node, from the document, 0, and the
    candidates. *)
 candidateCounts[nd_] :=
-  memoised[{"Counts", nd["Id"]},
+  keptVector[{"Counts", nd["Id"], nd["CandidateKey"]},
     With[{v = candidateVector[nd]}, {Accumulate[Prepend[v, 0]], Flatten @ Position[v, 1]}]];
 
 (* The elements with some candidate of a pattern root below them, at any
    depth, a vector over the elements. *)
 hasCandidateBelow[nd_] :=
-  memoised[{"Below", nd["Id"]},
+  keptVector[{"Below", nd["Id"], nd["CandidateKey"]},
     With[{counts = First[candidateCounts[nd]]}, Unitize[counts[[Rest[$end] + 1]] - Rest[counts]]]];
 
 descendantSolutions[sub_, j_, key_] :=
@@ -1336,7 +1450,7 @@ conditionPassing[nd_, cands_] :=
 
 (* Whether each element can match a pattern root: a vector over the elements
    that is 1 at every match, for skipping the rest. *)
-candidateVector[nd_] := memoised[{"Candidates", nd["Id"]}, candidates[nd]];
+candidateVector[nd_] := keptVector[{"Candidates", nd["Id"], nd["CandidateKey"]}, candidates[nd]];
 candidates[nd_] := Switch[nd["Kind"],
   "Named" | "Cond" | "Test", candidateVector[nd["Sub"]],
   "Alt", Unitize[Total[candidateVector /@ nd["Subs"]]],
@@ -1359,7 +1473,7 @@ delta[p_] := UnitVector[$n + 1, p + 1];
 
 childVector[sub_] :=
   memoised[{"Vector", sub["Id"], $walkId},
-    Developer`ToPackedArray @ If[exactCandidatesQ[sub],
+    Developer`ToPackedArray @ If[sub["Exact"],
       candidateVector[sub][[$kidIds]],
       Boole[match[sub, #] =!= {} & /@ $kidIds]]];
 
@@ -1377,19 +1491,11 @@ constraintFilter[c_] := Switch[c["Kind"],
   _, 1];
 
 parentsWith[it_] :=
-  memoised[{"Parents", it["Id"]},
+  keptVector[{"Parents", it["Id"], it["Sub"]["CandidateKey"]},
     Module[{v = ConstantArray[0, Length[$elem] - 1]},
       v[[DeleteCases[$parent[[Flatten[Position[candidateVector[it["Sub"]], 1]] + 1]], 0]]] = 1;
       v]];
 
-(* Whether a pattern root's candidates are exactly its matches: it tests only
-   an element's tag and attributes, which the compiled test decides. *)
-exactCandidatesQ[nd_] := Switch[nd["Kind"],
-  "XMLPattern", nd["Constraints"] === {},
-  "Blank", nd["Head"] === {},
-  "Named", exactCandidatesQ[nd["Sub"]],
-  "Alt", AllTrue[nd["Subs"], exactCandidatesQ],
-  _, False];
 childSolutions[sub_, k_] := match[sub, $kidIds[[k]]];
 childRun[s_, e_] :=
   nameMatch[{Append[posOf[$walkId], s + 1 ;; e]}, seq[elemOf /@ $kidIds[[s + 1 ;; e]]], Join[elemKey[$walkId], sequenceKey[4, s + 1 ;; e]]];
@@ -1487,7 +1593,7 @@ repeatReach[it_, s_, dir_] :=
 enumerate[items_, s0_, endOK_] := enumerate[items, s0, endOK, backReach[items, endOK]];
 enumerate[items_, s0_, endOK_, back_] :=
   Module[{caps, frontier = {{s0, <||>}}, prev = 0, ends},
-    caps = Flatten @ Position[capQ /@ items, True];
+    caps = Flatten @ Position[#["Captures"] & /@ items, True];
     Do[
       ends = segmentEnds[items[[prev + 1 ;; c - 1]], back[[c]]];
       frontier = Join @@ Function[f,
@@ -1534,7 +1640,7 @@ entrySpans[it_, s_, next_] := Switch[it["Kind"],
     projectSpans[Join @@ (Function[b, With[{inner = enumerate[b, s, next]},
       If[it["Slot"] === None, inner, {#[[1]], Append[#[[2]], it["Slot"] -> $runMatch[s, #[[1]]]]} & /@ inner]]] /@ it["Subs"]), it["Keep"]],
   "Repeat",
-    If[capQ[it] && !AllTrue[it["Items"], !capQ[#] || boundRecordQ[#] && #["Keep"] === {#["Record"]} &],
+    If[it["Captures"] && !AllTrue[it["Items"], !#["Captures"] || boundRecordQ[#] && #["Keep"] === {#["Record"]} &],
       repeatSpans[it, s, next],
       {#, <||>} & /@ (Flatten @ Position[repeatReach[it, delta[s], 1] next, 1] - 1)]];
 
@@ -1586,9 +1692,9 @@ projectSpans[sps_, keep_] := DeleteDuplicatesBy[{#[[1]], KeyTake[#[[2]], keep]} 
    branch at: the children it binds are where the entries before it can end,
    it matches, and the entries after it can match the rest. *)
 oneCaptureQ[c_] :=
-  With[{caps = Select[c["Items"], capQ]}, Length[caps] == 1 && caps[[1]]["Kind"] === "One"];
+  With[{caps = Select[c["Items"], #["Captures"] &]}, Length[caps] == 1 && caps[[1]]["Kind"] === "One"];
 
-oneCapture[c_] := oneCaptureAt[c["Items"], First @ FirstPosition[capQ /@ c["Items"], True]];
+oneCapture[c_] := oneCaptureAt[c["Items"], First @ FirstPosition[#["Captures"] & /@ c["Items"], True]];
 
 oneCaptureAt[items_, k_] :=
   With[{f = reach[Take[items, k - 1], delta[0], 1], b = reach[Drop[items, k], delta[$n], -1], sub = items[[k]]["Sub"]},
@@ -1778,8 +1884,9 @@ results[mode_, cq_, bare_, n_, nodes_] :=
         If[r =!= $noResult, count++; Sow[r, $resultTag]]]]];
 
 (* A counted name bound to text, or to a run holding text, in some solution
-   is refused, as refuseText refuses one whose pattern shows
-   it. *)
+   is refused. refuseText refuses every name on an entry that can match text
+   before the run; this is left for a name inside another WL pattern on an
+   item, as HoldPattern[x_], that binds the whole item. *)
 refuseBoundText[sols_, counted_] :=
   Replace[FirstCase[counted, n_ /; AnyTrue[sols, MemberQ[matchPos[Lookup[#, Key[n], {{}}]], Missing["Text"]] &]],
     Hold[s_] :> refuseHere["text", HoldForm[s]]];
@@ -1830,18 +1937,11 @@ rootSolutions[root_, oneQ_, nodes_] :=
    attributes is matched once, and its solutions are moved to the other
    elements that have it: matching each element cost about 40 µs for a name
    on an attribute, 95 µs for one on a list key. *)
-headRootQ[root_] := !$records && With[{x = headPatternOf[root]}, x =!= None && x["Constraints"] === {} && x["HeadNames"] =!= {}];
-
-(* The XMLPattern node of such a root, or None. A name on the root that is
-   also bound inside it is compared, so the root is matched as usual. *)
-headPatternOf[nd_] := Switch[nd["Kind"],
-  "XMLPattern", nd,
-  "Named", If[nd["Sub"]["Kind"] === "XMLPattern" && !MemberQ[nd["Sub"]["Names"], nd["Name"]], nd["Sub"], None],
-  _, None];
+headRootQ[root_] := !$records && With[{x = root["HeadPattern"]}, x =!= None && x["Constraints"] === {} && x["HeadNames"] =!= {}];
 
 (* The solutions of match[root, #] & /@ cands, joined. *)
 headRootSolutions[root_, cands_] :=
-  With[{x = headPatternOf[root],
+  With[{x = root["HeadPattern"],
       name = If[root["Kind"] === "Named" && MemberQ[root["Keep"], root["Name"]], root["Name"], None]},
     With[{heads = headReads[x["Attrs"], elemOf /@ cands]},
       With[{templates = headTemplate[x, #, name] & /@ GroupBy[Transpose[{heads, cands}], First -> Last, First]},
@@ -2011,7 +2111,7 @@ listRootQ[q_] := MatchQ[q, _List] ||
 listRoot[q_, need_] :=
   Block[{$owner = XMLMatchQ, $place = "constraint"},
     With[{c = cConstraint[q, need]},
-      treeNode["XMLDocument", c["Names"], need, "Constraints" -> {c}, "MinKids" -> minKids[c]]]];
+      treeNode["XMLDocument", c["Names"], need, "Constraints" -> {c}]]];
 
 (* How many DOM levels below its root node a pattern reads. *)
 reachBelow[nd_] := Switch[nd["Kind"],

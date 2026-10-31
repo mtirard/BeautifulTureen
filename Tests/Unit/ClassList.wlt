@@ -166,6 +166,17 @@ TestCreate[
   TestID -> "classlist-binds-token-list"
 ];
 
+(* A token-list pattern is compiled with the rest of the query, so a mistake in
+   it is refused whatever the tree holds: no element here is a q, and the
+   second query binds no name in the list. *)
+TestCreate[
+  {XMLCases[$mixed, XMLPattern["q", "classList" -> {___, PatternTest[x : PatternSequence[_, _], StringQ]}] :> x],
+    XMLCases[$mixed, XMLPattern["p", "classList" -> {___, PatternTest[PatternSequence[_, _], StringQ]}]]},
+  {$Failed, $Failed},
+  {XMLCases::badpat, XMLCases::badpat},
+  TestID -> "classlist-bad-token-pattern-refused-on-any-tree"
+];
+
 (* An element binding sees the element as it is in the tree, while cls_ binds the
    token list from the same match. *)
 TestCreate[

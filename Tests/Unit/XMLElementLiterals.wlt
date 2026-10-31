@@ -5,6 +5,7 @@
    the right-hand side is ::exceptname. *)
 
 row     = doc[el["tr", el["th", "a"], el["td", "a"], el["td", "b"]]];
+bold    = doc[el["tr", el["th", el["b"]], el["td", "a"]]];
 links   = doc[el["p", e["a", "1"], e["a", "2"], e["a", "3"]]];
 listing = doc[XMLElement["ul", {"class" -> "a b"}, {el["li"], " ", el["li", XMLElement["a", {"href" -> "/x"}, {}]]}]];
 
@@ -24,16 +25,17 @@ TestCreate[
   TestID -> "literal-text-counted-static"
 ];
 
-(* A sequence is known to bind text only while matching. *)
+(* Whether a counted name can bind text is read from its pattern, so it is
+   refused also where the document has no text: here the th holds a b. *)
 TestCreate[
-  XMLCases[row, XMLPattern["tr"][{XMLElement["th", _, {s___}], ___}] :> {s}],
+  XMLCases[bold, XMLPattern["tr"][{XMLElement["th", _, {s___}], ___}] :> {s}],
   $Failed,
   {XMLCases::text},
   TestID -> "literal-text-counted-sequence"
 ];
 
 TestCreate[
-  XMLPosition[row, XMLPattern["tr"][{XMLElement["th", _, {t_}], ___}] :> t],
+  XMLPosition[bold, XMLPattern["tr"][{XMLElement["th", _, {t_}], ___}] :> t],
   $Failed,
   {XMLPosition::text},
   TestID -> "literal-text-counted-blank-xmlposition"
@@ -55,7 +57,7 @@ TestCreate[
 ];
 
 TestCreate[
-  XMLCases[row, XMLElement["tr", _, {x_, ___}] :> x],
+  XMLCases[row, XMLElement["tr", _, {x_XMLElement, ___}] :> x],
   {el["th", "a"]},
   TestID -> "literal-blank-binds-element"
 ];
@@ -137,18 +139,28 @@ TestCreate[
 
 TestCreate[
   XMLPosition[listing, XMLElement["ul", _, {_, _, XMLElement["li", _, {XMLElement["a", {"href" -> h_}, _]}]}] :> h],
-  {{1, 2, 1, Key["href"]}},
+  {Missing["Literal"]},
   TestID -> "literal-deep-attribute-value-position"
 ];
 
+(* A name inside a literal's attribute list has no position: which attribute
+   WL matched it to is not known. It is identified by its value, so the two
+   elements give one result. *)
 TestCreate[
-  XMLPosition[links, XMLElement["p", _, {_, r__}] :> r],
+  With[{shared = {XMLElement["p", {"a" -> "v", "b" -> "v"}, {}], XMLElement["p", {"a" -> "v", "b" -> "v"}, {}]}},
+    {XMLPosition[shared, XMLElement["p", {___, "b" -> h_}, _] :> h], XMLCases[shared, XMLElement["p", {___, "b" -> h_}, _] :> h]}],
+  {{Missing["Literal"]}, {"v"}},
+  TestID -> "literal-attribute-name-shared-value-no-position"
+];
+
+TestCreate[
+  XMLPosition[links, XMLElement["p", _, {_, r__XMLElement}] :> r],
   {{1, 2 ;; 3}},
   TestID -> "literal-deep-run-position"
 ];
 
 TestCreate[
-  XMLPosition[listing, XMLElement["ul", _, {_, g___, " ", ___}] :> g],
+  XMLPosition[listing, XMLElement["ul", _, {_, g___XMLElement, " ", ___}] :> g],
   {{1, 2 ;; 1}},
   TestID -> "literal-deep-gap-position"
 ];

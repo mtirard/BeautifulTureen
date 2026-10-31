@@ -249,3 +249,16 @@ TestCreate[
   {"/sale", "/regular"},
   TestID -> "attr-extraction-href"
 ];
+
+(* What a query computes for every element is kept with the document's index
+   for the next query, but not a test whose function the caller can redefine
+   between two queries. *)
+TestCreate[
+  Module[{wanted},
+    wanted[h_] := h === "/sale";
+    With[{first = XMLCases[$treeProducts, XMLPattern["a", "href" -> _?wanted] :> 1]},
+      wanted[h_] := h === "/none";
+      {first, XMLCases[$treeProducts, XMLPattern["a", "href" -> _?wanted] :> 1]}]],
+  {{1}, {}},
+  TestID -> "attr-test-redefined-between-queries"
+];
