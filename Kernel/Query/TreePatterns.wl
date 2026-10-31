@@ -34,6 +34,10 @@ PackageScoped[$noResult]
 PackageScoped[elemOf]
 PackageScoped[childrenOf]
 PackageScoped[posOf]
+PackageScoped[memoised]
+PackageScoped[capturesQ]
+PackageScoped[$listWrapperKinds]
+PackageScoped[$pathKinds]
 PackageScoped[nameMatch]
 PackageScoped[candidateCounts]
 PackageScoped[candidateVector]
@@ -160,6 +164,7 @@ runQuery[cq_Association, tree_, mode_, n_ : Infinity, roots_ : All] :=
       If[top === None, {},
         Block[{$head = cq["Head"], $readings = cq["Readings"], $order = cq["Order"], $slotOf = cq["Slots"],
             $indexDepth = indexDepth[roots, top, cq["Reach"]], $memo = <||>,
+            (* the symbols of $indexState *)
             $elem, $parent, $depth, $kids, $index, $end, $wlPos, $tops, $posMemo = <||>,
             $matElems = <||>, $vectors = <||>, $keyLength},
           onIndex[roots, tree, columnarResults[mode, cq, bareQ[roots, tree], n, rootNodes[cq["Root"], roots, top, tree]] &]]]],
@@ -373,20 +378,28 @@ $keptVectors = 200;
    node in another query, or the same query again, finds it. For a node
    with no key it is kept for this run only, as other memos are. *)
 SetAttributes[keptVector, HoldRest];
-keptVector[{tag_, id_, None}, v_] := memoised[{tag, id}, v];
-keptVector[{tag_, id_, key_}, v_] := memoised[{tag, id}, Lookup[$vectors, Key[{tag, key}], $vectors[{tag, key}] = v]];
+keptVector[{tag_, id_, None}, v_] := memoised[$memo, {tag, id}, v];
+keptVector[{tag_, id_, key_}, v_] := memoised[$memo, {tag, id}, memoised[$vectors, {tag, key}, v]];
+
+(* The value of store, an Association held in a symbol, at k; v, computed
+   and kept there, when it has none. *)
+SetAttributes[memoised, HoldAll];
+memoised[store_, k_, v_] := Lookup[store, Key[k], store[k] = v];
+
+(* The symbols of the index state the cache keeps, $vectors last; runQuery
+   localises each of them. *)
+$indexState = Hold[{$tops, $wlPos, $elem, $parent, $depth, $kids, $index, $end, $keyLength, $matElems, $posMemo, $vectors}];
 
 cachedIndexTree[input_] :=
   If[cachedQ[input],
-    {$tops, $wlPos, $elem, $parent, $depth, $kids, $index, $end, $keyLength, $matElems, $posMemo, $vectors} = $indexCache[[3]],
+    Replace[$indexState, Hold[syms_] :> (syms = $indexCache[[3]])],
     indexTree[input];
     keepIndex[input]];
 
 cachedQ[input_] := $indexCache[[2]] === $indexDepth && $indexCache[[1]] === input;
 
 keepIndex[input_] :=
-  $indexCache = {input, $indexDepth, {$tops, $wlPos, $elem, $parent, $depth, $kids, $index, $end, $keyLength, $matElems, $posMemo,
-    If[Length[$vectors] > $keptVectors, <||>, $vectors]}};
+  $indexCache = {input, $indexDepth, MapAt[If[Length[#] > $keptVectors, <||>, #] &, ReleaseHold[$indexState], -1]};
 
 (* What a query read is kept when it ends, unless a query in its right-hand
    side, on another input, has replaced the cache meanwhile. *)
@@ -416,12 +429,12 @@ childrenOf[i_] := $kids[[i + 1]];
 
 (* The element's position: element-child indices from the document. *)
 posOf[0] := {};
-posOf[i_] := Lookup[$posMemo, i, $posMemo[i] = Append[posOf[$parent[[i + 1]]], $index[[i + 1]]]];
+posOf[i_] := memoised[$posMemo, i, Append[posOf[$parent[[i + 1]]], $index[[i + 1]]]];
 
 (* The elements as the compiled tests of one set of readings see them:
    materialised once per set, over the indexed input, which moves no element. *)
 materialElems[{}] := Rest[$elem];
-materialElems[r_] := Lookup[$matElems, Key[r], $matElems[r] = Extract[materialise[$tops, r, {1, 2 $indexDepth - 1}], $wlPos]];
+materialElems[r_] := memoised[$matElems, r, Extract[materialise[$tops, r, {1, 2 $indexDepth - 1}], $wlPos]];
 
 (* =========================================================== *)
 (* Matches                                                      *)
@@ -466,6 +479,12 @@ withFacts[nd_] :=
     {{"Captures", capturesQ}, {"MinItems", minItems}, {"MinKids", minKids}, {"Exact", exactQ},
       {"FilterKey", filterKey}, {"CandidateKey", candidateKey}}];
 
+(* The kinds of a constraint node that is a name, test or Condition on a
+   list constraint, its "Sub"; and those of a path: a named, tested or
+   Conditioned Descendant, or Shortest or Longest on one. *)
+$listWrapperKinds = "ListNamed" | "ListCond" | "ListTest";
+$pathKinds = "PathNamed" | "PathTest" | "PathCond" | "PathNearest";
+
 capturesQ[nd_] := nd["Keep"] =!= {} || nd["Kind"] === "SeqCond" ||
   MatchQ[nd["Kind"], "Run" | "Repeat"] && AnyTrue[nd["Items"], #["Captures"] &] ||
   nd["Kind"] === "Branches" && AnyTrue[Flatten[nd["Subs"]], #["Captures"] &];
@@ -483,7 +502,7 @@ itemsMin[items_List] := Total[#["MinItems"] & /@ items];
 
 minKids[nd_] := Switch[nd["Kind"],
   "List", nd["MinItems"],
-  "ListNamed" | "ListCond" | "ListTest" | "PathNamed" | "PathTest" | "PathCond" | "PathNearest", nd["Sub"]["MinKids"],
+  $listWrapperKinds | $pathKinds, nd["Sub"]["MinKids"],
   "Descendant", 1,
   "ConstraintAlt", Min[#["MinKids"] & /@ nd["Subs"]],
   "XMLPattern" | "XMLDocument", Max[0, #["MinKids"] & /@ nd["Constraints"]],
@@ -506,7 +525,7 @@ candidateKey[nd_] := Switch[nd["Kind"],
 
 filterKey[nd_] := Switch[nd["Kind"],
   "List", keyed[{"Parents", #["Sub"]["CandidateKey"] & /@ Select[nd["Items"], #["Kind"] === "One" &]}],
-  "ListNamed" | "ListCond" | "ListTest" | "PathNamed" | "PathTest" | "PathCond" | "PathNearest", nd["Sub"]["FilterKey"],
+  $listWrapperKinds | $pathKinds, nd["Sub"]["FilterKey"],
   "Descendant", keyed[{"Below", nd["Sub"]["CandidateKey"]}],
   _, {"All"}];
 
@@ -963,9 +982,6 @@ repeatBounds[Verbatim[RepeatedNull][_]] := {0, Infinity};
 (* candidates of its pattern roots (Query/Columnar.wl).         *)
 (* =========================================================== *)
 
-SetAttributes[memoised, HoldRest];
-memoised[k_, v_] := Lookup[$memo, Key[k], $memo[k] = v];
-
 (* Whether each element passes the compiled tag and attribute test, once per
    query for all elements. *)
 (* The test reads only the tag and attributes, so it is run once for each
@@ -1014,9 +1030,8 @@ hasCandidateBelow[nd_] :=
    below. *)
 constraintFilter[c_] := Switch[c["Kind"],
   "List", Times @@ Prepend[parentsWith /@ Select[c["Items"], #["Kind"] === "One" &], 1],
-  "ListNamed" | "ListCond" | "ListTest", constraintFilter[c["Sub"]],
+  $listWrapperKinds | $pathKinds, constraintFilter[c["Sub"]],
   "Descendant", hasCandidateBelow[c["Sub"]],
-  "PathNamed" | "PathTest" | "PathCond" | "PathNearest", constraintFilter[c["Sub"]],
   _, 1];
 
 parentsWith[it_] :=

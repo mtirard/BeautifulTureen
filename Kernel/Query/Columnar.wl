@@ -81,10 +81,7 @@ distinctRows[t_, rootQ_] :=
 unionTables[ts_, cols_] := sortedByRoot @ Merge[aligned[#, cols] & /@ ts, packed @* Catenate];
 
 (* At x + 1, how many of the node ids vs are at most x, over the nodes. *)
-countsUpTo[vs_] :=
-  Module[{c = ConstantArray[0, Length[$elem]]},
-    With[{t = Tally[vs]}, If[t =!= {}, c[[t[[All, 1]] + 1]] = t[[All, 2]]]];
-    Accumulate[c]];
+countsUpTo[vs_] := Accumulate[valueCounts[vs + 1, Length[$elem]]];
 
 (* Each i of is, lens[[i]] times. *)
 repeated[is_, lens_] := packed @ Flatten @ MapThread[ConstantArray, {is, lens}];
@@ -128,7 +125,7 @@ childMarks[ps_] := With[{m = idMarks[ps]}, Prepend[m[[Rest[$parent] + 1]], 0]];
 (* K, kept with the index: a page's elements do not change between
    queries. A run computes it only when it makes a code (columnarResults):
    an element test of a pattern with no names makes none. *)
-placeBase[] := Lookup[$vectors, Key[{"PlaceBase"}], $vectors[{"PlaceBase"}] = Max[0, Length /@ $elem[[2 ;;, 2]]] + 3];
+placeBase[] := memoised[$vectors, {"PlaceBase"}, Max[0, Length /@ $elem[[2 ;;, 2]]] + 3];
 
 codePosition[c_] /; c < -1 := First[First[extraMatch[c]]];
 codePosition[c_] :=
@@ -206,7 +203,7 @@ agreeQ[x_, y_, mode_] :=
   x == y || If[mode === "Across" && placeCodeQ[x] && placeCodeQ[y], Sort[atoms[x]] === Sort[atoms[y]], valueId[x] === valueId[y]];
 
 (* The id of the value of a code. *)
-valueId[c_] := Lookup[$codeValueIds, c, $codeValueIds[c] = With[{v = anyValue[c]}, Lookup[$valueIds, Key[v], $valueIds[v] = Length[$valueIds] + 1]]];
+valueId[c_] := memoised[$codeValueIds, c, With[{v = anyValue[c]}, memoised[$valueIds, v, Length[$valueIds] + 1]]];
 
 anyValue[c_] := Which[c >= 0, codeValue[c], setCodeQ[c], anyValue[First[setMembers[c]]], True, extraMatch[c][[2]]];
 
@@ -248,8 +245,7 @@ atoms[c_] :=
 unionCode[x_, y_] :=
   With[{ms = DeleteDuplicatesBy[Join[atoms[x], atoms[y]], If[# >= -1, #, Replace[First[codeMatch[#]], Except[{_Missing}] -> #]] &]},
     If[Length[ms] == 1, First[ms],
-      With[{sorted = ms[[Ordering[With[{ks = orderKey /@ ms}, PadRight[ks, {Length[ks], Max[Length /@ ks]}, $keyPad]]]]]},
-        Lookup[$sets, Key[sorted], $sets[sorted] = (AppendTo[$setList, sorted]; extraCode["Set", Length[$setList]])]]]];
+      With[{sorted = ms[[Ordering[paddedKeys[orderKey /@ ms]]]]}, interned[$sets, $setList, "Set", sorted]]]];
 
 (* Table s with name bound to codes on each row, compared by value with
    what s binds it to already. *)
@@ -470,9 +466,9 @@ holding[c_, ps_, filteredQ_] :=
     "List" /; childListQ[c],
       If[filteredQ && childEntry[c]["Exact"], ps,
         With[{kids = tab[childEntry[c], childMarks[ps], True]["Root"]}, restricted[ps, idMarks[$parent[[kids + 1]]]]]],
-    "List" | "ListNamed" | "ListCond" | "ListTest",
+    "List" | $listWrapperKinds,
       restricted[ps, idMarks[listConstraintTable[c, ps]["Root"]]],
-    "PathNamed" | "PathTest" | "PathCond" | "PathNearest",
+    $pathKinds,
       restricted[ps, idMarks[pathTable[c, ps]["Root"]]],
     "ConstraintAlt",
       restricted[ps, idMarks[Union @@ (holding[#, ps, False] & /@ c["Subs"])]]];
@@ -481,9 +477,9 @@ holding[c_, ps_, filteredQ_] :=
 constraintTable[c_, ps_] :=
   projected[c["Keep"], True] @ Switch[c["Kind"],
     "Descendant", descendantPairs[withLowerEnds[c, tab[c["Sub"], belowMarks[ps], True]], ps, c["Levels"]],
-    "PathNamed" | "PathTest" | "PathCond" | "PathNearest", pathTable[c, ps],
+    $pathKinds, pathTable[c, ps],
     "List" /; childListQ[c], childTable[c, ps],
-    "List" | "ListNamed" | "ListCond" | "ListTest", listConstraintTable[c, ps],
+    "List" | $listWrapperKinds, listConstraintTable[c, ps],
     "ConstraintAlt", unionTables[If[#["Keep"] === {}, <|"Root" -> packed[holding[#, ps, False]]|>, constraintTable[#, ps]] & /@ c["Subs"], c["Keep"]]];
 
 (* The distinct rows of a table on the names keep, as a node keeps only
@@ -724,7 +720,7 @@ $noValue = Unique["noValue"];
 boundValues[_, _, {}] := <||>;
 boundValues[val_, Verbatim[Pattern][s_Symbol, Verbatim[Blank][]], {Hold[s_Symbol]}] := <|Hold[s] -> val|>;
 boundValues[val_, pat_, names_] :=
-  With[{rule = listMemo[{"BoundRule", pat, names},
+  With[{rule = memoised[$listMemo, {"BoundRule", pat, names},
       RuleDelayed @@ Join[Hold[pat], Replace[Join @@ (Replace[#, Hold[s_] :> Hold[{s}]] & /@ names), Hold[a___] :> Hold[{a}]]]]},
     Replace[First[ReplaceList[val, rule], None], {
       None -> <||>,
@@ -799,9 +795,10 @@ keyPairs[keys_, values_] :=
       {row, off} = spread[cum[[keys + 1]] - cum[[keys]]];
       {row, Ordering[values][[cum[[keys[[row]]]] + 1 + off]]}]];
 
-valueCounts[vs_, size_] := Module[{c = ConstantArray[0, size]}, With[{t = Tally[vs]}, c[[t[[All, 1]]]] = t[[All, 2]]]; c];
-
-$sequenceCount = 0;
+(* How many of the integers vs equal each of 1 to size. Tally into an
+   array costs less than BinCounts, which takes about 50 µs at any size,
+   and than Counts over a wide range. *)
+valueCounts[vs_, size_] := Module[{c = ConstantArray[0, size]}, With[{t = Tally[vs]}, If[t =!= {}, c[[t[[All, 1]]]] = t[[All, 2]]]]; c];
 
 (* The sequence of the items of owners, lens[[i]] for the i-th, read by
    reader. "ItemPlace" is the place before each item, "ItemAt" the item
@@ -819,17 +816,16 @@ sequenceOf[reader_, owners_, lens0_] :=
       "First" -> first, "Last" -> first + lens, "OwnerOf" -> ownerIndex[lens + 1], "ItemPlace" -> itemPlace, "ItemAt" -> itemAt,
       "ItemOwner" -> packed[owners][[item]], "ItemK" -> packed[Range[n] - Most[Accumulate[Prepend[lens, 0]]][[item]]]|>]];
 
-(* What a list operator computes once per sequence, for the run. *)
-SetAttributes[listMemo, HoldRest];
-listMemo[k_, v_] := Lookup[$listMemo, Key[k], $listMemo[k] = v];
+(* What a list operator computes once per sequence, for the run, is kept
+   in $listMemo (memoised). *)
 
 (* A 0/1 vector over the items as one over the places, 0 at each owner's
    last place. *)
 overPlaces[cx_, v_] := Module[{e = ConstantArray[0, cx["Places"]]}, If[Length[v] > 0, e[[cx["ItemPlace"]]] = v]; e];
 
-passVector[cx_, sub_] := listMemo[{"Pass", cx["Id"], sub["Id"]}, overPlaces[cx, cx["Test"][cx, sub]]];
-anyItem[cx_] := listMemo[{"Any", cx["Id"]}, overPlaces[cx, ConstantArray[1, Length[cx["ItemPlace"]]]]];
-itemTable[cx_, sub_] := listMemo[{"Table", cx["Id"], sub["Id"]}, cx["Table"][cx, sub]];
+passVector[cx_, sub_] := memoised[$listMemo, {"Pass", cx["Id"], sub["Id"]}, overPlaces[cx, cx["Test"][cx, sub]]];
+anyItem[cx_] := memoised[$listMemo, {"Any", cx["Id"]}, overPlaces[cx, ConstantArray[1, Length[cx["ItemPlace"]]]]];
+itemTable[cx_, sub_] := memoised[$listMemo, {"Table", cx["Id"], sub["Id"]}, cx["Table"][cx, sub]];
 
 (* 1 at each of the items given. *)
 itemMarks[cx_, items_] := Module[{v = ConstantArray[0, Length[cx["ItemPlace"]]]}, If[items =!= {}, v[[items]] = 1]; v];
@@ -1189,7 +1185,7 @@ namedRepeatRows[cx_, it_, t_, next_] :=
 (* 1 at each place whose next item and the one after it are equal, in one
    owner. *)
 equalNext[cx_] :=
-  listMemo[{"Equal", cx["Id"]},
+  memoised[$listMemo, {"Equal", cx["Id"]},
     With[{vs = $elem[[cx["Items"] + 1]], own = cx["ItemOwner"]},
       overPlaces[cx, If[Length[vs] < 2, ConstantArray[0, Length[vs]],
         Append[Boole[MapThread[SameQ, {Most[vs], Rest[vs]}]] (1 - Unitize[Differences[own]]), 0]]]]];
@@ -1275,7 +1271,7 @@ unrecordedEntry[it_, kept_] :=
         _, it]},
     If[it["Kind"] === "One" || MemberQ[kept, it["Id"]], u,
       With[{keep = Complement[it["Keep"], Complement[$labelKeys, Union @@ Prepend[#["Keep"] & /@ entriesBelow[u], {}]]]},
-        Append[u, {"Keep" -> keep, "Captures" -> (keep =!= {} || it["Kind"] === "SeqCond" || AnyTrue[entriesBelow[u], #["Captures"] &])}]]]];
+        With[{narrowed = Append[u, "Keep" -> keep]}, Append[narrowed, "Captures" -> capturesQ[narrowed]]]]]];
 
 (* The entries directly inside an entry, with an Except's second argument. *)
 entriesBelow[it_] :=
@@ -1405,7 +1401,7 @@ labelled[t_, key_, label_] := Append[t, key -> ConstantArray[labelCode[label], r
    the match of codes; {"NotIn", {codes, ...}, mode}, to none of those; or
    {"Unbound"}, never; or {"And", {label, ...}}, each of labels that
    compare the names in different ways (labelsMet). *)
-labelCode[label_] := Lookup[$labels, Key[label], $labels[label] = (AppendTo[$labelList, label]; extraCode["Label", Length[$labelList]])];
+labelCode[label_] := interned[$labels, $labelList, "Label", label];
 
 labelCodeQ[c_] := c < -1 && First[extraFields[c]] == $extraKinds["Label"];
 labelOf[c_] := $labelList[[extraFields[c][[2]]]];
@@ -1546,11 +1542,17 @@ $extraKinds = <|"Run" -> 1, "Repeat" -> 2, "Text" -> 3, "ContentsRun" -> 4, "Con
 matchCode[pos_, v_, key_] :=
   With[{id = If[MatchQ[pos, {_Missing}], {"Value", v}, {pos, v}]},
     If[KeyExistsQ[$matches, id],
-      With[{c = $matches[id]}, With[{i = extraFields[c][[2]]},
-        If[keyBeforeQ[key, $matchList[[i, 3]]], $matchList[[i, 3]] = key]]; c],
-      AppendTo[$matchList, {pos, v, key}]; $matches[id] = extraCode["Match", Length[$matchList]]]];
+      With[{i = extraFields[$matches[id]][[2]]}, If[keyBeforeQ[key, $matchList[[i, 3]]], $matchList[[i, 3]] = key]]];
+    interned[$matches, $matchList, "Match", id, {pos, v, key}]];
 
-keyBeforeQ[a_, b_] := With[{n = Max[Length[a], Length[b]]}, Order[PadRight[a, n, $keyPad], PadRight[b, n, $keyPad]] == 1];
+keyBeforeQ[a_, b_] := Order @@ paddedKeys[{a, b}] == 1;
+
+(* The code of kind kind for key k in store, an Association held in a
+   symbol: the i-th entry of list, entry appended to it when k is new, so
+   that equal keys have one code. *)
+SetAttributes[interned, HoldAll];
+interned[store_, list_, kind_, k_, entry_] := memoised[store, k, (AppendTo[list, entry]; extraCode[kind, Length[list]])];
+interned[store_, list_, kind_, k_] := interned[store, list, kind, k, k];
 
 (* The code of a match at a place on element p, s as in a place code, of
    value v: the place's own code when v is the place's whole value, else a
@@ -1578,15 +1580,13 @@ $plainKinds = {3, 5, 6, 8, 9, 10};
    the most tokens at each list key, for the reading that splits it. *)
 placeRadix[keys_] :=
   Max[
-    Lookup[$vectors, Key[{"PlaceRadix"}],
-      $vectors[{"PlaceRadix"}] = Max[1024, 2 + Max[0, Length /@ $elem[[2 ;;, 3]]], 1 + Ceiling[Sqrt[Length[$elem]]]]],
+    memoised[$vectors, {"PlaceRadix"}, Max[1024, 2 + Max[0, Length /@ $elem[[2 ;;, 3]]], 1 + Ceiling[Sqrt[Length[$elem]]]]],
     tokenRadix /@ keys];
 
 tokenRadix[key_] :=
   With[{r = $readings[key]},
-    Lookup[$vectors, Key[{"TokenRadix", key, r}],
-      $vectors[{"TokenRadix", key, r}] =
-        2 + Max[0, Length[tokensOf[#, key]] & /@ DeleteDuplicates[Position[$elem[[2 ;;, 2, All, 1]], rawKeyOf[r], {2}, Heads -> False][[All, 1]]]]]];
+    memoised[$vectors, {"TokenRadix", key, r},
+      2 + Max[0, Length[tokensOf[#, key]] & /@ DeleteDuplicates[Position[$elem[[2 ;;, 2, All, 1]], rawKeyOf[r], {2}, Heads -> False][[All, 1]]]]]];
 
 (* The list keys a compiled query may read tokens at: those of the
    readings in force that it mentions. *)
@@ -1653,7 +1653,7 @@ missingItem[v_] := Missing[If[!FreeQ[v, _String, {0, 1}], "Text", "Literal"]];
 listAttribute[o_, key_] := attributeIndex[$elem[[o + 1, 2]], rawKeyOf[$readings[key]]];
 
 (* The order key of an element's position (Positions.wl). *)
-elementKey[i_] := listMemo[{"Key", i}, Join @@ (sequenceKey[4, #] & /@ posOf[i])];
+elementKey[i_] := memoised[$listMemo, {"Key", i}, Join @@ (sequenceKey[4, #] & /@ posOf[i])];
 
 (* The order key of a code's position. *)
 orderKey[c_] :=
@@ -1674,7 +1674,7 @@ rankedColumn[col_] :=
         -col Unitize[col + 1],
       True,
         With[{u = DeleteCases[DeleteDuplicates[col], -1]},
-          With[{keys = packed[With[{ks = orderKey /@ u}, PadRight[ks, {Length[ks], Max[Length /@ ks]}, $keyPad]]]},
+          With[{keys = packed[paddedKeys[orderKey /@ u]]},
             With[{order = Ordering[keys]},
               Lookup[
                 Append[AssociationThread[u[[order]], Accumulate[Prepend[Unitize[Total /@ Abs[Differences[keys[[order]]]]], 1]]], -1 -> 0],
@@ -1688,7 +1688,7 @@ rankedColumn[col_] :=
    input is a bare element, whose own position is never counted. An element
    test gives the empty tuple if the pattern root matches anywhere. *)
 columnarResults[mode_, cq_, bare_, n_, nodes_] :=
-  Block[{$K, $B, $t, $listMemo = <||>, $matches = <||>, $matchList = {}, $valueIds = <||>, $codeValueIds = <||>, $sets = <||>, $setList = {}, $labels = <||>, $labelList = {},
+  Block[{$K, $B, $t, $listMemo = <||>, $sequenceCount = 0, $matches = <||>, $matchList = {}, $valueIds = <||>, $codeValueIds = <||>, $sets = <||>, $setList = {}, $labels = <||>, $labelList = {},
       $exceptModes = If[cq["Records"], exceptModes[cq["Root"]], <||>], $labelKeys},
     $K := ($K = placeBase[]);
     $B := ($B = placeRadix[listKeysOf[cq]]);
