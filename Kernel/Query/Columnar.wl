@@ -57,15 +57,15 @@ PackageScoped[$columnarFallback]
    While both engines exist, a query runs here only if every node of it is
    one this engine matches: element pattern roots, their tags and
    attributes, names on elements and on places of one element, Descendant,
-   Child and list constraints, Alternatives, Condition and PatternTest,
-   XMLDocument, and XMLElement patterns with their contents lists. It is
+   Child and list constraints, named and tested paths, Shortest and Longest,
+   Alternatives, Condition and PatternTest, XMLDocument, and XMLElement
+   patterns with their contents lists. It is
    decided from the compiled query alone, when it is compiled. *)
 
 (* "Columnar", or why the engine does not run compiled query cq. *)
 columnarCoverage[cq_Association] :=
   Which[
     cq["Records"], "an Except refers to a name bound outside it",
-    cq["NamedPaths"], "a named path",
     True, Replace[DeleteDuplicates[uncovered[cq["Root"]]], {{} -> "Columnar", r_ :> StringRiffle[r, ", "]}]];
 
 (* Why a node, or a node below it, is not covered: the empty list when it
@@ -81,7 +81,8 @@ uncovered[nd_] :=
     "Literal" | "Blank", {},
     "Plain", If[nd["Keep"] === {}, {}, {"a name inside a WL pattern on one value"}],
     "Token", If[nd["Keep"] === {} || {wholeName[nd["Pattern"]]} === nd["Keep"], {}, {"a name inside a WL pattern on one value"}],
-    "Descendant", If[nd["Key"] =!= None, {"a path"}, uncovered[nd["Sub"]]],
+    "Descendant" | "PathTest" | "PathCond" | "PathNearest", uncovered[nd["Sub"]],
+    "PathNamed", If[MemberQ[nd["Sub"]["Names"], nd["Name"]], {"a name compared by value"}, uncovered[nd["Sub"]]],
     "List", entriesUncovered[nd["Items"], "Children"],
     "ContentsList", entriesUncovered[nd["Items"], "Contents"],
     "LiteralParts", literalUncovered[nd],
@@ -356,7 +357,10 @@ treeTable[nd_, cands_, rootQ_] :=
       named === {}, t,
       p === {}, emptyTable[nd["Keep"]],
       !rootQ && Length[named] == 1 && Lookup[nd, "HeadNames", {}] === {} && coverableQ[First[named]], covered[First[named], p],
-      True, distinctRows[Fold[If[rowCount[#1] == 0, #1, joinTables[#1, constraintTable[#2, DeleteDuplicates[#1["Root"]]]]] &, t, named], rootQ]]];
+      True,
+        distinctRows[
+          KeyDrop[Fold[If[rowCount[#1] == 0, #1, joinTables[#1, rootConstraintTable[nd, #2, DeleteDuplicates[#1["Root"]]]]] &, t, named], pathKeys[nd]],
+          rootQ]]];
 
 (* The table of the names in the tag and attributes, at elements ps: a
    column for each name on the tag, the attribute map or an attribute, and
@@ -395,13 +399,16 @@ holding[c_, ps_, filteredQ_] :=
         With[{kids = tab[childEntry[c], childMarks[ps], True]["Root"]}, restricted[ps, idMarks[$parent[[kids + 1]]]]]],
     "List" | "ListNamed" | "ListCond" | "ListTest",
       restricted[ps, idMarks[listConstraintTable[c, ps]["Root"]]],
+    "PathNamed" | "PathTest" | "PathCond" | "PathNearest",
+      restricted[ps, idMarks[pathTable[c, ps]["Root"]]],
     "ConstraintAlt",
       restricted[ps, idMarks[Union @@ (holding[#, ps, False] & /@ c["Subs"])]]];
 
 (* The table of a constraint that keeps names, at elements ps. *)
 constraintTable[c_, ps_] :=
   projected[c["Keep"], True] @ Switch[c["Kind"],
-    "Descendant", descendantPairs[tab[c["Sub"], belowMarks[ps], True], ps, c["Levels"]],
+    "Descendant", descendantPairs[withLowerEnds[c, tab[c["Sub"], belowMarks[ps], True]], ps, c["Levels"]],
+    "PathNamed" | "PathTest" | "PathCond" | "PathNearest", pathTable[c, ps],
     "List" /; childListQ[c], childTable[c, ps],
     "List" | "ListNamed" | "ListCond" | "ListTest", listConstraintTable[c, ps],
     "ConstraintAlt", unionTables[If[#["Keep"] === {}, <|"Root" -> packed[holding[#, ps, False]]|>, constraintTable[#, ps]] & /@ c["Subs"], c["Keep"]]];
@@ -439,6 +446,84 @@ coverableQ[c_] := c["Kind"] === "Descendant" && c["Levels"] === {1, Infinity};
 (* The rows of the constraint's pattern below some candidate; their roots
    are not read. *)
 covered[c_, ps_] := projected[c["Keep"], False] @ tab[c["Sub"], belowMarks[ps], True];
+
+(* ---- Paths ----
+
+   A Descendant under a name, a test, a Condition, Shortest or Longest is a
+   path: every node of it keeps a hidden column, its "Key", holding the id
+   of the element its pattern matched, the lower end; the root of a row is
+   its upper end. A name on it binds a place code of both ends (pathCodes),
+   whose position is upper ;; lower and whose value the elements strictly
+   between, outermost first. *)
+
+(* The table of a Descendant with its lower ends, when it is a path. *)
+withLowerEnds[c_, s_] := If[c["Key"] === None, s, Append[s, c["Key"] -> s["Root"]]];
+
+(* The hidden columns of the paths among an element's constraints, which
+   it does not keep. *)
+pathKeys[nd_] := DeleteCases[Lookup[nd["Constraints"], "Key", None], None];
+
+pathTable[c_, ps_] :=
+  With[{s = constraintTable[c["Sub"], ps]},
+    Switch[c["Kind"],
+      "PathNamed", If[MemberQ[c["Keep"], c["Name"]], Append[s, c["Name"] -> pathCodes[s["Root"], s[c["Key"]]]], s],
+      "PathTest", pickRows[s, pathsPassing[c["F"], s["Root"], s[c["Key"]]]],
+      "PathCond", passingRows[c, s],
+      "PathNearest", s]];
+
+(* A path test runs once for each distinct pair of ends, as 0 or 1. *)
+pathsPassing[f_, is_, js_] :=
+  With[{pairs = Transpose[{is, js}]},
+    packed @ Lookup[AssociationMap[Boole[TrueQ[f[$elem[[pathIds @@ # + 1]]]]] &, DeleteDuplicates[pairs]], pairs]];
+
+(* The codes of the paths from is to js: the lower end is the owner, so
+   that codes of paths sort by lower end, then upper end, as positions of
+   paths do. *)
+pathCodes[is_, js_] :=
+  (If[Max[0, is] >= $B^2, fallBack["more elements than a path's code holds"]];
+   extraCode["Path", js, Quotient[is, $B], Mod[is, $B]]);
+
+(* Whether each code is not on the bare input, which is never counted: its
+   element, code K, or a path from it. *)
+notBare[col_] :=
+  If[Min[col, 0] >= -1, Unitize[col - $K],
+    With[{f = extraFields[col]},
+      Unitize[col - $K] (1 - UnitStep[-2 - col] (1 - Unitize[f[[1]] - $extraKinds["Path"]]) (1 - Unitize[f[[3]] $B + f[[4]] - 1]))]];
+
+(* The table of constraint c of pattern root nd at elements ps. Under
+   XMLDocument, the one root, Shortest and Longest have no effect. *)
+rootConstraintTable[nd_, c_, ps_] :=
+  If[nd["Kind"] === "XMLPattern" && nearestOf[c] =!= None, nearestTable[nd, c, ps, nearestOf[c]], constraintTable[c, ps]];
+
+(* Shortest and Longest on a path, as the solutions engine's nearestFiltered
+   and shadowsQ decide them: a row with upper end i and lower end j is
+   dropped when some element k shadows it, strictly between i and j for
+   Shortest, strictly above i, below the document, for Longest. k shadows
+   when it is a candidate of nd (its tag and attributes pass, and it has
+   the children nd needs), every other constraint of nd has a solution at
+   k, and c has one with lower end j; nd's own Conditions, and whatever is around it, are not
+   compared. The elements that shadow some row ending at j are all above
+   j, so a row survives Shortest when none of them is deeper than i, and
+   Longest when none is shallower. The rows at the elements that are not
+   among ps are dropped by the join. *)
+nearestTable[nd_, c_, ps_, which_] :=
+  Module[{ks = candidateIds[nd], t, d, js, best},
+    ks = If[which === Shortest,
+      restricted[ks, Unitize[belowMarks[ps] + idMarks[ps]]],
+      With[{cum = countsUpTo[ps]}, Pick[ks, Unitize[cum[[$end[[ks + 1]] + 1]] - cum[[ks + 1]] + idMarks[ps][[ks + 1]]], 1]]];
+    ks = Fold[If[#1 === {}, #1, holdingAt[#2, #1]] &, ks, Select[nd["Constraints"], #["Id"] =!= c["Id"] &]];
+    t = constraintTable[c, ks];
+    If[rowCount[t] == 0, Return[t, Module]];
+    d = $depth[[t["Root"] + 1]];
+    js = t[c["Key"]];
+    best = ConstantArray[0, Length[$elem]];
+    (* At repeated parts, the last assignment wins. *)
+    With[{o = If[which === Shortest, Ordering[d], Reverse[Ordering[d]]]}, best[[js[[o]] + 1]] = d[[o]]];
+    pickRows[t, If[which === Shortest, UnitStep[d - best[[js + 1]]], UnitStep[best[[js + 1]] - d]]]];
+
+(* The elements among ps, an XMLPattern's candidates, at which constraint c
+   has a solution. *)
+holdingAt[c_, ps_] := If[c["Keep"] === {}, holding[c, ps, True], Sort @ DeleteDuplicates[constraintTable[c, ps]["Root"]]];
 
 tabKind["Named", nd_, allowed_, rootQ_] :=
   With[{keepQ = MemberQ[nd["Keep"], nd["Name"]]},
@@ -972,7 +1057,7 @@ listConstraintTable[c_, ps_] :=
    results sort them by their order keys (ranked). *)
 
 $extraKinds = <|"Run" -> 1, "Repeat" -> 2, "Text" -> 3, "ContentsRun" -> 4, "Contents" -> 5, "Token" -> 6, "TokenRun" -> 7, "TokenList" -> 8,
-  "List" -> 9|>;
+  "List" -> 9, "Path" -> 10|>;
 
 (* The owner is the most significant, then the indices in turn, so that the
    codes of one kind, of one list key, are in position order, backwards. *)
@@ -985,7 +1070,7 @@ extraFields[codes_] :=
 (* The kinds whose value is one value and whose position is one position,
    which results can make from codes directly (directResults), and whose
    codes of one kind and list key are in position order. *)
-$plainKinds = {3, 5, 6, 8, 9};
+$plainKinds = {3, 5, 6, 8, 9, 10};
 
 (* $B, kept with the index: more than the most items of any element's
    contents, and room for tokens. *)
@@ -1004,7 +1089,8 @@ extraValues[codes_] :=
   Module[{tokens},
     tokens[o_, j_] := tokens[o, j] = tokensOf[o, Keys[$readings][[j]]];
     MapThread[
-      Switch[#1, 3, $elem[[#2 + 1, 3, #3]], 5, $elem[[#2 + 1, 3]], 6, tokens[#2, #3][[#4]], 8, tokens[#2, #3], 9, $elem[[$kids[[#2 + 1]] + 1]]] &,
+      Switch[#1, 3, $elem[[#2 + 1, 3, #3]], 5, $elem[[#2 + 1, 3]], 6, tokens[#2, #3][[#4]], 8, tokens[#2, #3], 9, $elem[[$kids[[#2 + 1]] + 1]],
+        10, $elem[[pathIds[#3 $B + #4, #2] + 1]]] &,
       Take[extraFields[codes], 4]]];
 
 extraPlace["Run", o_, m_, n_, _] := {{Append[posOf[o], m ;; n]}, seq[$elem[[$kids[[o + 1, m ;; n]] + 1]]]};
@@ -1020,6 +1106,7 @@ extraPlace["ContentsRun", o_, m_, n_, _] :=
   With[{items = $elem[[o + 1, 3]]},
     With[{run = items[[m ;; n]], e = Count[Take[items, m - 1], _XMLElement] + 1},
       {{If[Count[run, _XMLElement] == Length[run], Append[posOf[o], e ;; e + Length[run] - 1], missingItem[run]]}, seq[run]}]];
+extraPlace["Path", j_, a_, b_, _] := With[{i = a $B + b}, {{posOf[i] ;; posOf[j]}, $elem[[pathIds[i, j] + 1]]}];
 extraPlace["Token", o_, j_, k_, _] := With[{key = Keys[$readings][[j]]}, {{Join[posOf[o], {Key[key], k}]}, tokensOf[o, key][[k]]}];
 extraPlace["TokenRun", o_, j_, m_, n_] := With[{key = Keys[$readings][[j]]}, {{Join[posOf[o], {Key[key], m ;; n}]}, seq[tokensOf[o, key][[m ;; n]]]}];
 extraPlace["TokenList", o_, j_, __] := With[{key = Keys[$readings][[j]]}, {{Append[posOf[o], Key[key]]}, tokensOf[o, key]}];
@@ -1032,6 +1119,11 @@ extraKeyOf["Text", o_, k_, _, _] := Join[elementKey[o], textItemKey[Count[Take[$
 extraKeyOf["ContentsRun", o_, m_, n_, _] :=
   With[{items = $elem[[o + 1, 3]]},
     With[{e = Count[Take[items, m - 1], _XMLElement] + 1}, Join[elementKey[o], sequenceKey[4, e ;; e + Count[items[[m ;; n]], _XMLElement] - 1]]]];
+(* A path sorts by its lower end, then its upper end; its lower end's key
+   is padded to the longest an element's can be, so that an element sorts
+   before the paths that end at it, as the solutions engine's keys do once
+   a query names a path (padded, Query/TreePatterns.wl). *)
+extraKeyOf["Path", j_, a_, b_, _] := Join[PadRight[elementKey[j], $keyLength, $keyPad], elementKey[a $B + b]];
 extraKeyOf["Token", o_, j_, k_, _] := Join[elementKey[o], tokenListKey[listAttribute[o, Keys[$readings][[j]]]], sequenceKey[2, k]];
 extraKeyOf["TokenRun", o_, j_, m_, n_] := Join[elementKey[o], tokenListKey[listAttribute[o, Keys[$readings][[j]]]], sequenceKey[2, m ;; n]];
 extraKeyOf["TokenList", o_, j_, __] := Join[elementKey[o], tokenListKey[listAttribute[o, Keys[$readings][[j]]]]];
@@ -1099,7 +1191,7 @@ orderedResults[mode_, cq_, bare_, n_] :=
   Block[{$cols, $data, $counted = cq["Counted"], $testRows},
     Module[{testNames = cq["TestNames"], rhs = cq["Rhs"], all = cq["Names"], slots, keyRows, groups, count = 0, k = 1, r},
       $t = aligned[$t, Union[Rest[Keys[$t]], $counted, testNames]];
-      If[bare, $t = pickRows[$t, Times @@ Prepend[Unitize[$t[#] - $K] & /@ $counted, ConstantArray[1, rowCount[$t]]]]];
+      If[bare, $t = pickRows[$t, Times @@ Prepend[notBare /@ Lookup[$t, $counted], ConstantArray[1, rowCount[$t]]]]];
       If[rowCount[$t] == 0 || n < 1, Return[{}, Module]];
       If[directRowsQ[mode, rhs, all, testNames], Return[directResults[mode, rhs, n], Module]];
       $cols = Rest[Keys[$t]];
