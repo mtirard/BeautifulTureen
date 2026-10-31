@@ -2,9 +2,6 @@
 
 Pattern-based HTML element selection and text extraction for the Wolfram Language.
 
-> [!WARNING]
-> **Work in progress.** HTMLPatterns is not yet released and is not on the Wolfram Paclet Repository. Its design is still changing, so expect breaking changes between versions; [CHANGELOG.md](CHANGELOG.md) lists them. Issues and feedback are welcome.
-
 HTMLPatterns works on the `XMLObject` tree that `Import[…, {"HTML", "XMLObject"}]` gives. It adds:
 
 - **XML patterns**: `XMLPattern[tag, attrs][constraints…]`, nested as the document is, with constraints on an element's children (`Child`) and on what is below it (`Descendant`), and CSS selector strings through `FromCSSSelector`
@@ -35,7 +32,13 @@ HTMLInnerText[XMLFirstCase[html, "ul.menu"]]
 
 ## Installing
 
-Requires Wolfram Language 15.0 or later and `wolframscript`. Clone the repository and run:
+Requires Wolfram Language 15.0 or later. Install the latest release from [GitHub](https://github.com/mtirard/HTMLPatterns/releases):
+
+```wl
+PacletInstall["https://github.com/mtirard/HTMLPatterns/releases/download/v4.0.0/MaximilienTirard__HTMLPatterns-4.0.0.paclet"]
+```
+
+To build from source, which needs `wolframscript`, clone the repository and run:
 
 ```sh
 make install
