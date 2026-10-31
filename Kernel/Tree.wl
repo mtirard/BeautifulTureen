@@ -71,7 +71,7 @@ unknownTreeOptions[opts_List] := Select[Flatten[opts], !optionRuleQ[HTMLToTree][
    longer be there for the focus query to see. Focus is run first, so a focus
    query that is refused gives $Failed before hide is matched.
 
-   A tree pattern or rule runs on the tree engine, which gives positions
+   A tree pattern or rule runs on the query engine, which gives positions
    (ADR 0025); they are turned into the walk's WL positions here. *)
 
 (* The sites the walk reads: "Hidden", the positions of Hidden items;

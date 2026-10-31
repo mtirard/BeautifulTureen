@@ -2,10 +2,11 @@
 (* HTMLPatterns: XMLPosition and XMLExtract, and the position helpers the
    query engine and the rewriting share *)
 
-(* Used by Query/TreePatterns.wl, Rewrite.wl and Tree.wl *)
+(* Used by Query/TreePatterns.wl, Query/Columnar.wl, Rewrite.wl and Tree.wl *)
 PackageScoped[elementStepQ]
 PackageScoped[topItems]
 PackageScoped[$keyPad]
+PackageScoped[paddedKeys]
 PackageScoped[sequenceKey]
 PackageScoped[tagKey]
 PackageScoped[attributeMapKey]
@@ -55,6 +56,10 @@ topItems[input_] := Replace[input, {XMLObject["Document"][_, r_, _] :> {r}, l_Li
    in its tests, in source order. *)
 $keyPad = -10^9;
 
+(* Order keys padded with $keyPad to the longest one's length. *)
+paddedKeys[{}] := {};
+paddedKeys[keys_] := PadRight[keys, {Length[keys], Max[0, Length /@ keys]}, $keyPad];
+
 tagKey[] := {0};
 attributeMapKey[] := {1};
 attributeKey[j_] := {2, j, 0};
@@ -75,7 +80,7 @@ attributeIndex[attrs_, key_] := First @ FirstPosition[attrs[[All, 1]], key, {Len
    token list from an attribute. *)
 positionOrdering[ps_, attributesOf_, readings_] :=
   With[{keys = positionKey[#, attributesOf, readings] & /@ ps},
-    Ordering[PadRight[#, Max[0, Length /@ keys], $keyPad] & /@ keys]];
+    Ordering[paddedKeys[keys]]];
 
 positionKey[pos_, attributesOf_, readings_] :=
   With[{k = LengthWhile[pos, elementStepQ]},

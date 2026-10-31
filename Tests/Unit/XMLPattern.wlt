@@ -262,3 +262,80 @@ TestCreate[
   {{1}, {}},
   TestID -> "attr-test-redefined-between-queries"
 ];
+
+(* === Names without a place of their own === *)
+
+$parts = XMLElement["div", {}, {
+  XMLElement["p", {"class" -> "a b"}, {"x", XMLElement["b", {}, {"y"}]}],
+  XMLElement["p", {"class" -> "c"}, {}],
+  XMLElement[{"urn:x", "q"}, {}, {}]}];
+
+(* A name deep in a namespaced tag binds its part, at the tag. *)
+TestCreate[
+  {XMLCases[$parts, XMLPattern[{n_, q_}] :> {n, q}], XMLPosition[$parts, XMLPattern[{n_, q_}] :> {n, q}]},
+  {{{"urn:x", "q"}}, {{{1, 3, 0}, {1, 3, 0}}}},
+  TestID -> "name-deep-in-namespaced-tag"
+];
+
+(* A name in an alternative of a token's pattern is bound only where that
+   alternative matched, at the token. *)
+TestCreate[
+  {XMLCases[$parts, XMLPattern["p", "classList" -> {___, t : ("a" | x_), ___}] :> {x}],
+   XMLPosition[$parts, XMLPattern["p", "classList" -> {___, t : ("a" | x_), ___}] :> {x}]},
+  {{{}, {"b"}, {"c"}}, {{}, {{1, 1, Key["classList"], 2}}, {{1, 2, Key["classList"], 1}}}},
+  TestID -> "name-in-alternative-of-token-pattern"
+];
+
+(* A name inside a WL pattern on the whole token list binds its part, at the
+   token list. *)
+TestCreate[
+  {XMLCases[$parts, XMLPattern["p", "classList" -> {x_, y_} | {z_}] :> {x, y, z}],
+   XMLPosition[$parts, XMLPattern["p", "classList" -> {x_, y_} | {z_}] :> {x, y, z}]},
+  {{{"c"}, {"a", "b"}}, {{{1, 2, Key["classList"]}}, {{1, 1, Key["classList"]}, {1, 1, Key["classList"]}}}},
+  TestID -> "name-inside-pattern-on-token-list"
+];
+
+(* A token list may be longer than any element's contents. *)
+TestCreate[
+  With[{long = XMLElement["p", {"class" -> StringRiffle[("c" <> ToString[#]) & /@ Range[1500]]}, {}]},
+    {XMLCases[long, XMLPattern["p", "classList" -> {___, x : "c1200", y_, ___}] :> {x, y}],
+     XMLPosition[long, XMLPattern["p", "classList" -> {___, "c1200", y_, ___}] :> y]}],
+  {{{"c1200", "c1201"}}, {{1, Key["classList"], 1201}}},
+  TestID -> "long-token-list"
+];
+
+(* A name inside another WL pattern on an item of a literal's contents that
+   can bind the whole item, and whose own pattern can match text, is refused
+   from the pattern alone, also on a tree with no text there; a test may use
+   it. *)
+TestCreate[
+  With[{noText = XMLElement["div", {}, {XMLElement["p", {}, {XMLElement["b", {}, {}]}]}]},
+    {XMLCases[noText, XMLElement["p", _, {___, HoldPattern[x_String], ___}] :> x],
+     XMLCases[noText, XMLElement["p", _, {___, HoldPattern[x_] | HoldPattern[y_XMLElement], ___}] :> x]}],
+  {$Failed, $Failed},
+  {XMLCases::text, XMLCases::text},
+  TestID -> "name-in-wl-pattern-bound-to-text-refused"
+];
+
+(* One that binds only part of an item, or whose pattern matches only
+   elements, is not refused. *)
+TestCreate[
+  {XMLCases[$parts, XMLElement["p", _, {___, HoldPattern[x_XMLElement], ___}] :> x],
+   XMLCases[$parts, XMLElement["p", _, {___, HoldPattern[{x_}], ___}] :> x]},
+  {{XMLElement["b", {}, {"y"}]}, {}},
+  TestID -> "name-in-wl-pattern-bound-to-element-kept"
+];
+
+TestCreate[
+  XMLCases[$parts, XMLElement["p", _, {___, HoldPattern[x_String], ___}] :> 1 /; x === "x"],
+  {1},
+  TestID -> "name-in-wl-pattern-bound-to-text-tested"
+];
+
+(* A name inside a WL pattern on a literal's contents that binds a part of
+   them has no position. *)
+TestCreate[
+  {XMLCases[$parts, XMLElement["p", _, h_[___]] :> h], XMLPosition[$parts, XMLElement["p", _, h_[___]] :> h]},
+  {{List}, {Missing["Literal"]}},
+  TestID -> "name-in-wl-pattern-on-contents"
+];

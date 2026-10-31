@@ -62,7 +62,7 @@ defaultRole[_] := "Inline";
 $displayRoles = {"Block", "Inline", "Preformatted", "LineBreak", "Skip"};
 validRoleQ[r_] := MemberQ[$displayRoles, r];
 
-(* Every rule is run once on the tree engine, against the input as given,
+(* Every rule is run once on the query engine, against the input as given,
    before the walk. A key that is a rule is a query, whose counted element
    positions get the value; a CSS string is a query when its translation is
    one, a context selector; any other key is an element test, each element

@@ -47,6 +47,16 @@ TestCreate[
   TestID -> "repeated-inside-repeated"
 ];
 
+(* Bound at one repeat, the name is at that element's position, so a bare
+   input's own position is still never counted. *)
+TestCreate[
+  {XMLPosition[el["ul", el["li"], el["li", "x"]], XMLPattern["ul"][{(x : XMLPattern["li"]) .., ___}] :> x],
+    XMLCases[el["div"], XMLDocument[{(x : XMLPattern["div"]) ..}] :> x],
+    XMLCases[{el["div"]}, XMLDocument[{(x : XMLPattern["div"]) ..}] :> x]},
+  {{{1, 1}}, {}, {el["div"]}},
+  TestID -> "repeated-inside-repeated-one-repeat"
+];
+
 TestCreate[
   XMLPosition[dups, XMLPattern["tbody"][{___, PatternSequence[x : XMLPattern["tr"], _] .., ___}] :> x],
   {{1, 1}, {1, 2}},
@@ -184,6 +194,70 @@ TestCreate[
   XMLCases[types, XMLPattern["div"][{Except[XMLPattern["b"]], y : XMLPattern[t_], ___}] :> id[y]],
   {},
   TestID -> "except-local-name-unbound-elsewhere"
+];
+
+(* Two Excepts of one list may refer to different names: the last two
+   children differ from the tags of two adjacent ones. *)
+TestCreate[
+  XMLCases[types, XMLPattern["div"][{___, n : XMLPattern[s_], XMLPattern[u_], ___, Except[XMLPattern[s_]], Except[XMLPattern[u_]]}] :> id[n]],
+  {"2"},
+  TestID -> "except-refs-different-names"
+];
+
+TestCreate[
+  XMLCases[types, XMLPattern["div"][{___, n : XMLPattern[s_], XMLPattern[u_], Except[XMLPattern[s_]] .., Except[XMLPattern[u_]]}] :> id[n]],
+  {},
+  TestID -> "except-refs-different-names-repeated"
+];
+
+(* A branch of the Except's pattern that binds no name it refers to
+   excludes whatever the name is: the last of its tag, followed by no c. *)
+TestCreate[
+  XMLCases[types, XMLPattern["div"][{___, n : XMLPattern[t_], Except[XMLPattern[t_] | XMLPattern["c"]] ...}] :> id[n]],
+  {"3", "5", "6"},
+  TestID -> "except-ref-in-one-branch"
+];
+
+TestCreate[
+  XMLCases[types, XMLPattern["div"][{___, n : XMLPattern[t_], Except[XMLPattern[t_] | XMLPattern["c"]]}] :> id[n]],
+  {"5"},
+  TestID -> "except-ref-in-one-branch-single"
+];
+
+(* Each branch binds one of two names: every child after the c is neither
+   the first child's value nor the c's. *)
+TestCreate[
+  XMLCases[types, XMLPattern["div"][{n : XMLPattern[_], ___, m : XMLPattern["c"], ___, Except[(n : XMLPattern[_]) | (m : XMLPattern[_])] ..}] :> id[n]],
+  {"1"},
+  TestID -> "except-refs-one-name-in-each-branch"
+];
+
+(* An Except inside another Except's pattern refers to a name bound
+   outside both. *)
+nested = doc[el["div", e["p", "1", el["b"]], e["b", "2", el["b"]], e["p", "3", el["i"]], e["b", "4", el["i"]]]];
+
+TestCreate[
+  XMLCases[nested, XMLPattern["div"][{___, n : XMLPattern[t_], Except[XMLPattern[t_][{Except[XMLPattern[t_]]}]] ...}] :> id[n]],
+  {"3", "4"},
+  TestID -> "except-ref-inside-except"
+];
+
+(* Bound only outside the outer Except's pattern, the name leaves the inner
+   Except matching any child: no child with one child may come before n. *)
+TestCreate[
+  XMLCases[nested, XMLPattern["div"][{Except[XMLPattern[_][{Except[XMLPattern[t_]]}]] ..., n : XMLPattern[t_], ___}] :> id[n]],
+  {"1"},
+  TestID -> "except-ref-inside-except-bound-outside-only"
+];
+
+(* One name referred to by an Except whose list binds it, below, and by one
+   in another constraint, across: each excludes as it compares. *)
+lis = doc[el["ul", e["li", "1", el["b"]], e["li", "2", el["i"]], e["li", "3", el["b"]], e["li", "4", el["li"]]]];
+
+TestCreate[
+  XMLCases[lis, XMLPattern["ul"][{___, Except[n : XMLPattern["li"]], ___}, Descendant[n : XMLPattern["li"][{___, Except[n : XMLPattern[_]]}]]] :> id[n]],
+  {"1", "2", "3", "4"},
+  TestID -> "except-ref-by-value-and-by-position"
 ];
 
 (* === A counted name with two positions, as targets === *)

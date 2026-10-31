@@ -1,8 +1,7 @@
 (* Names in the tag and attributes of a pattern root with no constraints.
-   What they bind is a function of the element's tag and the attributes the
-   rules name, which a page repeats over thousands of elements, so they are
-   matched once per distinct tag and attributes. Times on a 2026 laptop, the
-   least of three runs, are given at each test, against
+   What they bind is read for all the elements at once, from their tags and
+   attributes and the token lists split from them. Times on a 2026 laptop,
+   the least of three runs, are given at each test, against
    HTMLClassList /@ XMLCases[$ps, XMLPattern["p"]] at about 17 ms. The bounds
    are generous, to catch a return to matching each element, not to
    benchmark. *)
