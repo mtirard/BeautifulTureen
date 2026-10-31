@@ -25,7 +25,7 @@ Results are a nested loop over the counted names in pattern order, the first nam
 The right-hand side, with the `Condition`s it tests, is evaluated in result order, once per result tried, and only until there are `n` results. The tests in the pattern carry no such promise:
 
 - a `Condition` or `PatternTest` in the pattern may be evaluated on candidates past the `n`-th result, and before any result is given;
-- a `Condition` in the pattern may be evaluated once per distinct value of the names it tests, in no promised order, and a `PatternTest` once per element it tests.
+- a `Condition` in the pattern may be evaluated once per distinct tuple of the places (parts of the tree) that the names it tests bind, in no promised order, and a `PatternTest` once per element it tests.
 
 So `Reap[XMLCases[t, XMLPattern["li"]?((Sow[#]; True) &), 2]]` gives the first two `li` and may sow every `li`. Code whose side effects or cost depend on how often, or in which order, a test in the pattern runs must move that code to the right-hand side.
 
