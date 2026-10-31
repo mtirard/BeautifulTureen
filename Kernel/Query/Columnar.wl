@@ -934,7 +934,7 @@ perStartRows[cx_, seg_, t_, target_] :=
 spanRows[cx_, it_, t_, next_] :=
   Switch[it["Kind"],
     "One", oneSpans[cx, it["Sub"], passVector[cx, it["Sub"]], t, next],
-    "Not", oneSpans[cx, it["Base"], oneVector[cx, it], t, next],
+    "Not", exceptLabelled[cx, it, oneSpans[cx, it["Base"], oneVector[cx, it], t, next]],
     "Run",
       With[{key = {"Start", it["Id"]}},
         With[{inner = walkedRows[cx, it["Items"], Append[t, key -> t["Place"]], next, False]},
@@ -1075,16 +1075,17 @@ ownExcepts[items_] :=
 recordsIn[nd_] := Join[If[nd["Kind"] === "Not" && nd["Record"] =!= None, {nd}, {}], Join @@ (recordsIn /@ subNodes[nd])];
 
 (* The entries with their Excepts' records no longer kept, and so not
-   branched on by the walk, which reads those Excepts as vectors. *)
-unrecorded[items_] := unrecordedEntry /@ items;
-unrecordedEntry[it_] :=
+   branched on by the walk, which reads those Excepts as vectors; but for
+   the Excepts kept, which label the rows at the item they match. *)
+unrecorded[items_, kept_ : {}] := unrecordedEntry[#, kept] & /@ items;
+unrecordedEntry[it_, kept_] :=
   With[{u = Switch[it["Kind"],
         "Not", Append[it, "Record" -> None],
-        "Run" | "Repeat", Append[it, "Items" -> unrecorded[it["Items"]]],
-        "SeqCond", Append[it, "Sub" -> Append[it["Sub"], "Items" -> unrecorded[it["Sub"]["Items"]]]],
-        "Branches", Append[it, "Subs" -> (unrecorded /@ it["Subs"])],
+        "Run" | "Repeat", Append[it, "Items" -> unrecorded[it["Items"], kept]],
+        "SeqCond", Append[it, "Sub" -> Append[it["Sub"], "Items" -> unrecorded[it["Sub"]["Items"], kept]]],
+        "Branches", Append[it, "Subs" -> (unrecorded[#, kept] & /@ it["Subs"])],
         _, it]},
-    If[it["Kind"] === "One", it,
+    If[it["Kind"] === "One" || MemberQ[kept, it["Id"]], u,
       With[{keep = Complement[it["Keep"], Complement[$labelKeys, Union @@ Prepend[#["Keep"] & /@ entriesBelow[u], {}]]]},
         Append[u, {"Keep" -> keep, "Captures" -> (keep =!= {} || it["Kind"] === "SeqCond" || AnyTrue[entriesBelow[u], #["Captures"] &])}]]]];
 
@@ -1100,8 +1101,8 @@ entriesBelow[it_] :=
 (* The rows of a list whose Excepts refer to names bound outside them, one
    walk for each assumption about the names. *)
 exceptRows[cx_, items_, keep_] :=
-  Module[{live = Select[ownExcepts[items], $exceptModes[#["Id"]] =!= "Never" &], plain = unrecorded[items], key, mode, refs, tuples, idents, ds, reps},
-    If[live === {}, Return[listRows[cx, plain, keep], Module]];
+  Module[{live = Select[ownExcepts[items], $exceptModes[#["Id"]] =!= "Never" &], plain, key, mode, refs, tuples, idents, ds, reps},
+    If[live === {}, Return[listRows[cx, unrecorded[items], keep], Module]];
     key = DeleteDuplicates[#["Record"] & /@ live];
     If[Length[key] > 1, fallBack["Excepts of one list that refer to different names"]];
     key = First[key];
@@ -1109,7 +1110,11 @@ exceptRows[cx_, items_, keep_] :=
     mode = $exceptModes[First[live]["Id"]];
     tuples = With[{e = itemTable[cx, #["Sub"]]}, {e["Item"], Transpose[Lookup[e, refs, ConstantArray[-1, Length[e["Item"]]]]]}] & /@ live;
     If[MemberQ[Flatten[tuples[[All, 2]]], -1], fallBack["an Except whose pattern binds only some of the names it refers to"]];
-    idents = PositionIndex[If[mode === "Value" && # =!= {}, Transpose[valueIds /@ Transpose[#]], tupleIdentity[#, mode] & /@ #]] & /@ tuples[[All, 2]];
+    idents = If[mode === "Value" && # =!= {}, Transpose[valueIds /@ Transpose[#]], tupleIdentity[#, mode] & /@ #] & /@ tuples[[All, 2]];
+    If[!IntersectingQ[#["Id"] & /@ live, #["Id"] & /@ repeatedExcepts[items]],
+      Return[singleExceptRows[cx, items, keep, key, mode, live, tuples, idents], Module]];
+    idents = PositionIndex /@ idents;
+    plain = unrecorded[items];
     ds = Union @@ (Keys /@ idents);
     reps = With[{i = FirstCase[Range[Length[live]], j_ /; KeyExistsQ[idents[[j]], #]]}, tuples[[i, 2, First[idents[[i]][#]]]]] & /@ ds;
     settledRows @ unionTables[
@@ -1122,6 +1127,37 @@ exceptRows[cx_, items_, keep_] :=
             assumedRows[cx, plain, keep, key, {"NotIn", reps, mode}]],
           assumedRows[cx, plain, keep, key, {"Unbound"}]}],
       keep]];
+
+(* The Excepts of a list's entries inside a repeat. *)
+repeatedExcepts[items_] :=
+  Join @@ (Switch[#["Kind"],
+      "Repeat", ownExcepts[#["Items"]],
+      "Run", repeatedExcepts[#["Items"]],
+      "SeqCond", repeatedExcepts[#["Sub"]["Items"]],
+      "Branches", Join @@ (repeatedExcepts /@ #["Subs"]),
+      _, {}] & /@ items);
+
+(* When no such Except is inside a repeat, each matches one item, and one
+   walk is enough: an Except matches any item its second argument passes,
+   and labels the row with the matches its pattern binds the names to at
+   that item, none of which the names may be ($itemLabels, exceptLabelled),
+   or with nothing if it binds them nowhere there. *)
+singleExceptRows[cx_, items_, keep_, key_, mode_, live_, tuples_, idents_] :=
+  Block[{$excluded = AssociationThread[#["Id"] & /@ live, ConstantArray[{}, Length[live]]],
+      $itemLabels = AssociationThread[#["Id"] & /@ live,
+        MapThread[Function[{tu, id},
+            {key, packed @ ReplacePart[ConstantArray[-1, Length[cx["ItemPlace"]]],
+              Normal @ GroupBy[Range[Length[tu[[1]]]], tu[[1, #]] &, labelCode[{"NotIn", tu[[2, First /@ GatherBy[#, id[[#]] &]]], mode}] &]]}],
+          {tuples, idents}]]},
+    settledRows @ listRows[cx, unrecorded[items, #["Id"] & /@ live], keep]];
+
+$itemLabels = <||>;
+
+(* The rows u of a single Except over sequence cx, at the place after its
+   item, with the label of that item. *)
+exceptLabelled[cx_, it_, u_] :=
+  If[!KeyExistsQ[$itemLabels, it["Id"]], u,
+    With[{kl = $itemLabels[it["Id"]]}, withName[u, kl[[1]], kl[[2]][[cx["ItemAt"][[u["Place"] - 1]]]]]]];
 
 (* The walk under one assumption, its rows labelled with it. An entry of
    the list that binds the name, when the Except refers to one, binds it
