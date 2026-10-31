@@ -427,9 +427,11 @@ subtreeEnds[d_] :=
 elemOf[i_] := $elem[[i + 1]];
 childrenOf[i_] := $kids[[i + 1]];
 
-(* The element's position: element-child indices from the document. *)
+(* The element's position: element-child indices from the document. The
+   lookup is written out, not memoised: it runs for each position a result
+   reads, and the extra call cost about 4% of such a query. *)
 posOf[0] := {};
-posOf[i_] := memoised[$posMemo, i, Append[posOf[$parent[[i + 1]]], $index[[i + 1]]]];
+posOf[i_] := Lookup[$posMemo, i, $posMemo[i] = Append[posOf[$parent[[i + 1]]], $index[[i + 1]]]];
 
 (* The elements as the compiled tests of one set of readings see them:
    materialised once per set, over the indexed input, which moves no element. *)
@@ -998,7 +1000,7 @@ headVector[nd_] :=
 (* f applied once to each distinct one of xs, as 0 or 1 for each. A pattern
    on the tag alone reads only the tags, which a page has few of; taking
    each element's tag and attributes with Take cost about 1 µs an element. *)
-distinctTested[xs_, f_] := With[{u = DeleteDuplicates[xs]}, Lookup[AssociationThread[u, Boole[f /@ u]], xs]];
+distinctTested[xs_, f_] := With[{distinct = DeleteDuplicates[xs]}, Lookup[AssociationThread[distinct, Boole[f /@ distinct]], xs]];
 
 (* Whether each element can match a pattern root: a vector over the elements
    that is 1 at every match, for skipping the rest. *)
