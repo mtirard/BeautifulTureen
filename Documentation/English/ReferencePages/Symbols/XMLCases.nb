@@ -36,9 +36,9 @@ Cell[TextData[{"A CSS selector for one element, one that depends only on its ele
 
 Cell[TextData[{"A name used twice, in one list or once above and once below, must have equal values at both positions. A name for an element used in two constraints of one ", Cell[BoxData[ButtonBox["XMLPattern", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLPattern"]], "InlineFormula"], " must match the same element in both."}], "Notes"],
 
-Cell["A condition can use only the names bound inside the pattern it is on.", "Notes"],
+Cell[TextData[{"A condition can use only the names bound inside the pattern it is on. It is evaluated in no promised order, and can be evaluated once for several matches that bind its names to the same parts of ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], "."}], "Notes"],
 
-Cell[TextData[{"In ", Cell[BoxData[RowBox[{ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLCases"], "[", RowBox[{StyleBox["tree", "TI"], ",", StyleBox["pattern", "TI"], ",", StyleBox["n", "TI"]}], "]"}]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["n", "TI"]], "InlineFormula"], " is a non-negative integer or ", Cell[BoxData[ButtonBox["Infinity", BaseStyle -> "Link", ButtonData -> "paclet:ref/Infinity"]], "InlineFormula"], ". With ", Cell[BoxData[RowBox[{StyleBox["pattern", "TI"], "\[RuleDelayed]", StyleBox["rhs", "TI"]}]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["rhs", "TI"]], "InlineFormula"], " is evaluated only for the results given."}], "Notes"],
+Cell[TextData[{"In ", Cell[BoxData[RowBox[{ButtonBox["XMLCases", BaseStyle -> "Link", ButtonData -> "paclet:MaximilienTirard/HTMLPatterns/ref/XMLCases"], "[", RowBox[{StyleBox["tree", "TI"], ",", StyleBox["pattern", "TI"], ",", StyleBox["n", "TI"]}], "]"}]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["n", "TI"]], "InlineFormula"], " is a non-negative integer or ", Cell[BoxData[ButtonBox["Infinity", BaseStyle -> "Link", ButtonData -> "paclet:ref/Infinity"]], "InlineFormula"], ". With ", Cell[BoxData[RowBox[{StyleBox["pattern", "TI"], "\[RuleDelayed]", StyleBox["rhs", "TI"]}]], "InlineFormula"], ", ", Cell[BoxData[StyleBox["rhs", "TI"]], "InlineFormula"], " is evaluated in the order of the results, only for the results given. A condition or test in ", Cell[BoxData[StyleBox["pattern", "TI"]], "InlineFormula"], " can also be evaluated for elements past the ", Cell[BoxData[StyleBox["n", "TI"]], "InlineFormula"], "-th result."}], "Notes"],
 
 Cell[TextData[{"When ", Cell[BoxData[StyleBox["tree", "TI"]], "InlineFormula"], " is an ", Cell[BoxData[ButtonBox["XMLElement", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLElement"]], "InlineFormula"], ", the outermost pattern can match it, but it is never itself a result. The root element of an ", Cell[BoxData[ButtonBox["XMLObject", BaseStyle -> "Link", ButtonData -> "paclet:ref/XMLObject"]], "InlineFormula"], " and the elements of a list can be results."}], "Notes"],
 
@@ -622,7 +622,10 @@ Cell["Name the selected element:", "ExampleText"],
 
 Cell[BoxData[RowBox[{"XMLCases", "[", RowBox[{"page", ",", RowBox[{RowBox[{"n", ":", "\"nav a\""}], ":>", RowBox[{"HTMLTextContent", "[", "n", "]"}]}]}], "]"}]], "Input"],
 
-Cell[BoxData[RowBox[{"{", "\"Home\"", "}"}]], "Output"]}, Open]]}, Open]],
+Cell[BoxData[RowBox[{"{", "\"Home\"", "}"}]], "Output"]}, Open]],
+
+Cell[CellGroupData[{Cell[BoxData[InterpretationBox[Cell["\t", "ExampleDelimiter"], $Line = 0; Null]], "ExampleDelimiter"], Cell["A test in the pattern can be evaluated for elements past the count:", "ExampleText"], Cell[BoxData["list = ImportString[\"<ul><li>Miso</li><li>Pho</li><li>Ramen</li></ul>\", {\"HTML\", \"XMLObject\"}];
+Reap[XMLCases[list, XMLPattern[\"li\"]?((Sow[HTMLTextContent[#]]; True) &), 2]]"], "Input"]}, Open]]}, Open]],
 
 Cell[CellGroupData[{Cell[BoxData[
  InterpretationBox[Cell[
