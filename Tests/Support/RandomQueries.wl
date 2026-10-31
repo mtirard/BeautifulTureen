@@ -5,17 +5,21 @@
 
 	The queries stay within what the columnar engine runs: pattern roots that
 	are XMLPatterns, class selectors, XMLElement patterns or alternatives of
-	these, or XMLDocument at the top; names on elements, tags, attribute maps
+	these, or XMLDocument or a selector by position among the siblings of
+	one tag at the top; names on elements, tags, attribute maps
 	and whole attribute values, tested or conditioned; WL patterns on
 	attribute values;
 	Descendant with and without level specs, Child and list constraints,
 	several to an element and nested, and alternatives of them; a name now
 	and then used again by a later constraint of the same element, which
-	pins one place, and a name for an element or a tag now and then bound
-	again anywhere; Conditions and PatternTests. A list's entries are blanks
+	pins one place, and a name for an element, a tag or an attribute now
+	and then bound again anywhere; Conditions and PatternTests. A list's
+	entries are blanks
 	and sequences, element patterns, named or not, named runs and gaps,
 	repeats, a name inside a repeat of one entry or of two, optional
-	entries, alternatives, a Condition on a sequence and Except. XMLElement patterns are matched whole or by their
+	entries, alternatives, a Condition on a sequence and Except, local or
+	referring to a tag or an element bound elsewhere, before it or after it
+	in its list, or in another constraint. XMLElement patterns are matched whole or by their
 	parts, with a contents list over the items, text included, and an
 	XMLPattern's class may be matched as a token list, a token named. A right-hand side uses some of the names,
 	and may test another. The generator grows as the columnar engine covers
@@ -54,8 +58,8 @@ $names = Unique["v"] & /@ Range[10];
 (* Building with Hold throughout keeps the Conditions and tests
    unevaluated. *)
 query[] :=
-  Block[{$used = {}, $pools = <|"element" -> {}, "tag" -> {}|>},
-    With[{lhs = If[RandomReal[] < 0.15, document[], pattern[RandomInteger[{1, 3}]]]},
+  Block[{$used = {}, $pools = <|"element" -> {}, "tag" -> {}, "attribute" -> {}|>},
+    With[{lhs = RandomChoice[{0.15, 0.8, 0.05} -> {document, pattern[RandomInteger[{1, 3}]] &, ofType}][]},
       With[{bound = $used},
         If[bound === {}, Hold @@ {lhs},
           With[{counted = RandomSample[bound, RandomInteger[{1, Min[3, Length[bound]]}]],
@@ -71,9 +75,9 @@ room[] := Length[$used] < Length[$names];
 
 fresh[] := With[{n = $names[[Length[$used] + 1]]}, AppendTo[$used, n]; n];
 
-(* A name for an element or a tag: now and then one bound already to the
-   same kind of thing, which then compares values or positions (ADR
-   0023). *)
+(* A name for an element, a tag or an attribute value: now and then one
+   bound already to the same kind of thing, which then compares values or
+   positions (ADR 0023). *)
 named[pool_] :=
   If[$pools[pool] =!= {} && RandomReal[] < 0.3, RandomChoice[$pools[pool]],
     With[{n = fresh[]}, AppendTo[$pools[pool], n]; n]];
@@ -88,12 +92,12 @@ head[] :=
   Switch[RandomChoice[{6, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1} -> Range[15]],
     1, {XMLPattern[tag[]], True},
     2, {tag[] <> RandomChoice[{"", "." <> RandomChoice[{"a", "b", "c"}]}], True},
-    3, {If[room[], XMLPattern[tag[], "id" -> Pattern[Evaluate[fresh[]], Blank[]]], XMLPattern[tag[]]], True},
+    3, {If[room[], XMLPattern[tag[], "id" -> Pattern[Evaluate[named["attribute"]], Blank[]]], XMLPattern[tag[]]], True},
     4, {If[room[], XMLPattern[Pattern[Evaluate[named["tag"]], Blank[]]], XMLPattern[_]], True},
     5, {If[room[], XMLPattern[tag[], Pattern[Evaluate[fresh[]], Blank[]]], XMLPattern[tag[]]], True},
     6, {XMLPattern[Alternatives @@ RandomSample[{"div", "p", "li", "span"}, 2]], True},
     7, {XMLPattern[_], True},
-    8, {If[room[], XMLPattern[tag[], "class" -> Pattern[Evaluate[fresh[]], Blank[]]], XMLPattern[tag[]]], True},
+    8, {If[room[], XMLPattern[tag[], "class" -> Pattern[Evaluate[named["attribute"]], Blank[]]], XMLPattern[tag[]]], True},
     9, {XMLPattern[tag[], "id" -> _?oddIdQ], True},
     10, {If[room[], XMLPattern[Pattern[Evaluate[fresh[]], "div" | "li"], "id" -> _String], XMLPattern["div"]], True},
     11, {XMLElement[tag[], _, RandomChoice[{{}, _}]], False},
@@ -175,7 +179,7 @@ list[depth_] :=
       3, condition[l]]];
 
 entry[depth_] :=
-  Switch[RandomChoice[{4, 2, 1, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1} -> Range[14]],
+  Switch[RandomChoice[{4, 2, 1, 4, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1} -> Range[14]],
     1, ___,
     2, __,
     3, _,
@@ -190,8 +194,29 @@ entry[depth_] :=
     12, If[Length[$used] + 2 <= Length[$names],
       With[{a = fresh[], b = fresh[]}, Condition @@ Hold[PatternSequence[Pattern[a, tag[]], Pattern[b, tag[]]], Mod[Hash[{a, b}], 3] =!= 0]],
       PatternSequence[tag[], ___]],
-    13, Except[tag[]],
+    13, except[],
     14, If[room[], Repeated[PatternSequence[Pattern[Evaluate[named["element"]], tag[]], _], RandomChoice[{Infinity, {1, 2}}]], tag[]..]];
+
+(* A selector by position among the siblings of one tag, which compiles to
+   lists whose Excepts refer to the tag, named, unless the selector gives
+   it. *)
+ofType[] :=
+  With[{s = RandomChoice[{"*", "div", "li", ".a", "div > *", "li + *", "p ~ .b"}] <>
+      RandomChoice[{":first-of-type", ":last-of-type", ":nth-of-type(2)", ":nth-last-of-type(2)", ":nth-of-type(2n+1)"}]},
+    If[room[], Pattern[Evaluate[fresh[]], s], s]];
+
+(* An Except, local or referring to a name bound elsewhere: a tag bound
+   before it, or after it in the same list, or an element bound before it,
+   in this list or another constraint. *)
+except[] :=
+  Switch[RandomChoice[{2, 1, 1, 1} -> Range[4]],
+    1, Except[tag[]],
+    2, If[$pools["tag"] === {}, Except[tag[]], repeatedOrNot[Except[XMLPattern[Pattern[Evaluate[RandomChoice[$pools["tag"]]], Blank[]]]]]],
+    3, If[room[], With[{t = named["tag"]}, PatternSequence[Except[XMLPattern[Pattern[t, Blank[]]]] ..., XMLPattern[Pattern[t, Blank[]]]]], Except[tag[]]],
+    4, If[$pools["element"] === {}, Except[tag[]],
+      With[{n = RandomChoice[$pools["element"]]}, repeatedOrNot[RandomChoice[{Except[Pattern[n, XMLPattern[_]]], Except[Pattern[n, XMLPattern[_]], tag[]]}]]]]];
+
+repeatedOrNot[p_] := RandomChoice[{p, RepeatedNull[p], Repeated[p]}];
 
 document[] :=
   With[{d = XMLDocument @@ Table[constraint[RandomInteger[{0, 2}]], RandomInteger[{1, 2}]]},
