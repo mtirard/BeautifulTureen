@@ -2,9 +2,6 @@
 
 Pattern-based HTML element selection and text extraction for the Wolfram Language.
 
-> [!WARNING]
-> **Work in progress.** HTMLPatterns is released on GitHub but is not on the Wolfram Paclet Repository. Its design is still changing, so expect breaking changes between versions; [CHANGELOG.md](CHANGELOG.md) lists them. Issues and feedback are welcome.
-
 HTMLPatterns works on the `XMLObject` tree that `Import[…, {"HTML", "XMLObject"}]` gives. It adds:
 
 - **XML patterns**: `XMLPattern[tag, attrs][constraints…]`, nested as the document is, with constraints on an element's children (`Child`) and on what is below it (`Descendant`), and CSS selector strings through `FromCSSSelector`
