@@ -91,10 +91,7 @@ entryUncovered[it_, reader_] :=
   Switch[it["Kind"],
     "Any", {},
     "One", uncovered[it["Sub"]],
-    "Not",
-      Join[uncovered[it["Sub"]], If[it["Base"] === None, {}, uncovered[it["Base"]]],
-        If[it["Record"] =!= None && (reader =!= "Children" || recordsIn[it["Sub"]] =!= {}),
-          {"an Except over contents or tokens, or inside another, refers to a name bound outside it"}, {}]],
+    "Not", Join[uncovered[it["Sub"]], If[it["Base"] === None, {}, uncovered[it["Base"]]]],
     "Run", Join @@ (entryUncovered[#, reader] & /@ it["Items"]),
     "SeqCond", Join @@ (entryUncovered[#, reader] & /@ it["Sub"]["Items"]),
     "Branches", Join @@ (Join @@ (entryUncovered[#, reader] & /@ #) & /@ it["Subs"]),
@@ -1144,18 +1141,22 @@ listConstraintTable[c_, ps_] :=
    Except refers to that match: the Except excludes the items its pattern
    binds the name to the match there. Where the walk meets the Except, the
    match may not be known: it may come later in the list, from another
-   constraint or from above. So the list is walked once for each match the
-   Except's pattern binds the names to at some item, by value, or, when
-   they are first bound all at once by the join of an element's
-   constraints, by position for places (exceptModes); once for a match it
-   binds nowhere, excluding nothing; and once for the names left unbound,
-   excluding every item the pattern matches, as a local Except does. Each
-   walk's rows carry what it assumed, a label code in the column of the
-   Except's record key (the Not node's "Record"), and the rows are kept
-   where the names, once bound, are what the label says (settledRows); at
-   the pattern root, a row whose names are still unbound keeps only the
-   last assumption (rootSettled). Two labels on one row, from two lists
-   whose Excepts refer to the same names, are both assumed (labelsMet). *)
+   constraint or from above. So the rows carry what the walk assumed about
+   the names, a label code in the column of the Except's record key (the
+   Not node's "Record"), compared by value, or, when they are first bound
+   all at once by the join of an element's constraints, by position for
+   places (exceptModes). Each Except labels the row at the item it matches
+   with the matches its pattern binds the names to there (labelledWalk);
+   or, for a repeat of Excepts that refer to one tuple of names, the list
+   is walked once for each such match, once for a match bound nowhere,
+   excluding nothing, and once for the names left unbound, excluding every
+   item the pattern matches, as a local Except does (assumedWalks). The
+   rows are kept where the names, once bound, are what the label says
+   (settledRows); at the pattern root, a row whose names are still unbound
+   keeps only the last assumption (rootSettled). Two labels on one row,
+   from two items or two lists whose Excepts refer to the same names, are
+   both assumed (labelsMet). This holds over children, contents items and
+   tokens alike, and inside another Except's pattern. *)
 
 (* The Excepts of a list's entries, not inside the patterns they test, that
    refer to names bound outside them. *)
@@ -1168,7 +1169,10 @@ ownExcepts[items_] :=
       _, {}] & /@ items);
 
 (* The Excepts at or below a node that refer to names bound outside them. *)
-recordsIn[nd_] := Join[If[nd["Kind"] === "Not" && nd["Record"] =!= None, {nd}, {}], Join @@ (recordsIn /@ subNodes[nd])];
+recordsIn[nd_] := Join[If[nd["Kind"] === "Not" && nd["Record"] =!= None, {nd}, {}], Join @@ (recordsIn /@ nodesBelow[nd])];
+
+(* The nodes directly below a node, with an XMLPattern's token lists. *)
+nodesBelow[nd_] := Join[subNodes[nd], Values[Lookup[nd, "TokenLists", <||>]]];
 
 (* The entries with their Excepts' records no longer kept, and so not
    branched on by the walk, which reads those Excepts as vectors; but for
@@ -1194,35 +1198,58 @@ entriesBelow[it_] :=
     "Branches", Flatten[it["Subs"]],
     _, {}];
 
-(* The rows of a list whose Excepts refer to names bound outside them, one
-   walk for each assumption about the names. *)
+(* The rows of a list whose Excepts refer to names bound outside them. The
+   walk keeps the labels and the names they are about until they are
+   settled, so that a name the list binds settles them there; then only the
+   list's own names are kept. Where no label is kept, inside another
+   Except's pattern or in a token list, a label on names bound outside the
+   list is dropped so, and an Except inside a repeat or a run never labels,
+   so that it matches any item, as the solutions engine drops the record
+   there. *)
 exceptRows[cx_, items_, keep_] :=
-  Module[{live = Select[ownExcepts[items], $exceptModes[#["Id"]] =!= "Never" &], plain, key, mode, refs, tuples, idents, ds, reps},
+  Module[{live = Select[ownExcepts[items], $exceptModes[#["Id"]] =!= "Never" &], keys, cols, tuples, idents},
     If[live === {}, Return[listRows[cx, unrecorded[items], keep], Module]];
-    key = DeleteDuplicates[#["Record"] & /@ live];
-    If[Length[key] > 1, fallBack["Excepts of one list that refer to different names"]];
-    key = First[key];
-    refs = First[key];
-    mode = $exceptModes[First[live]["Id"]];
-    tuples = With[{e = itemTable[cx, #["Sub"]]}, {e["Item"], Transpose[Lookup[e, refs, ConstantArray[-1, Length[e["Item"]]]]]}] & /@ live;
-    If[MemberQ[Flatten[tuples[[All, 2]]], -1], fallBack["an Except whose pattern binds only some of the names it refers to"]];
-    idents = If[mode === "Value" && # =!= {}, Transpose[valueIds /@ Transpose[#]], tupleIdentity[#, mode] & /@ #] & /@ tuples[[All, 2]];
-    If[!IntersectingQ[#["Id"] & /@ live, #["Id"] & /@ repeatedExcepts[items]],
-      Return[singleExceptRows[cx, items, keep, key, mode, live, tuples, idents], Module]];
-    idents = PositionIndex /@ idents;
-    plain = unrecorded[items];
+    keys = DeleteDuplicates[#["Record"] & /@ live];
+    cols = DeleteDuplicates[Join[keep, keys, Join @@ (First /@ keys)]];
+    tuples = exceptTuples[cx, #] & /@ live;
+    idents = MapThread[tupleIdentities[#1[[2]], $exceptModes[#2["Id"]]] &, {tuples, live}];
+    distinctRows[KeyTake[
+        settledRows @ If[
+          IntersectingQ[#["Id"] & /@ live, #["Id"] & /@ repeatedExcepts[items]] && Length[keys] == 1 && AllTrue[live, MemberQ[#["Keep"], #["Record"]] &] &&
+            SameQ @@ Lookup[$exceptModes, #["Id"] & /@ live] && FreeQ[tuples[[All, 2]], -1],
+          assumedWalks[cx, items, cols, First[keys], $exceptModes[First[live]["Id"]], live, tuples, idents],
+          labelledWalk[cx, items, cols, live, tuples, idents]],
+        Prepend[keep, "Root"]],
+      True]];
+
+(* {the items the Except's pattern matches, the codes it binds the names it
+   refers to there, a tuple for each, -1 for a name a branch of it leaves
+   unbound, which then matches any}. *)
+exceptTuples[cx_, it_] :=
+  With[{e = itemTable[cx, it["Sub"]]}, {e["Item"], Transpose[Lookup[e, First[it["Record"]], ConstantArray[-1, Length[e["Item"]]]]]}];
+
+(* The identity of each tuple, as its codes are compared. *)
+tupleIdentities[{}, _] := {};
+tupleIdentities[tuples_, "Value"] := Transpose[valueIds /@ Transpose[tuples]];
+tupleIdentities[tuples_, mode_] := tupleIdentity[#, mode] & /@ tuples;
+
+(* When the Excepts refer to one tuple of names, compared one way, and each
+   pattern binds all of them, and some is inside a repeat, which matches
+   many items at once: one walk for each assumption about the names. *)
+assumedWalks[cx_, items_, cols_, key_, mode_, live_, tuples_, idents0_] :=
+  Module[{idents = PositionIndex /@ idents0, plain = unrecorded[items], ds, reps},
     ds = Union @@ (Keys /@ idents);
     reps = With[{i = FirstCase[Range[Length[live]], j_ /; KeyExistsQ[idents[[j]], #]]}, tuples[[i, 2, First[idents[[i]][#]]]]] & /@ ds;
-    settledRows @ unionTables[
+    unionTables[
       Join[
         MapThread[Function[{d, rep},
             Block[{$excluded = AssociationThread[#["Id"] & /@ live, MapThread[#1[[1, Lookup[#2, Key[d], {}]]] &, {tuples, idents}]]},
-              assumedRows[cx, plain, keep, key, {"Is", rep, mode}]]],
+              assumedRows[cx, plain, cols, key, {"Is", rep, mode}]]],
           {ds, reps}],
         {Block[{$excluded = AssociationThread[#["Id"] & /@ live, ConstantArray[{}, Length[live]]]},
-            assumedRows[cx, plain, keep, key, {"NotIn", reps, mode}]],
-          assumedRows[cx, plain, keep, key, {"Unbound"}]}],
-      keep]];
+            assumedRows[cx, plain, cols, key, {"NotIn", reps, mode}]],
+          assumedRows[cx, plain, cols, key, {"Unbound"}]}],
+      cols]];
 
 (* The Excepts of a list's entries inside a repeat. *)
 repeatedExcepts[items_] :=
@@ -1233,19 +1260,22 @@ repeatedExcepts[items_] :=
       "Branches", Join @@ (repeatedExcepts /@ #["Subs"]),
       _, {}] & /@ items);
 
-(* When no such Except is inside a repeat, each matches one item, and one
-   walk is enough: an Except matches any item its second argument passes,
-   and labels the row with the matches its pattern binds the names to at
-   that item, none of which the names may be ($itemLabels, exceptLabelled),
-   or with nothing if it binds them nowhere there. *)
-singleExceptRows[cx_, items_, keep_, key_, mode_, live_, tuples_, idents_] :=
+(* Otherwise one walk: an Except matches any item its second argument
+   passes, and labels the row, in the column of its own record key, with
+   the matches its pattern binds the names to at that item, none of which
+   the names may be ($itemLabels, exceptLabelled), or with nothing if it
+   binds them nowhere there. A repeat of Excepts is walked one repeat at a
+   time, and the labels of the items it matches meet on the row
+   (labelsMet). *)
+labelledWalk[cx_, items_, cols_, live_, tuples_, idents_] :=
   Block[{$excluded = AssociationThread[#["Id"] & /@ live, ConstantArray[{}, Length[live]]],
       $itemLabels = AssociationThread[#["Id"] & /@ live,
-        MapThread[Function[{tu, id},
-            {key, packed @ ReplacePart[ConstantArray[-1, Length[cx["ItemPlace"]]],
-              Normal @ GroupBy[Range[Length[tu[[1]]]], tu[[1, #]] &, labelCode[{"NotIn", tu[[2, First /@ GatherBy[#, id[[#]] &]]], mode}] &]]}],
-          {tuples, idents}]]},
-    settledRows @ listRows[cx, unrecorded[items, #["Id"] & /@ live], keep]];
+        MapThread[Function[{it, tu, id},
+            {it["Record"], packed @ ReplacePart[ConstantArray[-1, Length[cx["ItemPlace"]]],
+              Normal @ GroupBy[Range[Length[tu[[1]]]], tu[[1, #]] &,
+                labelCode[{"NotIn", tu[[2, First /@ GatherBy[#, id[[#]] &]]], $exceptModes[it["Id"]]}] &]]}],
+          {live, tuples, idents}]]},
+    listRows[cx, unrecorded[items, #["Id"] & /@ live], cols]];
 
 $itemLabels = <||>;
 
@@ -1278,7 +1308,7 @@ assumed[cx_, s_] :=
         _, testedOnce[col, # == -1 || holdsQ[label, {#}] &]]]]];
 
 (* The identity of a tuple of codes, as they are compared (agreeQ). *)
-tupleIdentity[codes_, mode_] := If[mode === "Across" && placeCodeQ[#], {"Places", Sort[atoms[#]]}, valueId[#]] & /@ codes;
+tupleIdentity[codes_, mode_] := Which[# == -1, -1, mode === "Across" && placeCodeQ[#], {"Places", Sort[atoms[#]]}, True, valueId[#]] & /@ codes;
 
 (* A table with every row labelled with an assumption about the names of
    an Except's record key. *)
@@ -1286,26 +1316,45 @@ labelled[t_, key_, label_] := Append[t, key -> ConstantArray[labelCode[label], r
 
 (* The code of an assumption: {"Is", codes, mode}, the names are bound to
    the match of codes; {"NotIn", {codes, ...}, mode}, to none of those; or
-   {"Unbound"}, never. *)
+   {"Unbound"}, never; or {"And", {label, ...}}, each of labels that
+   compare the names in different ways (labelsMet). *)
 labelCode[label_] := Lookup[$labels, Key[label], $labels[label] = (AppendTo[$labelList, label]; extraCode["Label", Length[$labelList]])];
 
 labelCodeQ[c_] := c < -1 && First[extraFields[c]] == $extraKinds["Label"];
 labelOf[c_] := $labelList[[extraFields[c][[2]]]];
 
 (* Two distinct labels on one row, as pairCompared gives them: whether both
-   may hold, and the label of both. *)
+   may hold, and the label of both. Labels that compare the names one way
+   are met into one; labels that compare them by value and by position, as
+   an Except whose names are bound in its own list and one whose names are
+   bound by another constraint, are both kept, {"And", {label, ...}}, one
+   for each way, and each is settled as it compares. *)
 labelsMet[x_, y_] :=
-  With[{a = labelOf[x], b = labelOf[y]},
-    Which[
-      First[a] === "Unbound" || First[b] === "Unbound", {0, -1},
-      Last[a] =!= Last[b], fallBack["Excepts that compare one name by value and by position"],
-      First[a] === "Is", If[holdsQ[b, a[[2]]], {1, x}, {0, -1}],
-      First[b] === "Is", If[holdsQ[a, b[[2]]], {1, y}, {0, -1}],
-      True, {1, labelCode[{"NotIn", Union[a[[2]], b[[2]]], Last[a]}]}]];
+  With[{ls = Join[conjuncts[labelOf[x]], conjuncts[labelOf[y]]]},
+    If[MemberQ[ls, {"Unbound"}], {0, -1},
+      With[{met = Fold[sameWayMet, #] & /@ GatherBy[ls, Last]},
+        Which[
+          MemberQ[met, None], {0, -1},
+          Length[met] == 1, {1, labelCode[First[met]]},
+          True, {1, labelCode[{"And", SortBy[met, Last]}]}]]]];
 
-(* Whether a label holds for the names bound to codes. *)
-holdsQ[{"Is", rep_, mode_}, codes_] := And @@ MapThread[agreeQ[#1, #2, mode] &, {rep, codes}];
+conjuncts[{"And", ls_}] := ls;
+conjuncts[l_] := {l};
+
+(* Two labels that compare the names one way, met into one, or None when
+   both cannot hold. *)
+sameWayMet[None, _] := None;
+sameWayMet[a_, b_] :=
+  Which[
+    First[a] === "Is", If[holdsQ[b, a[[2]]], a, None],
+    First[b] === "Is", If[holdsQ[a, b[[2]]], b, None],
+    True, {"NotIn", Union[a[[2]], b[[2]]], Last[a]}];
+
+(* Whether a label holds for the names bound to codes. A name a match
+   leaves unbound, -1, agrees with any. *)
+holdsQ[{"Is", rep_, mode_}, codes_] := And @@ MapThread[#1 == -1 || agreeQ[#1, #2, mode] &, {rep, codes}];
 holdsQ[{"NotIn", reps_, mode_}, codes_] := NoneTrue[reps, holdsQ[{"Is", #, mode}, codes] &];
+holdsQ[{"And", ls_}, codes_] := AllTrue[ls, holdsQ[#, codes] &];
 holdsQ[{"Unbound"}, _] := False;
 
 (* The rows of a table whose labels hold, once the names they are about
@@ -1336,25 +1385,33 @@ rootSettled[t_] :=
    the join of an element's constraints, which come before its tag and
    attributes; "Value" when it is a list, an element's tag and attributes,
    a name on a pattern or a literal's parts; "Never" when no match that
-   holds the Except binds them, and it excludes as a local Except does. *)
+   holds the Except binds them, and it excludes as a local Except does.
+   Inside another Except's pattern, which keeps no label (exceptRows), an
+   Except whose names that pattern does not bind is "Value" too, and its
+   labels are dropped unsettled. *)
 exceptModes[root_] := Association @ Flatten @ Last @ Reap[modesBelow[root, {}]];
 
 modesBelow[nd_, ctx_] :=
   If[nd["Kind"] === "Not" && nd["Record"] =!= None,
     Sow[nd["Id"] -> modeOf[First[nd["Record"]], ctx]];
+    modesBelow[nd["Sub"], {"Inside"}];
     If[nd["Base"] =!= None, modesBelow[nd["Base"], Prepend[ctx, {{}, {}}]]],
     Scan[modesBelow[#[[1]], Prepend[ctx, #[[2]]]] &, beside[nd]]];
 
 (* Each node below nd, with the names bound beside it that it is joined to
-   by value, and those across constraints. *)
+   by value, and those across constraints. An XMLPattern's token lists are
+   joined to its tag and attributes, and those to its constraints, by
+   value. *)
 beside[nd_] :=
   Switch[nd["Kind"],
     "XMLPattern" | "XMLDocument",
       With[{cs = nd["Constraints"]},
-        MapIndexed[{#1, {Lookup[nd, "HeadNames", {}], Union @@ Prepend[#["Names"] & /@ Delete[cs, #2], {}]}} &, cs]],
-    "Named" | "ListNamed" | "ContentsNamed", {{nd["Sub"], {{nd["Name"]}, {}}}},
+        Join[
+          MapIndexed[{#1, {Lookup[nd, "HeadNames", {}], Union @@ Prepend[#["Names"] & /@ Delete[cs, #2], {}]}} &, cs],
+          {#, {Union[Lookup[nd, "HeadNames", {}], Union @@ Prepend[#["Names"] & /@ cs, {}]], {}}} & /@ Values[Lookup[nd, "TokenLists", <||>]]]],
+    "Named" | "ListNamed" | "ContentsNamed" | "TokenNamed", {{nd["Sub"], {{nd["Name"]}, {}}}},
     "LiteralParts", {{nd["Sub"], {Union[nd["TagNames"], nd["AttrsNames"]], {}}}},
-    "List" | "ContentsList" | "Seq", entriesBeside[nd["Items"], {}],
+    "List" | "ContentsList" | "Seq" | "TokenList", entriesBeside[nd["Items"], {}],
     "Run", entriesBeside[nd["Items"], {nd["Name"]}],
     "Repeat", {#, {Union @@ (#["Names"] & /@ nd["Items"]), {}}} & /@ nd["Items"],
     "Branches", Join @@ (entriesBeside[#, {}] & /@ nd["Subs"]),
@@ -1368,6 +1425,7 @@ modeOf[refs_, ctx_] :=
   Module[{acc = {}},
     Catch[
       Scan[Function[l,
+          If[l === "Inside", Throw["Value", $modeTag]];
           If[SubsetQ[Union[acc, l[[2]]], refs], Throw["Across", $modeTag]];
           acc = Union[acc, l[[1]], l[[2]]];
           If[SubsetQ[acc, refs], Throw["Value", $modeTag]]],
