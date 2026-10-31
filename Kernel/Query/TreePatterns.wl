@@ -25,6 +25,8 @@ PackageScoped[$engine]
    as the solutions engine's resultOf makes them *)
 PackageScoped[$elem]
 PackageScoped[$parent]
+PackageScoped[$kids]
+PackageScoped[$kids]
 PackageScoped[$depth]
 PackageScoped[$end]
 PackageScoped[$vectors]
@@ -43,6 +45,7 @@ PackageScoped[resultOf]
 PackageScoped[rhsNames]
 PackageScoped[guardedBody]
 PackageScoped[subNodes]
+PackageScoped[seq]
 
 (* =========================================================== *)
 (* Tree patterns (ADR 0023, 0024, 0025)                         *)
