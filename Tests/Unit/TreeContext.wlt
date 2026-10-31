@@ -91,6 +91,22 @@ TestCreate[
   TestID -> "path-value"
 ];
 
+(* A name bound to a path in one branch and to an element in another: the
+   element sorts before the paths that end at it, and those outermost upper
+   end first. *)
+TestCreate[
+  XMLCases[nav, XMLPattern["nav"][(p : Descendant[XMLPattern["a", "id" -> "a2"]]) | Child[p : XMLPattern["a"]]] :> If[ListQ[p], id /@ p, id[p]]],
+  {"a1", "a2", {"i"}, {}, "a3"},
+  TestID -> "path-element-order"
+];
+
+(* A tested path can be a branch of alternatives that binds nothing. *)
+TestCreate[
+  XMLCases[nav, n : XMLPattern["nav"][Descendant[XMLPattern["a", "id" -> "a2"]]?(Length[#] == 1 &) | {}] :> id[n]],
+  {"o"},
+  TestID -> "path-test-in-alternatives"
+];
+
 (* === Shortest and Longest === *)
 
 TestCreate[
