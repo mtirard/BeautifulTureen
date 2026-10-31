@@ -215,6 +215,20 @@ TestCreate[
   TestID -> "classlist-shared-name-across-alternatives"
 ];
 
+(* An Except in a token list may refer to a token bound before it: a class
+   list whose last token differs from its first. *)
+TestCreate[
+  texts[XMLPattern["p", "classList" -> {x_, ___, Except[x_]}]],
+  {"promo"},
+  TestID -> "classlist-except-refers-to-token"
+];
+
+TestCreate[
+  XMLCases[$mixed, XMLPattern["p", "classList" -> {x_, Except[x_] ..}] :> x],
+  {"promo"},
+  TestID -> "classlist-repeated-except-refers-to-token"
+];
+
 (* XMLFirstCase agrees. *)
 TestCreate[
   XMLFirstCase[$mixed, e : XMLPattern["p", "classList" -> "card"] :> e],
