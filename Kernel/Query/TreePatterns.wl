@@ -29,6 +29,7 @@ PackageScoped[$kids]
 PackageScoped[$kids]
 PackageScoped[$depth]
 PackageScoped[$end]
+PackageScoped[$keyLength]
 PackageScoped[$vectors]
 PackageScoped[$readings]
 PackageScoped[$slotOf]
@@ -46,6 +47,8 @@ PackageScoped[rhsNames]
 PackageScoped[guardedBody]
 PackageScoped[subNodes]
 PackageScoped[seq]
+PackageScoped[pathIds]
+PackageScoped[nearestOf]
 
 (* =========================================================== *)
 (* Tree patterns (ADR 0023, 0024, 0025)                         *)
@@ -1503,7 +1506,7 @@ shadowsQ[nd_, c_, k_, j_] :=
   memoised[{"Shadow", c["Id"], k, j},
     headVector[nd][[k]] == 1 && Length[childrenOf[k]] >= nd["MinKids"] &&
       MemberQ[lowerEnd[c, #] & /@ matchConstraint[c, k], j] &&
-      AllTrue[DeleteCases[nd["Constraints"], c], matchConstraint[#, k] =!= {} &]];
+      AllTrue[Select[nd["Constraints"], #["Id"] =!= c["Id"] &], matchConstraint[#, k] =!= {} &]];
 
 (* A Condition on an XMLPattern without constraints that sees only names
    its attribute rules bind as "key" -> name_, on keys that are not list
