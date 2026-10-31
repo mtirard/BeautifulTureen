@@ -933,6 +933,16 @@ uniqueRows[t_] := If[Length[First[t]] <= 1, t, AssociationThread[Keys[t], packed
 stacked[ts_, cols_] :=
   AssociationThread[cols, Function[k, packed[Join @@ (Lookup[#, Key[k], ConstantArray[-1, Length[First[#]]]] & /@ ts)]] /@ cols];
 
+(* The rows of the branches of Alternatives it from the rows of t, on
+   columns cols, f[u, b] the rows of branch b from the rows u, in the order
+   of the solutions: by the row of t they come from, and from one row the
+   first branch's first. So an Optional, the branches of its pattern and of
+   nothing, gives both at one row before either at the next. *)
+branchRows[t_, it_, f_, cols_] :=
+  With[{key = {"Row", it["Id"]}},
+    With[{s = stacked[f[Append[t, key -> packed[Range[frontierRows[t]]]], #] & /@ it["Subs"], Append[cols, key]]},
+      KeyDrop[takeRows[s, Ordering[s[key]]], key]]];
+
 (* The rows of the walk of items over sequence cx from the rows of t, to the
    places of endOK. top: items are the whole list, and its rows need only
    their owners. *)
@@ -954,7 +964,8 @@ walkedRows[cx_, items_, t0_, endOK_, top_] :=
    the places of target from the row's on, are read off vectors directly;
    so are any entries when each owner's rows are at one place, by one reach
    from all of them. Otherwise entry by entry, each step pruned by what the
-   entries after it can reach. *)
+   entries after it can reach. Rows come out in the order of the solutions:
+   by the row they come from, and from one row by place. *)
 segmentRows[cx_, {}, t_, target_] := pickRows[t, target[[t["Place"]]]];
 segmentRows[cx_, seg_, t_, target_] /; AllTrue[seg, MatchQ[#["Kind"], "One" | "Not"] &] :=
   With[{l = Length[seg], q = t["Place"], p = cx["Places"]},
@@ -972,10 +983,12 @@ segmentRows[cx_, seg_, t_, target_] /; DuplicateFreeQ[cx["OwnerOf"][[DeleteDupli
     start[[t["Place"]]] = 1;
     ends = Flatten @ Position[reachOver[cx, seg, start, 1] target, 1];
     pairs = keyPairs[cx["OwnerOf"][[ends]], cx["OwnerOf"][[t["Place"]]]];
+    pairs = pairs[[All, Ordering[pairs[[2]]]]];
     Append[takeRows[t, pairs[[2]]], "Place" -> packed[ends[[pairs[[1]]]]]]];
 segmentRows[cx_, seg_, t_, target_] :=
-  With[{backs = backVectors[cx, seg, target]},
-    Fold[uniqueRows[stepRows[cx, seg[[#2]], #1, backs[[#2 + 1]]]] &, t, Range[Length[seg]]]];
+  With[{backs = backVectors[cx, seg, target], key = {"Row", "Segment"}},
+    With[{u = Fold[uniqueRows[stepRows[cx, seg[[#2]], #1, backs[[#2 + 1]]]] &, Append[t, key -> packed[Range[frontierRows[t]]]], Range[Length[seg]]]},
+      uniqueRows @ KeyDrop[takeRows[u, Ordering[Transpose[{u[key], u["Place"]}]]], key]]];
 
 stepRows[cx_, it_, t_, next_] :=
   Switch[it["Kind"],
@@ -1026,9 +1039,9 @@ spanRows[cx_, it_, t_, next_] :=
             spanColumns[t, it]]]],
     "Branches",
       With[{key = {"Start", it["Id"]}, slotQ = MemberQ[it["Keep"], it["Slot"]]},
-        uniqueRows @ stacked[
-          Function[b, With[{inner = walkedRows[cx, b, Append[t, key -> t["Place"]], next, False]},
-            If[slotQ, Append[inner, it["Slot"] -> runCodes[cx, inner[key], inner["Place"]]], inner]]] /@ it["Subs"],
+        uniqueRows @ branchRows[t, it,
+          Function[{u, b}, With[{inner = walkedRows[cx, b, Append[u, key -> u["Place"]], next, False]},
+            If[slotQ, Append[inner, it["Slot"] -> runCodes[cx, inner[key], inner["Place"]]], inner]]],
           spanColumns[t, it]]],
     "SeqCond", uniqueRows @ KeyTake[passingRows[it, walkedRows[cx, it["Sub"]["Items"], t, next, False]], spanColumns[t, it]],
     "Repeat",
