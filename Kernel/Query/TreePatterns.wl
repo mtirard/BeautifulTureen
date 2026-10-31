@@ -910,7 +910,8 @@ cItem[r : (_Repeated | _RepeatedNull), need_] :=
     {treeNode["Repeat", Union @@ Prepend[#["Names"] & /@ inner, {}], need, "Items" -> inner, "Min" -> bounds[[1]], "Max" -> bounds[[2]]]}];
 (* A name inside Except binds nothing outside it; tests inside it run there.
    A name also bound outside it refers to that match: the Except records
-   what its pattern binds the name to, its "Record" key (settled). *)
+   what its pattern binds the name to, its "Record" key, and the query
+   engine keeps the rows where they agree (settledRows, Query/Columnar.wl). *)
 cItem[Verbatim[Except][p_], need_] := {notNode[p, None, need]};
 cItem[Verbatim[Except][p_, q_], need_] := {notNode[p, $single[q, need], need]};
 
