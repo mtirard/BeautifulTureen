@@ -53,6 +53,17 @@ TestCreate[
   TestID -> "count-test-in-pattern-may-run-past-nth-match"
 ];
 
+(* A Condition in the pattern may be evaluated once for several matches that
+   bind its names to the same parts of the tree (ADR 0024, Evaluation): div
+   a and div b both hold div c. *)
+TestCreate[
+  With[{r = Reap[XMLCases[$countNested,
+      XMLPattern["div", "id" -> id_][Descendant[x : XMLPattern["div", "id" -> "c"] /; (Sow["id" /. x[[2]]]; True)]] :> id]]},
+    {First[r], Length[Flatten[Last[r]]] < 2, Union[Flatten[Last[r]]]}],
+  {{"a", "b"}, True, {"c"}},
+  TestID -> "count-condition-in-pattern-may-run-once-for-same-parts"
+];
+
 (* As in Cases, a rule's right-hand side is evaluated once, before any
    matching, even for n = 0. *)
 TestCreate[
